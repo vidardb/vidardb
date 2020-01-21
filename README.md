@@ -1,6 +1,6 @@
 ## VidarDB: A Versatile Storage Engine that Adapts to Your Workloads
 
-[![Build Status](https://travis-ci.org/facebook/vidardb.svg?branch=master)](https://travis-ci.org/facebook/vidardb)
+[![Build Status](https://travis-ci.org/vidardb/vidardb.svg?branch=master)](https://travis-ci.org/vidardb/vidardb)
 
 VidarDB is developed and maintained by VidarDB Team.
 It is built on RocksDB and earlier work on LevelDB by Sanjay Ghemawat (sanjay@google.com)
