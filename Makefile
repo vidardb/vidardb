@@ -13,6 +13,12 @@ LDFLAGS += $(EXTRA_LDFLAGS)
 MACHINE ?= $(shell uname -m)
 ARFLAGS = rs
 
+# Users can specify their own configuration
+REGISTRY ?= vidardb
+TAG ?= vidardb-latest
+IMAGE ?= postgresql
+DOCKER ?= docker
+
 # Transform parallel LOG output into something more readable.
 perl_command = perl -n \
   -e '@a=split("\t",$$_,-1); $$t=$$a[8];'				\
@@ -422,8 +428,11 @@ endif  # PLATFORM_SHARED_EXT
 .PHONY: blackbox_crash_test check clean coverage crash_test ldb_tests package \
 	release tags valgrind_check whitebox_crash_test format static_lib shared_lib all \
 	dbg vidardbjavastatic vidardbjava install install-static install-shared uninstall \
-	analyze tools tools_lib
+	analyze tools tools_lib docker-image
 
+docker-image:
+	@echo "Building docker image..."
+	$(DOCKER) build --no-cache --pull -t $(REGISTRY)/$(IMAGE):$(TAG) docker-image
 
 all: $(LIBRARY) $(BENCHMARKS) tools tools_lib test_libs $(TESTS)  # Shichao
 
