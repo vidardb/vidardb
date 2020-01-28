@@ -9,7 +9,7 @@ Start the container with the following Docker image we have provided.
 - Run a Docker container:
 
     ```sh
-    docker run -d --name postgresql -p 5432:5432 vidardb/postgresql:vidardb-master
+    docker run -d --name postgresql -p 5432:5432 vidardb/postgresql:vidardb-latest
     ```
 
 - Connect to the PostgreSQL:
@@ -34,7 +34,7 @@ We can build a new Docker image in the following way. It is the prerequisite tha
     make docker-image
     ```
 
-    After executing the previous command, it will build docker image with the default image repository and name: `vidardb/postgresql:vidardb-master`.
+    After executing the previous command, it will build docker image with the default image repository and name: `vidardb/postgresql:vidardb-latest`.
 
     We can also specify the build parameters:
 
