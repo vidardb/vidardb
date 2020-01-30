@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-set -Eeo pipefail
+
 # TODO swap to -Eeuo pipefail above (after handling all potentially-unset variables)
+set -Eeo pipefail
 
 # usage: file_env VAR [DEFAULT]
 #    ie: file_env 'XYZ_DB_PASSWORD' 'example'
@@ -219,10 +220,7 @@ pg_setup_shared_preload_libraries() {
 }
 
 pg_init_madlib() {
-	echo "Installing MADLib..."
-	PGUSER="${PGUSER:-postgres}" PGDATABASE="${POSTGRES_DB}" /usr/local/madlib/bin/madpack -p postgres install
-	PGUSER="${PGUSER:-postgres}" PGDATABASE="${POSTGRES_DB}" /usr/local/madlib/bin/madpack -p postgres install-check
-	echo "Install MADLib successfully"
+	install-madlib.sh -U "${PGUSER:-postgres}" -D "${POSTGRES_DB}"
 }
 
 # start socket and $PGHOST postgresql server for setting up or running scripts

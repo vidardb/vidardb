@@ -30,4 +30,5 @@ RUN set -xe && apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* apache-madlib-${MADLIB_VERSION}-bin-Linux.deb
 
 # Add bootstrap entrypoint
+COPY install-madlib.sh /usr/local/bin/
 COPY docker-entrypoint.sh /usr/local/bin/
