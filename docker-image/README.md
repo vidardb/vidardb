@@ -41,3 +41,17 @@ We can build a new Docker image in the following way. It is the prerequisite tha
     ```sh
     REGISTRY=<YOUR REGISTRY ADDRESS> IMAGE=<YOUR IMAGE NAME> TAG=<YOUR IMAGE TAG> make docker-image 
     ```
+
+## Installing MADLib
+
+If you need to install MADLib for a new created database, you can run the following instructions.
+
+```sh
+docker exec -it postgresql sh -c "install-madlib.sh -U postgres -D postgres"
+```
+
+You can also print the `install-madlib.sh` help usage to specify your own database arguments:
+
+```sh
+docker exec -it postgresql sh -c "install-madlib.sh -h"
+```
