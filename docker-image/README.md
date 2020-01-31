@@ -12,7 +12,7 @@ Start the container with the following Docker image we have provided.
     docker run -d --name postgresql -p 5432:5432 vidardb/postgresql:vidardb-latest
     ```
 
-- Connect to the PostgreSQL:
+- Connect to the PostgreSQL after the container is started successfully:
 
     ```sh
     psql -h 127.0.0.1 -p 5432 -U postgres
@@ -44,14 +44,18 @@ We can build a new Docker image in the following way. It is the prerequisite tha
 
 ## Installing MADLib
 
-If you need to install MADLib for a new created database, you can run the following instructions.
+If you need to install MADLib for a new created database, you can run the following instructions:
 
 ```sh
-docker exec -it postgresql sh -c "install-madlib.sh -U postgres -D postgres"
+# USERNAME: database username
+# PASSWORD: database password
+# DATABASE: database name
+docker exec -it postgresql sh -c "install-madlib.sh -U USERNAME -P PASSWORD -D DATABASE"
 ```
 
-You can also print the `install-madlib.sh` help usage to specify your own database arguments:
+For example, if you have created a new database named `madlib`, and the username is `madlib` and no password,
+and you can install madlib like this:
 
 ```sh
-docker exec -it postgresql sh -c "install-madlib.sh -h"
+docker exec -it postgresql sh -c "install-madlib.sh -U madlib -D madlib"
 ```

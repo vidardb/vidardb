@@ -29,6 +29,8 @@ RUN set -xe && apt-get update && \
     apt-get purge -y --auto-remove wget ca-certificates && \
     rm -rf /var/lib/apt/lists/* /tmp/* apache-madlib-${MADLIB_VERSION}-bin-Linux.deb
 
-# Add bootstrap entrypoint
-COPY install-madlib.sh /usr/local/bin/
-COPY docker-entrypoint.sh /usr/local/bin/
+# Add bootstrap entrypoint and util tools
+COPY docker-entrypoint.sh install-madlib.sh health-check.sh /usr/local/bin/
+
+# Add health check
+HEALTHCHECK CMD health-check.sh
