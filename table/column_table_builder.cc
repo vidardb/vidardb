@@ -22,6 +22,7 @@
 #include "vidardb/env.h"
 #include "vidardb/flush_block_policy.h"
 #include "vidardb/table.h"
+#include "vidardb/splitter.h"
 
 #include "table/block.h"
 #include "table/column_table_reader.h"
@@ -360,8 +361,8 @@ void ColumnTableBuilder::CreateSubcolumnBuilders(Rep* r) {
 
 void ColumnTableBuilder::AddInSubcolumnBuilders(Rep* r, const Slice& key,
                                                 const Slice& value) {
-  std::vector<std::string> vals(StringSplit(value.ToString(),
-                                            r->table_options.delim));
+  const Splitter* splitter = r->table_options.splitter;
+  std::vector<std::string> vals = splitter->Split(value.ToString());
   if (!vals.empty() && vals.size() != r->table_options.column_num) {
     r->status = Status::InvalidArgument("table_options.column_num");
     return;

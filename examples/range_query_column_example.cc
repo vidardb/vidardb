@@ -9,6 +9,7 @@ using namespace std;
 #include "vidardb/db.h"
 #include "vidardb/status.h"
 #include "vidardb/options.h"
+#include "vidardb/splitter.h"
 #include "../table/adaptive_table_factory.h"
 using namespace vidardb;
 
@@ -25,8 +26,11 @@ int main(int argc, char* argv[]) {
   options.create_if_missing = true;
 
   // column table
+  // const Splitter* splitter = PipeSplitter();
+  const Splitter* splitter = EncodingSplitter();
   TableFactory* table_factory = NewColumnTableFactory();
   static_cast<ColumnTableOptions*>(table_factory->GetOptions())->column_num = M;
+  static_cast<ColumnTableOptions*>(table_factory->GetOptions())->splitter = splitter;
   options.table_factory.reset(table_factory);
 
   Status s = DB::Open(options, kDBPath, &db);
@@ -35,25 +39,34 @@ int main(int argc, char* argv[]) {
   // insert data
   WriteOptions write_options;
   // write_options.sync = true;
-  s = db->Put(write_options, "1", "chen1|33|hangzhou");
+  s = db->Put(write_options, "1", 
+    splitter->Join(std::vector<std::string>{"chen1", "33", "hangzhou"}));
   assert(s.ok());
-  s = db->Put(write_options, "2", "wang2|32|wuhan");
+  s = db->Put(write_options, "2", 
+    splitter->Join(std::vector<std::string>{"wang2", "32", "wuhan"}));
   assert(s.ok());
-  s = db->Put(write_options, "3", "zhao3|35|nanjing");
+  s = db->Put(write_options, "3", 
+    splitter->Join(std::vector<std::string>{"zhao3", "35", "nanjing"}));
   assert(s.ok());
-  s = db->Put(write_options, "4", "liao4|28|beijing");
+  s = db->Put(write_options, "4", 
+    splitter->Join(std::vector<std::string>{"liao4", "28", "beijing"}));
   assert(s.ok());
-  s = db->Put(write_options, "5", "jiang5|30|shanghai");
+  s = db->Put(write_options, "5", 
+    splitter->Join(std::vector<std::string>{"jiang5", "30", "shanghai"}));
   assert(s.ok());
-  s = db->Put(write_options, "6", "lian6|30|changsha");
+  s = db->Put(write_options, "6", 
+    splitter->Join(std::vector<std::string>{"lian6", "30", "changsha"}));
   assert(s.ok());
   s = db->Delete(write_options, "1");
   assert(s.ok());
-  s = db->Put(write_options, "3", "zhao333|35|nanjing");
+  s = db->Put(write_options, "3", 
+    splitter->Join(std::vector<std::string>{"zhao333", "35", "nanjing"}));
   assert(s.ok());
-  s = db->Put(write_options, "6", "lian666|30|changsha");
+  s = db->Put(write_options, "6", 
+    splitter->Join(std::vector<std::string>{"lian666", "30", "changsha"}));
   assert(s.ok());
-  s = db->Put(write_options, "1", "chen1111|33|hangzhou");
+  s = db->Put(write_options, "1", 
+    splitter->Join(std::vector<std::string>{"chen1111", "33", "hangzhou"}));
   assert(s.ok());
   s = db->Delete(write_options, "3");
   assert(s.ok());
@@ -77,7 +90,15 @@ int main(int argc, char* argv[]) {
     next = db->RangeQuery(read_options, range, res, &s);
     assert(s.ok());
     for (auto it : res) {
-      cout << it.user_key << "=" << it.user_val << " ";
+      cout << it.user_key << "=[";
+      std::vector<std::string> vals = splitter->Split(it.user_val);
+      for (auto i = 0u; i < vals.size(); i++) {
+        cout << vals[i];
+        if (i < vals.size() - 1) {
+          cout << ", ";
+        };
+      }
+      cout << "] ";
     }
     cout << endl;
   }

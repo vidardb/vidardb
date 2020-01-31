@@ -19,6 +19,7 @@
 #include "vidardb/statistics.h"
 #include "vidardb/table.h"
 #include "vidardb/table_properties.h"
+#include "vidardb/splitter.h"
 
 #include "table/block.h"
 #include "table/column_table_factory.h"
@@ -887,11 +888,12 @@ class ColumnTable::BlockEntryIteratorState : public TwoLevelIteratorState {
 
 class ColumnTable::ColumnIterator : public InternalIterator {
  public:
-  ColumnIterator(const std::vector<InternalIterator*>& columns, char delim,
+  ColumnIterator(const std::vector<InternalIterator*>& columns,
+                 const Splitter* splitter,
                  bool has_main_column,
                  const InternalKeyComparator& internal_comparator,
                  uint64_t num_entries = 0)
-  : columns_(columns), delim_(delim), has_main_column_(has_main_column),
+  : columns_(columns), splitter_(splitter), has_main_column_(has_main_column),
     internal_comparator_(internal_comparator), num_entries_(num_entries) {}
 
   virtual ~ColumnIterator() {
@@ -1096,10 +1098,8 @@ class ColumnTable::ColumnIterator : public InternalIterator {
           }
 
           auto& it = user_vals[user_val_idx++]->second.iter_;
-          it->user_val.append(iter->value().data_, iter->value().size_);
-          if (i + 1 < columns_.size()) {
-            it->user_val.append(1, delim_);
-          }
+          splitter_->Append(it->user_val, iter->value().ToString(),
+                            i + 1 >= columns_.size());
         }
       }
     }
@@ -1133,18 +1133,15 @@ class ColumnTable::ColumnIterator : public InternalIterator {
         // skip main column (only key)
         continue;
       }
-      // val1|val2|val3|...
-      value_.append(columns_[i]->value().data_, columns_[i]->value().size_);
-      if (i < columns_.size() - 1) {
-        value_.append(1, delim_);
-      }
+      splitter_->Append(value_, columns_[i]->value().ToString(), 
+                        i + 1 >= columns_.size());
     }
     return true;
   }
 
   std::vector<InternalIterator*> columns_;
   std::string value_;
-  char delim_;
+  const Splitter* splitter_;
   Status status_;
   bool has_main_column_;  // true in NewIterator, false in Get & Prefetch
   const InternalKeyComparator& internal_comparator_; // used in rangrquery
@@ -1182,7 +1179,7 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
         new BlockEntryIteratorState(rep_->tables[column_index].get(), ro),
         rep_->tables[column_index]->NewIndexIterator(ro), arena));
   }
-  return new ColumnIterator(iters, rep_->table_options.delim,
+  return new ColumnIterator(iters, rep_->table_options.splitter,
                             true, rep_->internal_comparator,
                             rep_->table_properties->num_entries);
 }
@@ -1233,7 +1230,7 @@ Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
             rep_->tables[it]->NewIndexIterator(ro)));
       }
 
-      ColumnIterator citers(iters, rep_->table_options.delim,
+      ColumnIterator citers(iters, rep_->table_options.splitter,
                             false, rep_->internal_comparator, /* might change*/
                             rep_->table_properties->num_entries);
       if (!citers.status().ok()) {
@@ -1329,7 +1326,7 @@ Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end,
           rep_->tables[it]->NewIndexIterator(ro)));
     }
 
-    ColumnIterator citers(iters, rep_->table_options.delim,
+    ColumnIterator citers(iters, rep_->table_options.splitter,
                           false, rep_->internal_comparator,
                           rep_->table_properties->num_entries);
     if (!citers.status().ok()) {
