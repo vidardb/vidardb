@@ -19,8 +19,8 @@ Start the container with the following docker image we have provided.
     docker run -d --name postgresql -p 5432:5432 vidardb/postgresql:vidardb-latest
     ```
 
-    Normally we should wait for 25~30s, so that the `postgresql` container will start, and its status
-    will become `healthy`.
+    After executing the before command, the `postgresql` container will start and initialize
+    the database. Normally we should wait for 25~30s, and then its status will become `healthy`.
 
     We can run the following command to query the `postgresql` container status:
 
