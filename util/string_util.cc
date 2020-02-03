@@ -20,7 +20,7 @@ std::vector<std::string> StringSplit(const std::string& arg, char delim) {
   return splits;
 }
 
-std::string StringJoin(const std::vector<std::string>& args, char delim) {
+std::string StringStitch(const std::vector<std::string>& args, char delim) {
   std::string result;
   for (auto i = 0u; i < args.size(); i++) {
     result.append(args[i]);

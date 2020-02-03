@@ -14,7 +14,7 @@ namespace vidardb {
 
 extern std::vector<std::string> StringSplit(const std::string& arg, char delim);
 
-extern std::string StringJoin(const std::vector<std::string>& args, char delim);
+extern std::string StringStitch(const std::vector<std::string>& args, char delim);
 
 extern void StringAppend(std::string& ss, const std::string& s, char delim,
                          bool append_delim);

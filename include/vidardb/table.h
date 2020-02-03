@@ -127,8 +127,8 @@ struct ColumnTableOptions {
   // Same as block_restart_interval but used for the index block.
   int index_block_restart_interval = 1;
 
-  // splitter for attributes excluding key, default is PipeSplitter
-  const Splitter* splitter = nullptr;
+  // splitter for attributes excluding key, default is EncodingSplitter
+  std::shared_ptr<Splitter> splitter;
 
   // total column number excluding key
   uint32_t column_num = 0;

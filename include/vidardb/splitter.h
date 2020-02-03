@@ -30,23 +30,55 @@ class Splitter {
   // Split a string to multiple sub-strings.
   virtual std::vector<std::string> Split(const std::string& s) const = 0;
 
-  // Join multiple sub-strings to a string.
-  virtual std::string Join(const std::vector<std::string>& v) const = 0;
+  // Stitch multiple sub-strings to a string.
+  virtual std::string Stitch(const std::vector<std::string>& v) const = 0;
 
   // Append a sub-string.
   virtual void Append(std::string& ss, const std::string& s, bool last) const = 0;
 };
 
-// Return a builtin splitter that uses '|' to split a string.
+// A builtin pipe splitter that uses '|' to split a string.
 // For example: s1|s2|s3...
-extern const Splitter* PipeSplitter();
+class PipeSplitter : public Splitter {
+ public:
+  PipeSplitter() { }
 
-// Return a builtin splitter that uses the following encoding format:
+  virtual const std::string Name() const override {
+    return "vidardb.PipeSplitter";
+  }
+
+  virtual std::vector<std::string> Split(const std::string& s) const override;
+
+  virtual std::string Stitch(const std::vector<std::string>& v) const override;
+
+  virtual void Append(std::string& ss, const std::string& s, bool last) const 
+    override;
+
+ private:
+  const char delim = '|';
+};
+
+// A builtin encoding splitter that uses the following format:
 // entry1entry2entry3...
+//
 // Every entry contains:
 //   length (4B)
 //   string
-extern const Splitter* EncodingSplitter();
+class EncodingSplitter : public Splitter {
+ public:
+  EncodingSplitter() { }
+
+  virtual const std::string Name() const override {
+    return "vidardb.EncodingSplitter";
+  }
+
+  virtual std::vector<std::string> Split(const std::string& s) const override;
+
+  virtual std::string Stitch(const std::vector<std::string>& v) const override;
+
+  virtual void Append(std::string& ss, const std::string& s, bool last) const 
+    override;
+};
 
 }  // namespace vidardb
 

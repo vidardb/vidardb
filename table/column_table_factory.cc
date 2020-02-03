@@ -42,7 +42,7 @@ ColumnTableFactory::ColumnTableFactory(
     table_options_.index_block_restart_interval = 1;
   }
   if (table_options_.splitter == nullptr) {
-    table_options_.splitter = PipeSplitter();
+    table_options_.splitter.reset(new EncodingSplitter());
   }
 }
 

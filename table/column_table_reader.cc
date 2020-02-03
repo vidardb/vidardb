@@ -889,7 +889,7 @@ class ColumnTable::BlockEntryIteratorState : public TwoLevelIteratorState {
 class ColumnTable::ColumnIterator : public InternalIterator {
  public:
   ColumnIterator(const std::vector<InternalIterator*>& columns,
-                 const Splitter* splitter,
+                 std::shared_ptr<Splitter> splitter,
                  bool has_main_column,
                  const InternalKeyComparator& internal_comparator,
                  uint64_t num_entries = 0)
@@ -1141,7 +1141,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 
   std::vector<InternalIterator*> columns_;
   std::string value_;
-  const Splitter* splitter_;
+  std::shared_ptr<Splitter> splitter_;
   Status status_;
   bool has_main_column_;  // true in NewIterator, false in Get & Prefetch
   const InternalKeyComparator& internal_comparator_; // used in rangrquery
