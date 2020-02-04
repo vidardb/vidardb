@@ -67,6 +67,7 @@ LIB_SOURCES =                                                   \
   util/cache.cc                                                 \
   util/coding.cc                                                \
   util/comparator.cc                                            \
+  util/splitter.cc                                              \
   util/compaction_job_stats_impl.cc                             \
   util/concurrent_arena.cc                                      \
   util/crc32c.cc                                                \

@@ -20,4 +20,23 @@ std::vector<std::string> StringSplit(const std::string& arg, char delim) {
   return splits;
 }
 
+std::string StringStitch(const std::vector<std::string>& args, char delim) {
+  std::string result;
+  for (auto i = 0u; i < args.size(); i++) {
+    result.append(args[i]);
+    if (i < args.size() - 1) {
+      result.append(1, delim);
+    }
+  }
+  return result;
+}
+
+void StringAppend(std::string& ss, const std::string& s, char delim,
+                  bool append_delim) {
+  ss.append(s);
+  if (append_delim) {
+    ss.append(1, delim);
+  }
+}
+
 }  // namespace vidardb

@@ -14,6 +14,11 @@ namespace vidardb {
 
 extern std::vector<std::string> StringSplit(const std::string& arg, char delim);
 
+extern std::string StringStitch(const std::vector<std::string>& args, char delim);
+
+extern void StringAppend(std::string& ss, const std::string& s, char delim,
+                         bool append_delim);
+
 template <typename T>
 inline std::string ToString(T value) {
 #if !(defined OS_ANDROID) && !(defined CYGWIN)
