@@ -8,7 +8,5 @@
 *.a
 shared-objects
 make_config.mk
-libvidardb*.so
-libvidardb*.so.4
-libvidardb*.so.4.9
-libvidardb*.so.4.9.0
+libvidardb*.so*
+libvidardb*.dylib
