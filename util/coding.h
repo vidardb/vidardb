@@ -84,7 +84,7 @@ inline uint32_t DecodeFixed32(const char* ptr) {
   }
 }
 
-// Only be used in column store for sub-column key
+// Only used in column store for sub-column key
 inline uint32_t DecodeFixed32BigEndian(const char* ptr) {
   return ((static_cast<uint32_t>(static_cast<unsigned char>(ptr[0])) << 24)
         | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[1])) << 16)
@@ -140,6 +140,7 @@ inline void EncodeFixed32(char* buf, uint32_t value) {
 #endif
 }
 
+// Only used in column store for sub-column key
 inline void EncodeFixed32BigEndian(char* buf, uint32_t value) {
   buf[0] = (value >> 24) & 0xff;
   buf[1] = (value >> 16) & 0xff;

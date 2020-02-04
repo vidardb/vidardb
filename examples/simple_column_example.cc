@@ -9,6 +9,7 @@ using namespace std;
 #include "vidardb/db.h"
 #include "vidardb/options.h"
 #include "vidardb/table.h"
+#include "vidardb/splitter.h"
 #include "../table/adaptive_table_factory.h"
 using namespace vidardb;
 
@@ -22,9 +23,12 @@ int main() {
   Options options;
   options.create_if_missing = true;
 
-  TableFactory* column_table_factory = NewColumnTableFactory();
-  static_cast<ColumnTableOptions*>(column_table_factory->GetOptions())->column_num = M;
-  options.table_factory.reset(column_table_factory);
+  TableFactory* table_factory = NewColumnTableFactory();
+  ColumnTableOptions* opts =
+      static_cast<ColumnTableOptions*>(table_factory->GetOptions());
+  opts->column_num = M;
+  opts->splitter.reset(new PipeSplitter());
+  options.table_factory.reset(table_factory);
 
   Status s = DB::Open(options, kDBPath, &db);
   assert(s.ok());

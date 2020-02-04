@@ -17,7 +17,7 @@ namespace vidardb {
 // from multiple threads.
 class Splitter {
  public:
-  virtual ~Splitter();
+  virtual ~Splitter() {}
 
   // The name of the splitter.  Used to check for splitter
   // mismatches (i.e., a DB created with one splitter is
@@ -34,7 +34,7 @@ class Splitter {
   virtual std::string Stitch(const std::vector<std::string>& v) const = 0;
 
   // Append a sub-string.
-  virtual void Append(std::string& ss, const std::string& s, bool last) const = 0;
+  virtual void Append(std::string& ss, const Slice& s, bool last) const = 0;
 };
 
 // A builtin pipe splitter that uses '|' to split a string.
@@ -51,8 +51,7 @@ class PipeSplitter : public Splitter {
 
   virtual std::string Stitch(const std::vector<std::string>& v) const override;
 
-  virtual void Append(std::string& ss, const std::string& s, bool last) const 
-    override;
+  virtual void Append(std::string& ss, const Slice& s, bool last) const override;
 
  private:
   const char delim = '|';
@@ -76,8 +75,7 @@ class EncodingSplitter : public Splitter {
 
   virtual std::string Stitch(const std::vector<std::string>& v) const override;
 
-  virtual void Append(std::string& ss, const std::string& s, bool last) const 
-    override;
+  virtual void Append(std::string& ss, const Slice& s, bool last) const override;
 };
 
 }  // namespace vidardb

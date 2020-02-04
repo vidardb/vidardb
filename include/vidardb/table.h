@@ -7,12 +7,12 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 //
-// Currently we support two types of tables: plain table and block-based table.
+// We support two types of tables: block-based table and column table.
 //   1. Block-based table: this is the default table type that we inherited from
 //      LevelDB, which was designed for storing data in hard disk or flash
 //      device.
-//   2. Plain table: it is one of VidarDB's SST file format optimized
-//      for low query latency on pure-memory or really low-latency media.
+//   2. column table: it is the column store implementation which suits for
+//      analysis workloads.
 
 #pragma once
 #include <memory>
@@ -127,10 +127,10 @@ struct ColumnTableOptions {
   // Same as block_restart_interval but used for the index block.
   int index_block_restart_interval = 1;
 
-  // splitter for attributes excluding key, default is EncodingSplitter
+  // Splitter for attributes excluding key, default is EncodingSplitter
   std::shared_ptr<Splitter> splitter;
 
-  // total column number excluding key
+  // Total column number excluding key
   uint32_t column_num = 0;
 };
 

@@ -1,3 +1,8 @@
+//  Copyright (c) 2020-present, VidarDB, Inc.  All rights reserved.
+//  This source code is licensed under the BSD-style license found in the
+//  LICENSE file in the root directory of this source tree. An additional grant
+//  of patent rights can be found in the PATENTS file in the same directory.
+//
 //  Copyright (c) 2011-present, Facebook, Inc.  All rights reserved.
 //  This source code is licensed under the BSD-style license found in the
 //  LICENSE file in the root directory of this source tree. An additional grant
@@ -15,9 +20,6 @@ namespace vidardb {
 extern std::vector<std::string> StringSplit(const std::string& arg, char delim);
 
 extern std::string StringStitch(const std::vector<std::string>& args, char delim);
-
-extern void StringAppend(std::string& ss, const std::string& s, char delim,
-                         bool append_delim);
 
 template <typename T>
 inline std::string ToString(T value) {

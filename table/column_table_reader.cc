@@ -1098,7 +1098,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
           }
 
           auto& it = user_vals[user_val_idx++]->second.iter_;
-          splitter_->Append(it->user_val, iter->value().ToString(),
+          splitter_->Append(it->user_val, iter->value(),
                             i + 1 >= columns_.size());
         }
       }
@@ -1133,8 +1133,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
         // skip main column (only key)
         continue;
       }
-      splitter_->Append(value_, columns_[i]->value().ToString(), 
-                        i + 1 >= columns_.size());
+      splitter_->Append(value_, columns_[i]->value(), i + 1 >= columns_.size());
     }
     return true;
   }

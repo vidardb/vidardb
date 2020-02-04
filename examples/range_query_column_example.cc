@@ -27,7 +27,8 @@ int main(int argc, char* argv[]) {
 
   // column table
   TableFactory* table_factory = NewColumnTableFactory();
-  ColumnTableOptions* opts = static_cast<ColumnTableOptions*>(table_factory->GetOptions());
+  ColumnTableOptions* opts =
+      static_cast<ColumnTableOptions*>(table_factory->GetOptions());
   opts->column_num = M;
   // opts->splitter.reset(new PipeSplitter()); // default EncodingSplitter
   options.table_factory.reset(table_factory);
@@ -40,33 +41,33 @@ int main(int argc, char* argv[]) {
   // write_options.sync = true;
   Splitter *splitter = opts->splitter.get();
   s = db->Put(write_options, "1", 
-    splitter->Stitch(vector<string>{"chen1", "33", "hangzhou"}));
+      splitter->Stitch(vector<string>{"chen1", "33", "hangzhou"}));
   assert(s.ok());
   s = db->Put(write_options, "2", 
-    splitter->Stitch(vector<string>{"wang2", "32", "wuhan"}));
+      splitter->Stitch(vector<string>{"wang2", "32", "wuhan"}));
   assert(s.ok());
   s = db->Put(write_options, "3", 
-    splitter->Stitch(vector<string>{"zhao3", "35", "nanjing"}));
+      splitter->Stitch(vector<string>{"zhao3", "35", "nanjing"}));
   assert(s.ok());
   s = db->Put(write_options, "4", 
-    splitter->Stitch(vector<string>{"liao4", "28", "beijing"}));
+      splitter->Stitch(vector<string>{"liao4", "28", "beijing"}));
   assert(s.ok());
   s = db->Put(write_options, "5", 
-    splitter->Stitch(vector<string>{"jiang5", "30", "shanghai"}));
+      splitter->Stitch(vector<string>{"jiang5", "30", "shanghai"}));
   assert(s.ok());
   s = db->Put(write_options, "6", 
-    splitter->Stitch(vector<string>{"lian6", "30", "changsha"}));
+      splitter->Stitch(vector<string>{"lian6", "30", "changsha"}));
   assert(s.ok());
   s = db->Delete(write_options, "1");
   assert(s.ok());
   s = db->Put(write_options, "3", 
-    splitter->Stitch(vector<string>{"zhao333", "35", "nanjing"}));
+      splitter->Stitch(vector<string>{"zhao333", "35", "nanjing"}));
   assert(s.ok());
   s = db->Put(write_options, "6", 
-    splitter->Stitch(vector<string>{"lian666", "30", "changsha"}));
+      splitter->Stitch(vector<string>{"lian666", "30", "changsha"}));
   assert(s.ok());
   s = db->Put(write_options, "1", 
-    splitter->Stitch(vector<string>{"chen1111", "33", "hangzhou"}));
+      splitter->Stitch(vector<string>{"chen1111", "33", "hangzhou"}));
   assert(s.ok());
   s = db->Delete(write_options, "3");
   assert(s.ok());
