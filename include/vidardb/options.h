@@ -214,7 +214,7 @@ struct ColumnFamilyOptions {
   ColumnFamilyOptions* OptimizeUniversalStyleCompaction(
       uint64_t memtable_memory_budget = 512 * 1024 * 1024);
   /********************* Shichao ***************************/
-  ColumnFamilyOptions* OptimizeHTAPBench(
+  ColumnFamilyOptions* OptimizeAdaptiveBench(
         uint64_t memtable_memory_budget = 512 * 1024 * 1024);
   /********************* Shichao ***************************/
 

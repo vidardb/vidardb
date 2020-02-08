@@ -55,13 +55,13 @@ int main(int argc, char* argv[]) {
   assert(s.ok());
 
   ReadOptions read_options;
-  // read_options.batch_capacity = 0; // full search // ok
-  read_options.batch_capacity = 2; // in batch // ok
+  // read_options.batch_capacity = 0; // full search
+  read_options.batch_capacity = 2; // in batch
 
-//  Range range; // full search // ok
-//  Range range("2", "4"); // [2, 4] // ok
-  Range range("1", "6"); // [1, 6] // ok
-//  Range range("1", kRangeQueryMax); // [1, max] // ok
+//  Range range; // full search
+//  Range range("2", "4"); // [2, 4]
+  Range range("1", "6"); // [1, 6]
+//  Range range("1", kRangeQueryMax); // [1, max]
 
   list<RangeQueryKeyVal> res;
   bool next = true;

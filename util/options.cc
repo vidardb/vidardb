@@ -726,7 +726,7 @@ ColumnFamilyOptions* ColumnFamilyOptions::OptimizeUniversalStyleCompaction(
 }
 
 /********************* Shichao ***************************/
-ColumnFamilyOptions* ColumnFamilyOptions::OptimizeHTAPBench(
+ColumnFamilyOptions* ColumnFamilyOptions::OptimizeAdaptiveBench(
     uint64_t memtable_memory_budget) {
   num_levels = 3;
   write_buffer_size = static_cast<size_t>(memtable_memory_budget / 4);
