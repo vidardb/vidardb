@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
   // open database
   DB* db; // db ref
   Options options;
-  options.OptimizeAdaptiveBench();
+  options.OptimizeAdaptiveLevelStyleCompaction();
   options.create_if_missing = true;
 
   // adaptive table factory

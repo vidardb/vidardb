@@ -198,9 +198,11 @@ struct ColumnFamilyOptions {
   // Default values for some parameters in ColumnFamilyOptions are not
   // optimized for heavy workloads and big datasets, which means you might
   // observe write stalls under some conditions. As a starting point for tuning
-  // VidarDB options, use the following two functions:
+  // VidarDB options, use the following three functions:
   // * OptimizeLevelStyleCompaction -- optimizes level style compaction
   // * OptimizeUniversalStyleCompaction -- optimizes universal style compaction
+  // * OptimizeAdaptiveLevelStyleCompaction -- optimizes level style compaction
+  //                                           for adaptive table storage
   // Universal style compaction is focused on reducing Write Amplification
   // Factor for big data sets, but increases Space Amplification.
   // Make sure to also call IncreaseParallelism(), which will provide the
@@ -214,7 +216,7 @@ struct ColumnFamilyOptions {
   ColumnFamilyOptions* OptimizeUniversalStyleCompaction(
       uint64_t memtable_memory_budget = 512 * 1024 * 1024);
   /********************* Shichao ***************************/
-  ColumnFamilyOptions* OptimizeAdaptiveBench(
+  ColumnFamilyOptions* OptimizeAdaptiveLevelStyleCompaction(
         uint64_t memtable_memory_budget = 512 * 1024 * 1024);
   /********************* Shichao ***************************/
 

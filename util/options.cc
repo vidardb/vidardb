@@ -726,7 +726,7 @@ ColumnFamilyOptions* ColumnFamilyOptions::OptimizeUniversalStyleCompaction(
 }
 
 /********************* Shichao ***************************/
-ColumnFamilyOptions* ColumnFamilyOptions::OptimizeAdaptiveBench(
+ColumnFamilyOptions* ColumnFamilyOptions::OptimizeAdaptiveLevelStyleCompaction(
     uint64_t memtable_memory_budget) {
   num_levels = 3;
   write_buffer_size = static_cast<size_t>(memtable_memory_budget / 4);
@@ -743,7 +743,11 @@ ColumnFamilyOptions* ColumnFamilyOptions::OptimizeAdaptiveBench(
 
   compression_per_level.resize(num_levels);
   for (int i = 0; i < num_levels; ++i) {
-    compression_per_level[i] = kSnappyCompression;
+    if (CompressionTypeSupported(kSnappyCompression)) {
+        compression_per_level[i] = kSnappyCompression;
+    } else {
+        compression_per_level[i] = kNoCompression;
+    }
   }
   return this;
 }
