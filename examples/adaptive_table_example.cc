@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
       static_cast<ColumnTableOptions*>(column_table->GetOptions());
   column_opts->column_num = M;
   options.table_factory.reset(NewAdaptiveTableFactory(block_based_table,
-    block_based_table, column_table, knob));
+      block_based_table, column_table, knob));
 
   Status s = DB::Open(options, kDBPath, &db);
   assert(s.ok());
