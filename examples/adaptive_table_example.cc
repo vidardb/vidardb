@@ -1,4 +1,4 @@
-//  Copyright (c) 2019-present, VidarDB, Inc.  All rights reserved.
+//  Copyright (c) 2020-present, VidarDB, Inc.  All rights reserved.
 //  This source code is licensed under the BSD-style license found in the
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
@@ -10,36 +10,49 @@ using namespace std;
 #include "vidardb/status.h"
 #include "vidardb/options.h"
 #include "vidardb/splitter.h"
-#include "../table/adaptive_table_factory.h"
+#include "vidardb/table.h"
 using namespace vidardb;
 
+// #define ROW_STORE
+#define COLUMN_STORE
+
 unsigned int M = 3;
-string kDBPath = "/tmp/range_query_column_example";
+string kDBPath = "/tmp/adaptive_table_example";
 
 int main(int argc, char* argv[]) {
   // remove existed db path
-  system("rm -rf /tmp/range_query_column_example");
+  system("rm -rf /tmp/adaptive_table_example");
 
   // open database
   DB* db; // db ref
   Options options;
+  options.OptimizeAdaptiveLevelStyleCompaction();
   options.create_if_missing = true;
 
-  // column table
-  TableFactory* table_factory = NewColumnTableFactory();
-  ColumnTableOptions* opts =
-      static_cast<ColumnTableOptions*>(table_factory->GetOptions());
-  opts->column_num = M;
-  // opts->splitter.reset(new PipeSplitter()); // default EncodingSplitter
-  options.table_factory.reset(table_factory);
+  // adaptive table factory
+  #ifdef ROW_STORE
+  const int knob = -1;
+  #endif
+  #ifdef COLUMN_STORE
+  const int knob = 0;
+  #endif
+
+  shared_ptr<TableFactory> block_based_table(NewBlockBasedTableFactory());
+  shared_ptr<TableFactory> column_table(NewColumnTableFactory());
+  ColumnTableOptions* column_opts =
+      static_cast<ColumnTableOptions*>(column_table->GetOptions());
+  column_opts->column_num = M;
+  options.table_factory.reset(NewAdaptiveTableFactory(block_based_table,
+    block_based_table, column_table, knob));
 
   Status s = DB::Open(options, kDBPath, &db);
   assert(s.ok());
 
   // insert data
+  #ifdef COLUMN_STORE
   WriteOptions write_options;
   // write_options.sync = true;
-  Splitter *splitter = opts->splitter.get();
+  Splitter *splitter = column_opts->splitter.get();
   s = db->Put(write_options, "1", 
       splitter->Stitch(vector<string>{"chen1", "33", "hangzhou"}));
   assert(s.ok());
@@ -71,8 +84,35 @@ int main(int argc, char* argv[]) {
   assert(s.ok());
   s = db->Delete(write_options, "3");
   assert(s.ok());
+  #endif
+  #ifdef ROW_STORE
+  WriteOptions write_options;
+  // write_options.sync = true;
+  s = db->Put(write_options, "1", "data1");
+  assert(s.ok());
+  s = db->Put(write_options, "2", "data2");
+  assert(s.ok());
+  s = db->Put(write_options, "3", "data3");
+  assert(s.ok());
+  s = db->Put(write_options, "4", "data4");
+  assert(s.ok());
+  s = db->Put(write_options, "5", "data5");
+  assert(s.ok());
+  s = db->Put(write_options, "6", "data6");
+  assert(s.ok());
+  s = db->Delete(write_options, "1");
+  assert(s.ok());
+  s = db->Put(write_options, "3", "data333");
+  assert(s.ok());
+  s = db->Put(write_options, "6", "data666");
+  assert(s.ok());
+  s = db->Put(write_options, "1", "data1111");
+  assert(s.ok());
+  s = db->Delete(write_options, "3");
+  assert(s.ok());
+  #endif
 
-  // test column sstable or memtable
+  // test memtable or sstable
   s = db->Flush(FlushOptions());
   assert(s.ok());
 
@@ -85,6 +125,7 @@ int main(int argc, char* argv[]) {
   Range range("1", "6"); // [1, 6]
 //  Range range("1", kRangeQueryMax); // [1, max]
 
+  #ifdef COLUMN_STORE
   list<RangeQueryKeyVal> res;
   bool next = true;
   while (next) { // range query loop
@@ -103,6 +144,19 @@ int main(int argc, char* argv[]) {
     }
     cout << endl;
   }
+  #endif
+  #ifdef ROW_STORE
+  list<RangeQueryKeyVal> res;
+  bool next = true;
+  while (next) { // range query loop
+    next = db->RangeQuery(read_options, range, res, &s);
+    assert(s.ok());
+    for (auto it : res) {
+      cout << it.user_key << "=" << it.user_val << " ";
+    }
+    cout << endl;
+  }
+  #endif
 
   delete db;
   return 0;

@@ -237,6 +237,8 @@ class TableFactory {
 // @block_based_table_factory:  block based table factory to use. If NULL, use
 //                              a default one.
 // @column_table_factory: column table factory to use. If NULL, use a default one.
+// @knob: starting from which level to use column table factory. Default value 
+//        is -1 which means using the default @table_factory_to_write.
 extern TableFactory* NewAdaptiveTableFactory(
     std::shared_ptr<TableFactory> table_factory_to_write = nullptr,
     std::shared_ptr<TableFactory> block_based_table_factory = nullptr,
