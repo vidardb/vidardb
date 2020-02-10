@@ -6,4 +6,4 @@ VidarDB is actively developed and maintained by VidarDB Team.
 It is built on RocksDB and earlier work on LevelDB by Sanjay Ghemawat (sanjay@google.com)
 and Jeff Dean (jeff@google.com)
 
-This code is a library that forms the core building block for VidarDB database system. For ease of use, we provide a [Docker image](docker-image/README.md) that has a PostgreSQL interface and SQL is supported. More documentations are coming soon. Feel free to report bugs or issues via Github.
+This code is a library that forms the core building block for VidarDB database system. For ease of use, we provide a [Docker image](docker_image/README.md) that has a PostgreSQL interface and SQL is supported. More documentations are coming soon. Feel free to report bugs or issues via Github.

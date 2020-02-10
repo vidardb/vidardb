@@ -432,7 +432,7 @@ endif  # PLATFORM_SHARED_EXT
 
 docker-image:
 	@echo "Building docker image..."
-	$(DOCKER) build --no-cache --pull -t $(REGISTRY)/$(IMAGE):$(TAG) docker-image
+	$(DOCKER) build --no-cache --pull -t $(REGISTRY)/$(IMAGE):$(TAG) docker_image
 
 all: $(LIBRARY) $(BENCHMARKS) tools tools_lib test_libs $(TESTS)  # Shichao
 
