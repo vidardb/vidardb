@@ -1,3 +1,5 @@
+<img style="width:100%;" src="/github-banner.png">
+
 ## VidarDB: A Versatile Storage Engine that Adapts to Your Workloads
 
 [![Build Status](https://travis-ci.org/vidardb/vidardb.svg?branch=master)](https://travis-ci.org/vidardb/vidardb)
