@@ -72,7 +72,7 @@ class AdaptiveTableFactory : public TableFactory {
   std::shared_ptr<TableFactory> table_factory_to_write_;
   std::shared_ptr<TableFactory> block_based_table_factory_;
   std::shared_ptr<TableFactory> column_table_factory_;  // Shichao
-  std::map<std::string, int> output_levels_;            // Shichao
+  std::unordered_map<std::string, int> output_levels_;  // Shichao
   int knob_;                                            // Shichao
   std::unique_ptr<InstrumentedMutex> mutex_;            // Shichao
 };
