@@ -1,44 +1,50 @@
 # Run PostgreSQL with VidarDB in Docker
 
-We can deploy PostgreSQL with VidarDB in Docker container.
+We can easily deploy PostgreSQL with VidarDB in a Docker container.
 
-## Testing
+## Get Started
 
-Start the container with the following docker image we have provided.
+The following document will guide you to install and play with VidarDB in a few minutes:
 
-- Install docker engine:
+- Docker is the only requirement. Install it at https://docs.docker.com/install/ .
 
-    Docker engine is available on multiple platforms and just follow the [official doc](https://docs.docker.com/install/#supported-platforms) to choose the best installation option for you.
-
-- Run a docker container:
+- Run a VidarDB Docker container:
 
     ```sh
-    # we should ensure that both the container name 'postgresql' and the port '5432' 
-    # have not been used in our environment
+    # Before running it, please ensure that both the container name 
+    # 'postgresql' and the port '5432' have not been used in your environment.
 
     docker run -d --name postgresql -p 5432:5432 vidardb/postgresql:vidardb-latest
     ```
 
-    After executing the before command, the `postgresql` container will start and initialize
-    the database. Normally we should wait for 25~30s, and then its status will become `healthy`.
+    After executing the above command, the `postgresql` container will start and the database will be initialized.
+    Normally we should wait for 25~30s, and then the container's status will become `healthy`.
 
-    We can run the following command to query the `postgresql` container status:
+    Use the following command to check the status of `postgresql`:
 
     ```sh
     docker ps -f name=postgresql
     ```
 
-- Connect to the PostgreSQL after the container is `healthy`:
+- Connect to the PostgreSQL after the container is ready:
 
     ```sh
     psql -h 127.0.0.1 -p 5432 -U postgres
     ```
 
-    Please note that PostgreSQL client should already be installed before running the container.
+    A welcome from the PostgreSQL should appear.
+    *Please note that the PostgreSQL client should already be installed before running the container.*
+    Otherwise, execute the command inside the container:
+    
+    ```sh
+    docker exec -it postgresql /bin/bash
+    ```
+    
+    Then, try to connect to the PostgreSQL again.
 
-## Building
+## Building your own Docker image
 
-We can build a new docker image in the following way. It is the prerequisite that install docker engine in the building machine.
+You may want to create your custom Docker image. Do it by '1-click':
 
 ```sh
 # building docker image with default image repository and name 'vidardb/postgresql:vidardb-latest'
@@ -46,22 +52,22 @@ We can build a new docker image in the following way. It is the prerequisite tha
 make docker-image
 ```
 
-We can also specify the build parameters:
+Some available build parameters:
 
 ```sh
 REGISTRY=<YOUR REGISTRY ADDRESS> IMAGE=<YOUR IMAGE NAME> TAG=<YOUR IMAGE TAG> make docker-image 
 ```
 
-## Installing MADLib
+## Installing MADlib
 
-If you need to install MADLib for a new created database in `postgresql` container, you can run the following instruction:
+[MADlib](https://madlib.apache.org/) supports big data machine learning in sql. If you want to install it for a new created database in the `postgresql` container, try the following command:
 
 ```sh
 docker exec -it postgresql sh -c "install-madlib.sh -U <YOUR DATABASE USERNAME> -P <YOUR DATABASE PASSWORD> -D <YOUR DATABASE NAME>"
 ```
 
-For example, if you have created a new database named `madlib`, and the username is `madlib` and no password,
-then you can install madlib like this:
+For example, if you have created a new database named `madlib`, and the username is `madlib` and there is no password,
+then you can simply install madlib like this:
 
 ```sh
 docker exec -it postgresql sh -c "install-madlib.sh -U madlib -D madlib"
