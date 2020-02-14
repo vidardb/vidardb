@@ -58,9 +58,9 @@ Some available build parameters:
 REGISTRY=<YOUR REGISTRY ADDRESS> IMAGE=<YOUR IMAGE NAME> TAG=<YOUR IMAGE TAG> make docker-image 
 ```
 
-## Installing MADlib
+## Installing AI functionality in your database
 
-[MADlib](https://madlib.apache.org/) supports big data machine learning in sql. If you want to install it for a new created database in the `postgresql` container, try the following command:
+VidarDB supports AI functionality naturally and the built-in database `postgres` has already installed [MADlib](https://madlib.apache.org/) which supports big data machine learning in sql. If you want to install it for a new created database in the `postgresql` container, try the following command:
 
 ```sh
 docker exec -it postgresql sh -c "install-madlib.sh -U <YOUR DATABASE USERNAME> -P <YOUR DATABASE PASSWORD> -D <YOUR DATABASE NAME>"
