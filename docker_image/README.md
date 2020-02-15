@@ -34,20 +34,21 @@ The following document will guide you to install and play with VidarDB in a few 
 
     A welcome from the PostgreSQL should appear.
     *Please note that the PostgreSQL client should already be installed before running the container.*
-    Otherwise, execute the command inside the container:
-    
+
+- For the users who don't have the PostgreSQL client installed:
+
     ```sh
     docker exec -it postgresql /bin/bash
     ```
-    
-    Then, try to connect to the PostgreSQL again.
+
+    Then we can connect to the PostgreSQL successfully inside the container (retry the connecting command again).
 
 ## Building your own Docker image
 
 You may want to create your custom Docker image. Do it by '1-click':
 
 ```sh
-# building docker image with default image repository and name 'vidardb/postgresql:vidardb-latest'
+# Building a Docker image with the default name 'vidardb/postgresql:vidardb-latest'
 
 make docker-image
 ```
@@ -58,9 +59,9 @@ Some available build parameters:
 REGISTRY=<YOUR REGISTRY ADDRESS> IMAGE=<YOUR IMAGE NAME> TAG=<YOUR IMAGE TAG> make docker-image 
 ```
 
-## Installing MADlib
+## Enable AI support in your database
 
-[MADlib](https://madlib.apache.org/) supports big data machine learning in sql. If you want to install it for a new created database in the `postgresql` container, try the following command:
+VidarDB loves AI! Our bulit-in database has already installed [MADlib](https://madlib.apache.org/) which supports big data machine learning in SQL. If you want to use it in the `postgresql` container, try the following command:
 
 ```sh
 docker exec -it postgresql sh -c "install-madlib.sh -U <YOUR DATABASE USERNAME> -P <YOUR DATABASE PASSWORD> -D <YOUR DATABASE NAME>"
