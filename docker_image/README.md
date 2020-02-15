@@ -48,7 +48,7 @@ The following document will guide you to install and play with VidarDB in a few 
 You may want to create your custom Docker image. Do it by '1-click':
 
 ```sh
-# Building Docker image with the default name 'vidardb/postgresql:vidardb-latest'
+# Building a Docker image with the default name 'vidardb/postgresql:vidardb-latest'
 
 make docker-image
 ```
