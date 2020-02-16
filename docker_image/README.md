@@ -1,6 +1,6 @@
 # Run PostgreSQL with VidarDB in Docker
 
-We can easily deploy PostgreSQL with VidarDB in a Docker container. The following document will guide you to install and play with VidarDB in a few steps.
+We can easily deploy PostgreSQL with VidarDB in a Docker container. The following document will guide you to install and play with VidarDB in one minute.
 
 ## Requirement
 
