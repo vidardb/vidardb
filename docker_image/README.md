@@ -1,47 +1,38 @@
 # Run PostgreSQL with VidarDB in Docker
 
-We can easily deploy PostgreSQL with VidarDB in a Docker container.
+We can easily deploy PostgreSQL with VidarDB in a Docker container. The following document will guide you to install and play with VidarDB in one minute.
 
-## Get Started
-
-The following document will guide you to install and play with VidarDB in a few minutes:
+## Requirement
 
 - Docker is the only requirement. Install it at https://docs.docker.com/install/ .
 
-- Run a VidarDB Docker container:
+## Run a VidarDB's Docker container
 
-    ```sh
-    # Before running it, please ensure that both the container name 
-    # 'postgresql' and the port '5432' have not been used in your environment.
+*Before running any of the following commands, please ensure that both the container name `postgresql` and the port `5432` have not been used in your environment.*
 
-    docker run -d --name postgresql -p 5432:5432 vidardb/postgresql:vidardb-latest
-    ```
+To run a VidarDB's Docker container:
 
-    After executing the above command, the `postgresql` container will start and the database will be initialized.
-    Normally we should wait for 25~30s, and then the container's status will become `healthy`.
+```sh
+docker run -d --name postgresql -p 5432:5432 vidardb/postgresql:vidardb-latest
+```
 
-    Use the following command to check the status of `postgresql`:
+After doing that, a `postgresql` container will start and the database will be initialized.
 
-    ```sh
-    docker ps -f name=postgresql
-    ```
+## Connect to the PostgreSQL
 
-- Connect to the PostgreSQL after the container is ready:
+```sh
+psql -h 127.0.0.1 -p 5432 -U postgres
+```
 
-    ```sh
-    psql -h 127.0.0.1 -p 5432 -U postgres
-    ```
+A welcome from the PostgreSQL should appear. *Please note that the PostgreSQL client should already be installed before running the container.*
 
-    A welcome from the PostgreSQL should appear.
-    *Please note that the PostgreSQL client should already be installed before running the container.*
+For the users who don't have the PostgreSQL client installed:
 
-- For the users who don't have the PostgreSQL client installed:
+```sh
+docker exec -it postgresql /bin/bash
+```
 
-    ```sh
-    docker exec -it postgresql /bin/bash
-    ```
-
-    Then we can connect to the PostgreSQL successfully inside the container (retry the connecting command again).
+Then we can connect to the PostgreSQL successfully inside the container (retry the connecting command again).
 
 ## Building your own Docker image
 
@@ -49,7 +40,6 @@ You may want to create your custom Docker image. Do it by '1-click':
 
 ```sh
 # Building a Docker image with the default name 'vidardb/postgresql:vidardb-latest'
-
 make docker-image
 ```
 
