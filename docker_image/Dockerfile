@@ -1,4 +1,5 @@
-FROM postgres:11.6
+# Mirror from https://hub.docker.com/_/postgres
+FROM vidardb/postgres:11.7
 
 # Install VidarDB
 ENV VIDARDB_VERSION=master
@@ -20,7 +21,7 @@ RUN set -xe && apt-get update && \
     apt-get purge -y --auto-remove make wget ca-certificates postgresql-server-dev-${POSTGRES_VERSION} && \
     rm -rf /var/lib/apt/lists/* /tmp/* PostgresForeignDataWrapper.tar.gz PostgresForeignDataWrapper-${FDW_VERSION}
 
-# Install MADLib
+# Install AI Functionality
 ENV MADLIB_VERSION=1.16
 RUN set -xe && apt-get update && \
     apt-get install -y --no-install-recommends wget ca-certificates postgresql-plpython-${POSTGRES_VERSION} python m4 && \
