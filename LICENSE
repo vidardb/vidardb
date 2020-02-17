@@ -1,9 +1,74 @@
-BSD 3-Clause Clear License
+BSD 3-Clause Clear License (Modified)
 
 For vidardb software
 
 Copyright (c) 2019-present, VidarDB, Inc.
 All rights reserved.
+
+1.1. This license pertains to all VidarDB software; third party
+     software and source code included with the VidarDB software, such 
+     as rocksdb software or leveldb software, is governed by the 
+     applicable licenses set forth herein.
+
+1.2. VidarDB Inc. (“VidarDB”) hereby grants to you a personal, 
+     non-exclusive, revocable, non-transferable license to use the 
+     VidarDB software and source code (“Software”) internally for the 
+     purposes and in accordance with the terms set forth in this 
+     license and the user documentation accompanying the software.  
+
+1.3. Redistribution and use in source and binary forms, with or 
+     without modification, are permitted provided that the following 
+     conditions are met:
+     (a) Redistributions of source code must retain the above 
+         copyright notice, this list of conditions and the following 
+         disclaimer.
+     (b) Redistributions in binary form must reproduce the above 
+         copyright notice, this list of conditions and the following 
+         disclaimer in the documentation and/or other materials 
+         provided with the distribution.
+     (c) The name of VidarDB may not be used to endorse or promote 
+         products derived from this Software without specific prior 
+         written permission. 
+     (d) You may not Sell the Software. “Sell” means practicing any or 
+         all of the rights granted to you under the License to provide 
+         to third parties, for a fee or other consideration (including 
+         without limitation fees for renting, leasing, hosting or 
+         consulting/support services related to the Software), a 
+         product or service whose value derives, entirely or 
+         substantially, from the functionality of the Software. 
+     (e) You may not remove, deface, cover or otherwise obscure any 
+         proprietary rights notice or identification on the Software 
+         (including without limitation any copyright notice). 
+     (f) You may not use the Software in any unlawful manner
+     (g) You may not authorize, permit or otherwise acquiesce in any 
+         other party engaging in any of the activities contrary to 
+         the terms of (a) – (f) above, or attempting to do so, and you 
+         will indemnify VidarDB from and against any claims arising 
+         from your breach of these terms or the terms of any license 
+         relating to third party software and source code included with 
+         the VidarDB software.
+
+1.4. You acknowledge that the Software is owned by VidarDB, who retains 
+     all right, title and interest therein, and is protected by 
+     Canadian, U.S. and international copyright laws. In addition, other 
+     intellectual property laws (including patent laws) and treaties may 
+     protect the Software. It is therefore your responsibility to fully 
+     comply with such laws in using the Software. Nothing herein shall 
+     be construed as constituting a sale of the Software or any portion 
+     thereof to you.
+
+1.5. THE SOFTWARE IS PROVIDED BY VIDARDB "AS IS" AND ANY EXPRESS OR 
+     IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+     WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE 
+     ARE DISCLAIMED. IN NO EVENT SHALL VIDARDB BE LIABLE FOR ANY DIRECT, 
+     INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
+     (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR 
+     SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) 
+     HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, 
+     STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) 
+     ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
+     EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 ---------------------------------------------------------------------
 
 For rocksdb software
