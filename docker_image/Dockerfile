@@ -34,4 +34,4 @@ RUN set -xe && apt-get update && \
 COPY docker-entrypoint.sh install-madlib.sh health-check.sh /usr/local/bin/
 
 # Add health check
-HEALTHCHECK CMD health-check.sh
+HEALTHCHECK --start-period=5s CMD health-check.sh

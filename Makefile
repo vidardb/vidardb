@@ -15,8 +15,8 @@ ARFLAGS = rs
 
 # Users can specify their own configuration
 REGISTRY ?= vidardb
-TAG ?= vidardb-latest
-IMAGE ?= postgresql
+IMAGE ?= vidardb
+TAG ?= latest
 DOCKER ?= docker
 
 # Transform parallel LOG output into something more readable.
