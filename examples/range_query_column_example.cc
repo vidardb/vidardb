@@ -10,7 +10,7 @@ using namespace std;
 #include "vidardb/status.h"
 #include "vidardb/options.h"
 #include "vidardb/splitter.h"
-#include "../table/adaptive_table_factory.h"
+#include "vidardb/table.h"
 using namespace vidardb;
 
 unsigned int M = 3;
