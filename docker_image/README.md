@@ -1,10 +1,10 @@
-# Run VidarDB in Docker
+# Run VidarDB with Docker
 
-We can easily deploy VidarDB in a Docker container. The following document will guide you to install and play with VidarDB in one minute.
+We can easily deploy VidarDB with Docker. This section will guide you to install and play with VidarDB in one minute.
 
 ## Requirement
 
-- Docker is the only requirement. Install it at https://docs.docker.com/install/ .
+Docker is the only requirement. Install it at [https://docs.docker.com/install/](https://docs.docker.com/install/) .
 
 ## Run a VidarDB's Docker container
 
@@ -31,8 +31,6 @@ For the others who have the PostgreSQL client installed:
 ```sh
 psql -h 127.0.0.1 -p 5432 -U postgres
 ```
-
-Then we can connect to the VidarDB successfully (retry the connecting command again).
 
 ## Build your own Docker image
 
