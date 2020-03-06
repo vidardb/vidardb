@@ -4,6 +4,4 @@
 
 [![Build Status](https://travis-ci.org/vidardb/vidardb.svg?branch=master)](https://travis-ci.org/vidardb/vidardb)
 
-This code is a library that forms the core building block for VidarDB database system. For ease of use, we provide a [Docker image](docker_image/README.md) that has a PostgreSQL interface and SQL is supported. Please note, it is not product-ready. You can read more documentation [here](https://www.vidardb.com/docs/). Feel free to report bugs or issues via Github.
-
-VidarDB is actively developed and maintained by VidarDB Team. It is built on earlier work of Facebook's RocksDB and Google's LevelDB.
+This code is a library that forms the core building block for VidarDB database system. For ease of use, we provide a [Docker image](docker_image/README.md) that has a PostgreSQL interface and SQL is supported. Please note, it is not product-ready. You can read more documentation [here](https://www.vidardb.com/docs/). VidarDB is actively developed and maintained by VidarDB team. Feel free to report bugs or issues via Github.
