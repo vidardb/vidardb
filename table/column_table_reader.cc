@@ -986,8 +986,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return s;
   }
 
-  virtual Status RangeQuery(const ReadOptions& read_options,
-                            const LookupRange& range,
+  virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
                             std::list<RangeQueryKeyVal>& res) {
     std::vector<std::map<std::string, SeqTypeVal>::iterator> user_vals;
     std::vector<bool> sub_key_bs; // track the valid sub_keys
@@ -1053,6 +1052,10 @@ class ColumnTable::ColumnIterator : public InternalIterator {
               if (it->second.type_ == kTypeDeletion) {
                 meta->del_keys.erase(it->second.seq_);
               }
+              if (read_options.result_size >= 
+                  it->second.iter_->user_val.size()) {
+                read_options.result_size -= it->second.iter_->user_val.size();
+              }
               it->second.seq_ = parsed_key.sequence;
               it->second.type_ = parsed_key.type;
               it->second.iter_->user_val = "";
@@ -1063,6 +1066,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
             } else {
               // inserted
               res.emplace_back(user_key, "");
+              read_options.result_size += user_key.size();
               it->second.iter_ = --res.end();
               user_vals.push_back(std::move(it));
               if (parsed_key.type == kTypeDeletion) {
@@ -1098,8 +1102,11 @@ class ColumnTable::ColumnIterator : public InternalIterator {
           }
 
           auto& it = user_vals[user_val_idx++]->second.iter_;
+          size_t prev_size = it->user_val.size();
           splitter_->Append(it->user_val, iter->value(),
                             i + 1 >= columns_.size());
+          size_t delta_size = it->user_val.size() - prev_size;
+          read_options.result_size += delta_size;
         }
       }
     }

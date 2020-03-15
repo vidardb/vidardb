@@ -879,8 +879,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
     return iter_->status();
   }
 
-  virtual Status RangeQuery(const ReadOptions& read_options,
-                            const LookupRange& range,
+  virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
                             std::list<RangeQueryKeyVal>& res) {
     if (range.start_->user_key().compare(kRangeQueryMin) == 0) {
       iter_->SeekToFirst(); // Full search
@@ -926,15 +925,21 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
           if (it->second.type_ == kTypeDeletion) {
             meta->del_keys.erase(it->second.seq_);
           }
+          if (read_options.result_size >= it->second.iter_->user_val.size()) {
+            read_options.result_size -= it->second.iter_->user_val.size();
+          }
           it->second.seq_ = parsed_key.sequence;
           it->second.type_ = parsed_key.type;
           it->second.iter_->user_val = std::move(user_val);
+          read_options.result_size += it->second.iter_->user_val.size();
           if (parsed_key.type == kTypeDeletion) {
             meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
           }
         } else {
           // inserted
+          size_t delta_size = user_key.size() + user_val.size();
           res.emplace_back(user_key, std::move(user_val));
+          read_options.result_size += delta_size;
           it->second.iter_ = --res.end();
           if (parsed_key.type == kTypeDeletion) {
             meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
