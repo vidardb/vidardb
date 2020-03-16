@@ -312,10 +312,11 @@ class MemTable {
 
     std::vector<std::string> result;
     result.reserve(columns.size());
+    // TODO: split slice in-place and extract the target attrs directly
     std::vector<std::string> user_vals = splitter->Split(user_value);
-    for (auto index : columns) { // from 1 to MAX_COLUMN_INDEX
+    for (auto index : columns) {  // from 1 to MAX_COLUMN_INDEX
       assert(index <= user_vals.size());
-      result.emplace_back(user_vals[index-1]);
+      result.emplace_back(std::move(user_vals[index-1]));
     }
 
     return splitter->Stitch(result);

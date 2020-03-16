@@ -1357,7 +1357,7 @@ struct ReadOptions {
   // Specify the splitter for column storage when only querying the specified
   // index column.
   // Default: nullptr which returns the all columns.
-  const Splitter* splitter;
+  const Splitter* splitter = nullptr;
 
   // If non-zero, RangeQuery will return the expected result keys of the given
   // maximum size in every batch. Otherwise, it will return the all result keys
