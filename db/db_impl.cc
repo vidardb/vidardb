@@ -3739,7 +3739,7 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
     meta->next_start_key = std::move(it->first);
     // Not include the next start key
     size_t delta_size = it->second.iter_->user_key.size() + 
-      it->second.iter_->user_val.size();
+        it->second.iter_->user_val.size();
     res.erase(it->second.iter_);
     assert(read_options.result_size >= delta_size);
     read_options.result_size -= delta_size;

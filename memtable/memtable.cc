@@ -496,7 +496,7 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
               meta->del_keys.erase(it->second.seq_);
             }
             assert(s->read_options->result_size >=
-                   it->second.iter_->user_val.size());
+                it->second.iter_->user_val.size());
             s->read_options->result_size -= it->second.iter_->user_val.size();
             it->second.seq_ = s->seq;
             it->second.type_ = type;
