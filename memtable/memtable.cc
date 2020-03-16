@@ -487,8 +487,10 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
         s->prev_iter = it;
 
         if (it->second.seq_ <= s->seq) {
-          std::string user_val(GetLengthPrefixedSlice(key_ptr + key_length)
-                               .ToString());
+          std::string user_full_val(GetLengthPrefixedSlice(key_ptr + key_length)
+                                    .ToString());
+          std::string user_val = s->mem->ReformatUserValue(user_full_val,
+            s->read_options->columns, s->read_options->splitter);
 
           if (it->second.seq_ < s->seq) {
             // replaced
