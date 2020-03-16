@@ -65,7 +65,7 @@ class MemTableListVersion {
   }
 
   /******************************* Shichao *******************************/
-  bool RangeQuery(const ReadOptions& read_options, const LookupRange& range,
+  bool RangeQuery(ReadOptions& read_options, const LookupRange& range,
                   std::list<RangeQueryKeyVal>& res, Status* s);
   /******************************* Shichao *******************************/
 
