@@ -405,9 +405,8 @@ inline bool CompressResultList(std::list<RangeQueryKeyVal>* res,
     size_t delta_size = it->second.iter_->user_key.size() + 
       it->second.iter_->user_val.size();
     res->erase(it->second.iter_);  // remove from list
-    if (read_options.result_size >= delta_size) {
-      read_options.result_size -= delta_size;
-    }
+    assert(read_options.result_size >= delta_size);
+    read_options.result_size -= delta_size;
 
     if (it->second.type_ == kTypeDeletion) {
       // remove from unordered_map

@@ -925,9 +925,8 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
           if (it->second.type_ == kTypeDeletion) {
             meta->del_keys.erase(it->second.seq_);
           }
-          if (read_options.result_size >= it->second.iter_->user_val.size()) {
-            read_options.result_size -= it->second.iter_->user_val.size();
-          }
+          assert(read_options.result_size >= it->second.iter_->user_val.size());
+          read_options.result_size -= it->second.iter_->user_val.size();
           it->second.seq_ = parsed_key.sequence;
           it->second.type_ = parsed_key.type;
           it->second.iter_->user_val = std::move(user_val);

@@ -3741,9 +3741,8 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
     size_t delta_size = it->second.iter_->user_key.size() + 
       it->second.iter_->user_val.size();
     res.erase(it->second.iter_);
-    if (read_options.result_size >= delta_size) {
-      read_options.result_size -= delta_size;
-    }
+    assert(read_options.result_size >= delta_size);
+    read_options.result_size -= delta_size;
     if (it->second.type_ == kTypeDeletion) {
       meta->del_keys.erase(it->second.seq_);
     }
@@ -3755,9 +3754,8 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
   for (const auto& it : meta->del_keys) {
     size_t delta_size = it.second->user_key.size() + it.second->user_val.size();
     res.erase(it.second);
-    if (read_options.result_size >= delta_size) {
-      read_options.result_size -= delta_size;
-    }
+    assert(read_options.result_size >= delta_size);
+    read_options.result_size -= delta_size;
   }
   meta->del_keys.clear();
 

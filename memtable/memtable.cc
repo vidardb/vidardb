@@ -495,10 +495,9 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
             if (it->second.type_ == kTypeDeletion) {
               meta->del_keys.erase(it->second.seq_);
             }
-            if (s->read_options->result_size >= 
-                it->second.iter_->user_val.size()) {
-              s->read_options->result_size -= it->second.iter_->user_val.size();
-            }
+            assert(s->read_options->result_size >=
+                   it->second.iter_->user_val.size());
+            s->read_options->result_size -= it->second.iter_->user_val.size();
             it->second.seq_ = s->seq;
             it->second.type_ = type;
             it->second.iter_->user_val = std::move(user_val);
