@@ -403,7 +403,7 @@ inline bool CompressResultList(std::list<RangeQueryKeyVal>* res,
   for (size_t i = 0u; i < diff_size; i++) {
     auto it = --(meta->map_res.end());
     size_t delta_size = it->second.iter_->user_key.size() + 
-      it->second.iter_->user_val.size();
+        it->second.iter_->user_val.size();
     res->erase(it->second.iter_);  // remove from list
     assert(read_options.result_size >= delta_size);
     read_options.result_size -= delta_size;
