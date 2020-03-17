@@ -341,10 +341,10 @@ ColumnTableBuilder::~ColumnTableBuilder() {
 }
 
 void ColumnTableBuilder::CreateSubcolumnBuilders(Rep* r) {
-  r->builders.resize(r->table_options.column_num);
+  r->builders.resize(r->table_options.column_count);
   std::string fname = r->file->writable_file()->GetFileName();
   Env::IOPriority pri = r->file->writable_file()->GetIOPriority();
-  for (auto i = 0u; i < r->table_options.column_num; i++) {
+  for (auto i = 0u; i < r->table_options.column_count; i++) {
     unique_ptr<WritableFile> file;
     std::string col_fname(TableSubFileName(fname, i+1));
     r->status = NewWritableFile(r->ioptions.env, col_fname, &file,
@@ -363,12 +363,12 @@ void ColumnTableBuilder::AddInSubcolumnBuilders(Rep* r, const Slice& key,
                                                 const Slice& value) {
   std::vector<std::string> vals(
       r->table_options.splitter->Split(value.ToString()));
-  if (!vals.empty() && vals.size() != r->table_options.column_num) {
-    r->status = Status::InvalidArgument("table_options.column_num");
+  if (!vals.empty() && vals.size() != r->table_options.column_count) {
+    r->status = Status::InvalidArgument("table_options.column_count");
     return;
   }
 
-  for (auto i = 0u; i < r->table_options.column_num; i++) {
+  for (auto i = 0u; i < r->table_options.column_count; i++) {
     const auto& rep = r->builders[i]->rep_;
     assert(!rep->closed);
     if (!r->builders[i]->ok()) return;
@@ -576,9 +576,9 @@ Status ColumnTableBuilder::Finish() {
     // Write column block.
     {
       MetaColumnBlockBuilder meta_column_block_builder;
-      uint32_t column_num = r->builders.size();
-      meta_column_block_builder.Add(r->main_column, column_num);
-      for (auto i = 0u; i < column_num; i++) {
+      uint32_t column_count = r->builders.size();
+      meta_column_block_builder.Add(r->main_column, column_count);
+      for (auto i = 0u; i < column_count; i++) {
           meta_column_block_builder.Add(i+1, r->builders[i]->rep_->offset);
       }
 

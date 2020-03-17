@@ -1012,7 +1012,7 @@ void Version::Get(const ReadOptions& read_options, const LookupKey& k,
 }
 
 /******************************** Shichao ********************************/
-void Version::RangeQuery(const ReadOptions& read_options,
+void Version::RangeQuery(ReadOptions& read_options,
                          const LookupRange& range,
                          std::list<RangeQueryKeyVal>& res,
                          Status* status) {

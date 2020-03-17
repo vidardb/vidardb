@@ -49,6 +49,7 @@ class Slice;
 class Statistics;
 class InternalKeyComparator;
 class WalFilter;
+class Splitter;
 
 // DB contents are stored in a set of blocks, each of which holds a
 // sequence of key,value pairs.  Each block may be compressed before
@@ -1353,15 +1354,24 @@ struct ReadOptions {
   // Note: Column index must be from 1 to MAX_COLUMN_INDEX.
   std::vector<uint32_t> columns;
 
+  // Specify the splitter for column storage when only querying the specified
+  // index column.
+  // Default: nullptr which returns the all columns.
+  const Splitter* splitter = nullptr;
+
   // If non-zero, RangeQuery will return the expected result keys of the given
   // maximum size in every batch. Otherwise, it will return the all result keys
   // in one batch.
   // Default: 0
   size_t batch_capacity = 0;
 
-  // Stores the temporary states for RangeQuery.
+  // Store the temporary states for RangeQuery.
   // Note: Caller should not set the value.
   void* range_query_meta = nullptr;
+
+  // Store the result size in one batch for RangeQuery.
+  // Note: Caller should not set the value.
+  size_t result_size;
   /***************************** Quanzhao *********************************/
 
   ReadOptions();

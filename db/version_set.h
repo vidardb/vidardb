@@ -453,7 +453,7 @@ class Version {
            bool* key_exists = nullptr, SequenceNumber* seq = nullptr);
 
   /**************** Shichao *******************/
-  void RangeQuery(const ReadOptions& read_options, const LookupRange& range,
+  void RangeQuery(ReadOptions& read_options, const LookupRange& range,
                   std::list<RangeQueryKeyVal>& res, Status* status);
   /**************** Shichao *******************/
 

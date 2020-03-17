@@ -386,7 +386,7 @@ struct RangeQueryMeta {
 // which maybe include an extra limit user key.
 // Return true if the size has reached the capacity, else false.
 inline bool CompressResultList(std::list<RangeQueryKeyVal>* res,
-                               const ReadOptions& read_options) {
+                               ReadOptions& read_options) {
   if (read_options.batch_capacity <= 0) {  // infinite
     return false;
   }
@@ -402,7 +402,12 @@ inline bool CompressResultList(std::list<RangeQueryKeyVal>* res,
   size_t diff_size = meta->map_res.size() - ok_size;
   for (size_t i = 0u; i < diff_size; i++) {
     auto it = --(meta->map_res.end());
+    size_t delta_size = it->second.iter_->user_key.size() + 
+        it->second.iter_->user_val.size();
     res->erase(it->second.iter_);  // remove from list
+    assert(read_options.result_size >= delta_size);
+    read_options.result_size -= delta_size;
+
     if (it->second.type_ == kTypeDeletion) {
       // remove from unordered_map
       meta->del_keys.erase(it->second.seq_);

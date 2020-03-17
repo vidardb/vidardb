@@ -397,7 +397,7 @@ struct Saver {
   Logger* logger;
   Statistics* statistics;
   Env* env_;
-  const ReadOptions* read_options;  // Quanzhao
+  ReadOptions* read_options;  // Quanzhao
 };
 }  // namespace
 
@@ -487,23 +487,32 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
         s->prev_iter = it;
 
         if (it->second.seq_ <= s->seq) {
-          std::string user_val(GetLengthPrefixedSlice(key_ptr + key_length)
-                               .ToString());
+          // TODO: might leverage move semantic later
+          std::string user_full_val(
+              GetLengthPrefixedSlice(key_ptr + key_length).ToString());
+          std::string user_val = s->mem->ReformatUserValue(user_full_val,
+              s->read_options->columns, s->read_options->splitter);
 
           if (it->second.seq_ < s->seq) {
             // replaced
             if (it->second.type_ == kTypeDeletion) {
               meta->del_keys.erase(it->second.seq_);
             }
+            assert(s->read_options->result_size >=
+                it->second.iter_->user_val.size());
+            s->read_options->result_size -= it->second.iter_->user_val.size();
             it->second.seq_ = s->seq;
             it->second.type_ = type;
             it->second.iter_->user_val = std::move(user_val);
+            s->read_options->result_size += it->second.iter_->user_val.size();
             if (type == kTypeDeletion) {
               meta->del_keys.insert({s->seq, it->second.iter_});
             }
           } else {
             // inserted
+            size_t delta_size = user_key.size() + user_val.size();
             s->res->emplace_back(user_key, std::move(user_val));
+            s->read_options->result_size += delta_size;
             it->second.iter_ = --(s->res->end());
             if (type == kTypeDeletion) {
               meta->del_keys.insert({s->seq, it->second.iter_});
@@ -562,8 +571,7 @@ bool MemTable::Get(const LookupKey& key, std::string* value, Status* s,
 }
 
 /***************************** Shichao *****************************/
-bool MemTable::RangeQuery(const ReadOptions& read_options,
-                          const LookupRange& range,
+bool MemTable::RangeQuery(ReadOptions& read_options, const LookupRange& range,
                           std::list<RangeQueryKeyVal>& res, Status* s) {
   if (IsEmpty()) {
     *s = Status::NotFound(Slice());

@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
   TableFactory* table_factory = NewColumnTableFactory();
   ColumnTableOptions* opts =
       static_cast<ColumnTableOptions*>(table_factory->GetOptions());
-  opts->column_num = M;
+  opts->column_count = M;
   // opts->splitter.reset(new PipeSplitter()); // default EncodingSplitter
   options.table_factory.reset(table_factory);
 
@@ -79,6 +79,8 @@ int main(int argc, char* argv[]) {
   ReadOptions read_options;
   // read_options.batch_capacity = 0; // full search
   read_options.batch_capacity = 2; // in batch
+  read_options.columns = {1, 3};
+  read_options.splitter = splitter;
 
 //  Range range; // full search
   // Range range("2", "5"); // [2, 5]
@@ -88,9 +90,12 @@ int main(int argc, char* argv[]) {
   list<RangeQueryKeyVal> res;
   bool next = true;
   while (next) { // range query loop
+    size_t total_size = 0;
     next = db->RangeQuery(read_options, range, res, &s);
     assert(s.ok());
+    cout << "{ ";
     for (auto it : res) {
+      total_size += it.user_key.size() + it.user_val.size();
       cout << it.user_key << "=[";
       vector<string> vals(splitter->Split(it.user_val));
       for (auto i = 0u; i < vals.size(); i++) {
@@ -101,7 +106,8 @@ int main(int argc, char* argv[]) {
       }
       cout << "] ";
     }
-    cout << endl;
+    cout << "} size=" << read_options.result_size << endl;
+    assert(total_size == read_options.result_size);
   }
 
   delete db;

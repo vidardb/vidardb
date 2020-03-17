@@ -66,12 +66,16 @@ int main(int argc, char* argv[]) {
   list<RangeQueryKeyVal> res;
   bool next = true;
   while (next) { // range query loop
+    size_t total_size = 0;
     next = db->RangeQuery(read_options, range, res, &s);
     assert(s.ok());
+    cout<< "{ ";
     for (auto it : res) {
+      total_size += it.user_key.size() + it.user_val.size();
       cout << it.user_key << "=" << it.user_val << " ";
     }
-    cout << endl;
+    cout << "} size=" << read_options.result_size << endl;
+    assert(total_size == read_options.result_size);
   }
 
   delete db;

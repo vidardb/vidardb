@@ -26,6 +26,7 @@
 #include "vidardb/env.h"
 #include "vidardb/memtablerep.h"
 #include "vidardb/immutable_options.h"
+#include "vidardb/splitter.h"
 #include "memtable/memtable_allocator.h"
 #include "util/concurrent_arena.h"
 #include "util/instrumented_mutex.h"
@@ -181,7 +182,7 @@ class MemTable {
   // If memtable does not overlap with the range, store a NotFound() error
   // in *status and return true.
   // Else, return false.
-  bool RangeQuery(const ReadOptions& read_options, const LookupRange& range,
+  bool RangeQuery(ReadOptions& read_options, const LookupRange& range,
                   std::list<RangeQueryKeyVal>& res, Status* s);
   /******************************* Shichao *******************************/
 
@@ -299,6 +300,27 @@ class MemTable {
   }
 
   const MemTableOptions* GetMemTableOptions() const { return &moptions_; }
+
+  // Reformat the user value by specified column index.
+  // Note: Column index must be from 1 to MAX_COLUMN_INDEX
+  const std::string ReformatUserValue(const std::string& user_value,
+                                      const std::vector<uint32_t>& columns,
+                                      const Splitter* splitter) const {
+    if (columns.size() == 0 || splitter == nullptr || user_value.empty()) {
+      return user_value;
+    }
+
+    std::vector<std::string> result;
+    result.reserve(columns.size());
+    // TODO: split slice in-place and extract the target attrs directly
+    std::vector<std::string> user_vals = splitter->Split(user_value);
+    for (auto index : columns) {  // from 1 to MAX_COLUMN_INDEX
+      assert(index <= user_vals.size());
+      result.emplace_back(std::move(user_vals[index-1]));
+    }
+
+    return splitter->Stitch(result);
+  };
 
  private:
   enum FlushStateEnum { FLUSH_NOT_REQUESTED, FLUSH_REQUESTED, FLUSH_SCHEDULED };
