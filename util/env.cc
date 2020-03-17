@@ -10,16 +10,15 @@
 #include "vidardb/env.h"
 
 #include <thread>
+
 #include "port/port.h"
 #include "port/sys_time.h"
-
-#include "vidardb/options.h"
 #include "util/arena.h"
+#include "vidardb/options.h"
 
 namespace vidardb {
 
-Env::~Env() {
-}
+Env::~Env() {}
 
 uint64_t Env::GetThreadID() const {
   std::hash<std::thread::id> hasher;
@@ -63,22 +62,17 @@ Status Env::GetChildrenFileAttributes(const std::string& dir,
   return Status::OK();
 }
 
-SequentialFile::~SequentialFile() {
-}
+SequentialFile::~SequentialFile() {}
 
-RandomAccessFile::~RandomAccessFile() {
-}
+RandomAccessFile::~RandomAccessFile() {}
 
-WritableFile::~WritableFile() {
-}
+WritableFile::~WritableFile() {}
 
-Logger::~Logger() {
-}
+Logger::~Logger() {}
 
-FileLock::~FileLock() {
-}
+FileLock::~FileLock() {}
 
-void LogFlush(Logger *info_log) {
+void LogFlush(Logger* info_log) {
   if (info_log) {
     info_log->Flush();
   }
@@ -93,9 +87,10 @@ void Log(Logger* info_log, const char* format, ...) {
   }
 }
 
-void Logger::Logv(const InfoLogLevel log_level, const char* format, va_list ap) {
-  static const char* kInfoLogLevelNames[5] = { "DEBUG", "INFO", "WARN",
-    "ERROR", "FATAL" };
+void Logger::Logv(const InfoLogLevel log_level, const char* format,
+                  va_list ap) {
+  static const char* kInfoLogLevelNames[5] = {"DEBUG", "INFO", "WARN", "ERROR",
+                                              "FATAL"};
   if (log_level < log_level_) {
     return;
   }
@@ -110,11 +105,10 @@ void Logger::Logv(const InfoLogLevel log_level, const char* format, va_list ap) 
   } else {
     char new_format[500];
     snprintf(new_format, sizeof(new_format) - 1, "[%s] %s",
-      kInfoLogLevelNames[log_level], format);
+             kInfoLogLevelNames[log_level], format);
     Logv(new_format, ap);
   }
 }
-
 
 void Log(const InfoLogLevel log_level, Logger* info_log, const char* format,
          ...) {
@@ -306,8 +300,7 @@ Status ReadFileToString(Env* env, const std::string& fname, std::string* data) {
   return s;
 }
 
-EnvWrapper::~EnvWrapper() {
-}
+EnvWrapper::~EnvWrapper() {}
 
 namespace {  // anonymous namespace
 
@@ -325,7 +318,7 @@ void AssignEnvOptions(EnvOptions* env_options, const DBOptions& options) {
   env_options->allow_fallocate = options.allow_fallocate;
 }
 
-}
+}  // namespace
 
 EnvOptions Env::OptimizeForLogWrite(const EnvOptions& env_options,
                                     const DBOptions& db_options) const {
@@ -346,6 +339,5 @@ EnvOptions::EnvOptions() {
   DBOptions options;
   AssignEnvOptions(this, options);
 }
-
 
 }  // namespace vidardb

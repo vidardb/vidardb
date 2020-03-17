@@ -3,20 +3,21 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 //
+#include "vidardb/perf_context.h"
+
 #include <algorithm>
 #include <iostream>
 #include <thread>
 #include <vector>
 
-#include "vidardb/db.h"
-#include "vidardb/memtablerep.h"
-#include "vidardb/perf_context.h"
 #include "util/histogram.h"
 #include "util/instrumented_mutex.h"
 #include "util/stop_watch.h"
 #include "util/string_util.h"
 #include "util/testharness.h"
 #include "util/thread_status_util.h"
+#include "vidardb/db.h"
+#include "vidardb/memtablerep.h"
 
 bool FLAGS_random_key = false;
 bool FLAGS_use_set_based_memetable = false;
@@ -32,23 +33,23 @@ const std::string kDbName = vidardb::test::TmpDir() + "/perf_context_test";
 namespace vidardb {
 
 std::shared_ptr<DB> OpenDb(bool read_only = false) {
-    DB* db;
-    Options options;
-    options.create_if_missing = true;
-    options.max_open_files = -1;
-    options.write_buffer_size = FLAGS_write_buffer_size;
-    options.max_write_buffer_number = FLAGS_max_write_buffer_number;
-    options.min_write_buffer_number_to_merge =
+  DB* db;
+  Options options;
+  options.create_if_missing = true;
+  options.max_open_files = -1;
+  options.write_buffer_size = FLAGS_write_buffer_size;
+  options.max_write_buffer_number = FLAGS_max_write_buffer_number;
+  options.min_write_buffer_number_to_merge =
       FLAGS_min_write_buffer_number_to_merge;
 
-    Status s;
-    if (!read_only) {
-      s = DB::Open(options, kDbName, &db);
-    } else {
-      s = DB::OpenForReadOnly(options, kDbName, &db);
-    }
-    EXPECT_OK(s);
-    return std::shared_ptr<DB>(db);
+  Status s;
+  if (!read_only) {
+    s = DB::Open(options, kDbName, &db);
+  } else {
+    s = DB::OpenForReadOnly(options, kDbName, &db);
+  }
+  EXPECT_OK(s);
+  return std::shared_ptr<DB>(db);
 }
 
 class PerfContextTest : public testing::Test {};
@@ -66,7 +67,7 @@ TEST_F(PerfContextTest, SeekIntoDeletion) {
     db->Put(write_options, key, value);
   }
 
-  for (int i = 0; i < FLAGS_total_keys -1 ; ++i) {
+  for (int i = 0; i < FLAGS_total_keys - 1; ++i) {
     std::string key = "k" + ToString(i);
     db->Delete(write_options, key);
   }
@@ -88,8 +89,9 @@ TEST_F(PerfContextTest, SeekIntoDeletion) {
   }
 
   if (FLAGS_verbose) {
-    std::cout << "Get user key comparison: \n" << hist_get.ToString()
-              << "Get time: \n" << hist_get_time.ToString();
+    std::cout << "Get user key comparison: \n"
+              << hist_get.ToString() << "Get time: \n"
+              << hist_get_time.ToString();
   }
 
   {
@@ -191,7 +193,7 @@ TEST_F(PerfContextTest, StopWatchOverhead) {
 }
 
 void ProfileQueries(bool enabled_time = false) {
-  DestroyDB(kDbName, Options());    // Start this test with a fresh DB
+  DestroyDB(kDbName, Options());  // Start this test with a fresh DB
 
   auto db = OpenDb();
 
@@ -292,7 +294,7 @@ void ProfileQueries(bool enabled_time = false) {
     hist_get.Add(perf_context.user_key_comparison_count);
 
     perf_context.Reset();
-//    db->MultiGet(read_options, multiget_keys, &values);
+    //    db->MultiGet(read_options, multiget_keys, &values);
     hist_mget_snapshot.Add(perf_context.get_snapshot_time);
     hist_mget_memtable.Add(perf_context.get_from_memtable_time);
     hist_mget_files.Add(perf_context.get_from_output_files_time);
@@ -302,15 +304,17 @@ void ProfileQueries(bool enabled_time = false) {
   }
 
   if (FLAGS_verbose) {
-    std::cout << "Put uesr key comparison: \n" << hist_put.ToString()
-              << "Get uesr key comparison: \n" << hist_get.ToString()
-              << "MultiGet uesr key comparison: \n" << hist_get.ToString();
+    std::cout << "Put uesr key comparison: \n"
+              << hist_put.ToString() << "Get uesr key comparison: \n"
+              << hist_get.ToString() << "MultiGet uesr key comparison: \n"
+              << hist_get.ToString();
     std::cout << "Put(): Pre and Post Process Time: \n"
               << hist_write_pre_post.ToString() << " Writing WAL time: \n"
               << hist_write_wal_time.ToString() << "\n"
               << " Writing Mem Table time: \n"
               << hist_write_memtable_time.ToString() << "\n"
-              << " Total DB mutex nanos: \n" << total_db_mutex_nanos << "\n";
+              << " Total DB mutex nanos: \n"
+              << total_db_mutex_nanos << "\n";
 
     std::cout << "Get(): Time to get snapshot: \n"
               << hist_get_snapshot.ToString()
@@ -320,8 +324,8 @@ void ProfileQueries(bool enabled_time = false) {
               << hist_get_files.ToString() << "\n"
               << " Number of memtables checked: \n"
               << hist_num_memtable_checked.ToString() << "\n"
-              << " Time to post process: \n" << hist_get_post_process.ToString()
-              << "\n";
+              << " Time to post process: \n"
+              << hist_get_post_process.ToString() << "\n";
 
     std::cout << "MultiGet(): Time to get snapshot: \n"
               << hist_mget_snapshot.ToString()
@@ -393,7 +397,7 @@ void ProfileQueries(bool enabled_time = false) {
     hist_get.Add(perf_context.user_key_comparison_count);
 
     perf_context.Reset();
-//    db->MultiGet(read_options, multiget_keys, &values);
+    //    db->MultiGet(read_options, multiget_keys, &values);
     hist_mget_snapshot.Add(perf_context.get_snapshot_time);
     hist_mget_memtable.Add(perf_context.get_from_memtable_time);
     hist_mget_files.Add(perf_context.get_from_output_files_time);
@@ -403,7 +407,8 @@ void ProfileQueries(bool enabled_time = false) {
   }
 
   if (FLAGS_verbose) {
-    std::cout << "ReadOnly Get uesr key comparison: \n" << hist_get.ToString()
+    std::cout << "ReadOnly Get uesr key comparison: \n"
+              << hist_get.ToString()
               << "ReadOnly MultiGet uesr key comparison: \n"
               << hist_mget.ToString();
 
@@ -415,8 +420,8 @@ void ProfileQueries(bool enabled_time = false) {
               << hist_get_files.ToString() << "\n"
               << " Number of memtables checked: \n"
               << hist_num_memtable_checked.ToString() << "\n"
-              << " Time to post process: \n" << hist_get_post_process.ToString()
-              << "\n";
+              << " Time to post process: \n"
+              << hist_get_post_process.ToString() << "\n";
 
     std::cout << "ReadOnly MultiGet(): Time to get snapshot: \n"
               << hist_mget_snapshot.ToString()
@@ -512,7 +517,8 @@ TEST_F(PerfContextTest, SeekKeyComparison) {
   }
 
   if (FLAGS_verbose) {
-    std::cout << "Put time:\n" << hist_put_time.ToString() << "WAL time:\n"
+    std::cout << "Put time:\n"
+              << hist_put_time.ToString() << "WAL time:\n"
               << hist_wal_time.ToString() << "time diff:\n"
               << hist_time_diff.ToString();
   }
@@ -540,7 +546,8 @@ TEST_F(PerfContextTest, SeekKeyComparison) {
   }
 
   if (FLAGS_verbose) {
-    std::cout << "Seek:\n" << hist_seek.ToString() << "Next:\n"
+    std::cout << "Seek:\n"
+              << hist_seek.ToString() << "Next:\n"
               << hist_next.ToString();
   }
 }
@@ -550,26 +557,26 @@ TEST_F(PerfContextTest, DBMutexLockCounter) {
   for (PerfLevel perf_level :
        {PerfLevel::kEnableTimeExceptForMutex, PerfLevel::kEnableTime}) {
     for (int c = 0; c < 2; ++c) {
-    InstrumentedMutex mutex(nullptr, Env::Default(), stats_code[c]);
-    mutex.Lock();
-    std::thread child_thread([&] {
-      SetPerfLevel(perf_level);
-      perf_context.Reset();
-      ASSERT_EQ(perf_context.db_mutex_lock_nanos, 0);
+      InstrumentedMutex mutex(nullptr, Env::Default(), stats_code[c]);
       mutex.Lock();
-      mutex.Unlock();
-      if (perf_level == PerfLevel::kEnableTimeExceptForMutex ||
-          stats_code[c] != DB_MUTEX_WAIT_MICROS) {
+      std::thread child_thread([&] {
+        SetPerfLevel(perf_level);
+        perf_context.Reset();
         ASSERT_EQ(perf_context.db_mutex_lock_nanos, 0);
-      } else {
-        // increment the counter only when it's a DB Mutex
-        ASSERT_GT(perf_context.db_mutex_lock_nanos, 0);
-      }
-    });
-    Env::Default()->SleepForMicroseconds(100);
-    mutex.Unlock();
-    child_thread.join();
-  }
+        mutex.Lock();
+        mutex.Unlock();
+        if (perf_level == PerfLevel::kEnableTimeExceptForMutex ||
+            stats_code[c] != DB_MUTEX_WAIT_MICROS) {
+          ASSERT_EQ(perf_context.db_mutex_lock_nanos, 0);
+        } else {
+          // increment the counter only when it's a DB Mutex
+          ASSERT_GT(perf_context.db_mutex_lock_nanos, 0);
+        }
+      });
+      Env::Default()->SleepForMicroseconds(100);
+      mutex.Unlock();
+      child_thread.join();
+    }
   }
 }
 
@@ -605,7 +612,7 @@ TEST_F(PerfContextTest, ToString) {
   ASSERT_NE(std::string::npos, zero_excluded.find("= 12345"));
 }
 
-}
+}  // namespace vidardb
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

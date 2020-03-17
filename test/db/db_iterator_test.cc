@@ -7,8 +7,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
-#include "test/db/db_test_util.h"
 #include "port/stack_trace.h"
+#include "test/db/db_test_util.h"
 #include "vidardb/iostats_context.h"
 #include "vidardb/perf_context.h"
 
@@ -457,7 +457,7 @@ TEST_F(DBIteratorTest, IterMulti) {
 // by using reseek rather than sequential scan
 TEST_F(DBIteratorTest, IterReseek) {
   anon::OptionsOverride options_override;
-//  options_override.skip_policy = kSkipNoSnapshot;
+  //  options_override.skip_policy = kSkipNoSnapshot;
   Options options = CurrentOptions(options_override);
   options.max_sequential_skip_in_iterations = 3;
   options.create_if_missing = true;
@@ -611,7 +611,6 @@ TEST_F(DBIteratorTest, IterPrevMaxSkip) {
     VerifyIterLast("(invalid)", 1);
   } while (ChangeOptions(kSkipNoSeekToLast));
 }
-
 
 TEST_F(DBIteratorTest, IteratorPinsRef) {
   do {

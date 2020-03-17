@@ -33,16 +33,16 @@ inline struct tm* localtime_r(const time_t* timep, struct tm* result) {
   errno_t ret = localtime_s(result, timep);
   return (ret == 0) ? result : NULL;
 }
-}
+}  // namespace port
 
-using port::timeval;
 using port::gettimeofday;
 using port::localtime_r;
-}
+using port::timeval;
+}  // namespace vidardb
 
 #else
-#include <time.h>
 #include <sys/time.h>
+#include <time.h>
 #endif
 
 #endif  // STORAGE_LEVELDB_PORT_SYS_TIME_H_

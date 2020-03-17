@@ -20,6 +20,7 @@
 #define STORAGE_VidarDB_INCLUDE_ITERATOR_H_
 
 #include <string>
+
 #include "vidardb/slice.h"
 #include "vidardb/status.h"
 

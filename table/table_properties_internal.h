@@ -10,8 +10,8 @@
 
 #pragma once
 
-#include "vidardb/status.h"
 #include "vidardb/iterator.h"
+#include "vidardb/status.h"
 
 namespace vidardb {
 

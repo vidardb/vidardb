@@ -7,17 +7,19 @@
 #define __STDC_FORMAT_MACROS
 #endif
 
+#include "util/delete_scheduler.h"
+
 #include <inttypes.h>
+
 #include <atomic>
 #include <thread>
 #include <vector>
 
-#include "vidardb/env.h"
-#include "vidardb/options.h"
-#include "util/delete_scheduler.h"
 #include "util/string_util.h"
 #include "util/sync_point.h"
 #include "util/testharness.h"
+#include "vidardb/env.h"
+#include "vidardb/options.h"
 
 namespace vidardb {
 
@@ -105,7 +107,7 @@ TEST_F(DeleteSchedulerTest, BasicRateLimiting) {
       "DeleteScheduler::BackgroundEmptyTrash:Wait",
       [&](void* arg) { penalties.push_back(*(static_cast<int*>(arg))); });
 
-  int num_files = 100;  // 100 files
+  int num_files = 100;        // 100 files
   uint64_t file_size = 1024;  // every file is 1 kb
   std::vector<uint64_t> delete_kbs_per_sec = {512, 200, 100, 50, 25};
 
@@ -173,7 +175,7 @@ TEST_F(DeleteSchedulerTest, RateLimitingMultiThreaded) {
       [&](void* arg) { penalties.push_back(*(static_cast<int*>(arg))); });
 
   int thread_cnt = 10;
-  int num_files = 10;  // 10 files per thread
+  int num_files = 10;         // 10 files per thread
   uint64_t file_size = 1024;  // every file is 1 kb
 
   std::vector<uint64_t> delete_kbs_per_sec = {512, 200, 100, 50, 25};

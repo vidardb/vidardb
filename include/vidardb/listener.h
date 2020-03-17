@@ -8,6 +8,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+
 #include "vidardb/compaction_job_stats.h"
 #include "vidardb/status.h"
 #include "vidardb/table_properties.h"
@@ -116,8 +117,8 @@ struct FlushJobInfo {
 
 struct CompactionJobInfo {
   CompactionJobInfo() = default;
-  explicit CompactionJobInfo(const CompactionJobStats& _stats) :
-      stats(_stats) {}
+  explicit CompactionJobInfo(const CompactionJobStats& _stats)
+      : stats(_stats) {}
 
   // the name of the column family where the compaction happened.
   std::string cf_name;
@@ -166,7 +167,6 @@ struct MemTableInfo {
   uint64_t num_entries;
   // Total number of deletes in memtable
   uint64_t num_deletes;
-
 };
 
 // EventListener class contains a set of call-back functions that will
@@ -265,7 +265,7 @@ class EventListener {
   // returned value.
   virtual void OnTableFileCreationStarted(
       const TableFileCreationBriefInfo& /*info*/) {}
- 
+
   // A call-back function for VidarDB which will be called before
   // a memtable is made immutable.
   //
@@ -276,16 +276,14 @@ class EventListener {
   // Note that if applications would like to use the passed reference
   // outside this function call, they should make copies from these
   // returned value.
-  virtual void OnMemTableSealed(
-    const MemTableInfo& /*info*/) {}
+  virtual void OnMemTableSealed(const MemTableInfo& /*info*/) {}
 
   virtual ~EventListener() {}
 };
 
 #else
 
-class EventListener {
-};
+class EventListener {};
 
 #endif  // VIDARDB_LITE
 

@@ -8,12 +8,14 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #include "memtable/skiplist.h"
+
 #include <set>
-#include "vidardb/env.h"
+
 #include "util/arena.h"
 #include "util/hash.h"
 #include "util/random.h"
 #include "util/testharness.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 
@@ -117,8 +119,7 @@ TEST_F(SkipTest, InsertAndLookup) {
 
     // Compare against model iterator
     for (std::set<Key>::reverse_iterator model_iter = keys.rbegin();
-         model_iter != keys.rend();
-         ++model_iter) {
+         model_iter != keys.rend(); ++model_iter) {
       ASSERT_TRUE(iter.Valid());
       ASSERT_EQ(*model_iter, iter.key());
       iter.Prev();
@@ -160,7 +161,7 @@ class ConcurrentTest {
   static uint64_t hash(Key key) { return key & 0xff; }
 
   static uint64_t HashNumbers(uint64_t k, uint64_t g) {
-    uint64_t data[2] = { k, g };
+    uint64_t data[2] = {k, g};
     return Hash(reinterpret_cast<char*>(data), sizeof(data), 0);
   }
 
@@ -302,11 +303,7 @@ class TestState {
   int seed_;
   std::atomic<bool> quit_flag_;
 
-  enum ReaderState {
-    STARTING,
-    RUNNING,
-    DONE
-  };
+  enum ReaderState { STARTING, RUNNING, DONE };
 
   explicit TestState(int s)
       : seed_(s), quit_flag_(false), state_(STARTING), state_cv_(&mu_) {}

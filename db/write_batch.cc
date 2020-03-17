@@ -39,9 +39,9 @@
 #include "db/db_impl.h"
 #include "db/dbformat.h"
 #include "db/flush_scheduler.h"
-#include "memtable/memtable.h"
 #include "db/snapshot_impl.h"
 #include "db/write_batch_internal.h"
+#include "memtable/memtable.h"
 #include "util/coding.h"
 #include "util/perf_context_imp.h"
 #include "util/statistics.h"
@@ -101,8 +101,7 @@ struct BatchContentClassifier : public WriteBatch::Handler {
   }
 };
 
-}  // anon namespace
-
+}  // namespace
 
 struct SavePoint {
   size_t size;  // size of rep_
@@ -116,8 +115,9 @@ struct SavePoints {
 
 WriteBatch::WriteBatch(size_t reserved_bytes)
     : save_points_(nullptr), content_flags_(0), rep_() {
-  rep_.reserve((reserved_bytes > WriteBatchInternal::kHeader) ?
-    reserved_bytes : WriteBatchInternal::kHeader);
+  rep_.reserve((reserved_bytes > WriteBatchInternal::kHeader)
+                   ? reserved_bytes
+                   : WriteBatchInternal::kHeader);
   rep_.resize(WriteBatchInternal::kHeader);
 }
 
@@ -154,16 +154,14 @@ WriteBatch& WriteBatch::operator=(WriteBatch&& src) {
 
 WriteBatch::~WriteBatch() { delete save_points_; }
 
-WriteBatch::Handler::~Handler() { }
+WriteBatch::Handler::~Handler() {}
 
 void WriteBatch::Handler::LogData(const Slice& blob) {
   // If the user has not specified something to do with blobs, then we ignore
   // them.
 }
 
-bool WriteBatch::Handler::Continue() {
-  return true;
-}
+bool WriteBatch::Handler::Continue() { return true; }
 
 void WriteBatch::Clear() {
   rep_.clear();
@@ -178,9 +176,7 @@ void WriteBatch::Clear() {
   }
 }
 
-int WriteBatch::Count() const {
-  return WriteBatchInternal::Count(this);
-}
+int WriteBatch::Count() const { return WriteBatchInternal::Count(this); }
 
 uint32_t WriteBatch::ComputeContentFlags() const {
   auto rv = content_flags_.load(std::memory_order_relaxed);
@@ -648,7 +644,7 @@ class MemTableInserter : public WriteBatch::Handler {
 
     MemTable* mem = cf_mems_->GetMemTable();
 
-      mem->Add(sequence_, kTypeValue, key, value, concurrent_memtable_writes_);
+    mem->Add(sequence_, kTypeValue, key, value, concurrent_memtable_writes_);
 
     // Since all Puts are logged in transaction logs (if enabled), always bump
     // sequence number. Even if the update eventually fails and does not result
@@ -874,7 +870,7 @@ void WriteBatchInternal::Append(WriteBatch* dst, const WriteBatch* src) {
   SetCount(dst, Count(dst) + Count(src));
   assert(src->rep_.size() >= WriteBatchInternal::kHeader);
   dst->rep_.append(src->rep_.data() + WriteBatchInternal::kHeader,
-    src->rep_.size() - WriteBatchInternal::kHeader);
+                   src->rep_.size() - WriteBatchInternal::kHeader);
   dst->content_flags_.store(
       dst->content_flags_.load(std::memory_order_relaxed) |
           src->content_flags_.load(std::memory_order_relaxed),

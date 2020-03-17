@@ -14,15 +14,16 @@
 
 #pragma once
 #include <stdint.h>
+
 #include <limits>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "table/table_builder.h"
 #include "vidardb/flush_block_policy.h"
 #include "vidardb/options.h"
 #include "vidardb/status.h"
-#include "table/table_builder.h"
 
 namespace vidardb {
 

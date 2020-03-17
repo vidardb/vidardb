@@ -11,7 +11,6 @@
 #include <thread>
 
 #include "port/port.h"
-
 #include "vidardb/status.h"
 
 namespace vidardb {

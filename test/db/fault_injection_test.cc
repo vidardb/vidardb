@@ -15,11 +15,6 @@
 #include "db/filename.h"
 #include "db/log_format.h"
 #include "db/version_set.h"
-#include "vidardb/cache.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
-#include "vidardb/table.h"
-#include "vidardb/write_batch.h"
 #include "util/fault_injection_test_env.h"
 #include "util/logging.h"
 #include "util/mock_env.h"
@@ -27,6 +22,11 @@
 #include "util/sync_point.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/cache.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/table.h"
+#include "vidardb/write_batch.h"
 
 namespace vidardb {
 
@@ -77,8 +77,7 @@ class FaultInjectionTest : public testing::Test,
         sync_use_compact_(true),
         base_env_(nullptr),
         env_(NULL),
-        db_(NULL) {
-  }
+        db_(NULL) {}
 
   ~FaultInjectionTest() {
     vidardb::SyncPoint::GetInstance()->DisableProcessing();
@@ -326,8 +325,7 @@ class FaultInjectionTest : public testing::Test,
                      FaultInjectionTest::kValExpectNoError));
   }
 
-  void NoWriteTestPreFault() {
-  }
+  void NoWriteTestPreFault() {}
 
   void NoWriteTestReopenWithFault(ResetMethod reset_method) {
     CloseDB();

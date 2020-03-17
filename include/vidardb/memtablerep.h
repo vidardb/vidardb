@@ -40,10 +40,12 @@
 
 #pragma once
 
-#include <memory>
-#include <stdexcept>
 #include <stdint.h>
 #include <stdlib.h>
+
+#include <memory>
+#include <stdexcept>
+
 #include "db/dbformat.h"  // Shichao
 
 namespace vidardb {
@@ -70,7 +72,7 @@ class MemTableRep {
     virtual int operator()(const char* prefix_len_key,
                            const Slice& key) const = 0;
 
-    virtual ~KeyComparator() { }
+    virtual ~KeyComparator() {}
   };
 
   explicit MemTableRep(MemTableAllocator* allocator) : allocator_(allocator) {}
@@ -105,7 +107,7 @@ class MemTableRep {
   // does nothing.  After MarkReadOnly() is called, this table rep will
   // not be written to (ie No more calls to Allocate(), Insert(),
   // or any writes done directly to entries accessed through the iterator.)
-  virtual void MarkReadOnly() { }
+  virtual void MarkReadOnly() {}
 
   // Look up key from the mem table, since the first key in the mem table whose
   // user_key matches the one given k, call the function callback_func(), with
@@ -124,9 +126,9 @@ class MemTableRep {
 
   /******************************* Shichao ***********************************/
   virtual void RangeQuery(const LookupRange& range,
-                          std::list<RangeQueryKeyVal>& res,
-                          void* callback_args,
-                          bool (*callback_func)(void* arg, const char* entry)) {}
+                          std::list<RangeQueryKeyVal>& res, void* callback_args,
+                          bool (*callback_func)(void* arg, const char* entry)) {
+  }
   /******************************* Shichao ***********************************/
 
   virtual uint64_t ApproximateNumEntries(const Slice& start_ikey,
@@ -138,7 +140,7 @@ class MemTableRep {
   // that was allocated through the allocator.  Safe to call from any thread.
   virtual size_t ApproximateMemoryUsage() = 0;
 
-  virtual ~MemTableRep() { }
+  virtual ~MemTableRep() {}
 
   // Iteration over the contents of a skip collection
   class Iterator {

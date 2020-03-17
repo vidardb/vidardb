@@ -15,11 +15,11 @@
 #include "db/db_iter.h"
 #include "db/dbformat.h"
 #include "db/job_context.h"
-#include "vidardb/env.h"
-#include "vidardb/slice.h"
 #include "table/merger.h"
 #include "util/string_util.h"
 #include "util/sync_point.h"
+#include "vidardb/env.h"
+#include "vidardb/slice.h"
 
 namespace vidardb {
 
@@ -31,10 +31,13 @@ namespace vidardb {
 class LevelIterator : public InternalIterator {
  public:
   LevelIterator(const ColumnFamilyData* const cfd,
-      const ReadOptions& read_options,
-      const std::vector<FileMetaData*>& files)
-    : cfd_(cfd), read_options_(read_options), files_(files), valid_(false),
-      file_index_(std::numeric_limits<uint32_t>::max()) {}
+                const ReadOptions& read_options,
+                const std::vector<FileMetaData*>& files)
+      : cfd_(cfd),
+        read_options_(read_options),
+        files_(files),
+        valid_(false),
+        file_index_(std::numeric_limits<uint32_t>::max()) {}
 
   void SetFileIndex(uint32_t file_index) {
     assert(file_index < files_.size());
@@ -59,9 +62,7 @@ class LevelIterator : public InternalIterator {
     status_ = Status::NotSupported("LevelIterator::Prev()");
     valid_ = false;
   }
-  bool Valid() const override {
-    return valid_;
-  }
+  bool Valid() const override { return valid_; }
   void SeekToFirst() override {
     SetFileIndex(0);
     file_iter_->SeekToFirst();
@@ -139,9 +140,7 @@ ForwardIterator::ForwardIterator(DBImpl* db, const ReadOptions& read_options,
   }
 }
 
-ForwardIterator::~ForwardIterator() {
-  Cleanup(true);
-}
+ForwardIterator::~ForwardIterator() { Cleanup(true); }
 
 void ForwardIterator::SVCleanup() {
   if (sv_ != nullptr && sv_->Unref()) {
@@ -223,8 +222,8 @@ void ForwardIterator::SeekInternal(const Slice& internal_key,
                                    bool seek_to_first) {
   assert(mutable_iter_);
   // mutable
-  seek_to_first ? mutable_iter_->SeekToFirst() :
-                  mutable_iter_->Seek(internal_key);
+  seek_to_first ? mutable_iter_->SeekToFirst()
+                : mutable_iter_->Seek(internal_key);
 
   // immutable
   // TODO(ljin): NeedToSeekImmutable has negative impact on performance
@@ -270,8 +269,8 @@ void ForwardIterator::SeekInternal(const Slice& internal_key,
       } else {
         // If the target key passes over the larget key, we are sure Next()
         // won't go over this file.
-        if (user_comparator_->Compare(user_key,
-              l0[i]->largest.user_key()) > 0) {
+        if (user_comparator_->Compare(user_key, l0[i]->largest.user_key()) >
+            0) {
           if (read_options_.iterate_upper_bound != nullptr) {
             has_iter_trimmed_for_upper_bound_ = true;
             delete l0_iters_[i];
@@ -330,9 +329,8 @@ void ForwardIterator::SeekInternal(const Slice& internal_key,
             assert(search_left_bound == 0);
             f_idx = 0;
           } else {
-            indexer.GetNextLevelIndex(
-                level, level_files.size() - 1,
-                1, 1, &search_left_bound, &search_right_bound);
+            indexer.GetNextLevelIndex(level, level_files.size() - 1, 1, 1,
+                                      &search_left_bound, &search_right_bound);
             continue;
           }
         }
@@ -346,17 +344,16 @@ void ForwardIterator::SeekInternal(const Slice& internal_key,
           indexer.GetNextLevelIndex(level, f_idx, cmp_smallest, -1,
                                     &search_left_bound, &search_right_bound);
         } else {
-          indexer.GetNextLevelIndex(
-              level, level_files.size() - 1,
-              1, 1, &search_left_bound, &search_right_bound);
+          indexer.GetNextLevelIndex(level, level_files.size() - 1, 1, 1,
+                                    &search_left_bound, &search_right_bound);
         }
       }
 
       // Seek
       if (f_idx < level_files.size()) {
         level_iters_[level - 1]->SetFileIndex(f_idx);
-        seek_to_first ? level_iters_[level - 1]->SeekToFirst() :
-                        level_iters_[level - 1]->Seek(internal_key);
+        seek_to_first ? level_iters_[level - 1]->SeekToFirst()
+                      : level_iters_[level - 1]->Seek(internal_key);
 
         if (!level_iters_[level - 1]->status().ok()) {
           immutable_status_ = level_iters_[level - 1]->status();
@@ -395,8 +392,7 @@ void ForwardIterator::Next() {
   assert(valid_);
   bool update_prev_key = false;
 
-  if (sv_ == nullptr ||
-      sv_->version_number != cfd_->GetSuperVersionNumber()) {
+  if (sv_ == nullptr || sv_->version_number != cfd_->GetSuperVersionNumber()) {
     std::string current_key = key().ToString();
     Slice old_key(current_key.data(), current_key.size());
 
@@ -411,8 +407,7 @@ void ForwardIterator::Next() {
     }
   } else if (current_ != mutable_iter_) {
     // It is going to advance immutable iterator
-      update_prev_key = true;
-
+    update_prev_key = true;
 
     if (update_prev_key) {
       prev_key_.SetKey(current_->key());
@@ -658,7 +653,7 @@ bool ForwardIterator::NeedToSeekImmutable(const Slice& target) {
   Slice prev_key = prev_key_.GetKey();
 
   if (cfd_->internal_comparator().InternalKeyComparator::Compare(
-        prev_key, target) >= (is_prev_inclusive_ ? 1 : 0)) {
+          prev_key, target) >= (is_prev_inclusive_ ? 1 : 0)) {
     return true;
   }
 
@@ -667,8 +662,8 @@ bool ForwardIterator::NeedToSeekImmutable(const Slice& target) {
     return false;
   }
   if (cfd_->internal_comparator().InternalKeyComparator::Compare(
-        target, current_ == mutable_iter_ ? immutable_min_heap_.top()->key()
-                                          : current_->key()) > 0) {
+          target, current_ == mutable_iter_ ? immutable_min_heap_.top()->key()
+                                            : current_->key()) > 0) {
     return true;
   }
   return false;
@@ -746,7 +741,7 @@ uint32_t ForwardIterator::FindFileInRange(
     uint32_t mid = (left + right) / 2;
     const FileMetaData* f = files[mid];
     if (cfd_->internal_comparator().InternalKeyComparator::Compare(
-          f->largest.Encode(), internal_key) < 0) {
+            f->largest.Encode(), internal_key) < 0) {
       // Key at "mid.largest" is < "target".  Therefore all
       // files at or before "mid" are uninteresting.
       left = mid + 1;

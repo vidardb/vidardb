@@ -70,24 +70,25 @@
 #endif
 
 #include <inttypes.h>
+
 #include "db/builder.h"
 #include "db/db_impl.h"
 #include "db/dbformat.h"
 #include "db/filename.h"
 #include "db/log_reader.h"
 #include "db/log_writer.h"
-#include "memtable/memtable.h"
 #include "db/table_cache.h"
 #include "db/version_edit.h"
-#include "db/writebuffer.h"
 #include "db/write_batch_internal.h"
+#include "db/writebuffer.h"
+#include "memtable/memtable.h"
+#include "table/scoped_arena_iterator.h"
+#include "util/file_reader_writer.h"
 #include "vidardb/comparator.h"
 #include "vidardb/db.h"
 #include "vidardb/env.h"
-#include "vidardb/options.h"
 #include "vidardb/immutable_options.h"
-#include "table/scoped_arena_iterator.h"
-#include "util/file_reader_writer.h"
+#include "vidardb/options.h"
 
 namespace vidardb {
 
@@ -195,8 +196,8 @@ class Repairer {
               assert(path_id == 0);
               logs_.push_back(number);
             } else if (type == kTableFile) {
-              table_fds_.emplace_back(number, static_cast<uint32_t>(path_id),
-                                      0, 0);
+              table_fds_.emplace_back(number, static_cast<uint32_t>(path_id), 0,
+                                      0);
             } else {
               // Ignore other files
             }
@@ -271,8 +272,8 @@ class Repairer {
     int counter = 0;
     while (reader.ReadRecord(&record, &scratch)) {
       if (record.size() < WriteBatchInternal::kHeader) {
-        reporter.Corruption(
-            record.size(), Status::Corruption("log record too small"));
+        reporter.Corruption(record.size(),
+                            Status::Corruption("log record too small"));
         continue;
       }
       WriteBatchInternal::SetContents(&batch, record);
@@ -280,9 +281,8 @@ class Repairer {
       if (status.ok()) {
         counter += WriteBatchInternal::Count(&batch);
       } else {
-        Log(InfoLogLevel::WARN_LEVEL,
-            options_.info_log, "Log #%" PRIu64 ": ignoring %s", log,
-            status.ToString().c_str());
+        Log(InfoLogLevel::WARN_LEVEL, options_.info_log,
+            "Log #%" PRIu64 ": ignoring %s", log, status.ToString().c_str());
         status = Status::OK();  // Keep going with rest of file
       }
     }
@@ -315,8 +315,8 @@ class Repairer {
       }
     }
     Log(InfoLogLevel::INFO_LEVEL, options_.info_log,
-        "Log #%" PRIu64 ": %d ops saved to Table #%" PRIu64 " %s",
-        log, counter, meta.fd.GetNumber(), status.ToString().c_str());
+        "Log #%" PRIu64 ": %d ops saved to Table #%" PRIu64 " %s", log, counter,
+        meta.fd.GetNumber(), status.ToString().c_str());
     return status;
   }
 
@@ -332,8 +332,7 @@ class Repairer {
         FormatFileNumber(t.meta.fd.GetNumber(), t.meta.fd.GetPathId(),
                          file_num_buf, sizeof(file_num_buf));
         Log(InfoLogLevel::WARN_LEVEL, options_.info_log,
-            "Table #%s: ignoring %s", file_num_buf,
-            status.ToString().c_str());
+            "Table #%s: ignoring %s", file_num_buf, status.ToString().c_str());
         ArchiveFile(fname);
       } else {
         tables_.push_back(t);
@@ -359,9 +358,9 @@ class Repairer {
       for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
         Slice key = iter->key();
         if (!ParseInternalKey(key, &parsed)) {
-          Log(InfoLogLevel::ERROR_LEVEL,
-              options_.info_log, "Table #%" PRIu64 ": unparsable key %s",
-              t->meta.fd.GetNumber(), EscapeString(key).c_str());
+          Log(InfoLogLevel::ERROR_LEVEL, options_.info_log,
+              "Table #%" PRIu64 ": unparsable key %s", t->meta.fd.GetNumber(),
+              EscapeString(key).c_str());
           continue;
         }
 
@@ -383,9 +382,9 @@ class Repairer {
       }
       delete iter;
     }
-    Log(InfoLogLevel::INFO_LEVEL,
-        options_.info_log, "Table #%" PRIu64 ": %d entries %s",
-        t->meta.fd.GetNumber(), counter, status.ToString().c_str());
+    Log(InfoLogLevel::INFO_LEVEL, options_.info_log,
+        "Table #%" PRIu64 ": %d entries %s", t->meta.fd.GetNumber(), counter,
+        status.ToString().c_str());
     return status;
   }
 
@@ -420,7 +419,7 @@ class Repairer {
                      t.meta.fd.GetFileSizeTotal());  // Shichao
     }
 
-    //fprintf(stderr, "NewDescriptor:\n%s\n", edit_.DebugString().c_str());
+    // fprintf(stderr, "NewDescriptor:\n%s\n", edit_.DebugString().c_str());
     {
       unique_ptr<WritableFileWriter> file_writer(
           new WritableFileWriter(std::move(file), env_options));
@@ -465,8 +464,7 @@ class Repairer {
     new_file.append("/");
     new_file.append((slash == nullptr) ? fname.c_str() : slash + 1);
     Status s = env_->RenameFile(fname, new_file);
-    Log(InfoLogLevel::INFO_LEVEL,
-        options_.info_log, "Archiving %s: %s\n",
+    Log(InfoLogLevel::INFO_LEVEL, options_.info_log, "Archiving %s: %s\n",
         fname.c_str(), s.ToString().c_str());
   }
 };

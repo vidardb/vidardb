@@ -14,15 +14,17 @@
 
 #pragma once
 #include <stdio.h>
+
 #include <string>
 #include <unordered_map>  // Shichao
+
+#include "util/coding.h"
+#include "util/logging.h"
 #include "vidardb/comparator.h"
 #include "vidardb/db.h"
 #include "vidardb/slice.h"
 #include "vidardb/table.h"
 #include "vidardb/types.h"
-#include "util/coding.h"
-#include "util/logging.h"
 
 namespace vidardb {
 
@@ -42,12 +44,12 @@ enum ValueType : unsigned char {
   kTypeColumnFamilyDeletion = 0x4,  // WAL only.
   kTypeColumnFamilyValue = 0x5,     // WAL only.
   kTypeSingleDeletion = 0x7,
-  kTypeBeginPrepareXID = 0x9,             // WAL only.
-  kTypeEndPrepareXID = 0xA,               // WAL only.
-  kTypeCommitXID = 0xB,                   // WAL only.
-  kTypeRollbackXID = 0xC,                 // WAL only.
-  kTypeNoop = 0xD,                        // WAL only.
-  kMaxValue = 0x7F                        // Not used for storing records.
+  kTypeBeginPrepareXID = 0x9,  // WAL only.
+  kTypeEndPrepareXID = 0xA,    // WAL only.
+  kTypeCommitXID = 0xB,        // WAL only.
+  kTypeRollbackXID = 0xC,      // WAL only.
+  kTypeNoop = 0xD,             // WAL only.
+  kMaxValue = 0x7F             // Not used for storing records.
 };
 
 // kValueTypeForSeek defines the ValueType that should be passed when
@@ -66,17 +68,16 @@ inline bool IsValueType(ValueType t) {
 
 // We leave eight bits empty at the bottom so a type and sequence#
 // can be packed together into 64-bits.
-static const SequenceNumber kMaxSequenceNumber =
-    ((0x1ull << 56) - 1);
+static const SequenceNumber kMaxSequenceNumber = ((0x1ull << 56) - 1);
 
 struct ParsedInternalKey {
   Slice user_key;
   SequenceNumber sequence;
   ValueType type;
 
-  ParsedInternalKey() { }  // Intentionally left uninitialized (for speed)
+  ParsedInternalKey() {}  // Intentionally left uninitialized (for speed)
   ParsedInternalKey(const Slice& u, const SequenceNumber& seq, ValueType t)
-      : user_key(u), sequence(seq), type(t) { }
+      : user_key(u), sequence(seq), type(t) {}
   std::string DebugString(bool hex = false) const;
 };
 
@@ -123,11 +124,12 @@ class InternalKeyComparator : public Comparator {
  protected:
   const Comparator* user_comparator_;
   std::string name_;
+
  public:
-  explicit InternalKeyComparator(const Comparator* c) : user_comparator_(c),
-    name_("vidardb.InternalKeyComparator:" +
-          (c != nullptr ? std::string(user_comparator_->Name()): "")) {
-  }
+  explicit InternalKeyComparator(const Comparator* c)
+      : user_comparator_(c),
+        name_("vidardb.InternalKeyComparator:" +
+              (c != nullptr ? std::string(user_comparator_->Name()) : "")) {}
   virtual ~InternalKeyComparator() {}
 
   virtual const char* Name() const override;
@@ -146,8 +148,7 @@ class InternalKeyComparator : public Comparator {
 class ColumnKeyComparator : public InternalKeyComparator {
  private:
  public:
-  explicit ColumnKeyComparator() :
-    InternalKeyComparator(nullptr) {
+  explicit ColumnKeyComparator() : InternalKeyComparator(nullptr) {
     name_ = "vidardb.ColumnKeyComparator";
   }
   virtual ~ColumnKeyComparator() {}
@@ -181,8 +182,9 @@ class ColumnKeyComparator : public InternalKeyComparator {
 class InternalKey {
  private:
   std::string rep_;
+
  public:
-  InternalKey() { }   // Leave rep_ as empty to indicate it is invalid
+  InternalKey() {}  // Leave rep_ as empty to indicate it is invalid
   InternalKey(const Slice& _user_key, SequenceNumber s, ValueType t) {
     AppendInternalKey(&rep_, ParsedInternalKey(_user_key, s, t));
   }
@@ -225,8 +227,8 @@ class InternalKey {
   std::string DebugString(bool hex = false) const;
 };
 
-inline int InternalKeyComparator::Compare(
-    const InternalKey& a, const InternalKey& b) const {
+inline int InternalKeyComparator::Compare(const InternalKey& a,
+                                          const InternalKey& b) const {
   return Compare(a.Encode(), b.Encode());
 }
 
@@ -263,7 +265,6 @@ inline uint64_t GetInternalKeySeqno(const Slice& internal_key) {
   return num >> 8;
 }
 
-
 // A helper class useful for DBImpl::Get()
 class LookupKey {
  public:
@@ -299,7 +300,7 @@ class LookupKey {
   const char* start_;
   const char* kstart_;
   const char* end_;
-  char space_[200];      // Avoid allocation for short keys
+  char space_[200];  // Avoid allocation for short keys
 
   // No copying allowed
   LookupKey(const LookupKey&);
@@ -313,12 +314,12 @@ inline LookupKey::~LookupKey() {
 /**************** Shichao ******************/
 // A range of LookupKeys
 struct LookupRange {
-  LookupKey* start_;          // Included in the range
-  LookupKey* limit_;          // Included in the range
+  LookupKey* start_;  // Included in the range
+  LookupKey* limit_;  // Included in the range
 
-  LookupRange(): start_(NULL), limit_(NULL) { }
-  LookupRange(LookupKey* start, LookupKey* limit) :
-              start_(start), limit_(limit) { }
+  LookupRange() : start_(NULL), limit_(NULL) {}
+  LookupRange(LookupKey* start, LookupKey* limit)
+      : start_(start), limit_(limit) {}
   SequenceNumber SequenceNum() const {
     assert(start_ != NULL);
     const Slice& ikey = start_->internal_key();
@@ -333,19 +334,19 @@ struct SeqTypeVal {
   typedef std::list<RangeQueryKeyVal>::iterator ListIterator;
   ListIterator iter_;
 
-  SeqTypeVal() : seq_(0), type_(kTypeDeletion) { }
+  SeqTypeVal() : seq_(0), type_(kTypeDeletion) {}
 
-  SeqTypeVal(SequenceNumber seq, ValueType type, const ListIterator& iter) :
-    seq_(seq), type_(type), iter_(iter) { }
+  SeqTypeVal(SequenceNumber seq, ValueType type, const ListIterator& iter)
+      : seq_(seq), type_(type), iter_(iter) {}
 
-  SeqTypeVal(SequenceNumber seq, ValueType type, ListIterator&& iter) :
-    seq_(seq), type_(type), iter_(std::move(iter)) { }
+  SeqTypeVal(SequenceNumber seq, ValueType type, ListIterator&& iter)
+      : seq_(seq), type_(type), iter_(std::move(iter)) {}
 
-  SeqTypeVal(const SeqTypeVal& stv) :
-    seq_(stv.seq_), type_(stv.type_), iter_(stv.iter_) { }
+  SeqTypeVal(const SeqTypeVal& stv)
+      : seq_(stv.seq_), type_(stv.type_), iter_(stv.iter_) {}
 
-  SeqTypeVal(SeqTypeVal&& stv) :
-    seq_(stv.seq_), type_(stv.type_), iter_(std::move(stv.iter_)) { }
+  SeqTypeVal(SeqTypeVal&& stv)
+      : seq_(stv.seq_), type_(stv.type_), iter_(std::move(stv.iter_)) {}
 
   SeqTypeVal& operator=(const SeqTypeVal& stv) {
     seq_ = stv.seq_;
@@ -366,20 +367,24 @@ struct SeqTypeVal {
 
 /**************************** Quanzhao *****************************/
 struct RangeQueryMeta {
-  ColumnFamilyData* column_family_data;      // Column family data
-  SuperVersion* super_version;               // Super version
-  SequenceNumber snapshot;                   // Current snapshot
-  LookupKey* current_limit_key;              // Current limit key
-  SequenceNumber limit_sequence;             // Limit sequence
-  std::string next_start_key;                // Next start key
-  std::map<std::string, SeqTypeVal> map_res; // Temp result map
+  ColumnFamilyData* column_family_data;       // Column family data
+  SuperVersion* super_version;                // Super version
+  SequenceNumber snapshot;                    // Current snapshot
+  LookupKey* current_limit_key;               // Current limit key
+  SequenceNumber limit_sequence;              // Limit sequence
+  std::string next_start_key;                 // Next start key
+  std::map<std::string, SeqTypeVal> map_res;  // Temp result map
   std::unordered_map<SequenceNumber,
-      std::list<RangeQueryKeyVal>::iterator> del_keys;  // store delete keys
+                     std::list<RangeQueryKeyVal>::iterator>
+      del_keys;  // store delete keys
 
   RangeQueryMeta(ColumnFamilyData* cfd, SuperVersion* sv, SequenceNumber snap,
-                 LookupKey* limit_key = nullptr, SequenceNumber limit_seq = 0):
-    column_family_data(cfd), super_version(sv), snapshot(snap),
-    current_limit_key(limit_key), limit_sequence(limit_seq) {}
+                 LookupKey* limit_key = nullptr, SequenceNumber limit_seq = 0)
+      : column_family_data(cfd),
+        super_version(sv),
+        snapshot(snap),
+        current_limit_key(limit_key),
+        limit_sequence(limit_seq) {}
 };
 
 // Ensure the result size is no more than the expected capacity
@@ -402,8 +407,8 @@ inline bool CompressResultList(std::list<RangeQueryKeyVal>* res,
   size_t diff_size = meta->map_res.size() - ok_size;
   for (size_t i = 0u; i < diff_size; i++) {
     auto it = --(meta->map_res.end());
-    size_t delta_size = it->second.iter_->user_key.size() + 
-        it->second.iter_->user_val.size();
+    size_t delta_size =
+        it->second.iter_->user_key.size() + it->second.iter_->user_val.size();
     res->erase(it->second.iter_);  // remove from list
     assert(read_options.result_size >= delta_size);
     read_options.result_size -= delta_size;
@@ -412,7 +417,7 @@ inline bool CompressResultList(std::list<RangeQueryKeyVal>* res,
       // remove from unordered_map
       meta->del_keys.erase(it->second.seq_);
     }
-    meta->map_res.erase(it);       // remove from map
+    meta->map_res.erase(it);  // remove from map
   }
 
   // update the current range limit key

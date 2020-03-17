@@ -12,8 +12,8 @@
 // which is a pity, it is a good test
 #if !defined(VIDARDB_LITE)
 
-#include "test/db/db_test_util.h"
 #include "port/stack_trace.h"
+#include "test/db/db_test_util.h"
 
 namespace vidardb {
 
@@ -32,9 +32,8 @@ class DBTestXactLogIterator : public DBTestBase {
 };
 
 namespace {
-SequenceNumber ReadRecords(
-    std::unique_ptr<TransactionLogIterator>& iter,
-    int& count) {
+SequenceNumber ReadRecords(std::unique_ptr<TransactionLogIterator>& iter,
+                           int& count) {
   count = 0;
   SequenceNumber lastSequence = 0;
   BatchResult res;
@@ -49,9 +48,8 @@ SequenceNumber ReadRecords(
   return res.sequence;
 }
 
-void ExpectRecords(
-    const int expected_no_records,
-    std::unique_ptr<TransactionLogIterator>& iter) {
+void ExpectRecords(const int expected_no_records,
+                   std::unique_ptr<TransactionLogIterator>& iter) {
   int num_records;
   ReadRecords(iter, num_records);
   ASSERT_EQ(num_records, expected_no_records);
@@ -89,19 +87,18 @@ TEST_F(DBTestXactLogIterator, TransactionLogIterator) {
 TEST_F(DBTestXactLogIterator, TransactionLogIteratorRace) {
   static const int LOG_ITERATOR_RACE_TEST_COUNT = 2;
   static const char* sync_points[LOG_ITERATOR_RACE_TEST_COUNT][4] = {
-      {"WalManager::GetSortedWalFiles:1",  "WalManager::PurgeObsoleteFiles:1",
+      {"WalManager::GetSortedWalFiles:1", "WalManager::PurgeObsoleteFiles:1",
        "WalManager::PurgeObsoleteFiles:2", "WalManager::GetSortedWalFiles:2"},
-      {"WalManager::GetSortedWalsOfType:1",
-       "WalManager::PurgeObsoleteFiles:1",
+      {"WalManager::GetSortedWalsOfType:1", "WalManager::PurgeObsoleteFiles:1",
        "WalManager::PurgeObsoleteFiles:2",
        "WalManager::GetSortedWalsOfType:2"}};
   for (int test = 0; test < LOG_ITERATOR_RACE_TEST_COUNT; ++test) {
     // Setup sync point dependency to reproduce the race condition of
     // a log file moved to archived dir, in the middle of GetSortedWalFiles
-    vidardb::SyncPoint::GetInstance()->LoadDependency(
-      { { sync_points[test][0], sync_points[test][1] },
-        { sync_points[test][2], sync_points[test][3] },
-      });
+    vidardb::SyncPoint::GetInstance()->LoadDependency({
+        {sync_points[test][0], sync_points[test][1]},
+        {sync_points[test][2], sync_points[test][3]},
+    });
 
     do {
       vidardb::SyncPoint::GetInstance()->ClearTrace();
@@ -178,7 +175,7 @@ TEST_F(DBTestXactLogIterator, TransactionLogIteratorCorruptedLog) {
     Options options = OptionsForLogIterTest();
     DestroyAndReopen(options);
     for (int i = 0; i < 1024; i++) {
-      Put("key"+ToString(i), DummyString(10));
+      Put("key" + ToString(i), DummyString(10));
     }
     dbfull()->Flush(FlushOptions());
     // Corrupt this log to create a gap
@@ -189,7 +186,7 @@ TEST_F(DBTestXactLogIterator, TransactionLogIteratorCorruptedLog) {
       mem_env_->Truncate(logfile_path, wal_files.front()->SizeFileBytes() / 2);
     } else {
       ASSERT_EQ(0, truncate(logfile_path.c_str(),
-                   wal_files.front()->SizeFileBytes() / 2));
+                            wal_files.front()->SizeFileBytes() / 2));
     }
 
     // Insert a new entry to a new log file

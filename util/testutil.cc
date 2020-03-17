@@ -21,7 +21,7 @@ namespace test {
 Slice RandomString(Random* rnd, int len, std::string* dst) {
   dst->resize(len);
   for (int i = 0; i < len; i++) {
-    (*dst)[i] = static_cast<char>(' ' + rnd->Uniform(95));   // ' ' .. '~'
+    (*dst)[i] = static_cast<char>(' ' + rnd->Uniform(95));  // ' ' .. '~'
   }
   return Slice(*dst);
 }
@@ -38,9 +38,8 @@ extern std::string RandomHumanReadableString(Random* rnd, int len) {
 std::string RandomKey(Random* rnd, int len, RandomKeyType type) {
   // Make sure to generate a wide variety of characters so we
   // test the boundary conditions for short-key optimizations.
-  static const char kTestChars[] = {
-    '\0', '\1', 'a', 'b', 'c', 'd', 'e', '\xfd', '\xfe', '\xff'
-  };
+  static const char kTestChars[] = {'\0', '\1', 'a',    'b',    'c',
+                                    'd',  'e',  '\xfd', '\xfe', '\xff'};
   std::string result;
   for (int i = 0; i < len; i++) {
     std::size_t indx = 0;
@@ -63,7 +62,6 @@ std::string RandomKey(Random* rnd, int len, RandomKeyType type) {
   return result;
 }
 
-
 extern Slice CompressibleString(Random* rnd, double compressed_fraction,
                                 int len, std::string* dst) {
   int raw = static_cast<int>(len * compressed_fraction);
@@ -83,7 +81,7 @@ extern Slice CompressibleString(Random* rnd, double compressed_fraction,
 namespace {
 class Uint64ComparatorImpl : public Comparator {
  public:
-  Uint64ComparatorImpl() { }
+  Uint64ComparatorImpl() {}
 
   virtual const char* Name() const override {
     return "vidardb.Uint64Comparator";
@@ -103,22 +101,18 @@ class Uint64ComparatorImpl : public Comparator {
   }
 
   virtual void FindShortestSeparator(std::string* start,
-      const Slice& limit) const override {
+                                     const Slice& limit) const override {
     return;
   }
 
-  virtual void FindShortSuccessor(std::string* key) const override {
-    return;
-  }
+  virtual void FindShortSuccessor(std::string* key) const override { return; }
 };
 }  // namespace
 
 static port::OnceType once;
 static const Comparator* uint64comp;
 
-static void InitModule() {
-  uint64comp = new Uint64ComparatorImpl;
-}
+static void InitModule() { uint64comp = new Uint64ComparatorImpl; }
 
 const Comparator* Uint64Comparator() {
   port::InitOnce(&once, InitModule);

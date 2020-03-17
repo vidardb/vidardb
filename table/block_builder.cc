@@ -33,11 +33,13 @@
 
 #include "table/block_builder.h"
 
-#include <algorithm>
 #include <assert.h>
-#include "vidardb/comparator.h"
+
+#include <algorithm>
+
 #include "db/dbformat.h"
 #include "util/coding.h"
+#include "vidardb/comparator.h"
 
 namespace vidardb {
 
@@ -47,35 +49,35 @@ BlockBuilder::BlockBuilder(int block_restart_interval)
       counter_(0),
       finished_(false) {
   assert(block_restart_interval_ >= 1);
-  restarts_.push_back(0);       // First restart point is at offset 0
+  restarts_.push_back(0);  // First restart point is at offset 0
 }
 
 void BlockBuilder::Reset() {
   buffer_.clear();
   restarts_.clear();
-  restarts_.push_back(0);       // First restart point is at offset 0
+  restarts_.push_back(0);  // First restart point is at offset 0
   counter_ = 0;
   finished_ = false;
   last_key_.clear();
 }
 
 size_t BlockBuilder::CurrentSizeEstimate() const {
-  return (buffer_.size() +                        // Raw data buffer
-          restarts_.size() * sizeof(uint32_t) +   // Restart array
-          sizeof(uint32_t));                      // Restart array length
+  return (buffer_.size() +                       // Raw data buffer
+          restarts_.size() * sizeof(uint32_t) +  // Restart array
+          sizeof(uint32_t));                     // Restart array length
 }
 
-size_t BlockBuilder::EstimateSizeAfterKV(const Slice& key, const Slice& value)
-  const {
+size_t BlockBuilder::EstimateSizeAfterKV(const Slice& key,
+                                         const Slice& value) const {
   size_t estimate = CurrentSizeEstimate();
   estimate += key.size() + value.size();
   if (counter_ >= block_restart_interval_) {
-    estimate += sizeof(uint32_t); // a new restart entry.
+    estimate += sizeof(uint32_t);  // a new restart entry.
   }
 
-  estimate += sizeof(int32_t); // varint for shared prefix length.
-  estimate += VarintLength(key.size()); // varint for key length.
-  estimate += VarintLength(value.size()); // varint for value length.
+  estimate += sizeof(int32_t);             // varint for shared prefix length.
+  estimate += VarintLength(key.size());    // varint for key length.
+  estimate += VarintLength(value.size());  // varint for value length.
 
   return estimate;
 }

@@ -16,11 +16,10 @@
 
 #include "db/dbformat.h"
 #include "db/pinned_iterators_manager.h"
+#include "format.h"
+#include "table/internal_iterator.h"
 #include "vidardb/iterator.h"
 #include "vidardb/options.h"
-#include "table/internal_iterator.h"
-
-#include "format.h"
 
 namespace vidardb {
 
@@ -66,9 +65,9 @@ class Block {
 
  protected:
   BlockContents contents_;
-  const char* data_;            // contents_.data.data()
-  size_t size_;                 // contents_.data.size()
-  uint32_t restart_offset_;     // Offset in data_ of restart array
+  const char* data_;         // contents_.data.data()
+  size_t size_;              // contents_.data.size()
+  uint32_t restart_offset_;  // Offset in data_ of restart array
 
   // No copying allowed
   Block(const Block&);
@@ -94,8 +93,8 @@ class BlockIter : public InternalIterator {
 
   virtual void Initialize(const Comparator* comparator, const char* data,
                           uint32_t restarts, uint32_t num_restarts) {
-    assert(data_ == nullptr);           // Ensure it is called only once
-    assert(num_restarts > 0);           // Ensure the param is valid
+    assert(data_ == nullptr);  // Ensure it is called only once
+    assert(num_restarts > 0);  // Ensure the param is valid
 
     comparator_ = comparator;
     data_ = data;
@@ -105,9 +104,7 @@ class BlockIter : public InternalIterator {
     restart_index_ = num_restarts_;
   }
 
-  virtual void SetStatus(Status s) {
-    status_ = s;
-  }
+  virtual void SetStatus(Status s) { status_ = s; }
 
   virtual bool Valid() const override { return current_ < restarts_; }
 
@@ -208,7 +205,6 @@ class ColumnBlockIter : public BlockIter {
   virtual void Seek(const Slice& target) override;
 
  private:
-
   virtual bool ParseNextKey();
 
   virtual bool BinarySeek(const Slice& target, uint32_t left, uint32_t right,

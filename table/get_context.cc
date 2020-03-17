@@ -4,10 +4,11 @@
 //  of patent rights can be found in the PATENTS file in the same directory.
 
 #include "table/get_context.h"
-#include "vidardb/env.h"
-#include "vidardb/statistics.h"
+
 #include "util/perf_context_imp.h"
 #include "util/statistics.h"
+#include "vidardb/env.h"
+#include "vidardb/statistics.h"
 
 namespace vidardb {
 
@@ -29,8 +30,7 @@ void appendToReplayLog(std::string* replay_log, ValueType type, Slice value) {
 
 }  // namespace
 
-GetContext::GetContext(const Comparator* ucmp,
-                       Logger* logger,
+GetContext::GetContext(const Comparator* ucmp, Logger* logger,
                        Statistics* statistics, GetState init_state,
                        const Slice& user_key, std::string* ret_value,
                        bool* value_found, Env* env, SequenceNumber* seq)

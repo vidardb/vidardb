@@ -136,7 +136,7 @@ bool VersionEdit::EncodeTo(std::string* dst) const {
       PutVarint32(dst, f.fd.GetPathId());
     }
     PutVarint64(dst, f.fd.GetFileSize());
-    PutVarint64(dst, f.fd.GetFileSizeTotal());        // Shichao
+    PutVarint64(dst, f.fd.GetFileSizeTotal());  // Shichao
     PutLengthPrefixedSlice(dst, f.smallest.Encode());
     PutLengthPrefixedSlice(dst, f.largest.Encode());
     PutVarint64(dst, f.smallest_seqno);
@@ -235,9 +235,8 @@ const char* VersionEdit::DecodeNewFile4From(Slice* input) {
   uint64_t file_size_total;  // Shichao
   if (GetLevel(input, &level, &msg) && GetVarint64(input, &number) &&
       GetVarint64(input, &file_size) &&
-      GetVarint64(input, &file_size_total) &&       // Shichao
-      GetInternalKey(input, &f.smallest) &&
-      GetInternalKey(input, &f.largest) &&
+      GetVarint64(input, &file_size_total) &&  // Shichao
+      GetInternalKey(input, &f.smallest) && GetInternalKey(input, &f.largest) &&
       GetVarint64(input, &f.smallest_seqno) &&
       GetVarint64(input, &f.largest_seqno)) {
     // See comments in VersionEdit::EncodeTo() for format of customized fields
@@ -280,7 +279,8 @@ const char* VersionEdit::DecodeNewFile4From(Slice* input) {
   } else {
     return "new-file4 entry";
   }
-  f.fd = FileDescriptor(number, path_id, file_size, file_size_total);  // Shichao
+  f.fd =
+      FileDescriptor(number, path_id, file_size, file_size_total);  // Shichao
   new_files_.push_back(std::make_pair(level, f));
   return nullptr;
 }
@@ -349,8 +349,7 @@ Status VersionEdit::DecodeFrom(const Slice& src) {
         break;
 
       case kCompactPointer:
-        if (GetLevel(&input, &level, &msg) &&
-            GetInternalKey(&input, &key)) {
+        if (GetLevel(&input, &level, &msg) && GetInternalKey(&input, &key)) {
           // we don't use compact pointers anymore,
           // but we should not fail if they are still
           // in manifest
@@ -380,10 +379,11 @@ Status VersionEdit::DecodeFrom(const Slice& src) {
         uint64_t file_size_total;  // Shichao
         if (GetLevel(&input, &level, &msg) && GetVarint64(&input, &number) &&
             GetVarint64(&input, &file_size) &&
-            GetVarint64(&input, &file_size_total) &&       // Shichao
+            GetVarint64(&input, &file_size_total) &&  // Shichao
             GetInternalKey(&input, &f.smallest) &&
             GetInternalKey(&input, &f.largest)) {
-          f.fd = FileDescriptor(number, 0, file_size, file_size_total);  // Shichao
+          f.fd =
+              FileDescriptor(number, 0, file_size, file_size_total);  // Shichao
           new_files_.push_back(std::make_pair(level, f));
         } else {
           if (!msg) {
@@ -398,12 +398,13 @@ Status VersionEdit::DecodeFrom(const Slice& src) {
         uint64_t file_size_total;  // Shichao
         if (GetLevel(&input, &level, &msg) && GetVarint64(&input, &number) &&
             GetVarint64(&input, &file_size) &&
-            GetVarint64(&input, &file_size_total) &&       // Shichao
+            GetVarint64(&input, &file_size_total) &&  // Shichao
             GetInternalKey(&input, &f.smallest) &&
             GetInternalKey(&input, &f.largest) &&
             GetVarint64(&input, &f.smallest_seqno) &&
             GetVarint64(&input, &f.largest_seqno)) {
-          f.fd = FileDescriptor(number, 0, file_size, file_size_total);  // Shichao
+          f.fd =
+              FileDescriptor(number, 0, file_size, file_size_total);  // Shichao
           new_files_.push_back(std::make_pair(level, f));
         } else {
           if (!msg) {
@@ -420,12 +421,13 @@ Status VersionEdit::DecodeFrom(const Slice& src) {
         uint64_t file_size_total;  // Shichao
         if (GetLevel(&input, &level, &msg) && GetVarint64(&input, &number) &&
             GetVarint32(&input, &path_id) && GetVarint64(&input, &file_size) &&
-            GetVarint64(&input, &file_size_total) &&       // Shichao
+            GetVarint64(&input, &file_size_total) &&  // Shichao
             GetInternalKey(&input, &f.smallest) &&
             GetInternalKey(&input, &f.largest) &&
             GetVarint64(&input, &f.smallest_seqno) &&
             GetVarint64(&input, &f.largest_seqno)) {
-          f.fd = FileDescriptor(number, path_id, file_size, file_size_total);  // Shichao
+          f.fd = FileDescriptor(number, path_id, file_size,
+                                file_size_total);  // Shichao
           new_files_.push_back(std::make_pair(level, f));
         } else {
           if (!msg) {
@@ -504,8 +506,7 @@ std::string VersionEdit::DebugString(bool hex_key) const {
     AppendNumberTo(&r, last_sequence_);
   }
   for (DeletedFileSet::const_iterator iter = deleted_files_.begin();
-       iter != deleted_files_.end();
-       ++iter) {
+       iter != deleted_files_.end(); ++iter) {
     r.append("\n  DeleteFile: ");
     AppendNumberTo(&r, iter->first);
     r.append(" ");
@@ -570,8 +571,7 @@ std::string VersionEdit::DebugJSON(int edit_num, bool hex_key) const {
     jw.StartArray();
 
     for (DeletedFileSet::const_iterator iter = deleted_files_.begin();
-         iter != deleted_files_.end();
-         ++iter) {
+         iter != deleted_files_.end(); ++iter) {
       jw.StartArrayedObject();
       jw << "Level" << iter->first;
       jw << "FileNumber" << iter->second;

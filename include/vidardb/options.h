@@ -16,15 +16,16 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <string>
-#include <memory>
-#include <vector>
-#include <limits>
-#include <unordered_map>
 
-#include "vidardb/version.h"
+#include <limits>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include "vidardb/listener.h"
 #include "vidardb/universal_compaction.h"
+#include "vidardb/version.h"
 
 #ifdef max
 #undef max
@@ -162,10 +163,10 @@ struct CompressionOptions {
         max_dict_bytes(_max_dict_bytes) {}
 };
 
-enum UpdateStatus {    // Return status For inplace update callback
-  UPDATE_FAILED   = 0, // Nothing to update
-  UPDATED_INPLACE = 1, // Value updated inplace
-  UPDATED         = 2, // No inplace update. Merged value set
+enum UpdateStatus {     // Return status For inplace update callback
+  UPDATE_FAILED = 0,    // Nothing to update
+  UPDATED_INPLACE = 1,  // Value updated inplace
+  UPDATED = 2,          // No inplace update. Merged value set
 };
 
 struct DbPath {
@@ -193,8 +194,7 @@ struct ColumnFamilyOptions {
   // an iterator, only Put() and Get() API calls
   //
   // Not supported in VIDARDB_LITE
-  ColumnFamilyOptions* OptimizeForPointLookup(
-      uint64_t block_cache_size_mb);
+  ColumnFamilyOptions* OptimizeForPointLookup(uint64_t block_cache_size_mb);
 
   // Default values for some parameters in ColumnFamilyOptions are not
   // optimized for heavy workloads and big datasets, which means you might
@@ -218,7 +218,7 @@ struct ColumnFamilyOptions {
       uint64_t memtable_memory_budget = 512 * 1024 * 1024);
   /********************* Shichao ***************************/
   ColumnFamilyOptions* OptimizeAdaptiveLevelStyleCompaction(
-        uint64_t memtable_memory_budget = 512 * 1024 * 1024);
+      uint64_t memtable_memory_budget = 512 * 1024 * 1024);
   /********************* Shichao ***************************/
 
   // -------------------
@@ -1009,12 +1009,7 @@ struct DBOptions {
   // Specify the file access pattern once a compaction is started.
   // It will be applied to all input files of a compaction.
   // Default: NORMAL
-  enum AccessHint {
-      NONE,
-      NORMAL,
-      SEQUENTIAL,
-      WILLNEED
-  };
+  enum AccessHint { NONE, NORMAL, SEQUENTIAL, WILLNEED };
   AccessHint access_hint_on_compaction_start;
 
   // If true, always create a new file descriptor and new table reader
@@ -1062,7 +1057,6 @@ struct DBOptions {
   //
   // Default: 1024 * 1024 (1 MB)
   size_t writable_file_max_buffer_size;
-
 
   // Use adaptive mutex, which spins in the user space before resorting
   // to kernel. This could reduce context switch when the mutex is not
@@ -1201,7 +1195,7 @@ struct DBOptions {
   bool dump_malloc_stats;
 
   /*************************** Shichao ***********************/
-  using showKeyFun = void(*)(const std::string&, std::string&);
+  using showKeyFun = void (*)(const std::string&, std::string&);
   showKeyFun show_key_fun;
 
   std::string export_path;

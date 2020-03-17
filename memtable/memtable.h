@@ -19,18 +19,19 @@
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "db/dbformat.h"
-#include "memtable/skiplist.h"
 #include "db/version_edit.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
-#include "vidardb/memtablerep.h"
-#include "vidardb/immutable_options.h"
-#include "vidardb/splitter.h"
 #include "memtable/memtable_allocator.h"
+#include "memtable/skiplist.h"
 #include "util/concurrent_arena.h"
 #include "util/instrumented_mutex.h"
 #include "util/mutable_cf_options.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/immutable_options.h"
+#include "vidardb/memtablerep.h"
+#include "vidardb/splitter.h"
 
 namespace vidardb {
 class Mutex;
@@ -40,9 +41,8 @@ class WriteBuffer;
 class InternalIterator;
 
 struct MemTableOptions {
-  explicit MemTableOptions(
-      const ImmutableCFOptions& ioptions,
-      const MutableCFOptions& mutable_cf_options);
+  explicit MemTableOptions(const ImmutableCFOptions& ioptions,
+                           const MutableCFOptions& mutable_cf_options);
   size_t write_buffer_size;
   size_t arena_block_size;
   size_t max_successive_merges;
@@ -68,7 +68,7 @@ class MemTable {
  public:
   struct KeyComparator : public MemTableRep::KeyComparator {
     const InternalKeyComparator comparator;
-    explicit KeyComparator(const InternalKeyComparator& c) : comparator(c) { }
+    explicit KeyComparator(const InternalKeyComparator& c) : comparator(c) {}
     virtual int operator()(const char* prefix_len_key1,
                            const char* prefix_len_key2) const override;
     virtual int operator()(const char* prefix_len_key,
@@ -289,9 +289,7 @@ class MemTable {
 
   // return true if the current MemTableRep supports snapshots.
   // inplace update prevents snapshots,
-  bool IsSnapshotSupported() const {
-    return table_->IsSnapshotSupported();
-  }
+  bool IsSnapshotSupported() const { return table_->IsSnapshotSupported(); }
 
   uint64_t ApproximateSize(const Slice& start_ikey, const Slice& end_ikey);
 
@@ -316,7 +314,7 @@ class MemTable {
     std::vector<std::string> user_vals = splitter->Split(user_value);
     for (auto index : columns) {  // from 1 to MAX_COLUMN_INDEX
       assert(index <= user_vals.size());
-      result.emplace_back(std::move(user_vals[index-1]));
+      result.emplace_back(std::move(user_vals[index - 1]));
     }
 
     return splitter->Stitch(result);
@@ -343,8 +341,8 @@ class MemTable {
   std::atomic<uint64_t> num_deletes_;
 
   // These are used to manage memtable flushes to storage
-  bool flush_in_progress_; // started the flush
-  bool flush_completed_;   // finished the flush
+  bool flush_in_progress_;  // started the flush
+  bool flush_completed_;    // finished the flush
   uint64_t file_number_;    // filled up after flush is complete
 
   // The updates to be applied to the transaction log when this

@@ -8,9 +8,9 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #pragma once
-#include "vidardb/iterator.h"
-#include "vidardb/env.h"
 #include "table/iterator_wrapper.h"
+#include "vidardb/env.h"
+#include "vidardb/iterator.h"
 
 namespace vidardb {
 
@@ -24,7 +24,6 @@ struct TwoLevelIteratorState {
   virtual ~TwoLevelIteratorState() {}
   virtual InternalIterator* NewSecondaryIterator(const Slice& handle) = 0;
 };
-
 
 // Return a new two level iterator.  A two-level iterator contains an
 // index iterator whose values point to a sequence of blocks where

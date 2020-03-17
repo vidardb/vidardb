@@ -3,18 +3,20 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
+#include "memtable/memtable_list.h"
+
 #include <algorithm>
 #include <string>
 #include <vector>
-#include "memtable/memtable_list.h"
+
 #include "db/version_set.h"
 #include "db/write_controller.h"
 #include "db/writebuffer.h"
-#include "vidardb/db.h"
-#include "vidardb/status.h"
-#include "util/testutil.h"
 #include "util/string_util.h"
 #include "util/testharness.h"
+#include "util/testutil.h"
+#include "vidardb/db.h"
+#include "vidardb/status.h"
 
 namespace vidardb {
 
@@ -313,16 +315,13 @@ TEST_F(MemTableListTest, GetFromHistoryTest) {
   ASSERT_EQ(1, to_delete.size());
 
   // Verify keys are no longer in MemTableList
-  found =
-      list.current()->Get(LookupKey("key1", seq), &value, &s);
+  found = list.current()->Get(LookupKey("key1", seq), &value, &s);
   ASSERT_FALSE(found);
 
-  found =
-      list.current()->Get(LookupKey("key2", seq), &value, &s);
+  found = list.current()->Get(LookupKey("key2", seq), &value, &s);
   ASSERT_FALSE(found);
 
-  found =
-      list.current()->Get(LookupKey("key3", seq), &value, &s);
+  found = list.current()->Get(LookupKey("key3", seq), &value, &s);
   ASSERT_FALSE(found);
 
   // Verify that the second memtable's keys are in the history
@@ -334,8 +333,7 @@ TEST_F(MemTableListTest, GetFromHistoryTest) {
   ASSERT_EQ("value3", value);
 
   // Verify that key2 from the first memtable is no longer in the history
-  found =
-      list.current()->Get(LookupKey("key2", seq), &value, &s);
+  found = list.current()->Get(LookupKey("key2", seq), &value, &s);
   ASSERT_FALSE(found);
 
   // Cleanup

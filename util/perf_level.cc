@@ -5,7 +5,9 @@
 //
 
 #include <assert.h>
+
 #include <sstream>
+
 #include "port/port.h"
 #include "util/perf_level_imp.h"
 
@@ -23,8 +25,6 @@ void SetPerfLevel(PerfLevel level) {
   perf_level = level;
 }
 
-PerfLevel GetPerfLevel() {
-  return perf_level;
-}
+PerfLevel GetPerfLevel() { return perf_level; }
 
 }  // namespace vidardb

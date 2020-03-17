@@ -30,16 +30,11 @@
 #include "db/filename.h"
 #include "db/log_reader.h"
 #include "db/log_writer.h"
+#include "db/version_set.h"
 #include "memtable/memtable.h"
 #include "memtable/memtable_list.h"
-#include "db/version_set.h"
 #include "port/likely.h"
 #include "port/port.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
-#include "vidardb/statistics.h"
-#include "vidardb/status.h"
-#include "vidardb/table.h"
 #include "table/block.h"
 #include "table/block_based_table_factory.h"
 #include "table/merger.h"
@@ -56,6 +51,11 @@
 #include "util/stop_watch.h"
 #include "util/sync_point.h"
 #include "util/thread_status_util.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/statistics.h"
+#include "vidardb/status.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 
@@ -94,17 +94,14 @@ FlushJob::FlushJob(const std::string& dbname, ColumnFamilyData* cfd,
   TEST_SYNC_POINT("FlushJob::FlushJob()");
 }
 
-FlushJob::~FlushJob() {
-  ThreadStatusUtil::ResetThreadStatus();
-}
+FlushJob::~FlushJob() { ThreadStatusUtil::ResetThreadStatus(); }
 
 void FlushJob::ReportStartedFlush() {
   ThreadStatusUtil::SetColumnFamily(cfd_, cfd_->ioptions()->env,
                                     cfd_->options()->enable_thread_tracking);
   ThreadStatusUtil::SetThreadOperation(ThreadStatus::OP_FLUSH);
-  ThreadStatusUtil::SetThreadOperationProperty(
-      ThreadStatus::COMPACTION_JOB_ID,
-      job_context_->job_id);
+  ThreadStatusUtil::SetThreadOperationProperty(ThreadStatus::COMPACTION_JOB_ID,
+                                               job_context_->job_id);
   IOSTATS_RESET(bytes_written);
 }
 
@@ -114,8 +111,7 @@ void FlushJob::ReportFlushInputSize(const std::vector<MemTable*>& mems) {
     input_size += mem->ApproximateMemoryUsage();
   }
   ThreadStatusUtil::IncreaseThreadOperationProperty(
-      ThreadStatus::FLUSH_BYTES_MEMTABLES,
-      input_size);
+      ThreadStatus::FLUSH_BYTES_MEMTABLES, input_size);
 }
 
 void FlushJob::RecordFlushIOStats() {
@@ -126,8 +122,7 @@ void FlushJob::RecordFlushIOStats() {
 }
 
 Status FlushJob::Run(FileMetaData* file_meta) {
-  AutoThreadOperationStageUpdater stage_run(
-      ThreadStatus::STAGE_FLUSH_RUN);
+  AutoThreadOperationStageUpdater stage_run(ThreadStatus::STAGE_FLUSH_RUN);
   // I/O measurement variables
   PerfLevel prev_perf_level = PerfLevel::kEnableTime;
   uint64_t prev_write_nanos = 0;
@@ -310,7 +305,8 @@ Status FlushJob::WriteLevel0Table(const std::vector<MemTable*>& mems,
     edit->AddFile(0 /* level */, meta->fd.GetNumber(), meta->fd.GetPathId(),
                   meta->fd.GetFileSize(), meta->smallest, meta->largest,
                   meta->smallest_seqno, meta->largest_seqno,
-                  meta->marked_for_compaction, meta->fd.GetFileSizeTotal());  // Shichao
+                  meta->marked_for_compaction,
+                  meta->fd.GetFileSizeTotal());  // Shichao
   }
 
   // Note that here we treat flush as level 0 compaction in internal stats

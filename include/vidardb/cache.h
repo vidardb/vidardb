@@ -23,7 +23,9 @@
 #define STORAGE_VIDARDB_INCLUDE_CACHE_H_
 
 #include <stdint.h>
+
 #include <memory>
+
 #include "vidardb/slice.h"
 #include "vidardb/status.h"
 

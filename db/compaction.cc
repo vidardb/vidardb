@@ -19,12 +19,13 @@
 #endif
 
 #include <inttypes.h>
+
 #include <vector>
 
 #include "db/column_family.h"
+#include "table/adaptive_table_factory.h"  // Shichao
 #include "util/logging.h"
 #include "util/sync_point.h"
-#include "table/adaptive_table_factory.h"  // Shichao
 
 namespace vidardb {
 
@@ -244,8 +245,9 @@ bool Compaction::IsTrivialMove() const {
   /****************************** Shichao ****************************/
   if (std::string(cfd_->ioptions()->table_factory->Name()) ==
       "AdaptiveTableFactory") {
-    int knob = static_cast<AdaptiveTableFactory*>(
-        cfd_->ioptions()->table_factory)->GetKnob();
+    int knob =
+        static_cast<AdaptiveTableFactory*>(cfd_->ioptions()->table_factory)
+            ->GetKnob();
     if ((start_level_ < knob && output_level_ >= knob) || start_level_ == 0) {
       return false;
     }

@@ -14,25 +14,26 @@
 #endif
 
 #include <inttypes.h>
+
 #include <algorithm>
-#include <vector>
 #include <memory>
+#include <vector>
 
 #include "db/filename.h"
-#include "db/transaction_log_impl.h"
 #include "db/log_reader.h"
 #include "db/log_writer.h"
+#include "db/transaction_log_impl.h"
 #include "db/write_batch_internal.h"
 #include "port/port.h"
-#include "vidardb/env.h"
-#include "vidardb/options.h"
-#include "vidardb/write_batch.h"
 #include "util/coding.h"
 #include "util/file_reader_writer.h"
 #include "util/logging.h"
 #include "util/mutexlock.h"
-#include "util/sync_point.h"
 #include "util/string_util.h"
+#include "util/sync_point.h"
+#include "vidardb/env.h"
+#include "vidardb/options.h"
+#include "vidardb/write_batch.h"
 
 namespace vidardb {
 
@@ -74,8 +75,7 @@ Status WalManager::GetSortedWalFiles(VectorLogPtr& files) {
   if (!files.empty()) {
     latest_archived_log_number = files.back()->LogNumber();
     Log(InfoLogLevel::INFO_LEVEL, db_options_.info_log,
-        "Latest Archived log: %" PRIu64,
-        latest_archived_log_number);
+        "Latest Archived log: %" PRIu64, latest_archived_log_number);
   }
 
   files.reserve(files.size() + logs.size());
@@ -99,7 +99,6 @@ Status WalManager::GetUpdatesSince(
     SequenceNumber seq, std::unique_ptr<TransactionLogIterator>* iter,
     const TransactionLogIterator::ReadOptions& read_options,
     VersionSet* version_set) {
-
   //  Get all sorted Wal Files.
   //  Do binary search and open files and find the seq number.
 
@@ -176,16 +175,16 @@ void WalManager::PurgeObsoleteWALFiles() {
         s = env_->GetFileModificationTime(file_path, &file_m_time);
         if (!s.ok()) {
           Log(InfoLogLevel::WARN_LEVEL, db_options_.info_log,
-              "Can't get file mod time: %s: %s",
-              file_path.c_str(), s.ToString().c_str());
+              "Can't get file mod time: %s: %s", file_path.c_str(),
+              s.ToString().c_str());
           continue;
         }
         if (now_seconds - file_m_time > db_options_.WAL_ttl_seconds) {
           s = env_->DeleteFile(file_path);
           if (!s.ok()) {
             Log(InfoLogLevel::WARN_LEVEL, db_options_.info_log,
-                "Can't delete file: %s: %s",
-                file_path.c_str(), s.ToString().c_str());
+                "Can't delete file: %s: %s", file_path.c_str(),
+                s.ToString().c_str());
             continue;
           } else {
             MutexLock l(&read_first_record_cache_mutex_);
@@ -200,8 +199,8 @@ void WalManager::PurgeObsoleteWALFiles() {
         s = env_->GetFileSize(file_path, &file_size);
         if (!s.ok()) {
           Log(InfoLogLevel::ERROR_LEVEL, db_options_.info_log,
-              "Unable to get file size: %s: %s",
-              file_path.c_str(), s.ToString().c_str());
+              "Unable to get file size: %s: %s", file_path.c_str(),
+              s.ToString().c_str());
           return;
         } else {
           if (file_size > 0) {
@@ -211,8 +210,8 @@ void WalManager::PurgeObsoleteWALFiles() {
             s = env_->DeleteFile(file_path);
             if (!s.ok()) {
               Log(InfoLogLevel::WARN_LEVEL, db_options_.info_log,
-                  "Unable to delete file: %s: %s",
-                  file_path.c_str(), s.ToString().c_str());
+                  "Unable to delete file: %s: %s", file_path.c_str(),
+                  s.ToString().c_str());
               continue;
             } else {
               MutexLock l(&read_first_record_cache_mutex_);
@@ -281,7 +280,7 @@ struct CompareLogByPointer {
     return *a_impl < *b_impl;
   }
 };
-}
+}  // namespace
 
 Status WalManager::GetSortedWalsOfType(const std::string& path,
                                        VectorLogPtr& log_files,
@@ -369,8 +368,7 @@ Status WalManager::ReadFirstRecord(const WalFileType type,
   if (type != kAliveLogFile && type != kArchivedLogFile) {
     Log(InfoLogLevel::ERROR_LEVEL, db_options_.info_log,
         "[WalManger] Unknown file type %s", ToString(type).c_str());
-    return Status::NotSupported(
-        "File Type Not Known " + ToString(type));
+    return Status::NotSupported("File Type Not Known " + ToString(type));
   }
   {
     MutexLock l(&read_first_record_cache_mutex_);

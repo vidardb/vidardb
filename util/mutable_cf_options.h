@@ -6,9 +6,10 @@
 #pragma once
 
 #include <vector>
+
+#include "util/compression.h"
 #include "vidardb/immutable_options.h"
 #include "vidardb/options.h"
-#include "util/compression.h"
 
 namespace vidardb {
 

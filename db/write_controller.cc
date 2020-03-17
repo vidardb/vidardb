@@ -7,6 +7,7 @@
 
 #include <atomic>
 #include <cassert>
+
 #include "vidardb/env.h"
 
 namespace vidardb {

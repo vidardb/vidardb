@@ -15,17 +15,18 @@
 // Thread-safe (provides internal synchronization)
 
 #pragma once
+#include <stdint.h>
+
 #include <string>
 #include <vector>
-#include <stdint.h>
 
 #include "db/dbformat.h"
 #include "port/port.h"
+#include "table/table_reader.h"
 #include "vidardb/cache.h"
 #include "vidardb/env.h"
-#include "vidardb/table.h"
 #include "vidardb/options.h"
-#include "table/table_reader.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 
@@ -112,14 +113,14 @@ class TableCache {
 
  private:
   // Build a table reader
-  Status GetTableReader(const EnvOptions& env_options,
-                        const InternalKeyComparator& internal_comparator,
-                        const FileDescriptor& fd, bool sequential_mode,
-                        size_t readahead, bool record_read_stats,
-                        HistogramImpl* file_read_hist,
-                        unique_ptr<TableReader>* table_reader,
-                        int level = -1, bool os_cache = true,  // Shichao
-                        const std::vector<uint32_t>& cols = std::vector<uint32_t>());  // Shichao
+  Status GetTableReader(
+      const EnvOptions& env_options,
+      const InternalKeyComparator& internal_comparator,
+      const FileDescriptor& fd, bool sequential_mode, size_t readahead,
+      bool record_read_stats, HistogramImpl* file_read_hist,
+      unique_ptr<TableReader>* table_reader, int level = -1,
+      bool os_cache = true,                                          // Shichao
+      const std::vector<uint32_t>& cols = std::vector<uint32_t>());  // Shichao
 
   const ImmutableCFOptions& ioptions_;
   const EnvOptions& env_options_;

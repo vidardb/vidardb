@@ -14,10 +14,11 @@
 #endif
 
 #include <inttypes.h>
-#include <vector>
-#include <string>
+
 #include <algorithm>
 #include <limits>
+#include <string>
+#include <vector>
 
 #include "db/compaction_picker.h"
 #include "db/db_impl.h"
@@ -353,8 +354,8 @@ ColumnFamilyData::ColumnFamilyData(
       compaction_picker_.reset(
           new FIFOCompactionPicker(ioptions_, &internal_comparator_));
     } else if (ioptions_.compaction_style == kCompactionStyleNone) {
-      compaction_picker_.reset(new NullCompactionPicker(
-          ioptions_, &internal_comparator_));
+      compaction_picker_.reset(
+          new NullCompactionPicker(ioptions_, &internal_comparator_));
       Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
           "Column family %s does not use any background compaction. "
           "Compactions can only be done via CompactFiles\n",
@@ -518,7 +519,7 @@ int GetL0ThresholdSpeedupCompaction(int level0_file_num_compaction_trigger,
 }  // namespace
 
 void ColumnFamilyData::RecalculateWriteStallConditions(
-      const MutableCFOptions& mutable_cf_options) {
+    const MutableCFOptions& mutable_cf_options) {
   if (current_ != nullptr) {
     auto* vstorage = current_->storage_info();
     auto write_controller = column_family_set_->write_controller_;
@@ -813,7 +814,7 @@ void ColumnFamilyData::ResetThreadLocalSuperVersions() {
 
 #ifndef VIDARDB_LITE
 Status ColumnFamilyData::SetOptions(
-      const std::unordered_map<std::string, std::string>& options_map) {
+    const std::unordered_map<std::string, std::string>& options_map) {
   MutableCFOptions new_mutable_cf_options;
   Status s = GetMutableOptionsFromStrings(mutable_cf_options_, options_map,
                                           &new_mutable_cf_options);
@@ -828,8 +829,7 @@ Status ColumnFamilyData::SetOptions(
 ColumnFamilySet::ColumnFamilySet(const std::string& dbname,
                                  const DBOptions* db_options,
                                  const EnvOptions& env_options,
-                                 Cache* table_cache,
-                                 WriteBuffer* write_buffer,
+                                 Cache* table_cache, WriteBuffer* write_buffer,
                                  WriteController* write_controller)
     : max_column_family_(0),
       dummy_cfd_(new ColumnFamilyData(0, "", nullptr, nullptr, nullptr,
@@ -872,8 +872,8 @@ ColumnFamilyData* ColumnFamilySet::GetColumnFamily(uint32_t id) const {
   }
 }
 
-ColumnFamilyData* ColumnFamilySet::GetColumnFamily(const std::string& name)
-    const {
+ColumnFamilyData* ColumnFamilySet::GetColumnFamily(
+    const std::string& name) const {
   auto cfd_iter = column_families_.find(name);
   if (cfd_iter != column_families_.end()) {
     auto cfd = GetColumnFamily(cfd_iter->second);
@@ -903,10 +903,9 @@ ColumnFamilyData* ColumnFamilySet::CreateColumnFamily(
     const std::string& name, uint32_t id, Version* dummy_versions,
     const ColumnFamilyOptions& options) {
   assert(column_families_.find(name) == column_families_.end());
-  ColumnFamilyData* new_cfd =
-      new ColumnFamilyData(id, name, dummy_versions, table_cache_,
-                           write_buffer_, options, db_options_,
-                           env_options_, this);
+  ColumnFamilyData* new_cfd = new ColumnFamilyData(
+      id, name, dummy_versions, table_cache_, write_buffer_, options,
+      db_options_, env_options_, this);
   column_families_.insert({name, id});
   column_family_data_.insert({id, new_cfd});
   max_column_family_ = std::max(max_column_family_, id);

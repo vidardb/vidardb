@@ -15,16 +15,18 @@
 #endif
 
 #include <inttypes.h>
+
 #include <string>
-#include "vidardb/db.h"
-#include "memtable/memtable.h"
+
 #include "db/version_set.h"
-#include "vidardb/env.h"
-#include "vidardb/iterator.h"
+#include "memtable/memtable.h"
 #include "table/merger.h"
 #include "util/coding.h"
 #include "util/log_buffer.h"
 #include "util/thread_status_util.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/iterator.h"
 
 namespace vidardb {
 
@@ -342,16 +344,18 @@ Status MemTableList::InstallMemtableFlushResults(
     // are part of the same batch. They can be committed now.
     uint64_t mem_id = 1;  // how many memtables have been flushed.
     do {
-      if (s.ok()) { // commit new state
-        LogToBuffer(log_buffer, "[%s] Level-0 commit table #%" PRIu64
-                                ": memtable #%" PRIu64 " done",
+      if (s.ok()) {  // commit new state
+        LogToBuffer(log_buffer,
+                    "[%s] Level-0 commit table #%" PRIu64 ": memtable #%" PRIu64
+                    " done",
                     cfd->GetName().c_str(), m->file_number_, mem_id);
         assert(m->file_number_ > 0);
         current_->Remove(m, to_delete);
       } else {
         // commit failed. setup state so that we can flush again.
-        LogToBuffer(log_buffer, "Level-0 commit table #%" PRIu64
-                                ": memtable #%" PRIu64 " failed",
+        LogToBuffer(log_buffer,
+                    "Level-0 commit table #%" PRIu64 ": memtable #%" PRIu64
+                    " failed",
                     m->file_number_, mem_id);
         m->flush_completed_ = false;
         m->flush_in_progress_ = false;
@@ -361,7 +365,8 @@ Status MemTableList::InstallMemtableFlushResults(
         imm_flush_needed.store(true, std::memory_order_release);
       }
       ++mem_id;
-    } while (!current_->memlist_.empty() && (nullptr != (m = current_->memlist_.back())) &&
+    } while (!current_->memlist_.empty() &&
+             (nullptr != (m = current_->memlist_.back())) &&
              (m->file_number_ == file_number));
   }
   commit_in_progress_ = false;

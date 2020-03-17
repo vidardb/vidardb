@@ -9,6 +9,7 @@
 #pragma once
 
 #include <algorithm>
+
 #include "port/port.h"
 
 namespace vidardb {
@@ -19,9 +20,7 @@ inline size_t TruncateToPageBoundary(size_t page_size, size_t s) {
   return s;
 }
 
-inline size_t Roundup(size_t x, size_t y) {
-  return ((x + y - 1) / y) * y;
-}
+inline size_t Roundup(size_t x, size_t y) { return ((x + y - 1) / y) * y; }
 
 // This class is to manage an aligned user
 // allocated buffer for unbuffered I/O purposes
@@ -33,17 +32,11 @@ class AlignedBuffer {
   size_t cursize_;
   char* bufstart_;
 
-public:
+ public:
   AlignedBuffer()
-    : alignment_(),
-      capacity_(0),
-      cursize_(0),
-      bufstart_(nullptr) {
-  }
+      : alignment_(), capacity_(0), cursize_(0), bufstart_(nullptr) {}
 
-  AlignedBuffer(AlignedBuffer&& o) VIDARDB_NOEXCEPT {
-    *this = std::move(o);
-  }
+  AlignedBuffer(AlignedBuffer&& o) VIDARDB_NOEXCEPT { *this = std::move(o); }
 
   AlignedBuffer& operator=(AlignedBuffer&& o) VIDARDB_NOEXCEPT {
     alignment_ = std::move(o.alignment_);
@@ -58,25 +51,15 @@ public:
 
   AlignedBuffer& operator=(const AlignedBuffer&) = delete;
 
-  size_t Alignment() const {
-    return alignment_;
-  }
+  size_t Alignment() const { return alignment_; }
 
-  size_t Capacity() const {
-    return capacity_;
-  }
+  size_t Capacity() const { return capacity_; }
 
-  size_t CurrentSize() const {
-    return cursize_;
-  }
+  size_t CurrentSize() const { return cursize_; }
 
-  const char* BufferStart() const {
-    return bufstart_;
-  }
+  const char* BufferStart() const { return bufstart_; }
 
-  void Clear() {
-    cursize_ = 0;
-  }
+  void Clear() { cursize_ = 0; }
 
   void Alignment(size_t alignment) {
     assert(alignment > 0);
@@ -86,7 +69,6 @@ public:
 
   // Allocates a new buffer and sets bufstart_ to the aligned first byte
   void AllocateNewBuffer(size_t requestedCapacity) {
-
     assert(alignment_ > 0);
     assert((alignment_ & (alignment_ - 1)) == 0);
 
@@ -95,8 +77,8 @@ public:
 
     char* p = buf_.get();
     bufstart_ = reinterpret_cast<char*>(
-      (reinterpret_cast<uintptr_t>(p)+(alignment_ - 1)) &
-      ~static_cast<uintptr_t>(alignment_ - 1));
+        (reinterpret_cast<uintptr_t>(p) + (alignment_ - 1)) &
+        ~static_cast<uintptr_t>(alignment_ - 1));
     capacity_ = size;
     cursize_ = 0;
   }
@@ -143,12 +125,8 @@ public:
   }
 
   // Returns place to start writing
-  char* Destination() {
-    return bufstart_ + cursize_;
-  }
+  char* Destination() { return bufstart_ + cursize_; }
 
-  void Size(size_t cursize) {
-    cursize_ = cursize;
-  }
+  void Size(size_t cursize) { cursize_ = cursize; }
 };
-}
+}  // namespace vidardb

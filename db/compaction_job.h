@@ -24,20 +24,20 @@
 #include "db/internal_stats.h"
 #include "db/job_context.h"
 #include "db/log_writer.h"
-#include "memtable/memtable_list.h"
 #include "db/version_edit.h"
 #include "db/write_controller.h"
 #include "db/write_thread.h"
+#include "memtable/memtable_list.h"
 #include "port/port.h"
+#include "table/scoped_arena_iterator.h"
+#include "util/event_logger.h"
+#include "util/stop_watch.h"
+#include "util/thread_local.h"
 #include "vidardb/compaction_job_stats.h"
 #include "vidardb/db.h"
 #include "vidardb/env.h"
 #include "vidardb/memtablerep.h"
 #include "vidardb/transaction_log.h"
-#include "table/scoped_arena_iterator.h"
-#include "util/event_logger.h"
-#include "util/stop_watch.h"
-#include "util/thread_local.h"
 
 namespace vidardb {
 
@@ -98,13 +98,13 @@ class CompactionJob {
   Status OpenCompactionOutputFile(SubcompactionState* sub_compact);
   void CleanupCompaction();
   void UpdateCompactionJobStats(
-    const InternalStats::CompactionStats& stats) const;
+      const InternalStats::CompactionStats& stats) const;
   void RecordDroppedKeys(const CompactionIteratorStats& c_iter_stats,
                          CompactionJobStats* compaction_job_stats = nullptr);
 
   void UpdateCompactionStats();
-  void UpdateCompactionInputStatsHelper(
-      int* num_files, uint64_t* bytes_read, int input_level);
+  void UpdateCompactionInputStatsHelper(int* num_files, uint64_t* bytes_read,
+                                        int input_level);
 
   void LogCompaction();
 

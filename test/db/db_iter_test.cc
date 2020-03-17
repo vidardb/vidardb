@@ -3,23 +3,24 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
-#include <string>
-#include <vector>
-#include <algorithm>
-#include <utility>
-
 #include "db/db_iter.h"
+
+#include <algorithm>
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "db/dbformat.h"
-#include "vidardb/comparator.h"
-#include "vidardb/options.h"
-#include "vidardb/perf_context.h"
-#include "vidardb/slice.h"
-#include "vidardb/statistics.h"
 #include "table/iterator_wrapper.h"
 #include "table/merger.h"
 #include "util/string_util.h"
 #include "util/sync_point.h"
 #include "util/testharness.h"
+#include "vidardb/comparator.h"
+#include "vidardb/options.h"
+#include "vidardb/perf_context.h"
+#include "vidardb/slice.h"
+#include "vidardb/statistics.h"
 
 namespace vidardb {
 
@@ -71,8 +72,8 @@ class TestIterator : public InternalIterator {
     std::sort(data_.begin(), data_.end(),
               [this](std::pair<std::string, std::string> a,
                      std::pair<std::string, std::string> b) {
-      return (cmp.Compare(a.first, b.first) < 0);
-    });
+                return (cmp.Compare(a.first, b.first) < 0);
+              });
   }
 
   virtual bool Valid() const override {
@@ -1572,7 +1573,6 @@ class DBIterWithMergeIterTest : public testing::Test {
  public:
   DBIterWithMergeIterTest()
       : env_(Env::Default()), icomp_(BytewiseComparator()) {
-
     internal_iter1_ = new TestIterator(BytewiseComparator());
     internal_iter1_->Add("a", kTypeValue, "1", 3u);
     internal_iter1_->Add("f", kTypeValue, "2", 5u);

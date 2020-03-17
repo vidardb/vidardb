@@ -9,16 +9,16 @@
 #pragma once
 
 #ifdef OS_WIN
-#  define VIDARDB_STD_THREADPOOL
+#define VIDARDB_STD_THREADPOOL
 #endif
 
-#include "vidardb/env.h"
 #include "util/thread_status_util.h"
+#include "vidardb/env.h"
 
 #ifdef VIDARDB_STD_THREADPOOL
-#  include <thread>
-#  include <mutex>
-#  include <condition_variable>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 #endif
 
 #include <atomic>

@@ -10,6 +10,7 @@
 #include "util/coding.h"
 
 #include <algorithm>
+
 #include "vidardb/slice.h"
 
 namespace vidardb {

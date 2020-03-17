@@ -17,7 +17,18 @@
 #include <utility>
 
 #include "db/dbformat.h"
-
+#include "table/block.h"
+#include "table/block_based_table_factory.h"
+#include "table/format.h"
+#include "table/get_context.h"
+#include "table/internal_iterator.h"
+#include "table/meta_blocks.h"
+#include "table/two_level_iterator.h"
+#include "util/coding.h"
+#include "util/file_reader_writer.h"
+#include "util/perf_context_imp.h"
+#include "util/stop_watch.h"
+#include "util/string_util.h"
 #include "vidardb/cache.h"
 #include "vidardb/comparator.h"
 #include "vidardb/env.h"
@@ -26,20 +37,6 @@
 #include "vidardb/statistics.h"
 #include "vidardb/table.h"
 #include "vidardb/table_properties.h"
-
-#include "table/block.h"
-#include "table/block_based_table_factory.h"
-#include "table/format.h"
-#include "table/get_context.h"
-#include "table/internal_iterator.h"
-#include "table/meta_blocks.h"
-#include "table/two_level_iterator.h"
-
-#include "util/coding.h"
-#include "util/file_reader_writer.h"
-#include "util/perf_context_imp.h"
-#include "util/stop_watch.h"
-#include "util/string_util.h"
 
 namespace vidardb {
 
@@ -288,16 +285,17 @@ Status BlockBasedTable::ReadMetaBlock(Rep* rep,
                                       std::unique_ptr<Block>* meta_block,
                                       std::unique_ptr<InternalIterator>* iter) {
   std::unique_ptr<Block> meta;
-  Status s = ReadBlockFromFile(
-      rep->file.get(), rep->footer, ReadOptions(),
-      rep->footer.metaindex_handle(), &meta, rep->ioptions.env,
-      true /* decompress */, Slice() /*compression dict*/,
-      rep->ioptions.info_log);
+  Status s =
+      ReadBlockFromFile(rep->file.get(), rep->footer, ReadOptions(),
+                        rep->footer.metaindex_handle(), &meta,
+                        rep->ioptions.env, true /* decompress */,
+                        Slice() /*compression dict*/, rep->ioptions.info_log);
 
   if (!s.ok()) {
     Log(InfoLogLevel::ERROR_LEVEL, rep->ioptions.info_log,
         "Encountered error while reading data from properties"
-        " block %s", s.ToString().c_str());
+        " block %s",
+        s.ToString().c_str());
     return s;
   }
 
@@ -309,7 +307,6 @@ Status BlockBasedTable::ReadMetaBlock(Rep* rep,
 
 void BlockBasedTable::GenerateCachePrefix(Cache* cc, RandomAccessFile* file,
                                           char* buffer, size_t* size) {
-
   // generate an id from the file
   *size = file->GetUniqueId(buffer, kMaxCacheKeyPrefixSize);
 
@@ -345,9 +342,11 @@ Slice BlockBasedTable::GetCacheKey(const char* cache_key_prefix,
   return Slice(cache_key, static_cast<size_t>(end - cache_key));
 }
 
-Status BlockBasedTable::PutDataBlockToCache(
-    const Slice& block_cache_key, Cache* block_cache, Statistics* statistics,
-    CachableEntry<Block>* block, Block* raw_block) {
+Status BlockBasedTable::PutDataBlockToCache(const Slice& block_cache_key,
+                                            Cache* block_cache,
+                                            Statistics* statistics,
+                                            CachableEntry<Block>* block,
+                                            Block* raw_block) {
   assert(raw_block->compression_type() == kNoCompression);
   Status s;
   block->value = raw_block;
@@ -444,10 +443,9 @@ InternalIterator* BlockBasedTable::NewDataBlockIterator(
       std::unique_ptr<Block> raw_block;
       {
         StopWatch sw(rep->ioptions.env, statistics, READ_BLOCK_GET_MICROS);
-        s = ReadBlockFromFile(rep->file.get(), rep->footer,
-                              read_options, handle, &raw_block,
-                              rep->ioptions.env, true, compression_dict,
-                              rep->ioptions.info_log);
+        s = ReadBlockFromFile(rep->file.get(), rep->footer, read_options,
+                              handle, &raw_block, rep->ioptions.env, true,
+                              compression_dict, rep->ioptions.info_log);
       }
 
       if (s.ok()) {
@@ -521,13 +519,13 @@ InternalIterator* BlockBasedTable::NewIndexIterator(
   bool no_io = read_options.read_tier == kBlockCacheTier;
   Cache* block_cache = rep_->table_options.block_cache.get();
   char cache_key[kMaxCacheKeyPrefixSize + kMaxVarint64Length];
-  auto key = GetCacheKeyFromOffset(rep_->cache_key_prefix,
-                                   rep_->cache_key_prefix_size,
-                                   rep_->dummy_index_reader_offset, cache_key);
+  auto key =
+      GetCacheKeyFromOffset(rep_->cache_key_prefix, rep_->cache_key_prefix_size,
+                            rep_->dummy_index_reader_offset, cache_key);
   Statistics* statistics = rep_->ioptions.statistics;
-  auto cache_handle = GetEntryFromCache(block_cache, key,
-                                        BLOCK_CACHE_INDEX_MISS,
-                                        BLOCK_CACHE_INDEX_HIT, statistics);
+  auto cache_handle =
+      GetEntryFromCache(block_cache, key, BLOCK_CACHE_INDEX_MISS,
+                        BLOCK_CACHE_INDEX_HIT, statistics);
 
   if (cache_handle == nullptr && no_io) {
     if (input_iter != nullptr) {
@@ -755,8 +753,9 @@ Status BlockBasedTable::Open(const ImmutableCFOptions& ioptions,
 
     if (!s.ok()) {
       Log(InfoLogLevel::WARN_LEVEL, rep->ioptions.info_log,
-        "Encountered error while reading data from properties "
-        "block %s", s.ToString().c_str());
+          "Encountered error while reading data from properties "
+          "block %s",
+          s.ToString().c_str());
     } else {
       rep->table_properties.reset(table_properties);
     }
@@ -814,9 +813,7 @@ class BlockBasedTable::BlockEntryIteratorState : public TwoLevelIteratorState {
  public:
   BlockEntryIteratorState(BlockBasedTable* table,
                           const ReadOptions& read_options)
-      : TwoLevelIteratorState(),
-        table_(table),
-        read_options_(read_options) {}
+      : TwoLevelIteratorState(), table_(table), read_options_(read_options) {}
 
   InternalIterator* NewSecondaryIterator(const Slice& index_value) override {
     return NewDataBlockIterator(table_->rep_, read_options_, index_value);
@@ -833,27 +830,17 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
  public:
   BlockBasedIterator(InternalIterator* iter,
                      const InternalKeyComparator& internal_comparator)
-  : iter_(iter), internal_comparator_(internal_comparator) {}
+      : iter_(iter), internal_comparator_(internal_comparator) {}
 
-  virtual ~BlockBasedIterator() {
-    iter_->~InternalIterator();
-  }
+  virtual ~BlockBasedIterator() { iter_->~InternalIterator(); }
 
-  virtual bool Valid() const {
-    return iter_->Valid();
-  }
+  virtual bool Valid() const { return iter_->Valid(); }
 
-  virtual void SeekToFirst() {
-    iter_->SeekToFirst();
-  }
+  virtual void SeekToFirst() { iter_->SeekToFirst(); }
 
-  virtual void SeekToLast() {
-    iter_->SeekToLast();
-  }
+  virtual void SeekToLast() { iter_->SeekToLast(); }
 
-  virtual void Seek(const Slice& target) {
-    iter_->Seek(target);
-  }
+  virtual void Seek(const Slice& target) { iter_->Seek(target); }
 
   virtual void Next() {
     assert(Valid());
@@ -875,14 +862,12 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
     return iter_->value();
   }
 
-  virtual Status status() const {
-    return iter_->status();
-  }
+  virtual Status status() const { return iter_->status(); }
 
   virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
                             std::list<RangeQueryKeyVal>& res) {
     if (range.start_->user_key().compare(kRangeQueryMin) == 0) {
-      iter_->SeekToFirst(); // Full search
+      iter_->SeekToFirst();  // Full search
     } else {
       iter_->Seek(range.start_->internal_key());
     }
@@ -944,8 +929,8 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
             meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
           }
 
-          if (CompressResultList(&res, read_options)
-              && meta->map_res.rbegin()->first <= user_key) {
+          if (CompressResultList(&res, read_options) &&
+              meta->map_res.rbegin()->first <= user_key) {
             break;  // Reach the batch capacity
           }
         }
@@ -959,9 +944,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
     iter_->SetPinnedItersMgr(pinned_iters_mgr);
   }
 
-  virtual bool IsKeyPinned() const {
-    return iter_->IsKeyPinned();
-  }
+  virtual bool IsKeyPinned() const { return iter_->IsKeyPinned(); }
 
  private:
   InternalIterator* iter_;
@@ -972,9 +955,10 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 
 InternalIterator* BlockBasedTable::NewIterator(const ReadOptions& read_options,
                                                Arena* arena) {
-  return new BlockBasedIterator(NewTwoLevelIterator(
-      new BlockEntryIteratorState(this, read_options),
-      NewIndexIterator(read_options), arena), rep_->internal_comparator);
+  return new BlockBasedIterator(
+      NewTwoLevelIterator(new BlockEntryIteratorState(this, read_options),
+                          NewIndexIterator(read_options), arena),
+      rep_->internal_comparator);
 }
 
 Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
@@ -1048,7 +1032,6 @@ Status BlockBasedTable::Prefetch(const Slice* const begin,
 
   for (begin ? iiter.Seek(*begin) : iiter.SeekToFirst(); iiter.Valid();
        iiter.Next()) {
-
     if (end && comparator.Compare(iiter.key(), *end) >= 0) {
       if (prefetching_boundary_page) {
         break;
@@ -1204,9 +1187,9 @@ void BlockBasedTable::Close() {
   if (!rep_->table_options.no_block_cache) {
     char cache_key[kMaxCacheKeyPrefixSize + kMaxVarint64Length];
     // Get the index block key
-    auto key = GetCacheKeyFromOffset(rep_->cache_key_prefix,
-                                rep_->cache_key_prefix_size,
-                                rep_->dummy_index_reader_offset, cache_key);
+    auto key = GetCacheKeyFromOffset(
+        rep_->cache_key_prefix, rep_->cache_key_prefix_size,
+        rep_->dummy_index_reader_offset, cache_key);
     rep_->table_options.block_cache.get()->Erase(key);
   }
 }
@@ -1232,8 +1215,8 @@ bool BlockBasedTable::TEST_KeyInCache(const ReadOptions& options,
 
   char cache_key_storage[kMaxCacheKeyPrefixSize + kMaxVarint64Length];
   Slice cache_key =
-      GetCacheKey(rep_->cache_key_prefix, rep_->cache_key_prefix_size,
-                  handle, cache_key_storage);
+      GetCacheKey(rep_->cache_key_prefix, rep_->cache_key_prefix_size, handle,
+                  cache_key_storage);
 
   s = GetDataBlockFromCache(cache_key, block_cache, nullptr, &block);
   assert(s.ok());

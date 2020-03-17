@@ -3,7 +3,6 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
-
 #include "db/db_impl_readonly.h"
 
 #include "db/db_impl.h"
@@ -21,8 +20,7 @@ DBImplReadOnly::DBImplReadOnly(const DBOptions& db_options,
   LogFlush(db_options_.info_log);
 }
 
-DBImplReadOnly::~DBImplReadOnly() {
-}
+DBImplReadOnly::~DBImplReadOnly() {}
 
 // Implementations of the DB interface
 Status DBImplReadOnly::Get(const ReadOptions& read_options,
@@ -56,8 +54,8 @@ Iterator* DBImplReadOnly::NewIterator(const ReadOptions& read_options,
            : latest_snapshot),
       super_version->mutable_cf_options.max_sequential_skip_in_iterations,
       super_version->version_number);
-  auto internal_iter = NewInternalIterator(
-      read_options, cfd, super_version, db_iter->GetArena());
+  auto internal_iter = NewInternalIterator(read_options, cfd, super_version,
+                                           db_iter->GetArena());
   db_iter->SetIterUnderDBIter(internal_iter);
   return db_iter;
 }
@@ -131,7 +129,7 @@ Status DB::OpenForReadOnly(
   return s;
 }
 
-#else  // !VIDARDB_LITE
+#else   // !VIDARDB_LITE
 
 Status DB::OpenForReadOnly(const Options& options, const std::string& dbname,
                            DB** dbptr, bool error_if_log_file_exist) {
@@ -147,4 +145,4 @@ Status DB::OpenForReadOnly(
 }
 #endif  // !VIDARDB_LITE
 
-}   // namespace vidardb
+}  // namespace vidardb

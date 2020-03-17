@@ -7,6 +7,7 @@
 #define STORAGE_VIDARDB_UNIVERSAL_COMPACTION_OPTIONS_H
 
 #include <stdint.h>
+
 #include <climits>
 #include <vector>
 
@@ -17,13 +18,12 @@ namespace vidardb {
 // into a single compaction run
 //
 enum CompactionStopStyle {
-  kCompactionStopStyleSimilarSize, // pick files of similar size
-  kCompactionStopStyleTotalSize    // total size of picked files > next file
+  kCompactionStopStyleSimilarSize,  // pick files of similar size
+  kCompactionStopStyleTotalSize     // total size of picked files > next file
 };
 
 class CompactionOptionsUniversal {
  public:
-
   // Percentage flexibilty while comparing file size. If the candidate file(s)
   // size is 1% smaller than the next file's size, then include next file into
   // this candidate set. // Default: 1

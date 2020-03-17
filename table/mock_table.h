@@ -14,16 +14,16 @@
 #include <string>
 #include <utility>
 
-#include "util/kv_map.h"
 #include "port/port.h"
-#include "vidardb/comparator.h"
-#include "vidardb/table.h"
 #include "table/internal_iterator.h"
 #include "table/table_builder.h"
 #include "table/table_reader.h"
+#include "util/kv_map.h"
 #include "util/mutexlock.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/comparator.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 namespace mock {

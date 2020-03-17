@@ -39,16 +39,16 @@
 #include "db/writebuffer.h"
 #include "memtable/memtable_list.h"
 #include "port/port.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
-#include "vidardb/memtablerep.h"
-#include "vidardb/transaction_log.h"
 #include "table/scoped_arena_iterator.h"
 #include "util/event_logger.h"
 #include "util/hash.h"
 #include "util/instrumented_mutex.h"
 #include "util/stop_watch.h"
 #include "util/thread_local.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/memtablerep.h"
+#include "vidardb/transaction_log.h"
 
 namespace vidardb {
 
@@ -174,8 +174,8 @@ class DBImpl : public DB {
 
   virtual Status GetUpdatesSince(
       SequenceNumber seq_number, unique_ptr<TransactionLogIterator>* iter,
-      const TransactionLogIterator::ReadOptions&
-          read_options = TransactionLogIterator::ReadOptions()) override;
+      const TransactionLogIterator::ReadOptions& read_options =
+          TransactionLogIterator::ReadOptions()) override;
   virtual Status DeleteFile(std::string name) override;
   Status DeleteFilesInRange(ColumnFamilyHandle* column_family,
                             const Slice* begin, const Slice* end);
@@ -187,9 +187,8 @@ class DBImpl : public DB {
   // Status::NotFound() will be returned if the current DB does not have
   // any column family match the specified name.
   // TODO(yhchiang): output parameter is placed in the end in this codebase.
-  virtual void GetColumnFamilyMetaData(
-      ColumnFamilyHandle* column_family,
-      ColumnFamilyMetaData* metadata) override;
+  virtual void GetColumnFamilyMetaData(ColumnFamilyHandle* column_family,
+                                       ColumnFamilyMetaData* metadata) override;
 
   // experimental API
   Status SuggestCompactRange(ColumnFamilyHandle* column_family,
@@ -290,8 +289,8 @@ class DBImpl : public DB {
 
   // Return the maximum overlapping data (in bytes) at next level for any
   // file at a level >= 1.
-  int64_t TEST_MaxNextLevelOverlappingBytes(ColumnFamilyHandle* column_family =
-                                                nullptr);
+  int64_t TEST_MaxNextLevelOverlappingBytes(
+      ColumnFamilyHandle* column_family = nullptr);
 
   // Return the current manifest file no.
   uint64_t TEST_Current_Manifest_FileNo();
@@ -497,11 +496,11 @@ class DBImpl : public DB {
                               const MutableCFOptions& mutable_cf_options,
                               int job_id, TableProperties prop);
 
-  void NotifyOnCompactionCompleted(ColumnFamilyData* cfd,
-                                   Compaction *c, const Status &st,
+  void NotifyOnCompactionCompleted(ColumnFamilyData* cfd, Compaction* c,
+                                   const Status& st,
                                    const CompactionJobStats& job_stats,
                                    int job_id);
-  void NotifyOnMemTableSealed(ColumnFamilyData* cfd, 
+  void NotifyOnMemTableSealed(ColumnFamilyData* cfd,
                               const MemTableInfo& mem_table_info);
 
   void NewThreadStatusCfInfo(ColumnFamilyData* cfd) const;
@@ -603,11 +602,11 @@ class DBImpl : public DB {
   Status WaitForFlushMemTable(ColumnFamilyData* cfd);
 
 #ifndef VIDARDB_LITE
-  Status CompactFilesImpl(
-      const CompactionOptions& compact_options, ColumnFamilyData* cfd,
-      Version* version, const std::vector<std::string>& input_file_names,
-      const int output_level, int output_path_id, JobContext* job_context,
-      LogBuffer* log_buffer);
+  Status CompactFilesImpl(const CompactionOptions& compact_options,
+                          ColumnFamilyData* cfd, Version* version,
+                          const std::vector<std::string>& input_file_names,
+                          const int output_level, int output_path_id,
+                          JobContext* job_context, LogBuffer* log_buffer);
 #endif  // VIDARDB_LITE
 
   ColumnFamilyData* GetColumnFamilyDataByName(const std::string& cf_name);
@@ -636,7 +635,8 @@ class DBImpl : public DB {
   // Return the minimum empty level that could hold the total data in the
   // input level. Return the input level, if such level could not be found.
   int FindMinimumEmptyLevelFitting(ColumnFamilyData* cfd,
-      const MutableCFOptions& mutable_cf_options, int level);
+                                   const MutableCFOptions& mutable_cf_options,
+                                   int level);
 
   // Move the files in the input level to the target level.
   // If target_level < 0, automatically calculate the minimum level that could
@@ -686,8 +686,7 @@ class DBImpl : public DB {
   InternalStats* default_cf_internal_stats_;
   unique_ptr<ColumnFamilyMemTablesImpl> column_family_memtables_;
   struct LogFileNumberSize {
-    explicit LogFileNumberSize(uint64_t _number)
-        : number(_number) {}
+    explicit LogFileNumberSize(uint64_t _number) : number(_number) {}
     void AddSize(uint64_t new_size) { size += new_size; }
     uint64_t number;
     uint64_t size = 0;
@@ -842,15 +841,15 @@ class DBImpl : public DB {
     uint32_t output_path_id;
     Status status;
     bool done;
-    bool in_progress;             // compaction request being processed?
-    bool incomplete;              // only part of requested range compacted
-    bool exclusive;               // current behavior of only one manual
-    bool disallow_trivial_move;   // Force actual compaction to run
-    const InternalKey* begin;     // nullptr means beginning of key range
-    const InternalKey* end;       // nullptr means end of key range
-    InternalKey* manual_end;      // how far we are compacting
-    InternalKey tmp_storage;      // Used to keep track of compaction progress
-    InternalKey tmp_storage1;     // Used to keep track of compaction progress
+    bool in_progress;            // compaction request being processed?
+    bool incomplete;             // only part of requested range compacted
+    bool exclusive;              // current behavior of only one manual
+    bool disallow_trivial_move;  // Force actual compaction to run
+    const InternalKey* begin;    // nullptr means beginning of key range
+    const InternalKey* end;      // nullptr means end of key range
+    InternalKey* manual_end;     // how far we are compacting
+    InternalKey tmp_storage;     // Used to keep track of compaction progress
+    InternalKey tmp_storage1;    // Used to keep track of compaction progress
     Compaction* compaction;
   };
   std::deque<ManualCompaction*> manual_compaction_dequeue_;
@@ -943,9 +942,8 @@ class DBImpl : public DB {
   // Return the earliest snapshot where seqno is visible.
   // Store the snapshot right before that, if any, in prev_snapshot
   inline SequenceNumber findEarliestVisibleSnapshot(
-    SequenceNumber in,
-    std::vector<SequenceNumber>& snapshots,
-    SequenceNumber* prev_snapshot);
+      SequenceNumber in, std::vector<SequenceNumber>& snapshots,
+      SequenceNumber* prev_snapshot);
 
   // Background threads call this function, which is just a wrapper around
   // the InstallSuperVersion() function. Background threads carry
@@ -964,9 +962,9 @@ class DBImpl : public DB {
 
 #ifndef VIDARDB_LITE
   using DB::GetPropertiesOfAllTables;
-  virtual Status GetPropertiesOfAllTables(ColumnFamilyHandle* column_family,
-                                          TablePropertiesCollection* props)
-      override;
+  virtual Status GetPropertiesOfAllTables(
+      ColumnFamilyHandle* column_family,
+      TablePropertiesCollection* props) override;
   virtual Status GetPropertiesOfTablesInRange(
       ColumnFamilyHandle* column_family, const Range* range, std::size_t n,
       TablePropertiesCollection* props) override;

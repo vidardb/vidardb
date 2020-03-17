@@ -5,6 +5,7 @@
 #pragma once
 
 #include <stdint.h>
+
 #include <string>
 
 #include "vidardb/perf_level.h"
@@ -47,11 +48,11 @@ struct IOStatsContext {
 };
 
 #ifndef IOS_CROSS_COMPILE
-# ifdef _WIN32
+#ifdef _WIN32
 extern __declspec(thread) IOStatsContext iostats_context;
-# else
+#else
 extern __thread IOStatsContext iostats_context;
-# endif
+#endif
 #endif  // IOS_CROSS_COMPILE
 
 }  // namespace vidardb

@@ -10,9 +10,10 @@
 #include "vidardb/cache.h"
 
 #include <forward_list>
-#include <vector>
-#include <string>
 #include <iostream>
+#include <string>
+#include <vector>
+
 #include "util/coding.h"
 #include "util/string_util.h"
 #include "util/testharness.h"
@@ -54,14 +55,13 @@ class CacheTest : public testing::Test {
   shared_ptr<Cache> cache_;
   shared_ptr<Cache> cache2_;
 
-  CacheTest() :
-      cache_(NewLRUCache(kCacheSize, kNumShardBits)),
-      cache2_(NewLRUCache(kCacheSize2, kNumShardBits2)) {
+  CacheTest()
+      : cache_(NewLRUCache(kCacheSize, kNumShardBits)),
+        cache2_(NewLRUCache(kCacheSize2, kNumShardBits2)) {
     current_ = this;
   }
 
-  ~CacheTest() {
-  }
+  ~CacheTest() {}
 
   int Lookup(shared_ptr<Cache> cache, int key) {
     Cache::Handle* handle = cache->Lookup(EncodeKey(key));
@@ -77,39 +77,28 @@ class CacheTest : public testing::Test {
                   &CacheTest::Deleter);
   }
 
-  void Erase(shared_ptr<Cache> cache, int key) {
-    cache->Erase(EncodeKey(key));
-  }
+  void Erase(shared_ptr<Cache> cache, int key) { cache->Erase(EncodeKey(key)); }
 
-
-  int Lookup(int key) {
-    return Lookup(cache_, key);
-  }
+  int Lookup(int key) { return Lookup(cache_, key); }
 
   void Insert(int key, int value, int charge = 1) {
     Insert(cache_, key, value, charge);
   }
 
-  void Erase(int key) {
-    Erase(cache_, key);
-  }
+  void Erase(int key) { Erase(cache_, key); }
 
-  int Lookup2(int key) {
-    return Lookup(cache2_, key);
-  }
+  int Lookup2(int key) { return Lookup(cache2_, key); }
 
   void Insert2(int key, int value, int charge = 1) {
     Insert(cache2_, key, value, charge);
   }
 
-  void Erase2(int key) {
-    Erase(cache2_, key);
-  }
+  void Erase2(int key) { Erase(cache2_, key); }
 };
 CacheTest* CacheTest::current_;
 
 namespace {
-void dumbDeleter(const Slice& key, void* value) { }
+void dumbDeleter(const Slice& key, void* value) {}
 }  // namespace
 
 TEST_F(CacheTest, UsageTest) {
@@ -197,18 +186,18 @@ TEST_F(CacheTest, HitAndMiss) {
 
   Insert(100, 101);
   ASSERT_EQ(101, Lookup(100));
-  ASSERT_EQ(-1,  Lookup(200));
-  ASSERT_EQ(-1,  Lookup(300));
+  ASSERT_EQ(-1, Lookup(200));
+  ASSERT_EQ(-1, Lookup(300));
 
   Insert(200, 201);
   ASSERT_EQ(101, Lookup(100));
   ASSERT_EQ(201, Lookup(200));
-  ASSERT_EQ(-1,  Lookup(300));
+  ASSERT_EQ(-1, Lookup(300));
 
   Insert(100, 102);
   ASSERT_EQ(102, Lookup(100));
   ASSERT_EQ(201, Lookup(200));
-  ASSERT_EQ(-1,  Lookup(300));
+  ASSERT_EQ(-1, Lookup(300));
 
   ASSERT_EQ(1U, deleted_keys_.size());
   ASSERT_EQ(100, deleted_keys_[0]);
@@ -222,14 +211,14 @@ TEST_F(CacheTest, Erase) {
   Insert(100, 101);
   Insert(200, 201);
   Erase(100);
-  ASSERT_EQ(-1,  Lookup(100));
+  ASSERT_EQ(-1, Lookup(100));
   ASSERT_EQ(201, Lookup(200));
   ASSERT_EQ(1U, deleted_keys_.size());
   ASSERT_EQ(100, deleted_keys_[0]);
   ASSERT_EQ(101, deleted_values_[0]);
 
   Erase(100);
-  ASSERT_EQ(-1,  Lookup(100));
+  ASSERT_EQ(-1, Lookup(100));
   ASSERT_EQ(201, Lookup(200));
   ASSERT_EQ(1U, deleted_keys_.size());
 }
@@ -270,8 +259,8 @@ TEST_F(CacheTest, EvictionPolicy) {
 
   // Frequently used entry must be kept around
   for (int i = 0; i < kCacheSize + 100; i++) {
-    Insert(1000+i, 2000+i);
-    ASSERT_EQ(2000+i, Lookup(1000+i));
+    Insert(1000 + i, 2000 + i);
+    ASSERT_EQ(2000 + i, Lookup(1000 + i));
     ASSERT_EQ(101, Lookup(100));
   }
   ASSERT_EQ(101, Lookup(100));
@@ -356,9 +345,9 @@ TEST_F(CacheTest, HeavyEntries) {
   const int kHeavy = 10;
   int added = 0;
   int index = 0;
-  while (added < 2*kCacheSize) {
+  while (added < 2 * kCacheSize) {
     const int weight = (index & 1) ? kLight : kHeavy;
-    Insert(index, 1000+index, weight);
+    Insert(index, 1000 + index, weight);
     added += weight;
     index++;
   }
@@ -369,10 +358,10 @@ TEST_F(CacheTest, HeavyEntries) {
     int r = Lookup(i);
     if (r >= 0) {
       cached_weight += weight;
-      ASSERT_EQ(1000+i, r);
+      ASSERT_EQ(1000 + i, r);
     }
   }
-  ASSERT_LE(cached_weight, kCacheSize + kCacheSize/10);
+  ASSERT_LE(cached_weight, kCacheSize + kCacheSize / 10);
 }
 
 TEST_F(CacheTest, NewId) {
@@ -381,19 +370,19 @@ TEST_F(CacheTest, NewId) {
   ASSERT_NE(a, b);
 }
 
-
 class Value {
  private:
   size_t v_;
+
  public:
-  explicit Value(size_t v) : v_(v) { }
+  explicit Value(size_t v) : v_(v) {}
 
   ~Value() { std::cout << v_ << " is destructed\n"; }
 };
 
 namespace {
 void deleter(const Slice& key, void* value) {
-  delete static_cast<Value *>(value);
+  delete static_cast<Value*>(value);
 }
 }  // namespace
 
@@ -406,7 +395,7 @@ TEST_F(CacheTest, SetCapacity) {
   std::vector<Cache::Handle*> handles(10);
   // Insert 5 entries, but not releasing.
   for (size_t i = 0; i < 5; i++) {
-    std::string key = ToString(i+1);
+    std::string key = ToString(i + 1);
     Status s = cache->Insert(key, new Value(i + 1), 1, &deleter, &handles[i]);
     ASSERT_TRUE(s.ok());
   }
@@ -421,7 +410,7 @@ TEST_F(CacheTest, SetCapacity) {
   // then decrease capacity to 7, final capacity should be 7
   // and usage should be 7
   for (size_t i = 5; i < 10; i++) {
-    std::string key = ToString(i+1);
+    std::string key = ToString(i + 1);
     Status s = cache->Insert(key, new Value(i + 1), 1, &deleter, &handles[i]);
     ASSERT_TRUE(s.ok());
   }
@@ -495,20 +484,20 @@ TEST_F(CacheTest, OverCapacity) {
   // a LRUCache with n entries and one shard only
   std::shared_ptr<Cache> cache = NewLRUCache(n, 0);
 
-  std::vector<Cache::Handle*> handles(n+1);
+  std::vector<Cache::Handle*> handles(n + 1);
 
   // Insert n+1 entries, but not releasing.
   for (size_t i = 0; i < n + 1; i++) {
-    std::string key = ToString(i+1);
+    std::string key = ToString(i + 1);
     Status s = cache->Insert(key, new Value(i + 1), 1, &deleter, &handles[i]);
     ASSERT_TRUE(s.ok());
   }
 
   // Guess what's in the cache now?
   for (size_t i = 0; i < n + 1; i++) {
-    std::string key = ToString(i+1);
+    std::string key = ToString(i + 1);
     auto h = cache->Lookup(key);
-    std::cout << key << (h?" found\n":" not found\n");
+    std::cout << key << (h ? " found\n" : " not found\n");
     ASSERT_TRUE(h != nullptr);
     if (h) cache->Release(h);
   }
@@ -526,7 +515,7 @@ TEST_F(CacheTest, OverCapacity) {
   // This is consistent with the LRU policy since the element 0
   // was released first
   for (size_t i = 0; i < n + 1; i++) {
-    std::string key = ToString(i+1);
+    std::string key = ToString(i + 1);
     auto h = cache->Lookup(key);
     if (h) {
       ASSERT_NE(i, 0U);
@@ -542,7 +531,7 @@ std::vector<std::pair<int, int>> callback_state;
 void callback(void* entry, size_t charge) {
   callback_state.push_back({DecodeValue(entry), static_cast<int>(charge)});
 }
-};
+};  // namespace
 
 TEST_F(CacheTest, ApplyToAllCacheEntiresTest) {
   std::vector<std::pair<int, int>> inserted;

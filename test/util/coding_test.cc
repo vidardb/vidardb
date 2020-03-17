@@ -13,7 +13,7 @@
 
 namespace vidardb {
 
-class Coding { };
+class Coding {};
 
 TEST(Coding, Fixed32) {
   std::string s;
@@ -43,15 +43,15 @@ TEST(Coding, Fixed64) {
     uint64_t v = static_cast<uint64_t>(1) << power;
     uint64_t actual = 0;
     actual = DecodeFixed64(p);
-    ASSERT_EQ(v-1, actual);
+    ASSERT_EQ(v - 1, actual);
     p += sizeof(uint64_t);
 
     actual = DecodeFixed64(p);
-    ASSERT_EQ(v+0, actual);
+    ASSERT_EQ(v + 0, actual);
     p += sizeof(uint64_t);
 
     actual = DecodeFixed64(p);
-    ASSERT_EQ(v+1, actual);
+    ASSERT_EQ(v + 1, actual);
     p += sizeof(uint64_t);
   }
 }
@@ -112,8 +112,8 @@ TEST(Coding, Varint64) {
     // Test values near powers of two
     const uint64_t power = 1ull << k;
     values.push_back(power);
-    values.push_back(power-1);
-    values.push_back(power+1);
+    values.push_back(power - 1);
+    values.push_back(power + 1);
   };
 
   std::string s;
@@ -133,14 +133,13 @@ TEST(Coding, Varint64) {
     ASSERT_EQ(VarintLength(actual), p - start);
   }
   ASSERT_EQ(p, limit);
-
 }
 
 TEST(Coding, Varint32Overflow) {
   uint32_t result;
   std::string input("\x81\x82\x83\x84\x85\x11");
-  ASSERT_TRUE(GetVarint32Ptr(input.data(), input.data() + input.size(), &result)
-              == nullptr);
+  ASSERT_TRUE(GetVarint32Ptr(input.data(), input.data() + input.size(),
+                             &result) == nullptr);
 }
 
 TEST(Coding, Varint32Truncation) {
@@ -151,16 +150,16 @@ TEST(Coding, Varint32Truncation) {
   for (unsigned int len = 0; len < s.size() - 1; len++) {
     ASSERT_TRUE(GetVarint32Ptr(s.data(), s.data() + len, &result) == nullptr);
   }
-  ASSERT_TRUE(
-      GetVarint32Ptr(s.data(), s.data() + s.size(), &result) != nullptr);
+  ASSERT_TRUE(GetVarint32Ptr(s.data(), s.data() + s.size(), &result) !=
+              nullptr);
   ASSERT_EQ(large_value, result);
 }
 
 TEST(Coding, Varint64Overflow) {
   uint64_t result;
   std::string input("\x81\x82\x83\x84\x85\x81\x82\x83\x84\x85\x11");
-  ASSERT_TRUE(GetVarint64Ptr(input.data(), input.data() + input.size(), &result)
-              == nullptr);
+  ASSERT_TRUE(GetVarint64Ptr(input.data(), input.data() + input.size(),
+                             &result) == nullptr);
 }
 
 TEST(Coding, Varint64Truncation) {
@@ -171,8 +170,8 @@ TEST(Coding, Varint64Truncation) {
   for (unsigned int len = 0; len < s.size() - 1; len++) {
     ASSERT_TRUE(GetVarint64Ptr(s.data(), s.data() + len, &result) == nullptr);
   }
-  ASSERT_TRUE(
-      GetVarint64Ptr(s.data(), s.data() + s.size(), &result) != nullptr);
+  ASSERT_TRUE(GetVarint64Ptr(s.data(), s.data() + s.size(), &result) !=
+              nullptr);
   ASSERT_EQ(large_value, result);
 }
 

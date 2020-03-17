@@ -25,10 +25,12 @@
 #ifndef STORAGE_VIDARDB_INCLUDE_WRITE_BATCH_H_
 #define STORAGE_VIDARDB_INCLUDE_WRITE_BATCH_H_
 
+#include <stdint.h>
+
 #include <atomic>
 #include <stack>
 #include <string>
-#include <stdint.h>
+
 #include "vidardb/status.h"
 #include "vidardb/write_batch_base.h"
 

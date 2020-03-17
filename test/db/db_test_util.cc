@@ -75,7 +75,7 @@ DBTestBase::~DBTestBase() {
 
 bool DBTestBase::ShouldSkipOptions(int option_config, int skip_mask) {
 #ifdef VIDARDB_LITE
-    // These options are not supported in VIDARDB_LITE
+  // These options are not supported in VIDARDB_LITE
   if (option_config == kHashSkipList ||
       option_config == kPlainTableFirstBytePrefix ||
       option_config == kPlainTableCappedPrefix ||
@@ -88,25 +88,25 @@ bool DBTestBase::ShouldSkipOptions(int option_config, int skip_mask) {
       option_config == kFIFOCompaction ||
       option_config == kConcurrentSkipList) {
     return true;
-    }
+  }
 #endif
 
-    if ((skip_mask & kSkipDeletesFilterFirst) &&
-        option_config == kDeletesFilterFirst) {
-      return true;
-    }
-    if ((skip_mask & kSkipUniversalCompaction) &&
-        (option_config == kUniversalCompaction ||
-         option_config == kUniversalCompactionMultiLevel)) {
-      return true;
-    }
-    if ((skip_mask & kSkipFIFOCompaction) && option_config == kFIFOCompaction) {
-      return true;
-    }
-    if ((skip_mask & kSkipMmapReads) && option_config == kWalDirAndMmapReads) {
-      return true;
-    }
-    return false;
+  if ((skip_mask & kSkipDeletesFilterFirst) &&
+      option_config == kDeletesFilterFirst) {
+    return true;
+  }
+  if ((skip_mask & kSkipUniversalCompaction) &&
+      (option_config == kUniversalCompaction ||
+       option_config == kUniversalCompactionMultiLevel)) {
+    return true;
+  }
+  if ((skip_mask & kSkipFIFOCompaction) && option_config == kFIFOCompaction) {
+    return true;
+  }
+  if ((skip_mask & kSkipMmapReads) && option_config == kWalDirAndMmapReads) {
+    return true;
+  }
+  return false;
 }
 
 // Switch to a fresh database with the next option configuration to
@@ -384,12 +384,12 @@ Status DBTestBase::Flush(int cf) {
 }
 
 Status DBTestBase::Put(const Slice& k, const Slice& v, WriteOptions wo) {
-    return db_->Put(wo, k, v);
+  return db_->Put(wo, k, v);
 }
 
 Status DBTestBase::Put(int cf, const Slice& k, const Slice& v,
                        WriteOptions wo) {
-    return db_->Put(wo, handles_[cf], k, v);
+  return db_->Put(wo, handles_[cf], k, v);
 }
 
 Status DBTestBase::Delete(const std::string& k) {
@@ -733,12 +733,14 @@ void DBTestBase::GetSstFiles(std::string path,
                              std::vector<std::string>* files) {
   env_->GetChildren(path, files);
 
-  files->erase(
-      std::remove_if(files->begin(), files->end(), [](std::string name) {
-        uint64_t number;
-        FileType type;
-        return !(ParseFileName(name, &number, &type) && type == kTableFile);
-      }), files->end());
+  files->erase(std::remove_if(files->begin(), files->end(),
+                              [](std::string name) {
+                                uint64_t number;
+                                FileType type;
+                                return !(ParseFileName(name, &number, &type) &&
+                                         type == kTableFile);
+                              }),
+               files->end());
 }
 
 int DBTestBase::GetSstFileCount(std::string path) {

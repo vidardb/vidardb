@@ -4,16 +4,14 @@
 //  of patent rights can be found in the PATENTS file in the same directory.
 //
 #pragma once
-#include "vidardb/statistics.h"
-
-#include <vector>
 #include <atomic>
 #include <string>
+#include <vector>
 
+#include "port/likely.h"
 #include "util/histogram.h"
 #include "util/mutexlock.h"
-#include "port/likely.h"
-
+#include "vidardb/statistics.h"
 
 namespace vidardb {
 
@@ -27,11 +25,9 @@ enum HistogramsInternal : uint32_t {
   INTERNAL_HISTOGRAM_ENUM_MAX
 };
 
-
 class StatisticsImpl : public Statistics {
  public:
-  StatisticsImpl(std::shared_ptr<Statistics> stats,
-                 bool enable_internal_stats);
+  StatisticsImpl(std::shared_ptr<Statistics> stats, bool enable_internal_stats);
   virtual ~StatisticsImpl();
 
   virtual uint64_t getTickerCount(uint32_t ticker_type) const override;
@@ -64,11 +60,9 @@ class StatisticsImpl : public Statistics {
   static_assert(sizeof(Ticker) == 64, "Expecting to fit into 64 bytes");
 
   // Attributes expand to nothing depending on the platform
-  __declspec(align(64))
-  Ticker tickers_[INTERNAL_TICKER_ENUM_MAX]
-     __attribute__((aligned(64)));
-  __declspec(align(64))
-  HistogramImpl histograms_[INTERNAL_HISTOGRAM_ENUM_MAX]
+  __declspec(align(64)) Ticker tickers_[INTERNAL_TICKER_ENUM_MAX]
+      __attribute__((aligned(64)));
+  __declspec(align(64)) HistogramImpl histograms_[INTERNAL_HISTOGRAM_ENUM_MAX]
       __attribute__((aligned(64)));
 };
 
@@ -94,4 +88,4 @@ inline void SetTickerCount(Statistics* statistics, uint32_t ticker_type,
   }
 }
 
-}
+}  // namespace vidardb

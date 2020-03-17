@@ -35,11 +35,11 @@ namespace vidardb {
 // std::priority_queue: the comparison operator is expected to provide the
 // less-than relation, but top() will return the maximum.
 
-template<typename T, typename Compare = std::less<T>>
+template <typename T, typename Compare = std::less<T>>
 class BinaryHeap {
  public:
-  BinaryHeap() { }
-  explicit BinaryHeap(Compare cmp) : cmp_(std::move(cmp)) { }
+  BinaryHeap() {}
+  explicit BinaryHeap(Compare cmp) : cmp_(std::move(cmp)) {}
 
   void push(const T& value) {
     data_.push_back(value);
@@ -77,18 +77,14 @@ class BinaryHeap {
     }
   }
 
-  void swap(BinaryHeap &other) {
+  void swap(BinaryHeap& other) {
     std::swap(cmp_, other.cmp_);
     data_.swap(other.data_);
   }
 
-  void clear() {
-    data_.clear();
-  }
+  void clear() { data_.clear(); }
 
-  bool empty() const {
-    return data_.empty();
-  }
+  bool empty() const { return data_.empty(); }
 
  private:
   static inline size_t get_root() { return 0; }

@@ -7,9 +7,10 @@
 
 #ifndef VIDARDB_LITE
 
-#include "db/db_impl.h"
-#include <vector>
 #include <string>
+#include <vector>
+
+#include "db/db_impl.h"
 
 namespace vidardb {
 
@@ -52,11 +53,11 @@ class DBImplReadOnly : public DBImpl {
   }
 
   using DBImpl::CompactFiles;
-  virtual Status CompactFiles(
-      const CompactionOptions& compact_options,
-      ColumnFamilyHandle* column_family,
-      const std::vector<std::string>& input_file_names,
-      const int output_level, const int output_path_id = -1) override {
+  virtual Status CompactFiles(const CompactionOptions& compact_options,
+                              ColumnFamilyHandle* column_family,
+                              const std::vector<std::string>& input_file_names,
+                              const int output_level,
+                              const int output_path_id = -1) override {
     return Status::NotSupported("Not supported operation in read only mode.");
   }
 
@@ -93,6 +94,6 @@ class DBImplReadOnly : public DBImpl {
   DBImplReadOnly(const DBImplReadOnly&);
   void operator=(const DBImplReadOnly&);
 };
-}
+}  // namespace vidardb
 
 #endif  // !VIDARDB_LITE

@@ -8,9 +8,10 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #pragma once
+#include <stdint.h>
+
 #include <vector>
 
-#include <stdint.h>
 #include "vidardb/slice.h"
 
 namespace vidardb {
@@ -41,26 +42,23 @@ class BlockBuilder {
   virtual size_t CurrentSizeEstimate() const;
 
   // Returns an estimated block size after appending key and value.
-  virtual size_t EstimateSizeAfterKV(const Slice& key, const Slice& value) const;
+  virtual size_t EstimateSizeAfterKV(const Slice& key,
+                                     const Slice& value) const;
 
   // Return true iff no entries have been added since the last Reset()
-  virtual bool empty() const {
-    return buffer_.empty();
-  }
+  virtual bool empty() const { return buffer_.empty(); }
 
   // Called after Add
-  virtual bool IsKeyStored() const {
-    return true;
-  }
+  virtual bool IsKeyStored() const { return true; }
 
  protected:
-  const int             block_restart_interval_;
+  const int block_restart_interval_;
 
-  std::string           buffer_;    // Destination buffer
+  std::string buffer_;              // Destination buffer
   std::vector<uint32_t> restarts_;  // Restart points
-  int                   counter_;   // Number of entries emitted since restart
-  bool                  finished_;  // Has Finish() been called?
-  std::string           last_key_;
+  int counter_;                     // Number of entries emitted since restart
+  bool finished_;                   // Has Finish() been called?
+  std::string last_key_;
 };
 
 }  // namespace vidardb

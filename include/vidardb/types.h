@@ -17,4 +17,4 @@ typedef uint64_t SequenceNumber;
 
 }  //  namespace vidardb
 
-#endif //  STORAGE_VIDARDB_INCLUDE_TYPES_H_
+#endif  //  STORAGE_VIDARDB_INCLUDE_TYPES_H_

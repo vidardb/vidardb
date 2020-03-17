@@ -12,12 +12,12 @@
 
 #pragma once
 
+#include <Windows.h>
+#include <stdint.h>
+
 #include <atomic>
 
 #include "vidardb/env.h"
-
-#include <stdint.h>
-#include <Windows.h>
 
 namespace vidardb {
 
@@ -57,6 +57,6 @@ class WinLogger : public vidardb::Logger {
   const static uint64_t flush_every_seconds_ = 5;
 };
 
-}
+}  // namespace port
 
 }  // namespace vidardb

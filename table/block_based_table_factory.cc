@@ -7,19 +7,19 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
-
 #include "table/block_based_table_factory.h"
+
+#include <stdint.h>
 
 #include <memory>
 #include <string>
-#include <stdint.h>
 
 #include "port/port.h"
-#include "vidardb/flush_block_policy.h"
-#include "vidardb/cache.h"
 #include "table/block_based_table_builder.h"
 #include "table/block_based_table_reader.h"
 #include "table/format.h"
+#include "vidardb/cache.h"
+#include "vidardb/flush_block_policy.h"
 
 namespace vidardb {
 

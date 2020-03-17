@@ -9,8 +9,8 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
-#include <string>
 #include <memory>
+#include <string>
 #include <vector>
 
 namespace vidardb {

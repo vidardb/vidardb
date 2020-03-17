@@ -7,6 +7,7 @@
 #define INCLUDE_VIDARDB_PERF_LEVEL_H_
 
 #include <stdint.h>
+
 #include <string>
 
 namespace vidardb {

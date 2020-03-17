@@ -15,8 +15,10 @@
 #ifdef VIDARDB_LIB_IO_POSIX
 
 #include "util/io_posix.h"
+
 #include <errno.h>
 #include <fcntl.h>
+
 #include <algorithm>
 #if defined(OS_LINUX)
 #include <linux/fs.h>
@@ -33,12 +35,12 @@
 #include <sys/syscall.h>
 #endif
 #include "port/port.h"
-#include "vidardb/slice.h"
 #include "util/coding.h"
 #include "util/iostats_context_imp.h"
 #include "util/posix_logger.h"
 #include "util/string_util.h"
 #include "util/sync_point.h"
+#include "vidardb/slice.h"
 
 namespace vidardb {
 
@@ -148,9 +150,10 @@ Status ReadUnaligned(int fd, Slice* data, const uint64_t offset,
                          reinterpret_cast<char*>(aligned_scratch.get()));
 
   // copy data upto min(size, what was read)
-  memcpy(scratch, reinterpret_cast<char*>(aligned_scratch.get()) +
-                      (offset % kSectorSize),
-         std::min(size, scratch_slice.size()));
+  memcpy(
+      scratch,
+      reinterpret_cast<char*>(aligned_scratch.get()) + (offset % kSectorSize),
+      std::min(size, scratch_slice.size()));
   *data = Slice(scratch, std::min(size, scratch_slice.size()));
   return s;
 }
@@ -170,7 +173,7 @@ Status DirectIORead(int fd, Slice* result, size_t off, size_t n,
  */
 PosixSequentialFile::PosixSequentialFile(const std::string& fname, FILE* f,
                                          const EnvOptions& options)
-//    : filename_(fname),
+    //    : filename_(fname),
     : SequentialFile(fname),
       file_(f),
       fd_(fileno(f)),
@@ -304,7 +307,8 @@ size_t PosixHelper::GetUniqueIdFromFile(int fd, char* id, size_t max_size) {
 PosixRandomAccessFile::PosixRandomAccessFile(const std::string& fname, int fd,
                                              const EnvOptions& options)
     : /*filename_(fname),*/ RandomAccessFile(fname),  // Shichao
-      fd_(fd), use_os_buffer_(options.use_os_buffer) {
+      fd_(fd),
+      use_os_buffer_(options.use_os_buffer) {
   assert(!options.use_mmap_reads || sizeof(void*) < 8);
 }
 
@@ -405,7 +409,9 @@ PosixMmapReadableFile::PosixMmapReadableFile(const int fd,
                                              void* base, size_t length,
                                              const EnvOptions& options)
     : RandomAccessFile(fname),  // Shichao
-      fd_(fd), /*filename_(fname),*/ mmapped_region_(base), length_(length) {
+      fd_(fd),
+      /*filename_(fname),*/ mmapped_region_(base),
+      length_(length) {
   fd_ = fd_ + 0;  // suppress the warning for used variables
   assert(options.use_mmap_reads);
   assert(options.use_os_buffer);
@@ -529,7 +535,7 @@ Status PosixMmapFile::Msync() {
 
 PosixMmapFile::PosixMmapFile(const std::string& fname, int fd, size_t page_size,
                              const EnvOptions& options)
-//    : filename_(fname),  // Shichao
+    //    : filename_(fname),  // Shichao
     : WritableFile(fname),
       fd_(fd),
       page_size_(page_size),
@@ -658,9 +664,9 @@ Status PosixMmapFile::Allocate(uint64_t offset, uint64_t len) {
   TEST_KILL_RANDOM("PosixMmapFile::Allocate:0", vidardb_kill_odds);
   int alloc_status = 0;
   if (allow_fallocate_) {
-    alloc_status = fallocate(
-        fd_, fallocate_with_keep_size_ ? FALLOC_FL_KEEP_SIZE : 0,
-          static_cast<off_t>(offset), static_cast<off_t>(len));
+    alloc_status =
+        fallocate(fd_, fallocate_with_keep_size_ ? FALLOC_FL_KEEP_SIZE : 0,
+                  static_cast<off_t>(offset), static_cast<off_t>(len));
   }
   if (alloc_status == 0) {
     return Status::OK();
@@ -677,7 +683,7 @@ Status PosixMmapFile::Allocate(uint64_t offset, uint64_t len) {
  */
 PosixWritableFile::PosixWritableFile(const std::string& fname, int fd,
                                      const EnvOptions& options)
-//    : filename_(fname),  //Shichao
+    //    : filename_(fname),  //Shichao
     : WritableFile(fname), fd_(fd), filesize_(0) {
 #ifdef VIDARDB_FALLOCATE_PRESENT
   allow_fallocate_ = options.allow_fallocate;
@@ -791,9 +797,9 @@ Status PosixWritableFile::Allocate(uint64_t offset, uint64_t len) {
   IOSTATS_TIMER_GUARD(allocate_nanos);
   int alloc_status = 0;
   if (allow_fallocate_) {
-    alloc_status = fallocate(
-        fd_, fallocate_with_keep_size_ ? FALLOC_FL_KEEP_SIZE : 0,
-        static_cast<off_t>(offset), static_cast<off_t>(len));
+    alloc_status =
+        fallocate(fd_, fallocate_with_keep_size_ ? FALLOC_FL_KEEP_SIZE : 0,
+                  static_cast<off_t>(offset), static_cast<off_t>(len));
   }
   if (alloc_status == 0) {
     return Status::OK();
@@ -806,7 +812,7 @@ Status PosixWritableFile::RangeSync(uint64_t offset, uint64_t nbytes) {
   assert(offset <= static_cast<uint64_t>(std::numeric_limits<off_t>::max()));
   assert(nbytes <= static_cast<uint64_t>(std::numeric_limits<off_t>::max()));
   if (sync_file_range(fd_, static_cast<off_t>(offset),
-      static_cast<off_t>(nbytes), SYNC_FILE_RANGE_WRITE) == 0) {
+                      static_cast<off_t>(nbytes), SYNC_FILE_RANGE_WRITE) == 0) {
     return Status::OK();
   } else {
     return IOError(filename_, errno);

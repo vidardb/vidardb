@@ -8,21 +8,21 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #include "util/threadpool.h"
-#include <atomic>
+
 #include <algorithm>
+#include <atomic>
 
 #ifndef OS_WIN
-#  include <unistd.h>
+#include <unistd.h>
 #endif
 
 #ifdef OS_LINUX
-#  include <sys/syscall.h>
+#include <sys/syscall.h>
 #endif
 
 #ifdef OS_FREEBSD
-#  include <stdlib.h>
+#include <stdlib.h>
 #endif
-
 
 namespace vidardb {
 
@@ -48,37 +48,29 @@ inline int ThreadPoolMutexLock(Lock& mutex) {
   return 0;
 }
 
-inline
-int ConditionWait(Condition& condition, Lock& lock) {
+inline int ConditionWait(Condition& condition, Lock& lock) {
   condition.wait(lock.ul_);
   return 0;
 }
 
-inline
-int ConditionSignalAll(Condition& condition) {
+inline int ConditionSignalAll(Condition& condition) {
   condition.notify_all();
   return 0;
 }
 
-inline
-int ConditionSignal(Condition& condition) {
+inline int ConditionSignal(Condition& condition) {
   condition.notify_one();
   return 0;
 }
 
-inline
-int MutexUnlock(Lock& mutex) {
+inline int MutexUnlock(Lock& mutex) {
   mutex.ul_.unlock();
   return 0;
 }
 
-inline
-void ThreadJoin(std::thread& thread) {
-  thread.join();
-}
+inline void ThreadJoin(std::thread& thread) { thread.join(); }
 
-inline
-int ThreadDetach(std::thread& thread) {
+inline int ThreadDetach(std::thread& thread) {
   thread.detach();
   return 0;
 }
@@ -92,37 +84,25 @@ inline int ThreadPoolMutexLock(Lock mutex) {
   return pthread_mutex_lock(&mutex);
 }
 
-inline
-int ConditionWait(Condition condition, Lock lock) {
+inline int ConditionWait(Condition condition, Lock lock) {
   return pthread_cond_wait(&condition, &lock);
 }
 
-inline
-int ConditionSignalAll(Condition condition) {
+inline int ConditionSignalAll(Condition condition) {
   return pthread_cond_broadcast(&condition);
 }
 
-inline
-int ConditionSignal(Condition condition) {
+inline int ConditionSignal(Condition condition) {
   return pthread_cond_signal(&condition);
 }
 
-inline
-int MutexUnlock(Lock mutex) {
-  return pthread_mutex_unlock(&mutex);
-}
+inline int MutexUnlock(Lock mutex) { return pthread_mutex_unlock(&mutex); }
 
-inline
-void ThreadJoin(pthread_t& thread) {
-  pthread_join(thread, nullptr);
-}
+inline void ThreadJoin(pthread_t& thread) { pthread_join(thread, nullptr); }
 
-inline
-int ThreadDetach(pthread_t& thread) {
-  return pthread_detach(thread);
-}
+inline int ThreadDetach(pthread_t& thread) { return pthread_detach(thread); }
 #endif
-}
+}  // namespace
 
 ThreadPool::ThreadPool()
     : total_threads_limit_(1),
@@ -141,7 +121,6 @@ ThreadPool::ThreadPool()
 ThreadPool::~ThreadPool() { assert(bgthreads_.size() == 0U); }
 
 void ThreadPool::JoinAllThreads() {
-
   Lock lock(mu_);
   PthreadCall("lock", ThreadPoolMutexLock(lock));
   assert(!exit_all_threads_);
@@ -167,7 +146,7 @@ void ThreadPool::LowerIOPriority() {
 void ThreadPool::BGThread(size_t thread_id) {
   bool low_io_priority = false;
   while (true) {
-// Wait until there is an item that is ready to run
+    // Wait until there is an item that is ready to run
     Lock uniqueLock(mu_);
     PthreadCall("lock", ThreadPoolMutexLock(uniqueLock));
     // Stop waiting if the thread needs to do work or needs to terminate.
@@ -291,7 +270,7 @@ void ThreadPool::StartBGThreads() {
   while ((int)bgthreads_.size() < total_threads_limit_) {
 #ifdef VIDARDB_STD_THREADPOOL
     std::thread p_t(&BGThreadWrapper,
-      new BGThreadMetadata(this, bgthreads_.size()));
+                    new BGThreadMetadata(this, bgthreads_.size()));
     bgthreads_.push_back(std::move(p_t));
 #else
     pthread_t t;
@@ -315,7 +294,6 @@ void ThreadPool::StartBGThreads() {
 
 void ThreadPool::Schedule(void (*function)(void* arg1), void* arg, void* tag,
                           void (*unschedFunction)(void* arg)) {
-
   Lock lock(mu_);
   PthreadCall("lock", ThreadPoolMutexLock(lock));
 

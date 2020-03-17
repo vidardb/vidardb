@@ -27,17 +27,17 @@ int main() {
 #include <vector>
 
 #include "db/dbformat.h"
-#include "memtable/memtable.h"
 #include "db/writebuffer.h"
+#include "memtable/memtable.h"
 #include "port/port.h"
 #include "port/stack_trace.h"
-#include "vidardb/comparator.h"
-#include "vidardb/memtablerep.h"
-#include "vidardb/options.h"
 #include "util/arena.h"
 #include "util/mutexlock.h"
 #include "util/stop_watch.h"
 #include "util/testutil.h"
+#include "vidardb/comparator.h"
+#include "vidardb/memtablerep.h"
+#include "vidardb/options.h"
 
 using GFLAGS::ParseCommandLineFlags;
 using GFLAGS::RegisterFlagValidator;
@@ -362,7 +362,9 @@ class SeqReadBenchmarkThread : public BenchmarkThread {
 
   void operator()() override {
     for (unsigned int i = 0; i < num_ops_; ++i) {
-      { ReadOneSeq(); }
+      {
+        ReadOneSeq();
+      }
     }
   }
 };
@@ -648,15 +650,15 @@ int main(int argc, char** argv) {
       key_gen.reset(new vidardb::KeyGenerator(&rng, vidardb::RANDOM,
                                               FLAGS_num_operations));
       benchmark.reset(new vidardb::ReadWriteBenchmark<
-          vidardb::ConcurrentReadBenchmarkThread>(memtablerep.get(),
-                                                  key_gen.get(), &sequence));
+                      vidardb::ConcurrentReadBenchmarkThread>(
+          memtablerep.get(), key_gen.get(), &sequence));
     } else if (name == vidardb::Slice("seqreadwrite")) {
       memtablerep.reset(createMemtableRep());
       key_gen.reset(new vidardb::KeyGenerator(&rng, vidardb::RANDOM,
                                               FLAGS_num_operations));
       benchmark.reset(new vidardb::ReadWriteBenchmark<
-          vidardb::SeqConcurrentReadBenchmarkThread>(memtablerep.get(),
-                                                     key_gen.get(), &sequence));
+                      vidardb::SeqConcurrentReadBenchmarkThread>(
+          memtablerep.get(), key_gen.get(), &sequence));
     } else {
       std::cout << "WARNING: skipping unknown benchmark '" << name.ToString()
                 << std::endl;

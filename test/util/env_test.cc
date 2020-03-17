@@ -16,10 +16,10 @@
 #endif
 #include <sys/types.h>
 
-#include <iostream>
-#include <unordered_set>
 #include <atomic>
+#include <iostream>
 #include <list>
+#include <unordered_set>
 
 #ifdef OS_LINUX
 #include <fcntl.h>
@@ -34,7 +34,6 @@
 #endif
 
 #include "port/port.h"
-#include "vidardb/env.h"
 #include "util/coding.h"
 #include "util/log_buffer.h"
 #include "util/mutexlock.h"
@@ -42,6 +41,7 @@
 #include "util/sync_point.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 
@@ -83,7 +83,7 @@ class EnvPosixTest : public testing::Test {
 
  public:
   Env* env_;
-  EnvPosixTest() : env_(Env::Default()) { }
+  EnvPosixTest() : env_(Env::Default()) {}
 };
 
 class EnvPosixTestWithParam : public EnvPosixTest,
@@ -93,8 +93,8 @@ class EnvPosixTestWithParam : public EnvPosixTest,
 };
 
 static void SetBool(void* ptr) {
-  reinterpret_cast<std::atomic<bool>*>(ptr)
-      ->store(true, std::memory_order_relaxed);
+  reinterpret_cast<std::atomic<bool>*>(ptr)->store(true,
+                                                   std::memory_order_relaxed);
 }
 
 TEST_P(EnvPosixTestWithParam, RunImmediately) {
@@ -212,7 +212,7 @@ TEST_P(EnvPosixTestWithParam, TwoPools) {
           num_running_(0),
           num_finished_(0),
           pool_size_(pool_size),
-          pool_name_(pool_name) { }
+          pool_name_(pool_name) {}
 
     static void Run(void* v) {
       CB* cb = reinterpret_cast<CB*>(v);
@@ -496,7 +496,6 @@ bool IsUniqueIDValid(const std::string& s) {
 const size_t MAX_ID_SIZE = 100;
 char temp_id[MAX_ID_SIZE];
 
-
 }  // namespace
 
 // Determine whether we can use the FS_IOC_GETVERSION ioctl
@@ -535,8 +534,8 @@ class IoctlFriendlyTmpdir {
     char dir_buf[100];
     std::list<std::string> candidate_dir_list = {"/var/tmp", "/tmp"};
 
-    const char *fmt = "%s/vidardb.XXXXXX";
-    const char *tmp = getenv("TEST_IOCTL_FRIENDLY_TMPDIR");
+    const char* fmt = "%s/vidardb.XXXXXX";
+    const char* tmp = getenv("TEST_IOCTL_FRIENDLY_TMPDIR");
     // If $TEST_IOCTL_FRIENDLY_TMPDIR/vidardb.XXXXXX fits, use
     // $TEST_IOCTL_FRIENDLY_TMPDIR; subtract 2 for the "%s", and
     // add 1 for the trailing NUL byte.
@@ -555,8 +554,10 @@ class IoctlFriendlyTmpdir {
           // Diagnose ioctl-related failure only if this is the
           // directory specified via that envvar.
           if (tmp && tmp == d) {
-            fprintf(stderr, "TEST_IOCTL_FRIENDLY_TMPDIR-specified directory is "
-                    "not suitable: %s\n", d.c_str());
+            fprintf(stderr,
+                    "TEST_IOCTL_FRIENDLY_TMPDIR-specified directory is "
+                    "not suitable: %s\n",
+                    d.c_str());
           }
           rmdir(dir_buf);  // ignore failure
         }
@@ -567,22 +568,18 @@ class IoctlFriendlyTmpdir {
       }
     }
 
-    fprintf(stderr, "failed to find an ioctl-friendly temporary directory;"
+    fprintf(stderr,
+            "failed to find an ioctl-friendly temporary directory;"
             " specify one via the TEST_IOCTL_FRIENDLY_TMPDIR envvar\n");
     std::abort();
   }
 
-  ~IoctlFriendlyTmpdir() {
-    rmdir(dir_.c_str());
-  }
-  const std::string& name() {
-    return dir_;
-  }
+  ~IoctlFriendlyTmpdir() { rmdir(dir_.c_str()); }
+  const std::string& name() { return dir_; }
 
  private:
   std::string dir_;
 };
-
 
 // Only works in linux platforms
 TEST_F(EnvPosixTest, RandomAccessUniqueID) {
@@ -704,7 +701,7 @@ TEST_F(EnvPosixTest, AllocateTest) {
 
 // Returns true if any of the strings in ss are the prefix of another string.
 bool HasPrefix(const std::unordered_set<std::string>& ss) {
-  for (const std::string& s: ss) {
+  for (const std::string& s : ss) {
     if (s.empty()) {
       return true;
     }
@@ -1107,24 +1104,38 @@ TEST_P(EnvPosixTestWithParam, ConsistentChildrenAttributes) {
 TEST_P(EnvPosixTestWithParam, WritableFileWrapper) {
   class Base : public WritableFile {
    public:
-    mutable int *step_;
+    mutable int* step_;
 
-    void inc(int x) const {
-      EXPECT_EQ(x, (*step_)++);
+    void inc(int x) const { EXPECT_EQ(x, (*step_)++); }
+
+    explicit Base(int* step) : step_(step) { inc(0); }
+
+    Status Append(const Slice& data) override {
+      inc(1);
+      return Status::OK();
     }
-
-    explicit Base(int* step) : step_(step) {
-      inc(0);
-    }
-
-    Status Append(const Slice& data) override { inc(1); return Status::OK(); }
     Status Truncate(uint64_t size) override { return Status::OK(); }
-    Status Close() override { inc(2); return Status::OK(); }
-    Status Flush() override { inc(3); return Status::OK(); }
-    Status Sync() override { inc(4); return Status::OK(); }
-    Status Fsync() override { inc(5); return Status::OK(); }
+    Status Close() override {
+      inc(2);
+      return Status::OK();
+    }
+    Status Flush() override {
+      inc(3);
+      return Status::OK();
+    }
+    Status Sync() override {
+      inc(4);
+      return Status::OK();
+    }
+    Status Fsync() override {
+      inc(5);
+      return Status::OK();
+    }
     void SetIOPriority(Env::IOPriority pri) override { inc(6); }
-    uint64_t GetFileSize() override { inc(7); return 0; }
+    uint64_t GetFileSize() override {
+      inc(7);
+      return 0;
+    }
     void GetPreallocationStatus(size_t* block_size,
                                 size_t* last_allocated_block) override {
       inc(8);
@@ -1149,9 +1160,7 @@ TEST_P(EnvPosixTestWithParam, WritableFileWrapper) {
     }
 
    public:
-    ~Base() {
-      inc(13);
-    }
+    ~Base() { inc(13); }
   };
 
   class Wrapper : public WritableFileWrapper {
@@ -1187,7 +1196,6 @@ TEST_P(EnvPosixTestWithParam, WritableFileWrapper) {
 
 INSTANTIATE_TEST_CASE_P(DefaultEnv, EnvPosixTestWithParam,
                         ::testing::Values(Env::Default()));
-
 
 }  // namespace vidardb
 

@@ -5,18 +5,18 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <vector>
 #include <memory>
+#include <vector>
 
-#include "vidardb/db.h"
-#include "vidardb/options.h"
-#include "vidardb/env.h"
-#include "vidardb/slice.h"
-#include "vidardb/status.h"
-#include "vidardb/comparator.h"
-#include "vidardb/table.h"
 #include "port/port.h"
 #include "util/string_util.h"
+#include "vidardb/comparator.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/options.h"
+#include "vidardb/slice.h"
+#include "vidardb/status.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 

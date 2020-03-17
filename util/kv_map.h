@@ -7,10 +7,10 @@
 #include <map>
 #include <string>
 
-#include "vidardb/comparator.h"
-#include "vidardb/slice.h"
 #include "util/coding.h"
 #include "util/murmurhash.h"
+#include "vidardb/comparator.h"
+#include "vidardb/slice.h"
 
 namespace vidardb {
 namespace stl_wrappers {
@@ -27,5 +27,5 @@ struct LessOfComparator {
 };
 
 typedef std::map<std::string, std::string, LessOfComparator> KVMap;
-}
-}
+}  // namespace stl_wrappers
+}  // namespace vidardb

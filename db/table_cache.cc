@@ -17,18 +17,17 @@
 #include "db/dbformat.h"
 #include "db/filename.h"
 #include "db/version_edit.h"
-
-#include "vidardb/statistics.h"
+#include "table/get_context.h"
 #include "table/internal_iterator.h"
 #include "table/iterator_wrapper.h"
 #include "table/table_builder.h"
 #include "table/table_reader.h"
-#include "table/get_context.h"
 #include "util/coding.h"
 #include "util/file_reader_writer.h"
 #include "util/perf_context_imp.h"
 #include "util/stop_watch.h"
 #include "util/sync_point.h"
+#include "vidardb/statistics.h"
 
 namespace vidardb {
 
@@ -78,8 +77,7 @@ TableCache::TableCache(const ImmutableCFOptions& ioptions,
   }
 }
 
-TableCache::~TableCache() {
-}
+TableCache::~TableCache() {}
 
 TableReader* TableCache::GetTableReaderFromHandle(Cache::Handle* handle) {
   return reinterpret_cast<TableReader*>(cache_->Value(handle));
@@ -94,7 +92,8 @@ Status TableCache::GetTableReader(
     const InternalKeyComparator& internal_comparator, const FileDescriptor& fd,
     bool sequential_mode, size_t readahead, bool record_read_stats,
     HistogramImpl* file_read_hist, unique_ptr<TableReader>* table_reader,
-    int level, bool os_cache/*Shichao*/, const std::vector<uint32_t>& cols) {  // Shichao
+    int level, bool os_cache /*Shichao*/,
+    const std::vector<uint32_t>& cols) {  // Shichao
   std::string fname =
       TableFileName(ioptions_.db_paths, fd.GetNumber(), fd.GetPathId());
   unique_ptr<RandomAccessFile> file;
@@ -105,8 +104,9 @@ Status TableCache::GetTableReader(
     eo.use_direct_reads = true;
   }
   /*************************** Shichao *************************/
-  Status s = ioptions_.env->NewRandomAccessFile(fname, &file,
-      os_cache? env_options: eo);  // Shichao
+  Status s = ioptions_.env->NewRandomAccessFile(
+      fname, &file,
+      os_cache ? env_options : eo);  // Shichao
 
   if (readahead > 0) {
     file = NewReadaheadRandomAccessFile(std::move(file), readahead);
@@ -124,8 +124,8 @@ Status TableCache::GetTableReader(
                                    file_read_hist));
 
     s = ioptions_.table_factory->NewTableReader(
-        TableReaderOptions(ioptions_, os_cache? env_options: eo,  // Shichao
-            internal_comparator, level, cols),      // Shichao
+        TableReaderOptions(ioptions_, os_cache ? env_options : eo,  // Shichao
+                           internal_comparator, level, cols),       // Shichao
         std::move(file_reader), fd.GetFileSize(), table_reader);
     TEST_SYNC_POINT("TableCache::GetTableReader:0");
   }
@@ -213,7 +213,7 @@ InternalIterator* TableCache::NewIterator(
     Status s = GetTableReader(
         env_options, icomparator, fd, true /* sequential_mode */, readahead,
         !for_compaction /* record stats */, nullptr, &table_reader_unique_ptr,
-        level, os_cache/*Shichao*/, options.columns/*Shichao*/);
+        level, os_cache /*Shichao*/, options.columns /*Shichao*/);
     if (!s.ok()) {
       return NewErrorInternalIterator(s, arena);
     }
@@ -232,8 +232,7 @@ InternalIterator* TableCache::NewIterator(
     }
   }
 
-  InternalIterator* result =
-      table_reader->NewIterator(options, arena);
+  InternalIterator* result = table_reader->NewIterator(options, arena);
 
   if (create_new_table_reader) {
     assert(handle == nullptr);
@@ -373,7 +372,8 @@ size_t TableCache::GetMemoryUsageByTableReader(
   }
 
   Cache::Handle* table_handle = nullptr;
-  Status s = FindTable(env_options, internal_comparator, fd, &table_handle, true);
+  Status s =
+      FindTable(env_options, internal_comparator, fd, &table_handle, true);
   if (!s.ok()) {
     return 0;
   }

@@ -8,9 +8,9 @@
 
 #include "db/db_impl.h"
 #include "test/db/db_test_util.h"
+#include "util/testharness.h"
 #include "vidardb/options.h"
 #include "vidardb/table.h"
-#include "util/testharness.h"
 
 namespace vidardb {
 class OptionsFileTest : public testing::Test {

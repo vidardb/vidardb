@@ -13,10 +13,10 @@ int main() {
 
 #include <gflags/gflags.h>
 
-#include "vidardb/env.h"
 #include "util/histogram.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/env.h"
 
 using GFLAGS::ParseCommandLineFlags;
 using GFLAGS::SetUsageMessage;

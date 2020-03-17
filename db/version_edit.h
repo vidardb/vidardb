@@ -15,12 +15,13 @@
 #pragma once
 #include <algorithm>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
-#include <string>
-#include "vidardb/cache.h"
+
 #include "db/dbformat.h"
 #include "util/arena.h"
+#include "vidardb/cache.h"
 
 namespace vidardb {
 
@@ -39,7 +40,7 @@ struct FileDescriptor {
   // Table reader in table_reader_handle
   TableReader* table_reader;
   uint64_t packed_number_and_path_id;
-  uint64_t file_size;  // File size in bytes
+  uint64_t file_size;        // File size in bytes
   uint64_t file_size_total;  // Shichao, for compaction calculation purpose
 
   FileDescriptor() : FileDescriptor(0, 0, 0, 0) {}
@@ -65,8 +66,8 @@ struct FileDescriptor {
     return packed_number_and_path_id & kFileNumberMask;
   }
   uint32_t GetPathId() const {
-    return static_cast<uint32_t>(
-        packed_number_and_path_id / (kFileNumberMask + 1));
+    return static_cast<uint32_t>(packed_number_and_path_id /
+                                 (kFileNumberMask + 1));
   }
   uint64_t GetFileSize() const { return file_size; }
   uint64_t GetFileSizeTotal() const { return file_size_total; }  // Shichao
@@ -75,11 +76,11 @@ struct FileDescriptor {
 struct FileMetaData {
   int refs;
   FileDescriptor fd;
-  InternalKey smallest;            // Smallest internal key served by table
-  InternalKey largest;             // Largest internal key served by table
-  bool being_compacted;            // Is this file undergoing compaction?
-  SequenceNumber smallest_seqno;   // The smallest seqno in this file
-  SequenceNumber largest_seqno;    // The largest seqno in this file
+  InternalKey smallest;           // Smallest internal key served by table
+  InternalKey largest;            // Largest internal key served by table
+  bool being_compacted;           // Is this file undergoing compaction?
+  SequenceNumber smallest_seqno;  // The smallest seqno in this file
+  SequenceNumber largest_seqno;   // The largest seqno in this file
 
   // Needs to be disposed when refs becomes 0.
   Cache::Handle* table_reader_handle;
@@ -92,12 +93,12 @@ struct FileMetaData {
   uint64_t compensated_file_size;
   // These values can mutate, but they can only be read or written from
   // single-threaded LogAndApply thread
-  uint64_t num_entries;            // the number of entries.
-  uint64_t num_deletions;          // the number of deletion entries.
-  uint64_t raw_key_size;           // total uncompressed key size.
-  uint64_t raw_value_size;         // total uncompressed value size.
-  bool init_stats_from_file;   // true if the data-entry stats of this file
-                               // has initialized from file.
+  uint64_t num_entries;       // the number of entries.
+  uint64_t num_deletions;     // the number of deletion entries.
+  uint64_t raw_key_size;      // total uncompressed key size.
+  uint64_t raw_value_size;    // total uncompressed value size.
+  bool init_stats_from_file;  // true if the data-entry stats of this file
+                              // has initialized from file.
 
   bool marked_for_compaction;  // True if client asked us nicely to compact this
                                // file.
@@ -132,14 +133,10 @@ struct FileMetaData {
 // smallest and largest key's slice
 struct FdWithKeyRange {
   FileDescriptor fd;
-  Slice smallest_key;    // slice that contain smallest key
-  Slice largest_key;     // slice that contain largest key
+  Slice smallest_key;  // slice that contain smallest key
+  Slice largest_key;   // slice that contain largest key
 
-  FdWithKeyRange()
-      : fd(),
-        smallest_key(),
-        largest_key() {
-  }
+  FdWithKeyRange() : fd(), smallest_key(), largest_key() {}
 
   FdWithKeyRange(FileDescriptor _fd, Slice _smallest_key, Slice _largest_key)
       : fd(_fd), smallest_key(_smallest_key), largest_key(_largest_key) {}
@@ -159,7 +156,7 @@ struct LevelFilesBrief {
 class VersionEdit {
  public:
   VersionEdit() { Clear(); }
-  ~VersionEdit() { }
+  ~VersionEdit() {}
 
   void Clear();
 
@@ -195,10 +192,11 @@ class VersionEdit {
                uint64_t file_size, const InternalKey& smallest,
                const InternalKey& largest, const SequenceNumber& smallest_seqno,
                const SequenceNumber& largest_seqno, bool marked_for_compaction,
-               uint64_t file_size_total) {                // Shichao
+               uint64_t file_size_total) {  // Shichao
     assert(smallest_seqno <= largest_seqno);
     FileMetaData f;
-    f.fd = FileDescriptor(file, file_path_id, file_size, file_size_total);  // Shichao
+    f.fd = FileDescriptor(file, file_path_id, file_size,
+                          file_size_total);  // Shichao
     f.smallest = smallest;
     f.largest = largest;
     f.smallest_seqno = smallest_seqno;

@@ -3,16 +3,17 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
-#include <thread>
+#include "util/thread_local.h"
+
 #include <atomic>
 #include <string>
+#include <thread>
 
-#include "vidardb/env.h"
 #include "port/port.h"
 #include "util/sync_point.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
-#include "util/thread_local.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 

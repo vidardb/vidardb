@@ -21,14 +21,14 @@
 #undef PLATFORM_IS_LITTLE_ENDIAN
 #define PLATFORM_IS_LITTLE_ENDIAN true
 
-#include <windows.h>
-#include <string>
-#include <string.h>
-#include <mutex>
-#include <limits>
-#include <condition_variable>
-
 #include <stdint.h>
+#include <string.h>
+#include <windows.h>
+
+#include <condition_variable>
+#include <limits>
+#include <mutex>
+#include <string>
 
 #include "vidardb/options.h"
 
@@ -36,7 +36,6 @@
 #undef max
 #undef DeleteFile
 #undef GetCurrentTime
-
 
 #ifndef strcasecmp
 #define strcasecmp _stricmp
@@ -84,7 +83,7 @@ const int64_t kMaxInt64 = std::numeric_limits<int64_t>::max();
 
 const size_t kMaxSizet = std::numeric_limits<size_t>::max();
 
-#else //_MSC_VER
+#else  //_MSC_VER
 
 // VS 15 has snprintf
 #define snprintf _snprintf
@@ -104,7 +103,7 @@ const size_t kMaxSizet = UINT64_MAX;
 const size_t kMaxSizet = UINT_MAX;
 #endif
 
-#endif //_MSC_VER
+#endif  //_MSC_VER
 
 const bool kLittleEndian = true;
 
@@ -112,12 +111,12 @@ class CondVar;
 
 class Mutex {
  public:
-
-   /* implicit */ Mutex(bool adaptive = false)
+  /* implicit */ Mutex(bool adaptive = false)
 #ifndef NDEBUG
-     : locked_(false)
+      : locked_(false)
 #endif
-   { }
+  {
+  }
 
   ~Mutex();
 
@@ -148,12 +147,9 @@ class Mutex {
   void operator=(const Mutex&) = delete;
 
  private:
-
   friend class CondVar;
 
-  std::mutex& getLock() {
-    return mutex_;
-  }
+  std::mutex& getLock() { return mutex_; }
 
   std::mutex mutex_;
 #ifndef NDEBUG
@@ -185,8 +181,7 @@ class RWMutex {
 
 class CondVar {
  public:
-  explicit CondVar(Mutex* mu) : mu_(mu) {
-  }
+  explicit CondVar(Mutex* mu) : mu_(mu) {}
 
   ~CondVar();
   void Wait();
@@ -206,20 +201,18 @@ class CondVar {
   Mutex* mu_;
 };
 
-
 // OnceInit type helps emulate
 // Posix semantics with initialization
 // adopted in the project
 struct OnceType {
+  struct Init {};
 
-    struct Init {};
+  OnceType() {}
+  OnceType(const Init&) {}
+  OnceType(const OnceType&) = delete;
+  OnceType& operator=(const OnceType&) = delete;
 
-    OnceType() {}
-    OnceType(const Init&) {}
-    OnceType(const OnceType&) = delete;
-    OnceType& operator=(const OnceType&) = delete;
-
-    std::once_flag flag_;
+  std::once_flag flag_;
 };
 
 #define LEVELDB_ONCE_INIT port::OnceType::Init()
@@ -287,11 +280,11 @@ extern int GetMaxOpenFiles();
 
 }  // namespace port
 
-using port::pthread_key_t;
+using port::pthread_getspecific;
 using port::pthread_key_create;
 using port::pthread_key_delete;
+using port::pthread_key_t;
 using port::pthread_setspecific;
-using port::pthread_getspecific;
 using port::truncate;
 
 }  // namespace vidardb

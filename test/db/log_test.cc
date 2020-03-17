@@ -9,13 +9,13 @@
 
 #include "db/log_reader.h"
 #include "db/log_writer.h"
-#include "vidardb/env.h"
 #include "util/coding.h"
 #include "util/crc32c.h"
 #include "util/file_reader_writer.h"
 #include "util/random.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 namespace log {
@@ -53,13 +53,13 @@ class LogTest : public ::testing::TestWithParam<int> {
     bool force_eof_;
     size_t force_eof_position_;
     bool returned_partial_;
-    explicit StringSource(Slice& contents) :
-      contents_(contents),
-      force_error_(false),
-      force_error_position_(0),
-      force_eof_(false),
-      force_eof_position_(0),
-      returned_partial_(false) { }
+    explicit StringSource(Slice& contents)
+        : contents_(contents),
+          force_error_(false),
+          force_error_position_(0),
+          force_eof_(false),
+          force_eof_position_(0),
+          returned_partial_(false) {}
 
     virtual Status Read(size_t n, Slice* result, char* scratch) override {
       EXPECT_TRUE(!returned_partial_) << "must not Read() after eof/error";
@@ -117,7 +117,7 @@ class LogTest : public ::testing::TestWithParam<int> {
     size_t dropped_bytes_;
     std::string message_;
 
-    ReportCollector() : dropped_bytes_(0) { }
+    ReportCollector() : dropped_bytes_(0) {}
     virtual void Corruption(size_t bytes, const Status& status) override {
       dropped_bytes_ += bytes;
       message_.append(status.ToString());
@@ -126,14 +126,14 @@ class LogTest : public ::testing::TestWithParam<int> {
 
   std::string& dest_contents() {
     auto dest =
-      dynamic_cast<test::StringSink*>(writer_.file()->writable_file());
+        dynamic_cast<test::StringSink*>(writer_.file()->writable_file());
     assert(dest);
     return dest->contents_;
   }
 
   const std::string& dest_contents() const {
     auto dest =
-      dynamic_cast<const test::StringSink*>(writer_.file()->writable_file());
+        dynamic_cast<const test::StringSink*>(writer_.file()->writable_file());
     assert(dest);
     return dest->contents_;
   }
@@ -176,13 +176,9 @@ class LogTest : public ::testing::TestWithParam<int> {
 
   Slice* get_reader_contents() { return &reader_contents_; }
 
-  void Write(const std::string& msg) {
-    writer_.AddRecord(Slice(msg));
-  }
+  void Write(const std::string& msg) { writer_.AddRecord(Slice(msg)); }
 
-  size_t WrittenBytes() const {
-    return dest_contents().size();
-  }
+  size_t WrittenBytes() const { return dest_contents().size(); }
 
   std::string Read(const WALRecoveryMode wal_recovery_mode =
                        WALRecoveryMode::kTolerateCorruptedTailRecords) {
@@ -205,7 +201,7 @@ class LogTest : public ::testing::TestWithParam<int> {
 
   void ShrinkSize(int bytes) {
     auto dest =
-      dynamic_cast<test::StringSink*>(writer_.file()->writable_file());
+        dynamic_cast<test::StringSink*>(writer_.file()->writable_file());
     assert(dest);
     dest->Drop(bytes);
   }
@@ -225,13 +221,9 @@ class LogTest : public ::testing::TestWithParam<int> {
     src->force_error_position_ = position;
   }
 
-  size_t DroppedBytes() const {
-    return report_.dropped_bytes_;
-  }
+  size_t DroppedBytes() const { return report_.dropped_bytes_; }
 
-  std::string ReportMessage() const {
-    return report_.message_;
-  }
+  std::string ReportMessage() const { return report_.message_; }
 
   void ForceEOF(size_t position = 0) {
     auto src = dynamic_cast<StringSource*>(reader_.file()->file());
@@ -245,9 +237,7 @@ class LogTest : public ::testing::TestWithParam<int> {
     reader_.UnmarkEOF();
   }
 
-  bool IsEOF() {
-    return reader_.IsEOF();
-  }
+  bool IsEOF() { return reader_.IsEOF(); }
 
   // Returns OK iff recorded error message contains "msg"
   std::string MatchError(const std::string& msg) const {
@@ -271,8 +261,8 @@ class LogTest : public ::testing::TestWithParam<int> {
     unique_ptr<SequentialFileReader> file_reader(
         test::GetSequentialFileReader(new StringSource(reader_contents_)));
     unique_ptr<Reader> offset_reader(
-        new Reader(NULL, std::move(file_reader), &report_,
-                   true /*checksum*/, WrittenBytes() + offset_past_end, 123));
+        new Reader(NULL, std::move(file_reader), &report_, true /*checksum*/,
+                   WrittenBytes() + offset_past_end, 123));
     Slice record;
     std::string scratch;
     ASSERT_TRUE(!offset_reader->ReadRecord(&record, &scratch));
@@ -283,9 +273,9 @@ class LogTest : public ::testing::TestWithParam<int> {
     WriteInitialOffsetLog();
     unique_ptr<SequentialFileReader> file_reader(
         test::GetSequentialFileReader(new StringSource(reader_contents_)));
-    unique_ptr<Reader> offset_reader(
-        new Reader(NULL, std::move(file_reader), &report_,
-                   true /*checksum*/, initial_offset, 123));
+    unique_ptr<Reader> offset_reader(new Reader(NULL, std::move(file_reader),
+                                                &report_, true /*checksum*/,
+                                                initial_offset, 123));
     Slice record;
     std::string scratch;
     ASSERT_TRUE(offset_reader->ReadRecord(&record, &scratch));
@@ -295,14 +285,13 @@ class LogTest : public ::testing::TestWithParam<int> {
               offset_reader->LastRecordOffset());
     ASSERT_EQ((char)('a' + expected_record_offset), record.data()[0]);
   }
-
 };
 
-size_t LogTest::initial_offset_record_sizes_[] =
-    {10000,  // Two sizable records in first block
-     10000,
-     2 * log::kBlockSize - 1000,  // Span three blocks
-     1};
+size_t LogTest::initial_offset_record_sizes_[] = {
+    10000,  // Two sizable records in first block
+    10000,
+    2 * log::kBlockSize - 1000,  // Span three blocks
+    1};
 
 TEST_P(LogTest, Empty) { ASSERT_EQ("EOF", Read()); }
 
@@ -424,7 +413,7 @@ TEST_P(LogTest, BadRecordType) {
 
 TEST_P(LogTest, TruncatedTrailingRecordIsIgnored) {
   Write("foo");
-  ShrinkSize(4);   // Drop all payload as well as a header byte
+  ShrinkSize(4);  // Drop all payload as well as a header byte
   ASSERT_EQ("EOF", Read());
   // Truncated last record is ignored, not treated as an error
   ASSERT_EQ(0U, DroppedBytes());
@@ -558,9 +547,8 @@ TEST_P(LogTest, PartialLastIsNotIgnored) {
   ShrinkSize(1);
   ASSERT_EQ("EOF", Read(WALRecoveryMode::kAbsoluteConsistency));
   ASSERT_GT(DroppedBytes(), 0U);
-  ASSERT_EQ("OK", MatchError(
-                      "Corruption: truncated headerCorruption: "
-                      "error reading trailing data"));
+  ASSERT_EQ("OK", MatchError("Corruption: truncated headerCorruption: "
+                             "error reading trailing data"));
 }
 
 TEST_P(LogTest, ErrorJoinsRecords) {
@@ -575,7 +563,7 @@ TEST_P(LogTest, ErrorJoinsRecords) {
   Write("correct");
 
   // Wipe the middle block
-  for (unsigned int offset = kBlockSize; offset < 2*kBlockSize; offset++) {
+  for (unsigned int offset = kBlockSize; offset < 2 * kBlockSize; offset++) {
     SetByte(offset, 'x');
   }
 

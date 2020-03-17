@@ -6,10 +6,10 @@
 #pragma once
 #include <string>
 
-#include "vidardb/status.h"
-#include "vidardb/types.h"
 #include "vidardb/env.h"
 #include "vidardb/options.h"
+#include "vidardb/status.h"
+#include "vidardb/types.h"
 
 namespace vidardb {
 

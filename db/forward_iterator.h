@@ -6,16 +6,16 @@
 
 #ifndef VIDARDB_LITE
 
+#include <queue>
 #include <string>
 #include <vector>
-#include <queue>
 
-#include "vidardb/db.h"
-#include "vidardb/iterator.h"
-#include "vidardb/options.h"
 #include "db/dbformat.h"
 #include "table/internal_iterator.h"
 #include "util/arena.h"
+#include "vidardb/db.h"
+#include "vidardb/iterator.h"
+#include "vidardb/options.h"
 
 namespace vidardb {
 
@@ -29,18 +29,20 @@ struct FileMetaData;
 
 class MinIterComparator {
  public:
-  explicit MinIterComparator(const Comparator* comparator) :
-    comparator_(comparator) {}
+  explicit MinIterComparator(const Comparator* comparator)
+      : comparator_(comparator) {}
 
   bool operator()(InternalIterator* a, InternalIterator* b) {
     return comparator_->Compare(a->key(), b->key()) > 0;
   }
+
  private:
   const Comparator* comparator_;
 };
 
 typedef std::priority_queue<InternalIterator*, std::vector<InternalIterator*>,
-                            MinIterComparator> MinIterHeap;
+                            MinIterComparator>
+    MinIterHeap;
 
 /**
  * ForwardIterator is a special type of iterator that only supports Seek()
@@ -86,9 +88,9 @@ class ForwardIterator : public InternalIterator {
   void UpdateCurrent();
   bool NeedToSeekImmutable(const Slice& internal_key);
   void DeleteCurrentIter();
-  uint32_t FindFileInRange(
-    const std::vector<FileMetaData*>& files, const Slice& internal_key,
-    uint32_t left, uint32_t right);
+  uint32_t FindFileInRange(const std::vector<FileMetaData*>& files,
+                           const Slice& internal_key, uint32_t left,
+                           uint32_t right);
 
   bool IsOverUpperBound(const Slice& internal_key) const;
 

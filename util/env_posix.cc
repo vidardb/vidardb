@@ -27,6 +27,7 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
+
 #include <algorithm>
 // Get nano time includes
 #if defined(OS_LINUX) || defined(OS_FREEBSD)
@@ -38,11 +39,10 @@
 #endif
 #include <deque>
 #include <set>
+
 #include "port/port.h"
-#include "vidardb/slice.h"
 #include "util/coding.h"
 #include "util/io_posix.h"
-#include "util/threadpool.h"
 #include "util/iostats_context_imp.h"
 #include "util/logging.h"
 #include "util/posix_logger.h"
@@ -51,6 +51,8 @@
 #include "util/sync_point.h"
 #include "util/thread_local.h"
 #include "util/thread_status_updater.h"
+#include "util/threadpool.h"
+#include "vidardb/slice.h"
 
 #if !defined(TMPFS_MAGIC)
 #define TMPFS_MAGIC 0x01021994
@@ -102,10 +104,11 @@ static int LockOrUnlock(const std::string& fname, int fd, bool lock) {
   f.l_type = (lock ? F_WRLCK : F_UNLCK);
   f.l_whence = SEEK_SET;
   f.l_start = 0;
-  f.l_len = 0;        // Lock/unlock entire file
+  f.l_len = 0;  // Lock/unlock entire file
   int value = fcntl(fd, F_SETLK, &f);
   if (value == -1 && lock) {
-    // if there is an error in locking, then remove the pathname from lockedfiles
+    // if there is an error in locking, then remove the pathname from
+    // lockedfiles
     lockedFiles.erase(fname);
   }
   mutex_lockedFiles.Unlock();
@@ -203,8 +206,8 @@ class PosixEnv : public Env {
       if (s.ok()) {
         void* base = mmap(nullptr, size, PROT_READ, MAP_SHARED, fd, 0);
         if (base != MAP_FAILED) {
-          result->reset(new PosixMmapReadableFile(fd, fname, base,
-                                                  size, options));
+          result->reset(
+              new PosixMmapReadableFile(fd, fname, base, size, options));
         } else {
           s = IOError(fname, errno);
         }
@@ -414,10 +417,11 @@ class PosixEnv : public Env {
     if (mkdir(name.c_str(), 0755) != 0) {
       if (errno != EEXIST) {
         result = IOError(name, errno);
-      } else if (!DirExists(name)) { // Check that name is actually a
-                                     // directory.
+      } else if (!DirExists(name)) {  // Check that name is actually a
+                                      // directory.
         // Message is taken from mkdir
-        result = Status::IOError("`"+name+"' exists but is not a directory");
+        result =
+            Status::IOError("`" + name + "' exists but is not a directory");
       }
     }
     return result;
@@ -447,7 +451,7 @@ class PosixEnv : public Env {
   virtual Status GetFileModificationTime(const std::string& fname,
                                          uint64_t* file_mtime) override {
     struct stat s;
-    if (stat(fname.c_str(), &s) !=0) {
+    if (stat(fname.c_str(), &s) != 0) {
       return IOError(fname, errno);
     }
     *file_mtime = static_cast<uint64_t>(s.st_mtime);
@@ -596,7 +600,8 @@ class PosixEnv : public Env {
     return static_cast<uint64_t>(ts.tv_sec) * 1000000000 + ts.tv_nsec;
 #else
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
-       std::chrono::steady_clock::now().time_since_epoch()).count();
+               std::chrono::steady_clock::now().time_since_epoch())
+        .count();
 #endif
   }
 
@@ -615,10 +620,10 @@ class PosixEnv : public Env {
 
   virtual Status GetCurrentTime(int64_t* unix_time) override {
     time_t ret = time(nullptr);
-    if (ret == (time_t) -1) {
+    if (ret == (time_t)-1) {
       return IOError("GetCurrentTime", errno);
     }
-    *unix_time = (int64_t) ret;
+    *unix_time = (int64_t)ret;
     return Status::OK();
   }
 
@@ -667,14 +672,8 @@ class PosixEnv : public Env {
     dummy.resize(maxsize);
     char* p = &dummy[0];
     localtime_r(&seconds, &t);
-    snprintf(p, maxsize,
-             "%04d/%02d/%02d-%02d:%02d:%02d ",
-             t.tm_year + 1900,
-             t.tm_mon + 1,
-             t.tm_mday,
-             t.tm_hour,
-             t.tm_min,
-             t.tm_sec);
+    snprintf(p, maxsize, "%04d/%02d/%02d-%02d:%02d:%02d ", t.tm_year + 1900,
+             t.tm_mon + 1, t.tm_mday, t.tm_hour, t.tm_min, t.tm_sec);
     return dummy;
   }
 
@@ -700,8 +699,7 @@ class PosixEnv : public Env {
 
  private:
   bool checkedDiskForMmap_;
-  bool forceMmapOff; // do we override Env options?
-
+  bool forceMmapOff;  // do we override Env options?
 
   // Returns true iff the named directory exists and is a directory.
   virtual bool DirExists(const std::string& dname) {
@@ -709,13 +707,13 @@ class PosixEnv : public Env {
     if (stat(dname.c_str(), &statbuf) == 0) {
       return S_ISDIR(statbuf.st_mode);
     }
-    return false; // stat() failed return false
+    return false;  // stat() failed return false
   }
 
   bool SupportsFastAllocate(const std::string& path) {
 #ifdef VIDARDB_FALLOCATE_PRESENT
     struct statfs s;
-    if (statfs(path.c_str(), &s)){
+    if (statfs(path.c_str(), &s)) {
       return false;
     }
     switch (s.f_type) {
@@ -817,13 +815,10 @@ std::string Env::GenerateUniqueId() {
   // Could not read uuid_file - generate uuid using "nanos-random"
   Random64 r(time(nullptr));
   uint64_t random_uuid_portion =
-    r.Uniform(std::numeric_limits<uint64_t>::max());
+      r.Uniform(std::numeric_limits<uint64_t>::max());
   uint64_t nanos_uuid_portion = NowNanos();
   char uuid2[200];
-  snprintf(uuid2,
-           200,
-           "%lx-%lx",
-           (unsigned long)nanos_uuid_portion,
+  snprintf(uuid2, 200, "%lx-%lx", (unsigned long)nanos_uuid_portion,
            (unsigned long)random_uuid_portion);
   return uuid2;
 }

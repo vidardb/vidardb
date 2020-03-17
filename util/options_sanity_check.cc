@@ -16,7 +16,7 @@ OptionsSanityCheckLevel SanityCheckLevelHelper(
   auto iter = smap.find(name);
   return iter != smap.end() ? iter->second : kSanityLevelExactMatch;
 }
-}
+}  // namespace
 
 OptionsSanityCheckLevel DBOptionSanityCheckLevel(
     const std::string& option_name) {

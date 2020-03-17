@@ -8,9 +8,8 @@
 #include <string>
 
 #include "port/port.h"
-
-#include "vidardb/sst_file_manager.h"
 #include "util/delete_scheduler.h"
+#include "vidardb/sst_file_manager.h"
 
 namespace vidardb {
 

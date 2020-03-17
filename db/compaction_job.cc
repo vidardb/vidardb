@@ -19,6 +19,7 @@
 #endif
 
 #include <inttypes.h>
+
 #include <algorithm>
 #include <functional>
 #include <list>
@@ -36,33 +37,33 @@
 #include "db/filename.h"
 #include "db/log_reader.h"
 #include "db/log_writer.h"
+#include "db/version_set.h"
 #include "memtable/memtable.h"
 #include "memtable/memtable_list.h"
-#include "db/version_set.h"
 #include "port/likely.h"
 #include "port/port.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
-#include "vidardb/statistics.h"
-#include "vidardb/status.h"
-#include "vidardb/table.h"
+#include "table/adaptive_table_factory.h"  // Shichao
 #include "table/block.h"
 #include "table/block_based_table_factory.h"
 #include "table/merger.h"
 #include "table/table_builder.h"
-#include "table/adaptive_table_factory.h"  // Shichao
 #include "util/coding.h"
 #include "util/file_reader_writer.h"
 #include "util/iostats_context_imp.h"
 #include "util/log_buffer.h"
 #include "util/logging.h"
-#include "util/sst_file_manager_impl.h"
 #include "util/mutexlock.h"
 #include "util/perf_context_imp.h"
+#include "util/sst_file_manager_impl.h"
 #include "util/stop_watch.h"
 #include "util/string_util.h"
 #include "util/sync_point.h"
 #include "util/thread_status_util.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/statistics.h"
+#include "vidardb/status.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 
@@ -306,15 +307,13 @@ CompactionJob::~CompactionJob() {
   ThreadStatusUtil::ResetThreadStatus();
 }
 
-void CompactionJob::ReportStartedCompaction(
-    Compaction* compaction) {
+void CompactionJob::ReportStartedCompaction(Compaction* compaction) {
   const auto* cfd = compact_->compaction->column_family_data();
   ThreadStatusUtil::SetColumnFamily(cfd, cfd->ioptions()->env,
                                     cfd->options()->enable_thread_tracking);
 
-  ThreadStatusUtil::SetThreadOperationProperty(
-      ThreadStatus::COMPACTION_JOB_ID,
-      job_id_);
+  ThreadStatusUtil::SetThreadOperationProperty(ThreadStatus::COMPACTION_JOB_ID,
+                                               job_id_);
 
   ThreadStatusUtil::SetThreadOperationProperty(
       ThreadStatus::COMPACTION_INPUT_OUTPUT_LEVEL,
@@ -344,8 +343,7 @@ void CompactionJob::ReportStartedCompaction(
 
   // Set the thread operation after operation properties
   // to ensure GetThreadList() can always show them all together.
-  ThreadStatusUtil::SetThreadOperation(
-      ThreadStatus::OP_COMPACTION);
+  ThreadStatusUtil::SetThreadOperation(ThreadStatus::OP_COMPACTION);
 
   if (compaction_job_stats_) {
     compaction_job_stats_->is_manual_compaction =
@@ -360,8 +358,8 @@ void CompactionJob::Prepare() {
   // Generate file_levels_ for compaction berfore making Iterator
   auto* c = compact_->compaction;
   assert(c->column_family_data() != nullptr);
-  assert(c->column_family_data()->current()->storage_info()
-      ->NumLevelFiles(compact_->compaction->level()) > 0);
+  assert(c->column_family_data()->current()->storage_info()->NumLevelFiles(
+             compact_->compaction->level()) > 0);
 
   // Is this compaction producing files at the bottommost level?
   bottommost_level_ = c->bottommost_level();
@@ -445,14 +443,18 @@ void CompactionJob::GenSubcompactionBoundaries() {
   }
 
   std::sort(bounds.begin(), bounds.end(),
-    [cfd_comparator] (const Slice& a, const Slice& b) -> bool {
-      return cfd_comparator->Compare(ExtractUserKey(a), ExtractUserKey(b)) < 0;
-    });
+            [cfd_comparator](const Slice& a, const Slice& b) -> bool {
+              return cfd_comparator->Compare(ExtractUserKey(a),
+                                             ExtractUserKey(b)) < 0;
+            });
   // Remove duplicated entries from bounds
-  bounds.erase(std::unique(bounds.begin(), bounds.end(),
-    [cfd_comparator] (const Slice& a, const Slice& b) -> bool {
-      return cfd_comparator->Compare(ExtractUserKey(a), ExtractUserKey(b)) == 0;
-    }), bounds.end());
+  bounds.erase(
+      std::unique(bounds.begin(), bounds.end(),
+                  [cfd_comparator](const Slice& a, const Slice& b) -> bool {
+                    return cfd_comparator->Compare(ExtractUserKey(a),
+                                                   ExtractUserKey(b)) == 0;
+                  }),
+      bounds.end());
 
   // Combine consecutive pairs of boundaries into ranges with an approximate
   // size of data covered by keys in that range
@@ -602,8 +604,7 @@ Status CompactionJob::Install(const MutableCFOptions& mutable_cf_options) {
       stats.bytes_written / static_cast<double>(stats.micros),
       compact_->compaction->output_level(),
       stats.num_input_files_in_non_output_levels,
-      stats.num_input_files_in_output_level,
-      stats.num_output_files,
+      stats.num_input_files_in_output_level, stats.num_output_files,
       stats.bytes_read_non_output_levels / 1048576.0,
       stats.bytes_read_output_level / 1048576.0,
       stats.bytes_written / 1048576.0,
@@ -618,15 +619,15 @@ Status CompactionJob::Install(const MutableCFOptions& mutable_cf_options) {
   UpdateCompactionJobStats(stats);
 
   auto stream = event_logger_->LogToBuffer(log_buffer_);
-  stream << "job" << job_id_
-         << "event" << "compaction_finished"
+  stream << "job" << job_id_ << "event"
+         << "compaction_finished"
          << "compaction_time_micros" << compaction_stats_.micros
          << "output_level" << compact_->compaction->output_level()
          << "num_output_files" << compact_->NumOutputFiles()
-         << "total_output_size" << compact_->total_bytes
-         << "num_input_records" << compact_->num_input_records
-         << "num_output_records" << compact_->num_output_records
-         << "num_subcompactions" << compact_->sub_compact_states.size();
+         << "total_output_size" << compact_->total_bytes << "num_input_records"
+         << compact_->num_input_records << "num_output_records"
+         << compact_->num_output_records << "num_subcompactions"
+         << compact_->sub_compact_states.size();
 
   if (measure_io_stats_ && compaction_job_stats_ != nullptr) {
     stream << "file_write_nanos" << compaction_job_stats_->file_write_nanos;
@@ -823,7 +824,7 @@ void CompactionJob::ProcessKeyValueCompaction(SubcompactionState* sub_compact) {
     // during subcompactions (i.e. if output size, estimated by input size, is
     // going to be 1.2MB and max_output_file_size = 1MB, prefer to have 0.6MB
     // and 0.6MB instead of 1MB and 0.2MB)
-    if (sub_compact->builder->FileSizeTotal() >=                     // Shichao
+    if (sub_compact->builder->FileSizeTotal() >=  // Shichao
         sub_compact->compaction->max_output_file_size()) {
       status = FinishCompactionOutputFile(input->status(), sub_compact);
       if (sub_compact->outputs.size() == 1) {
@@ -929,9 +930,10 @@ Status CompactionJob::FinishCompactionOutputFile(
   } else {
     sub_compact->builder->Abandon();
   }
-  const uint64_t current_bytes = sub_compact->builder->FileSizeTotal();  // Shichao
+  const uint64_t current_bytes =
+      sub_compact->builder->FileSizeTotal();              // Shichao
   meta->fd.file_size = sub_compact->builder->FileSize();  // Shichao
-  meta->fd.file_size_total = current_bytes;  // Shichao
+  meta->fd.file_size_total = current_bytes;               // Shichao
   sub_compact->current_output()->finished = true;
   sub_compact->total_bytes += current_bytes;
 
@@ -951,14 +953,16 @@ Status CompactionJob::FinishCompactionOutputFile(
     // Verify that the table is usable
     InternalIterator* iter = cfd->table_cache()->NewIterator(
         ReadOptions(), env_options_, cfd->internal_comparator(), meta->fd,
-        nullptr, cfd->internal_stats()->GetFileReadHist(
-                     compact_->compaction->output_level()),
+        nullptr,
+        cfd->internal_stats()->GetFileReadHist(
+            compact_->compaction->output_level()),
 
-                     false);
+        false);
     s = iter->status();
 
     if (s.ok() && paranoid_file_checks_) {
-      for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {}
+      for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+      }
       s = iter->status();
     }
 
@@ -1148,8 +1152,7 @@ void CompactionJob::CleanupCompaction() {
 
 #ifndef VIDARDB_LITE
 namespace {
-void CopyPrefix(
-    const Slice& src, size_t prefix_length, std::string* dst) {
+void CopyPrefix(const Slice& src, size_t prefix_length, std::string* dst) {
   assert(prefix_length > 0);
   size_t length = src.size() > prefix_length ? prefix_length : src.size();
   dst->assign(src.data(), length);
@@ -1165,17 +1168,14 @@ void CompactionJob::UpdateCompactionStats() {
   for (int input_level = 0;
        input_level < static_cast<int>(compaction->num_input_levels());
        ++input_level) {
-    if (compaction->start_level() + input_level
-        != compaction->output_level()) {
+    if (compaction->start_level() + input_level != compaction->output_level()) {
       UpdateCompactionInputStatsHelper(
           &compaction_stats_.num_input_files_in_non_output_levels,
-          &compaction_stats_.bytes_read_non_output_levels,
-          input_level);
+          &compaction_stats_.bytes_read_non_output_levels, input_level);
     } else {
       UpdateCompactionInputStatsHelper(
           &compaction_stats_.num_input_files_in_output_level,
-          &compaction_stats_.bytes_read_output_level,
-          input_level);
+          &compaction_stats_.bytes_read_output_level, input_level);
     }
   }
 
@@ -1189,7 +1189,8 @@ void CompactionJob::UpdateCompactionStats() {
     compaction_stats_.num_output_files += static_cast<int>(num_output_files);
 
     for (const auto& out : sub_compact.outputs) {
-      compaction_stats_.bytes_written += out.meta.fd.file_size_total;  // Shichao
+      compaction_stats_.bytes_written +=
+          out.meta.fd.file_size_total;  // Shichao
     }
     if (sub_compact.num_input_records > sub_compact.num_output_records) {
       compaction_stats_.num_dropped_records +=
@@ -1198,8 +1199,9 @@ void CompactionJob::UpdateCompactionStats() {
   }
 }
 
-void CompactionJob::UpdateCompactionInputStatsHelper(
-    int* num_files, uint64_t* bytes_read, int input_level) {
+void CompactionJob::UpdateCompactionInputStatsHelper(int* num_files,
+                                                     uint64_t* bytes_read,
+                                                     int input_level) {
   const Compaction* compaction = compact_->compaction;
   auto num_input_files = compaction->num_input_files(input_level);
   *num_files += static_cast<int>(num_input_files);
@@ -1220,10 +1222,8 @@ void CompactionJob::UpdateCompactionJobStats(
 
     // input information
     compaction_job_stats_->total_input_bytes =
-        stats.bytes_read_non_output_levels +
-        stats.bytes_read_output_level;
-    compaction_job_stats_->num_input_records =
-        compact_->num_input_records;
+        stats.bytes_read_non_output_levels + stats.bytes_read_output_level;
+    compaction_job_stats_->num_input_records = compact_->num_input_records;
     compaction_job_stats_->num_input_files =
         stats.num_input_files_in_non_output_levels +
         stats.num_input_files_in_output_level;
@@ -1232,19 +1232,16 @@ void CompactionJob::UpdateCompactionJobStats(
 
     // output information
     compaction_job_stats_->total_output_bytes = stats.bytes_written;
-    compaction_job_stats_->num_output_records =
-        compact_->num_output_records;
+    compaction_job_stats_->num_output_records = compact_->num_output_records;
     compaction_job_stats_->num_output_files = stats.num_output_files;
 
     if (compact_->NumOutputFiles() > 0U) {
-      CopyPrefix(
-          compact_->SmallestUserKey(),
-          CompactionJobStats::kMaxPrefixLength,
-          &compaction_job_stats_->smallest_output_key_prefix);
-      CopyPrefix(
-          compact_->LargestUserKey(),
-          CompactionJobStats::kMaxPrefixLength,
-          &compaction_job_stats_->largest_output_key_prefix);
+      CopyPrefix(compact_->SmallestUserKey(),
+                 CompactionJobStats::kMaxPrefixLength,
+                 &compaction_job_stats_->smallest_output_key_prefix);
+      CopyPrefix(compact_->LargestUserKey(),
+                 CompactionJobStats::kMaxPrefixLength,
+                 &compaction_job_stats_->largest_output_key_prefix);
     }
   }
 #endif  // !VIDARDB_LITE

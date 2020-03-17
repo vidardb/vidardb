@@ -13,15 +13,15 @@
 #include <string>
 #include <vector>
 
+#include "table/block_based_table_factory.h"
+#include "table/internal_iterator.h"
+#include "util/mutexlock.h"
+#include "util/random.h"
 #include "vidardb/env.h"
 #include "vidardb/iterator.h"
 #include "vidardb/options.h"
 #include "vidardb/slice.h"
 #include "vidardb/table.h"
-#include "table/block_based_table_factory.h"
-#include "table/internal_iterator.h"
-#include "util/mutexlock.h"
-#include "util/random.h"
 
 namespace vidardb {
 class SequentialFile;
@@ -53,9 +53,10 @@ class ErrorEnv : public EnvWrapper {
   bool writable_file_error_;
   int num_writable_file_errors_;
 
-  ErrorEnv() : EnvWrapper(Env::Default()),
-               writable_file_error_(false),
-               num_writable_file_errors_(0) { }
+  ErrorEnv()
+      : EnvWrapper(Env::Default()),
+        writable_file_error_(false),
+        num_writable_file_errors_(0) {}
 
   virtual Status NewWritableFile(const std::string& fname,
                                  unique_ptr<WritableFile>* result,
@@ -141,8 +142,8 @@ class VectorIterator : public InternalIterator {
   }
 
   VectorIterator(const std::vector<std::string>& keys,
-      const std::vector<std::string>& values)
-    : keys_(keys), values_(values), current_(keys.size()) {
+                 const std::vector<std::string>& values)
+      : keys_(keys), values_(values), current_(keys.size()) {
     assert(keys_.size() == values_.size());
   }
 
@@ -175,15 +176,15 @@ extern RandomAccessFileReader* GetRandomAccessFileReader(RandomAccessFile* raf);
 
 extern SequentialFileReader* GetSequentialFileReader(SequentialFile* se);
 
-class StringSink: public WritableFile {
+class StringSink : public WritableFile {
  public:
   std::string contents_;
 
-  explicit StringSink(Slice* reader_contents = nullptr) :
-      WritableFile(),
-      contents_(""),
-      reader_contents_(reader_contents),
-      last_flush_(0) {
+  explicit StringSink(Slice* reader_contents = nullptr)
+      : WritableFile(),
+        contents_(""),
+        reader_contents_(reader_contents),
+        last_flush_(0) {
     if (reader_contents_ != nullptr) {
       *reader_contents_ = Slice(contents_.data(), 0);
     }
@@ -200,9 +201,8 @@ class StringSink: public WritableFile {
     if (reader_contents_ != nullptr) {
       assert(reader_contents_->size() <= last_flush_);
       size_t offset = last_flush_ - reader_contents_->size();
-      *reader_contents_ = Slice(
-          contents_.data() + offset,
-          contents_.size() - offset);
+      *reader_contents_ =
+          Slice(contents_.data() + offset, contents_.size() - offset);
       last_flush_ = contents_.size();
     }
 
@@ -216,8 +216,8 @@ class StringSink: public WritableFile {
   void Drop(size_t bytes) {
     if (reader_contents_ != nullptr) {
       contents_.resize(contents_.size() - bytes);
-      *reader_contents_ = Slice(
-          reader_contents_->data(), reader_contents_->size() - bytes);
+      *reader_contents_ =
+          Slice(reader_contents_->data(), reader_contents_->size() - bytes);
       last_flush_ = contents_.size();
     }
   }
@@ -270,7 +270,7 @@ class OverwritingStringSink : public WritableFile {
   size_t last_flush_;
 };
 
-class StringSource: public RandomAccessFile {
+class StringSource : public RandomAccessFile {
  public:
   explicit StringSource(const Slice& contents, uint64_t uniq_id = 0,
                         bool mmap = false)
@@ -279,12 +279,12 @@ class StringSource: public RandomAccessFile {
         mmap_(mmap),
         total_reads_(0) {}
 
-  virtual ~StringSource() { }
+  virtual ~StringSource() {}
 
   uint64_t Size() const { return contents_.size(); }
 
   virtual Status Read(uint64_t offset, size_t n, Slice* result,
-      char* scratch) const override {
+                      char* scratch) const override {
     total_reads_++;
     if (offset > contents_.size()) {
       return Status::InvalidArgument("invalid Read offset");
@@ -309,7 +309,7 @@ class StringSource: public RandomAccessFile {
     char* rid = id;
     rid = EncodeVarint64(rid, uniq_id_);
     rid = EncodeVarint64(rid, 0);
-    return static_cast<size_t>(rid-id);
+    return static_cast<size_t>(rid - id);
   }
 
   int total_reads() const { return total_reads_; }
@@ -399,7 +399,6 @@ class SleepingBackgroundTask {
   bool done_with_sleep_;
   bool sleeping_;
 };
-
 
 inline std::string EncodeInt(uint64_t x) {
   std::string result;

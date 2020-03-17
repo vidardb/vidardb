@@ -6,11 +6,11 @@
 #pragma once
 
 #include "port/port.h"
+#include "util/statistics.h"
+#include "util/stop_watch.h"
 #include "vidardb/env.h"
 #include "vidardb/statistics.h"
 #include "vidardb/thread_status.h"
-#include "util/statistics.h"
-#include "util/stop_watch.h"
 
 namespace vidardb {
 class InstrumentedCondVar;
@@ -20,24 +20,17 @@ class InstrumentedCondVar;
 class InstrumentedMutex {
  public:
   explicit InstrumentedMutex(bool adaptive = false)
-      : mutex_(adaptive), stats_(nullptr), env_(nullptr),
-        stats_code_(0) {}
+      : mutex_(adaptive), stats_(nullptr), env_(nullptr), stats_code_(0) {}
 
-  InstrumentedMutex(
-      Statistics* stats, Env* env,
-      int stats_code, bool adaptive = false)
-      : mutex_(adaptive), stats_(stats), env_(env),
-        stats_code_(stats_code) {}
+  InstrumentedMutex(Statistics* stats, Env* env, int stats_code,
+                    bool adaptive = false)
+      : mutex_(adaptive), stats_(stats), env_(env), stats_code_(stats_code) {}
 
   void Lock();
 
-  void Unlock() {
-    mutex_.Unlock();
-  }
+  void Unlock() { mutex_.Unlock(); }
 
-  void AssertHeld() {
-    mutex_.AssertHeld();
-  }
+  void AssertHeld() { mutex_.AssertHeld(); }
 
  private:
   void LockInternal();
@@ -56,9 +49,7 @@ class InstrumentedMutexLock {
     mutex_->Lock();
   }
 
-  ~InstrumentedMutexLock() {
-    mutex_->Unlock();
-  }
+  ~InstrumentedMutexLock() { mutex_->Unlock(); }
 
  private:
   InstrumentedMutex* const mutex_;
@@ -78,13 +69,9 @@ class InstrumentedCondVar {
 
   bool TimedWait(uint64_t abs_time_us);
 
-  void Signal() {
-    cond_.Signal();
-  }
+  void Signal() { cond_.Signal(); }
 
-  void SignalAll() {
-    cond_.SignalAll();
-  }
+  void SignalAll() { cond_.SignalAll(); }
 
  private:
   void WaitInternal();

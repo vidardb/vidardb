@@ -11,14 +11,12 @@
 #define __STDC_FORMAT_MACROS
 #endif
 
+#include <inttypes.h>
+
 #include <cctype>
 #include <cstring>
 #include <unordered_map>
-#include <inttypes.h>
 
-#include "vidardb/cache.h"
-#include "vidardb/convenience.h"
-#include "vidardb/memtablerep.h"
 #include "util/options_helper.h"
 #include "util/options_parser.h"
 #include "util/options_sanity_check.h"
@@ -26,6 +24,9 @@
 #include "util/stderr_logger.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/cache.h"
+#include "vidardb/convenience.h"
+#include "vidardb/memtablerep.h"
 
 #ifndef GFLAGS
 bool FLAGS_enable_print = false;
@@ -136,8 +137,8 @@ TEST_F(OptionsTest, GetOptionsFromMapTest) {
 
   ColumnFamilyOptions base_cf_opt;
   ColumnFamilyOptions new_cf_opt;
-  ASSERT_OK(GetColumnFamilyOptionsFromMap(
-            base_cf_opt, cf_options_map, &new_cf_opt));
+  ASSERT_OK(
+      GetColumnFamilyOptionsFromMap(base_cf_opt, cf_options_map, &new_cf_opt));
   ASSERT_EQ(new_cf_opt.write_buffer_size, 1U);
   ASSERT_EQ(new_cf_opt.max_write_buffer_number, 2);
   ASSERT_EQ(new_cf_opt.min_write_buffer_number_to_merge, 3);
@@ -189,14 +190,14 @@ TEST_F(OptionsTest, GetOptionsFromMapTest) {
   ASSERT_EQ(new_cf_opt.optimize_filters_for_hits, true);
 
   cf_options_map["write_buffer_size"] = "hello";
-  ASSERT_NOK(GetColumnFamilyOptionsFromMap(
-             base_cf_opt, cf_options_map, &new_cf_opt));
+  ASSERT_NOK(
+      GetColumnFamilyOptionsFromMap(base_cf_opt, cf_options_map, &new_cf_opt));
   cf_options_map["write_buffer_size"] = "1";
-  ASSERT_OK(GetColumnFamilyOptionsFromMap(
-            base_cf_opt, cf_options_map, &new_cf_opt));
+  ASSERT_OK(
+      GetColumnFamilyOptionsFromMap(base_cf_opt, cf_options_map, &new_cf_opt));
   cf_options_map["unknown_option"] = "1";
-  ASSERT_NOK(GetColumnFamilyOptionsFromMap(
-             base_cf_opt, cf_options_map, &new_cf_opt));
+  ASSERT_NOK(
+      GetColumnFamilyOptionsFromMap(base_cf_opt, cf_options_map, &new_cf_opt));
 
   DBOptions base_db_opt;
   DBOptions new_db_opt;
@@ -248,41 +249,44 @@ TEST_F(OptionsTest, GetColumnFamilyOptionsFromStringTest) {
   ColumnFamilyOptions new_cf_opt;
   base_cf_opt.table_factory.reset();
   ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt, "", &new_cf_opt));
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "write_buffer_size=5", &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt, "write_buffer_size=5",
+                                             &new_cf_opt));
   ASSERT_EQ(new_cf_opt.write_buffer_size, 5U);
   ASSERT_TRUE(new_cf_opt.table_factory == nullptr);
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "write_buffer_size=6;", &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "write_buffer_size=6;", &new_cf_opt));
   ASSERT_EQ(new_cf_opt.write_buffer_size, 6U);
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "  write_buffer_size =  7  ", &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "  write_buffer_size =  7  ", &new_cf_opt));
   ASSERT_EQ(new_cf_opt.write_buffer_size, 7U);
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "  write_buffer_size =  8 ; ", &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "  write_buffer_size =  8 ; ", &new_cf_opt));
   ASSERT_EQ(new_cf_opt.write_buffer_size, 8U);
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "write_buffer_size=9;max_write_buffer_number=10", &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "write_buffer_size=9;max_write_buffer_number=10",
+      &new_cf_opt));
   ASSERT_EQ(new_cf_opt.write_buffer_size, 9U);
   ASSERT_EQ(new_cf_opt.max_write_buffer_number, 10);
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "write_buffer_size=11; max_write_buffer_number  =  12 ;",
-            &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "write_buffer_size=11; max_write_buffer_number  =  12 ;",
+      &new_cf_opt));
   ASSERT_EQ(new_cf_opt.write_buffer_size, 11U);
   ASSERT_EQ(new_cf_opt.max_write_buffer_number, 12);
   // Wrong name "max_write_buffer_number_"
-  ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
-             "write_buffer_size=13;max_write_buffer_number_=14;",
-              &new_cf_opt));
+  ASSERT_NOK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "write_buffer_size=13;max_write_buffer_number_=14;",
+      &new_cf_opt));
   // Wrong key/value pair
-  ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
-             "write_buffer_size=13;max_write_buffer_number;", &new_cf_opt));
+  ASSERT_NOK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "write_buffer_size=13;max_write_buffer_number;",
+      &new_cf_opt));
   // Error Paring value
-  ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
-             "write_buffer_size=13;max_write_buffer_number=;", &new_cf_opt));
+  ASSERT_NOK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "write_buffer_size=13;max_write_buffer_number=;",
+      &new_cf_opt));
   // Missing option name
-  ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
-             "write_buffer_size=13; =100;", &new_cf_opt));
+  ASSERT_NOK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "write_buffer_size=13; =100;", &new_cf_opt));
 
   const int64_t kilo = 1024UL;
   const int64_t mega = 1024 * kilo;
@@ -290,14 +294,15 @@ TEST_F(OptionsTest, GetColumnFamilyOptionsFromStringTest) {
   const int64_t tera = 1024 * giga;
 
   // Units (k)
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "memtable_prefix_bloom_bits=14k;max_write_buffer_number=-15K",
-            &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt,
+      "memtable_prefix_bloom_bits=14k;max_write_buffer_number=-15K",
+      &new_cf_opt));
   ASSERT_EQ(new_cf_opt.max_write_buffer_number, -15 * kilo);
   // Units (m)
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "max_write_buffer_number=16m;inplace_update_num_locks=17M",
-            &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "max_write_buffer_number=16m;inplace_update_num_locks=17M",
+      &new_cf_opt));
   ASSERT_EQ(new_cf_opt.max_write_buffer_number, 16 * mega);
   // Units (g)
   ASSERT_OK(GetColumnFamilyOptionsFromString(
@@ -310,91 +315,100 @@ TEST_F(OptionsTest, GetColumnFamilyOptionsFromStringTest) {
   ASSERT_EQ(new_cf_opt.arena_block_size, 19 * giga);
 
   // Units (t)
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "write_buffer_size=20t;arena_block_size=21T", &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "write_buffer_size=20t;arena_block_size=21T", &new_cf_opt));
   ASSERT_EQ(new_cf_opt.write_buffer_size, 20 * tera);
   ASSERT_EQ(new_cf_opt.arena_block_size, 21 * tera);
 
   // Nested block based table options
   // Emtpy
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "write_buffer_size=10;max_write_buffer_number=16;"
-            "block_based_table_factory={};arena_block_size=1024",
-            &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt,
+      "write_buffer_size=10;max_write_buffer_number=16;"
+      "block_based_table_factory={};arena_block_size=1024",
+      &new_cf_opt));
   ASSERT_TRUE(new_cf_opt.table_factory != nullptr);
   // Non-empty
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "write_buffer_size=10;max_write_buffer_number=16;"
-            "block_based_table_factory={block_cache=1M;block_size=4;};"
-            "arena_block_size=1024",
-            &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt,
+      "write_buffer_size=10;max_write_buffer_number=16;"
+      "block_based_table_factory={block_cache=1M;block_size=4;};"
+      "arena_block_size=1024",
+      &new_cf_opt));
   ASSERT_TRUE(new_cf_opt.table_factory != nullptr);
   // Last one
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "write_buffer_size=10;max_write_buffer_number=16;"
-            "block_based_table_factory={block_cache=1M;block_size=4;}",
-            &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt,
+      "write_buffer_size=10;max_write_buffer_number=16;"
+      "block_based_table_factory={block_cache=1M;block_size=4;}",
+      &new_cf_opt));
   ASSERT_TRUE(new_cf_opt.table_factory != nullptr);
   // Mismatch curly braces
-  ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
-             "write_buffer_size=10;max_write_buffer_number=16;"
-             "block_based_table_factory={{{block_size=4;};"
-             "arena_block_size=1024",
-             &new_cf_opt));
+  ASSERT_NOK(GetColumnFamilyOptionsFromString(
+      base_cf_opt,
+      "write_buffer_size=10;max_write_buffer_number=16;"
+      "block_based_table_factory={{{block_size=4;};"
+      "arena_block_size=1024",
+      &new_cf_opt));
   // Unexpected chars after closing curly brace
-  ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
-             "write_buffer_size=10;max_write_buffer_number=16;"
-             "block_based_table_factory={block_size=4;}};"
-             "arena_block_size=1024",
-             &new_cf_opt));
-  ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
-             "write_buffer_size=10;max_write_buffer_number=16;"
-             "block_based_table_factory={block_size=4;}xdfa;"
-             "arena_block_size=1024",
-             &new_cf_opt));
-  ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
-             "write_buffer_size=10;max_write_buffer_number=16;"
-             "block_based_table_factory={block_size=4;}xdfa",
-             &new_cf_opt));
+  ASSERT_NOK(GetColumnFamilyOptionsFromString(
+      base_cf_opt,
+      "write_buffer_size=10;max_write_buffer_number=16;"
+      "block_based_table_factory={block_size=4;}};"
+      "arena_block_size=1024",
+      &new_cf_opt));
+  ASSERT_NOK(GetColumnFamilyOptionsFromString(
+      base_cf_opt,
+      "write_buffer_size=10;max_write_buffer_number=16;"
+      "block_based_table_factory={block_size=4;}xdfa;"
+      "arena_block_size=1024",
+      &new_cf_opt));
+  ASSERT_NOK(GetColumnFamilyOptionsFromString(
+      base_cf_opt,
+      "write_buffer_size=10;max_write_buffer_number=16;"
+      "block_based_table_factory={block_size=4;}xdfa",
+      &new_cf_opt));
   // Invalid block based table option
-  ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
-             "write_buffer_size=10;max_write_buffer_number=16;"
-             "block_based_table_factory={xx_block_size=4;}",
-             &new_cf_opt));
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-           "optimize_filters_for_hits=true",
-           &new_cf_opt));
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "optimize_filters_for_hits=false",
-            &new_cf_opt));
-  ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
-              "optimize_filters_for_hits=junk",
-              &new_cf_opt));
+  ASSERT_NOK(GetColumnFamilyOptionsFromString(
+      base_cf_opt,
+      "write_buffer_size=10;max_write_buffer_number=16;"
+      "block_based_table_factory={xx_block_size=4;}",
+      &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "optimize_filters_for_hits=true", &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "optimize_filters_for_hits=false", &new_cf_opt));
+  ASSERT_NOK(GetColumnFamilyOptionsFromString(
+      base_cf_opt, "optimize_filters_for_hits=junk", &new_cf_opt));
 
   // Nested plain table options
   // Emtpy
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "write_buffer_size=10;max_write_buffer_number=16;"
-            "plain_table_factory={};arena_block_size=1024",
-            &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt,
+      "write_buffer_size=10;max_write_buffer_number=16;"
+      "plain_table_factory={};arena_block_size=1024",
+      &new_cf_opt));
   ASSERT_TRUE(new_cf_opt.table_factory != nullptr);
   ASSERT_EQ(std::string(new_cf_opt.table_factory->Name()), "PlainTable");
   // Non-empty
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "write_buffer_size=10;max_write_buffer_number=16;"
-            "plain_table_factory={user_key_len=66;bloom_bits_per_key=20;};"
-            "arena_block_size=1024",
-            &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt,
+      "write_buffer_size=10;max_write_buffer_number=16;"
+      "plain_table_factory={user_key_len=66;bloom_bits_per_key=20;};"
+      "arena_block_size=1024",
+      &new_cf_opt));
   ASSERT_TRUE(new_cf_opt.table_factory != nullptr);
   ASSERT_EQ(std::string(new_cf_opt.table_factory->Name()), "PlainTable");
 
   // memtable factory
-  ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-            "write_buffer_size=10;max_write_buffer_number=16;"
-            "memtable=skip_list:10;arena_block_size=1024",
-            &new_cf_opt));
+  ASSERT_OK(GetColumnFamilyOptionsFromString(
+      base_cf_opt,
+      "write_buffer_size=10;max_write_buffer_number=16;"
+      "memtable=skip_list:10;arena_block_size=1024",
+      &new_cf_opt));
   ASSERT_TRUE(new_cf_opt.memtable_factory != nullptr);
-  ASSERT_EQ(std::string(new_cf_opt.memtable_factory->Name()), "SkipListFactory");
+  ASSERT_EQ(std::string(new_cf_opt.memtable_factory->Name()),
+            "SkipListFactory");
 }
 #endif  // !VIDARDB_LITE
 
@@ -403,47 +417,51 @@ TEST_F(OptionsTest, GetBlockBasedTableOptionsFromString) {
   BlockBasedTableOptions table_opt;
   BlockBasedTableOptions new_opt;
   // make sure default values are overwritten by something else
-  ASSERT_OK(GetBlockBasedTableOptionsFromString(table_opt,
-            "cache_index_and_filter_blocks=1;index_type=kBinarySearch;"
-            "checksum=kCRC32c;hash_index_allow_collision=1;no_block_cache=1;"
-            "block_cache=1M;block_cache_compressed=1k;block_size=1024;"
-            "block_size_deviation=8;block_restart_interval=4;"
-            "filter_policy=bloomfilter:4:true;whole_key_filtering=1;"
-            "skip_table_builder_flush=1",
-            &new_opt));
+  ASSERT_OK(GetBlockBasedTableOptionsFromString(
+      table_opt,
+      "cache_index_and_filter_blocks=1;index_type=kBinarySearch;"
+      "checksum=kCRC32c;hash_index_allow_collision=1;no_block_cache=1;"
+      "block_cache=1M;block_cache_compressed=1k;block_size=1024;"
+      "block_size_deviation=8;block_restart_interval=4;"
+      "filter_policy=bloomfilter:4:true;whole_key_filtering=1;"
+      "skip_table_builder_flush=1",
+      &new_opt));
   ASSERT_TRUE(new_opt.no_block_cache);
   ASSERT_TRUE(new_opt.block_cache != nullptr);
-  ASSERT_EQ(new_opt.block_cache->GetCapacity(), 1024UL*1024UL);
+  ASSERT_EQ(new_opt.block_cache->GetCapacity(), 1024UL * 1024UL);
   ASSERT_EQ(new_opt.block_size, 1024UL);
   ASSERT_EQ(new_opt.block_size_deviation, 8);
   ASSERT_EQ(new_opt.block_restart_interval, 4);
 
   // unknown option
-  ASSERT_NOK(GetBlockBasedTableOptionsFromString(table_opt,
-             "cache_index_and_filter_blocks=1;index_type=kBinarySearch;"
-             "bad_option=1",
-             &new_opt));
+  ASSERT_NOK(GetBlockBasedTableOptionsFromString(
+      table_opt,
+      "cache_index_and_filter_blocks=1;index_type=kBinarySearch;"
+      "bad_option=1",
+      &new_opt));
 
   // unrecognized index type
-  ASSERT_NOK(GetBlockBasedTableOptionsFromString(table_opt,
-             "cache_index_and_filter_blocks=1;index_type=kBinarySearchXX",
-             &new_opt));
+  ASSERT_NOK(GetBlockBasedTableOptionsFromString(
+      table_opt, "cache_index_and_filter_blocks=1;index_type=kBinarySearchXX",
+      &new_opt));
 
   // unrecognized checksum type
-  ASSERT_NOK(GetBlockBasedTableOptionsFromString(table_opt,
-             "cache_index_and_filter_blocks=1;checksum=kxxHashXX",
-             &new_opt));
+  ASSERT_NOK(GetBlockBasedTableOptionsFromString(
+      table_opt, "cache_index_and_filter_blocks=1;checksum=kxxHashXX",
+      &new_opt));
 
   // unrecognized filter policy name
-  ASSERT_NOK(GetBlockBasedTableOptionsFromString(table_opt,
-             "cache_index_and_filter_blocks=1;"
-             "filter_policy=bloomfilterxx:4:true",
-             &new_opt));
+  ASSERT_NOK(
+      GetBlockBasedTableOptionsFromString(table_opt,
+                                          "cache_index_and_filter_blocks=1;"
+                                          "filter_policy=bloomfilterxx:4:true",
+                                          &new_opt));
   // unrecognized filter policy config
-  ASSERT_NOK(GetBlockBasedTableOptionsFromString(table_opt,
-             "cache_index_and_filter_blocks=1;"
-             "filter_policy=bloomfilter:4",
-             &new_opt));
+  ASSERT_NOK(
+      GetBlockBasedTableOptionsFromString(table_opt,
+                                          "cache_index_and_filter_blocks=1;"
+                                          "filter_policy=bloomfilter:4",
+                                          &new_opt));
 }
 #endif  // !VIDARDB_LITE
 
@@ -458,14 +476,14 @@ TEST_F(OptionsTest, GetMemTableRepFactoryFromString) {
                                              &new_mem_factory));
 
   ASSERT_OK(GetMemTableRepFactoryFromString("prefix_hash", &new_mem_factory));
-  ASSERT_OK(GetMemTableRepFactoryFromString("prefix_hash:1000",
-                                            &new_mem_factory));
+  ASSERT_OK(
+      GetMemTableRepFactoryFromString("prefix_hash:1000", &new_mem_factory));
   ASSERT_EQ(std::string(new_mem_factory->Name()), "HashSkipListRepFactory");
   ASSERT_NOK(GetMemTableRepFactoryFromString("prefix_hash:1000:invalid_opt",
                                              &new_mem_factory));
 
-  ASSERT_OK(GetMemTableRepFactoryFromString("hash_linkedlist",
-                                            &new_mem_factory));
+  ASSERT_OK(
+      GetMemTableRepFactoryFromString("hash_linkedlist", &new_mem_factory));
   ASSERT_OK(GetMemTableRepFactoryFromString("hash_linkedlist:1000",
                                             &new_mem_factory));
   ASSERT_EQ(std::string(new_mem_factory->Name()), "HashLinkListRepFactory");
@@ -559,9 +577,8 @@ TEST_F(OptionsTest, ColumnFamilyOptionsSerialization) {
 
 #endif  // !VIDARDB_LITE
 
-Status StringToMap(
-    const std::string& opts_str,
-    std::unordered_map<std::string, std::string>* opts_map);
+Status StringToMap(const std::string& opts_str,
+                   std::unordered_map<std::string, std::string>* opts_map);
 
 #ifndef VIDARDB_LITE  // StringToMap is not supported in VIDARDB_LITE
 TEST_F(OptionsTest, StringToMapTest) {
@@ -620,17 +637,17 @@ TEST_F(OptionsTest, StringToMapTest) {
   ASSERT_EQ(opts_map["k3"], "v3");
   // Multi-level nested options
   opts_map.clear();
-  ASSERT_OK(StringToMap("k1=v1;k2={nk1=nv1;nk2={nnk1=nnk2}};"
-                        "k3={nk1={nnk1={nnnk1=nnnv1;nnnk2;nnnv2}}};k4=v4",
-                        &opts_map));
+  ASSERT_OK(
+      StringToMap("k1=v1;k2={nk1=nv1;nk2={nnk1=nnk2}};"
+                  "k3={nk1={nnk1={nnnk1=nnnv1;nnnk2;nnnv2}}};k4=v4",
+                  &opts_map));
   ASSERT_EQ(opts_map["k1"], "v1");
   ASSERT_EQ(opts_map["k2"], "nk1=nv1;nk2={nnk1=nnk2}");
   ASSERT_EQ(opts_map["k3"], "nk1={nnk1={nnnk1=nnnv1;nnnk2;nnnv2}}");
   ASSERT_EQ(opts_map["k4"], "v4");
   // Garbage inside curly braces
   opts_map.clear();
-  ASSERT_OK(StringToMap("k1=v1;k2={dfad=};k3={=};k4=v4",
-                        &opts_map));
+  ASSERT_OK(StringToMap("k1=v1;k2={dfad=};k3={=};k4=v4", &opts_map));
   ASSERT_EQ(opts_map["k1"], "v1");
   ASSERT_EQ(opts_map["k2"], "dfad=");
   ASSERT_EQ(opts_map["k3"], "=");
@@ -646,9 +663,10 @@ TEST_F(OptionsTest, StringToMapTest) {
   ASSERT_EQ(opts_map["k2"], "{{{}}}{}{}");
   // With random spaces
   opts_map.clear();
-  ASSERT_OK(StringToMap("  k1 =  v1 ; k2= {nk1=nv1; nk2={nnk1=nnk2}}  ; "
-                        "k3={  {   } }; k4= v4  ",
-                        &opts_map));
+  ASSERT_OK(
+      StringToMap("  k1 =  v1 ; k2= {nk1=nv1; nk2={nnk1=nnk2}}  ; "
+                  "k3={  {   } }; k4= v4  ",
+                  &opts_map));
   ASSERT_EQ(opts_map["k1"], "v1");
   ASSERT_EQ(opts_map["k2"], "nk1=nv1; nk2={nnk1=nnk2}");
   ASSERT_EQ(opts_map["k3"], "{   }");
@@ -698,8 +716,8 @@ TEST_F(OptionsTest, StringToMapRandomTest) {
       for (int attempt = 0; attempt < 10; attempt++) {
         std::string str = base;
         // Replace random position to space
-        size_t pos = static_cast<size_t>(
-            rnd.Uniform(static_cast<int>(base.size())));
+        size_t pos =
+            static_cast<size_t>(rnd.Uniform(static_cast<int>(base.size())));
         str[pos] = ' ';
         Status s = StringToMap(str, &opts_map);
         ASSERT_TRUE(s.ok() || s.IsInvalidArgument());
@@ -716,8 +734,8 @@ TEST_F(OptionsTest, StringToMapRandomTest) {
     std::string str = "";
     for (int attempt = 0; attempt < len; attempt++) {
       // Add a random character
-      size_t pos = static_cast<size_t>(
-          rnd.Uniform(static_cast<int>(chars.size())));
+      size_t pos =
+          static_cast<size_t>(rnd.Uniform(static_cast<int>(chars.size())));
       str.append(1, chars[pos]);
     }
     Status s = StringToMap(str, &opts_map);
@@ -967,13 +985,19 @@ TEST_F(OptionsParserTest, ParseVersion) {
   VidarDBOptionsParser parser;
 
   const std::vector<std::string> invalid_versions = {
-      "a.b.c", "3.2.2b", "3.-12", "3. 1",  // only digits and dots are allowed
+      "a.b.c",
+      "3.2.2b",
+      "3.-12",
+      "3. 1",  // only digits and dots are allowed
       "1.2.3.4",
       "1.2.3"  // can only contains at most one dot.
       "0",     // options_file_version must be at least one
       "3..2",
-      ".", ".1.2",             // must have at least one digit before each dot
-      "1.2.", "1.", "2.34."};  // must have at least one digit after each dot
+      ".",
+      ".1.2",  // must have at least one digit before each dot
+      "1.2.",
+      "1.",
+      "2.34."};  // must have at least one digit after each dot
   for (auto iv : invalid_versions) {
     snprintf(buffer, kLength - 1, file_template.c_str(), iv.c_str());
 
@@ -1033,7 +1057,10 @@ void VerifyCFPointerTypedOptions(
 TEST_F(OptionsParserTest, DumpAndParse) {
   DBOptions base_db_opt;
   std::vector<ColumnFamilyOptions> base_cf_opts;
-  std::vector<std::string> cf_names = {"default", "cf1", "cf2", "cf3",
+  std::vector<std::string> cf_names = {"default",
+                                       "cf1",
+                                       "cf2",
+                                       "cf3",
                                        "c:f:4:4:4"
                                        "p\\i\\k\\a\\chu\\\\\\",
                                        "###vidardb#1-testcf#2###"};

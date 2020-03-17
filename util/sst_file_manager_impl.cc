@@ -8,9 +8,9 @@
 #include <vector>
 
 #include "port/port.h"
-#include "vidardb/env.h"
 #include "util/mutexlock.h"
 #include "util/sync_point.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 

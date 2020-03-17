@@ -10,9 +10,10 @@
 
 #pragma once
 #include <string>
+
+#include "db/dbformat.h"
 #include "vidardb/env.h"
 #include "vidardb/types.h"
-#include "db/dbformat.h"
 
 namespace vidardb {
 
@@ -25,10 +26,9 @@ class GetContext {
     kCorrupt,
   };
 
-  GetContext(const Comparator* ucmp,
-             Logger* logger, Statistics* statistics, GetState init_state,
-             const Slice& user_key, std::string* ret_value, bool* value_found,
-             Env* env, SequenceNumber* seq = nullptr);
+  GetContext(const Comparator* ucmp, Logger* logger, Statistics* statistics,
+             GetState init_state, const Slice& user_key, std::string* ret_value,
+             bool* value_found, Env* env, SequenceNumber* seq = nullptr);
 
   void MarkKeyMayExist();
 

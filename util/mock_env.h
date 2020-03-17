@@ -12,10 +12,11 @@
 #include <map>
 #include <string>
 #include <vector>
-#include "vidardb/env.h"
-#include "vidardb/status.h"
+
 #include "port/port.h"
 #include "util/mutexlock.h"
+#include "vidardb/env.h"
+#include "vidardb/status.h"
 
 namespace vidardb {
 

@@ -8,8 +8,8 @@ using namespace std;
 
 #include "vidardb/db.h"
 #include "vidardb/options.h"
-#include "vidardb/table.h"
 #include "vidardb/splitter.h"
+#include "vidardb/table.h"
 using namespace vidardb;
 
 unsigned int M = 2;
@@ -42,7 +42,7 @@ int main() {
 
   list<RangeQueryKeyVal> resRQ;
   bool next = true;
-  while (next) { // range query loop
+  while (next) {  // range query loop
     next = db->RangeQuery(ro, Range(), resRQ, &s);
     assert(s.ok());
     for (auto it = resRQ.begin(); it != resRQ.end(); it++) {
@@ -56,7 +56,7 @@ int main() {
   if (!s.ok()) cout << "Get not ok!" << endl;
   cout << "Get: " << val << endl;
 
-  Iterator *it = db->NewIterator(ro);
+  Iterator* it = db->NewIterator(ro);
   it->Seek("column1");
   if (it->Valid()) {
     cout << "value: " << it->value().ToString() << endl;

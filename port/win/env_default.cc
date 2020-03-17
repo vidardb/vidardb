@@ -7,9 +7,10 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
+#include <vidardb/env.h>
+
 #include <mutex>
 
-#include <vidardb/env.h>
 #include "port/win/env_win.h"
 
 namespace vidardb {
@@ -26,11 +27,11 @@ namespace port {
 //    dead-lock.
 //    in this manner any remaining threads are terminated OK.
 namespace {
-  std::once_flag winenv_once_flag;
-  Env* envptr;
-};
+std::once_flag winenv_once_flag;
+Env* envptr;
+};  // namespace
 
-}
+}  // namespace port
 
 Env* Env::Default() {
   using namespace port;
@@ -38,5 +39,4 @@ Env* Env::Default() {
   return envptr;
 }
 
-}
-
+}  // namespace vidardb

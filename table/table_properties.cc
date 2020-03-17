@@ -8,13 +8,14 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
-#include "table/table_properties_internal.h"
 #include "vidardb/table_properties.h"
-#include "vidardb/iterator.h"
-#include "vidardb/env.h"
+
 #include "port/port.h"
 #include "table/internal_iterator.h"
+#include "table/table_properties_internal.h"
 #include "util/string_util.h"
+#include "vidardb/env.h"
+#include "vidardb/iterator.h"
 
 namespace vidardb {
 
@@ -22,47 +23,38 @@ const uint32_t TablePropertiesCollectorFactory::Context::kUnknownColumnFamily =
     port::kMaxInt32;
 
 namespace {
-  void AppendProperty(
-      std::string& props,
-      const std::string& key,
-      const std::string& value,
-      const std::string& prop_delim,
-      const std::string& kv_delim) {
-    props.append(key);
-    props.append(kv_delim);
-    props.append(value);
-    props.append(prop_delim);
-  }
-
-  template <class TValue>
-  void AppendProperty(
-      std::string& props,
-      const std::string& key,
-      const TValue& value,
-      const std::string& prop_delim,
-      const std::string& kv_delim) {
-    AppendProperty(
-        props, key, ToString(value), prop_delim, kv_delim
-    );
-  }
-
-  // Seek to the specified meta block.
-  // Return true if it successfully seeks to that block.
-  Status SeekToMetaBlock(InternalIterator* meta_iter,
-                         const std::string& block_name, bool* is_found) {
-    *is_found = true;
-    meta_iter->Seek(block_name);
-    if (meta_iter->status().ok() &&
-        (!meta_iter->Valid() || meta_iter->key() != block_name)) {
-      *is_found = false;
-    }
-    return meta_iter->status();
-  }
+void AppendProperty(std::string& props, const std::string& key,
+                    const std::string& value, const std::string& prop_delim,
+                    const std::string& kv_delim) {
+  props.append(key);
+  props.append(kv_delim);
+  props.append(value);
+  props.append(prop_delim);
 }
 
-std::string TableProperties::ToString(
-    const std::string& prop_delim,
-    const std::string& kv_delim) const {
+template <class TValue>
+void AppendProperty(std::string& props, const std::string& key,
+                    const TValue& value, const std::string& prop_delim,
+                    const std::string& kv_delim) {
+  AppendProperty(props, key, ToString(value), prop_delim, kv_delim);
+}
+
+// Seek to the specified meta block.
+// Return true if it successfully seeks to that block.
+Status SeekToMetaBlock(InternalIterator* meta_iter,
+                       const std::string& block_name, bool* is_found) {
+  *is_found = true;
+  meta_iter->Seek(block_name);
+  if (meta_iter->status().ok() &&
+      (!meta_iter->Valid() || meta_iter->key() != block_name)) {
+    *is_found = false;
+  }
+  return meta_iter->status();
+}
+}  // namespace
+
+std::string TableProperties::ToString(const std::string& prop_delim,
+                                      const std::string& kv_delim) const {
   std::string result;
   result.reserve(1024);
 
@@ -125,22 +117,16 @@ void TableProperties::Add(const TableProperties& tp) {
   num_entries += tp.num_entries;
 }
 
-const std::string TablePropertiesNames::kDataSize  =
-    "vidardb.data.size";
-const std::string TablePropertiesNames::kIndexSize =
-    "vidardb.index.size";
-const std::string TablePropertiesNames::kFilterSize =
-    "vidardb.filter.size";
-const std::string TablePropertiesNames::kRawKeySize =
-    "vidardb.raw.key.size";
+const std::string TablePropertiesNames::kDataSize = "vidardb.data.size";
+const std::string TablePropertiesNames::kIndexSize = "vidardb.index.size";
+const std::string TablePropertiesNames::kFilterSize = "vidardb.filter.size";
+const std::string TablePropertiesNames::kRawKeySize = "vidardb.raw.key.size";
 const std::string TablePropertiesNames::kRawValueSize =
     "vidardb.raw.value.size";
 const std::string TablePropertiesNames::kNumDataBlocks =
     "vidardb.num.data.blocks";
-const std::string TablePropertiesNames::kNumEntries =
-    "vidardb.num.entries";
-const std::string TablePropertiesNames::kFilterPolicy =
-    "vidardb.filter.policy";
+const std::string TablePropertiesNames::kNumEntries = "vidardb.num.entries";
+const std::string TablePropertiesNames::kFilterPolicy = "vidardb.filter.policy";
 const std::string TablePropertiesNames::kFormatVersion =
     "vidardb.format.version";
 const std::string TablePropertiesNames::kFixedKeyLen =

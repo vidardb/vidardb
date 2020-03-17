@@ -7,26 +7,25 @@
 #pragma once
 #include <vector>
 
+#include "db/filename.h"
+#include "db/log_reader.h"
+#include "db/version_set.h"
+#include "port/port.h"
 #include "vidardb/env.h"
 #include "vidardb/options.h"
-#include "vidardb/types.h"
 #include "vidardb/transaction_log.h"
-#include "db/version_set.h"
-#include "db/log_reader.h"
-#include "db/filename.h"
-#include "port/port.h"
+#include "vidardb/types.h"
 
 namespace vidardb {
 
 class LogFileImpl : public LogFile {
  public:
   LogFileImpl(uint64_t logNum, WalFileType logType, SequenceNumber startSeq,
-              uint64_t sizeBytes) :
-    logNumber_(logNum),
-    type_(logType),
-    startSequence_(startSeq),
-    sizeFileBytes_(sizeBytes) {
-  }
+              uint64_t sizeBytes)
+      : logNumber_(logNum),
+        type_(logType),
+        startSequence_(startSeq),
+        sizeFileBytes_(sizeBytes) {}
 
   std::string PathName() const override {
     if (type_ == kArchivedLogFile) {
@@ -43,7 +42,7 @@ class LogFileImpl : public LogFile {
 
   uint64_t SizeFileBytes() const override { return sizeFileBytes_; }
 
-  bool operator < (const LogFile& that) const {
+  bool operator<(const LogFile& that) const {
     return LogNumber() < that.LogNumber();
   }
 
@@ -52,7 +51,6 @@ class LogFileImpl : public LogFile {
   WalFileType type_;
   SequenceNumber startSequence_;
   uint64_t sizeFileBytes_;
-
 };
 
 class TransactionLogIteratorImpl : public TransactionLogIterator {
@@ -100,8 +98,8 @@ class TransactionLogIteratorImpl : public TransactionLogIterator {
     }
   } reporter_;
 
-  SequenceNumber currentBatchSeq_; // sequence number at start of current batch
-  SequenceNumber currentLastSeq_; // last sequence in the current batch
+  SequenceNumber currentBatchSeq_;  // sequence number at start of current batch
+  SequenceNumber currentLastSeq_;   // last sequence in the current batch
   // Used only to get latest seq. num
   // TODO(icanadi) can this be just a callback?
   VersionSet const* const versions_;

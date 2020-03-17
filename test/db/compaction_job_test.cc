@@ -5,30 +5,31 @@
 
 #ifndef VIDARDB_LITE
 
+#include "db/compaction_job.h"
+
 #include <algorithm>
 #include <map>
 #include <string>
 #include <tuple>
 
-#include "db/compaction_job.h"
 #include "db/column_family.h"
 #include "db/version_set.h"
 #include "db/writebuffer.h"
-#include "vidardb/cache.h"
-#include "vidardb/db.h"
-#include "vidardb/options.h"
 #include "table/mock_table.h"
 #include "util/file_reader_writer.h"
 #include "util/string_util.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/cache.h"
+#include "vidardb/db.h"
+#include "vidardb/options.h"
 
 namespace vidardb {
 
 namespace {
 
 void VerifyInitializationOfCompactionJobStats(
-      const CompactionJobStats& compaction_job_stats) {
+    const CompactionJobStats& compaction_job_stats) {
 #if !defined(IOS_CROSS_COMPILE)
   ASSERT_EQ(compaction_job_stats.elapsed_micros, 0U);
 
@@ -89,7 +90,7 @@ class CompactionJobTest : public testing::Test {
   }
 
   std::string KeyStr(const std::string& user_key, const SequenceNumber seq_num,
-      const ValueType t) {
+                     const ValueType t) {
     return InternalKey(user_key, seq_num, t).Encode().ToString();
   }
 
@@ -131,7 +132,7 @@ class CompactionJobTest : public testing::Test {
 
     VersionEdit edit;
     edit.AddFile(level, file_number, 0, 10, smallest_key, largest_key,
-        smallest_seqno, largest_seqno, false, 0);
+                 smallest_seqno, largest_seqno, false, 0);
 
     mutex_.Lock();
     versions_->LogAndApply(versions_->GetColumnFamilySet()->GetDefault(),
@@ -171,10 +172,10 @@ class CompactionJobTest : public testing::Test {
           test::CorruptKeyType(&internal_key);
           test::CorruptKeyType(&bottommost_internal_key);
         }
-        contents.insert({ internal_key.Encode().ToString(), value });
+        contents.insert({internal_key.Encode().ToString(), value});
         if (i == 1 || k < kMatchingKeys || corrupt_id(k - kMatchingKeys)) {
           expected_results.insert(
-              { bottommost_internal_key.Encode().ToString(), value });
+              {bottommost_internal_key.Encode().ToString(), value});
         }
       }
 
@@ -231,7 +232,7 @@ class CompactionJobTest : public testing::Test {
       CompactionInputFiles compaction_level;
       compaction_level.level = static_cast<int>(level);
       compaction_level.files.insert(compaction_level.files.end(),
-          level_files.begin(), level_files.end());
+                                    level_files.begin(), level_files.end());
       compaction_input_files.push_back(compaction_level);
       num_input_files += level_files.size();
     }
@@ -299,7 +300,7 @@ TEST_F(CompactionJobTest, Simple) {
   auto cfd = versions_->GetColumnFamilySet()->GetDefault();
   auto files = cfd->current()->storage_info()->LevelFiles(0);
   ASSERT_EQ(2U, files.size());
-  RunCompaction({ files }, expected_results);
+  RunCompaction({files}, expected_results);
 }
 
 TEST_F(CompactionJobTest, SimpleCorrupted) {

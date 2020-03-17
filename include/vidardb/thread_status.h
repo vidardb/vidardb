@@ -14,6 +14,7 @@
 #pragma once
 
 #include <stdint.h>
+
 #include <cstddef>
 #include <map>
 #include <string>
@@ -21,11 +22,9 @@
 #include <vector>
 
 #ifndef VIDARDB_USING_THREAD_STATUS
-#define VIDARDB_USING_THREAD_STATUS \
-    !defined(VIDARDB_LITE) && \
-    !defined(NVIDARDB_THREAD_STATUS) && \
-    !defined(OS_MACOSX) && \
-    !defined(IOS_CROSS_COMPILE)
+#define VIDARDB_USING_THREAD_STATUS                             \
+  !defined(VIDARDB_LITE) && !defined(NVIDARDB_THREAD_STATUS) && \
+      !defined(OS_MACOSX) && !defined(IOS_CROSS_COMPILE)
 #endif
 
 namespace vidardb {
@@ -45,8 +44,8 @@ struct ThreadStatus {
   // The type of a thread.
   enum ThreadType : int {
     HIGH_PRIORITY = 0,  // VidarDB BG thread in high-pri thread pool
-    LOW_PRIORITY,  // VidarDB BG thread in low-pri thread pool
-    USER,  // User thread (Non-VidarDB BG thread)
+    LOW_PRIORITY,       // VidarDB BG thread in low-pri thread pool
+    USER,               // User thread (Non-VidarDB BG thread)
     NUM_THREAD_TYPES
   };
 
@@ -106,22 +105,20 @@ struct ThreadStatus {
     NUM_STATE_TYPES
   };
 
-  ThreadStatus(const uint64_t _id,
-               const ThreadType _thread_type,
-               const std::string& _db_name,
-               const std::string& _cf_name,
+  ThreadStatus(const uint64_t _id, const ThreadType _thread_type,
+               const std::string& _db_name, const std::string& _cf_name,
                const OperationType _operation_type,
                const uint64_t _op_elapsed_micros,
                const OperationStage _operation_stage,
-               const uint64_t _op_props[],
-               const StateType _state_type) :
-      thread_id(_id), thread_type(_thread_type),
-      db_name(_db_name),
-      cf_name(_cf_name),
-      operation_type(_operation_type),
-      op_elapsed_micros(_op_elapsed_micros),
-      operation_stage(_operation_stage),
-      state_type(_state_type) {
+               const uint64_t _op_props[], const StateType _state_type)
+      : thread_id(_id),
+        thread_type(_thread_type),
+        db_name(_db_name),
+        cf_name(_cf_name),
+        operation_type(_operation_type),
+        op_elapsed_micros(_op_elapsed_micros),
+        operation_stage(_operation_stage),
+        state_type(_state_type) {
     for (int i = 0; i < kNumOperationProperties; ++i) {
       op_properties[i] = _op_props[i];
     }
@@ -173,23 +170,20 @@ struct ThreadStatus {
   static const std::string MicrosToString(uint64_t op_elapsed_time);
 
   // Obtain a human-readable string describing the specified operation stage.
-  static const std::string& GetOperationStageName(
-      OperationStage stage);
+  static const std::string& GetOperationStageName(OperationStage stage);
 
   // Obtain the name of the "i"th operation property of the
   // specified operation.
-  static const std::string& GetOperationPropertyName(
-      OperationType op_type, int i);
+  static const std::string& GetOperationPropertyName(OperationType op_type,
+                                                     int i);
 
   // Translate the "i"th property of the specified operation given
   // a property value.
-  static std::map<std::string, uint64_t>
-      InterpretOperationProperties(
-          OperationType op_type, const uint64_t* op_properties);
+  static std::map<std::string, uint64_t> InterpretOperationProperties(
+      OperationType op_type, const uint64_t* op_properties);
 
   // Obtain the name of a state given its type.
   static const std::string& GetStateName(StateType state_type);
 };
-
 
 }  // namespace vidardb

@@ -13,6 +13,7 @@
 #pragma once
 
 #include <atomic>
+
 #include "util/allocator.h"
 
 namespace vidardb {

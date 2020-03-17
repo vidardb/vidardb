@@ -3,14 +3,13 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
-#include "vidardb/snapshot.h"
-
 #include "vidardb/db.h"
+#include "vidardb/snapshot.h"
 
 namespace vidardb {
 
-ManagedSnapshot::ManagedSnapshot(DB* db) : db_(db),
-                                           snapshot_(db->GetSnapshot()) {}
+ManagedSnapshot::ManagedSnapshot(DB* db)
+    : db_(db), snapshot_(db->GetSnapshot()) {}
 
 ManagedSnapshot::ManagedSnapshot(DB* db, const Snapshot* _snapshot)
     : db_(db), snapshot_(_snapshot) {}
@@ -21,6 +20,6 @@ ManagedSnapshot::~ManagedSnapshot() {
   }
 }
 
-const Snapshot* ManagedSnapshot::snapshot() { return snapshot_;}
+const Snapshot* ManagedSnapshot::snapshot() { return snapshot_; }
 
 }  // namespace vidardb

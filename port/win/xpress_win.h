@@ -20,7 +20,6 @@ bool Compress(const char* input, size_t length, std::string* output);
 char* Decompress(const char* input_data, size_t input_length,
                  int* decompress_size);
 
-}
-}
-}
-
+}  // namespace xpress
+}  // namespace port
+}  // namespace vidardb

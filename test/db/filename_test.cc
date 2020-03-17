@@ -35,23 +35,23 @@ TEST_F(FileNameTest, Parse) {
     FileType type;
     char mode;
   } cases[] = {
-        {"100.log", 100, kLogFile, kAllMode},
-        {"0.log", 0, kLogFile, kAllMode},
-        {"0.sst", 0, kTableFile, kAllMode},
-        {"CURRENT", 0, kCurrentFile, kAllMode},
-        {"LOCK", 0, kDBLockFile, kAllMode},
-        {"MANIFEST-2", 2, kDescriptorFile, kAllMode},
-        {"MANIFEST-7", 7, kDescriptorFile, kAllMode},
-        {"METADB-2", 2, kMetaDatabase, kAllMode},
-        {"METADB-7", 7, kMetaDatabase, kAllMode},
-        {"LOG", 0, kInfoLogFile, kDefautInfoLogDir},
-        {"LOG.old", 0, kInfoLogFile, kDefautInfoLogDir},
-        {"LOG.old.6688", 6688, kInfoLogFile, kDefautInfoLogDir},
-        {"vidardb_dir_LOG", 0, kInfoLogFile, kDifferentInfoLogDir},
-        {"vidardb_dir_LOG.old", 0, kInfoLogFile, kDifferentInfoLogDir},
-        {"vidardb_dir_LOG.old.6688", 6688, kInfoLogFile, kDifferentInfoLogDir},
-        {"18446744073709551615.log", 18446744073709551615ull, kLogFile,
-         kAllMode}, };
+      {"100.log", 100, kLogFile, kAllMode},
+      {"0.log", 0, kLogFile, kAllMode},
+      {"0.sst", 0, kTableFile, kAllMode},
+      {"CURRENT", 0, kCurrentFile, kAllMode},
+      {"LOCK", 0, kDBLockFile, kAllMode},
+      {"MANIFEST-2", 2, kDescriptorFile, kAllMode},
+      {"MANIFEST-7", 7, kDescriptorFile, kAllMode},
+      {"METADB-2", 2, kMetaDatabase, kAllMode},
+      {"METADB-7", 7, kMetaDatabase, kAllMode},
+      {"LOG", 0, kInfoLogFile, kDefautInfoLogDir},
+      {"LOG.old", 0, kInfoLogFile, kDefautInfoLogDir},
+      {"LOG.old.6688", 6688, kInfoLogFile, kDefautInfoLogDir},
+      {"vidardb_dir_LOG", 0, kInfoLogFile, kDifferentInfoLogDir},
+      {"vidardb_dir_LOG.old", 0, kInfoLogFile, kDifferentInfoLogDir},
+      {"vidardb_dir_LOG.old.6688", 6688, kInfoLogFile, kDifferentInfoLogDir},
+      {"18446744073709551615.log", 18446744073709551615ull, kLogFile, kAllMode},
+  };
   for (char mode : {kDifferentInfoLogDir, kDefautInfoLogDir, kNoCheckLogDir}) {
     for (unsigned int i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
       InfoLogPrefix info_log_prefix(mode != kDefautInfoLogDir, "/vidardb/dir");
@@ -70,35 +70,33 @@ TEST_F(FileNameTest, Parse) {
   }
 
   // Errors
-  static const char* errors[] = {
-    "",
-    "foo",
-    "foo-dx-100.log",
-    ".log",
-    "",
-    "manifest",
-    "CURREN",
-    "CURRENTX",
-    "MANIFES",
-    "MANIFEST",
-    "MANIFEST-",
-    "XMANIFEST-3",
-    "MANIFEST-3x",
-    "META",
-    "METADB",
-    "METADB-",
-    "XMETADB-3",
-    "METADB-3x",
-    "LOC",
-    "LOCKx",
-    "LO",
-    "LOGx",
-    "18446744073709551616.log",
-    "184467440737095516150.log",
-    "100",
-    "100.",
-    "100.lop"
-  };
+  static const char* errors[] = {"",
+                                 "foo",
+                                 "foo-dx-100.log",
+                                 ".log",
+                                 "",
+                                 "manifest",
+                                 "CURREN",
+                                 "CURRENTX",
+                                 "MANIFES",
+                                 "MANIFEST",
+                                 "MANIFEST-",
+                                 "XMANIFEST-3",
+                                 "MANIFEST-3x",
+                                 "META",
+                                 "METADB",
+                                 "METADB-",
+                                 "XMETADB-3",
+                                 "METADB-3x",
+                                 "LOC",
+                                 "LOCKx",
+                                 "LO",
+                                 "LOGx",
+                                 "18446744073709551616.log",
+                                 "184467440737095516150.log",
+                                 "100",
+                                 "100.",
+                                 "100.lop"};
   for (unsigned int i = 0; i < sizeof(errors) / sizeof(errors[0]); i++) {
     std::string f = errors[i];
     ASSERT_TRUE(!ParseFileName(f, &number, &type)) << f;

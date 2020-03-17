@@ -11,6 +11,7 @@
 // in Release build.
 // which is a pity, it is a good test
 #include <fcntl.h>
+
 #include <algorithm>
 #include <set>
 #include <thread>
@@ -24,27 +25,16 @@
 #endif
 
 #include "db/db_impl.h"
-#include "test/db/db_test_util.h"
 #include "db/dbformat.h"
 #include "db/filename.h"
 #include "db/job_context.h"
 #include "db/version_set.h"
 #include "db/write_batch_internal.h"
 #include "port/stack_trace.h"
-#include "vidardb/cache.h"
-#include "vidardb/convenience.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
-#include "vidardb/options.h"
-#include "vidardb/perf_context.h"
-#include "vidardb/slice.h"
-#include "vidardb/snapshot.h"
-#include "vidardb/table.h"
-#include "vidardb/table_properties.h"
-#include "vidardb/thread_status.h"
 #include "table/block_based_table_factory.h"
 #include "table/mock_table.h"
 #include "table/scoped_arena_iterator.h"
+#include "test/db/db_test_util.h"
 #include "util/compression.h"
 #include "util/file_reader_writer.h"
 #include "util/hash.h"
@@ -56,6 +46,17 @@
 #include "util/testharness.h"
 #include "util/testutil.h"
 #include "util/thread_status_util.h"
+#include "vidardb/cache.h"
+#include "vidardb/convenience.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/options.h"
+#include "vidardb/perf_context.h"
+#include "vidardb/slice.h"
+#include "vidardb/snapshot.h"
+#include "vidardb/table.h"
+#include "vidardb/table_properties.h"
+#include "vidardb/thread_status.h"
 
 namespace vidardb {
 
@@ -301,7 +302,7 @@ TEST_F(DBTest, GetFromVersions) {
 #ifndef VIDARDB_LITE
 TEST_F(DBTest, GetSnapshot) {
   anon::OptionsOverride options_override;
-//  options_override.skip_policy = kSkipNoSnapshot;
+  //  options_override.skip_policy = kSkipNoSnapshot;
   do {
     CreateAndReopenWithCF({"pikachu"}, CurrentOptions(options_override));
     // Try with both a short key and a long key
@@ -1038,7 +1039,7 @@ TEST_F(DBTest, ApproximateSizes) {
 
 TEST_F(DBTest, HiddenValuesAreRemoved) {
   anon::OptionsOverride options_override;
-//  options_override.skip_policy = kSkipNoSnapshot;
+  //  options_override.skip_policy = kSkipNoSnapshot;
   do {
     Options options = CurrentOptions(options_override);
     CreateAndReopenWithCF({"pikachu"}, options);
@@ -1566,7 +1567,7 @@ TEST_F(DBTest, SnapshotFiles) {
 
 TEST_F(DBTest, CompactOnFlush) {
   anon::OptionsOverride options_override;
-//  options_override.skip_policy = kSkipNoSnapshot;
+  //  options_override.skip_policy = kSkipNoSnapshot;
   do {
     Options options = CurrentOptions(options_override);
     options.disable_auto_compactions = true;
@@ -1893,15 +1894,15 @@ static void MTThreadBody(void* arg) {
 
       // Half of the time directly use WriteBatch. Half of the time use
       // WriteBatchWithIndex.
-//      if (rnd.OneIn(2)) {
-        WriteBatch batch;
-        for (int cf = 0; cf < kColumnFamilies; ++cf) {
-          snprintf(valbuf, sizeof(valbuf), "%d.%d.%d.%d.%-1000d", key, id,
-                   static_cast<int>(counter), cf, unique_id);
-          batch.Put(t->state->test->handles_[cf], Slice(keybuf), Slice(valbuf));
-        }
-        ASSERT_OK(db->Write(WriteOptions(), &batch));
-//      }
+      //      if (rnd.OneIn(2)) {
+      WriteBatch batch;
+      for (int cf = 0; cf < kColumnFamilies; ++cf) {
+        snprintf(valbuf, sizeof(valbuf), "%d.%d.%d.%d.%-1000d", key, id,
+                 static_cast<int>(counter), cf, unique_id);
+        batch.Put(t->state->test->handles_[cf], Slice(keybuf), Slice(valbuf));
+      }
+      ASSERT_OK(db->Write(WriteOptions(), &batch));
+      //      }
     }
     counter++;
   }
@@ -1928,7 +1929,7 @@ class MultiThreadedDBTest : public DBTest,
 
 TEST_P(MultiThreadedDBTest, MultiThreaded) {
   anon::OptionsOverride options_override;
-//  options_override.skip_policy = kSkipNoSnapshot;
+  //  options_override.skip_policy = kSkipNoSnapshot;
   std::vector<std::string> cfs;
   for (int i = 1; i < kColumnFamilies; ++i) {
     cfs.push_back(ToString(i));
@@ -2388,8 +2389,8 @@ class DBTestRandomized : public DBTest,
     std::vector<int> option_configs;
     // skip cuckoo hash as it does not support snapshot.
     for (int option_config = kDefault; option_config < kEnd; ++option_config) {
-      if (!ShouldSkipOptions(option_config, kSkipDeletesFilterFirst |
-                                                kSkipNoSeekToLast)) {
+      if (!ShouldSkipOptions(option_config,
+                             kSkipDeletesFilterFirst | kSkipNoSeekToLast)) {
         option_configs.push_back(option_config);
       }
     }
@@ -2404,7 +2405,7 @@ INSTANTIATE_TEST_CASE_P(
 
 TEST_P(DBTestRandomized, Randomized) {
   anon::OptionsOverride options_override;
-//  options_override.skip_policy = kSkipNoSnapshot;
+  //  options_override.skip_policy = kSkipNoSnapshot;
   Options options = CurrentOptions(options_override);
   DestroyAndReopen(options);
 
@@ -2454,8 +2455,8 @@ TEST_P(DBTestRandomized, Randomized) {
       // iterator will be invalid right when seeking a non-existent key, right
       // than return a key that is close to it.
 
-        ASSERT_TRUE(CompareIterators(step, &model, db_, nullptr, nullptr));
-        ASSERT_TRUE(CompareIterators(step, &model, db_, model_snap, db_snap));
+      ASSERT_TRUE(CompareIterators(step, &model, db_, nullptr, nullptr));
+      ASSERT_TRUE(CompareIterators(step, &model, db_, model_snap, db_snap));
 
       // Save a snapshot from each DB this time that we'll use next
       // time we compare things, to make sure the current state is
@@ -2528,7 +2529,6 @@ TEST_F(DBTest, SimpleWriteTimeoutTest) {
 }
 
 #ifndef VIDARDB_LITE
-
 
 TEST_F(DBTest, TableOptionsSanitizeTest) {
   Options options = CurrentOptions();

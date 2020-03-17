@@ -54,8 +54,8 @@ class TableReader {
   // persists the data on a non volatile storage medium like disk/SSD
   virtual Status Prefetch(const Slice* begin = nullptr,
                           const Slice* end = nullptr) {
-    (void) begin;
-    (void) end;
+    (void)begin;
+    (void)end;
     // Default implementation is NOOP.
     // The child class should implement functionality when applicable
     return Status::OK();

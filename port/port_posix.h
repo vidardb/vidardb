@@ -22,30 +22,30 @@
 
 #undef PLATFORM_IS_LITTLE_ENDIAN
 #if defined(OS_MACOSX)
-  #include <machine/endian.h>
-  #if defined(__DARWIN_LITTLE_ENDIAN) && defined(__DARWIN_BYTE_ORDER)
-    #define PLATFORM_IS_LITTLE_ENDIAN \
-        (__DARWIN_BYTE_ORDER == __DARWIN_LITTLE_ENDIAN)
-  #endif
+#include <machine/endian.h>
+#if defined(__DARWIN_LITTLE_ENDIAN) && defined(__DARWIN_BYTE_ORDER)
+#define PLATFORM_IS_LITTLE_ENDIAN \
+  (__DARWIN_BYTE_ORDER == __DARWIN_LITTLE_ENDIAN)
+#endif
 #elif defined(OS_SOLARIS)
-  #include <sys/isa_defs.h>
-  #ifdef _LITTLE_ENDIAN
-    #define PLATFORM_IS_LITTLE_ENDIAN true
-  #else
-    #define PLATFORM_IS_LITTLE_ENDIAN false
-  #endif
+#include <sys/isa_defs.h>
+#ifdef _LITTLE_ENDIAN
+#define PLATFORM_IS_LITTLE_ENDIAN true
+#else
+#define PLATFORM_IS_LITTLE_ENDIAN false
+#endif
 #elif defined(OS_FREEBSD) || defined(OS_OPENBSD) || defined(OS_NETBSD) || \
     defined(OS_DRAGONFLYBSD) || defined(OS_ANDROID)
-  #include <sys/endian.h>
-  #include <sys/types.h>
-  #define PLATFORM_IS_LITTLE_ENDIAN (_BYTE_ORDER == _LITTLE_ENDIAN)
+#include <sys/endian.h>
+#include <sys/types.h>
+#define PLATFORM_IS_LITTLE_ENDIAN (_BYTE_ORDER == _LITTLE_ENDIAN)
 #else
-  #include <endian.h>
+#include <endian.h>
 #endif
 #include <pthread.h>
-
 #include <stdint.h>
 #include <string.h>
+
 #include <limits>
 #include <string>
 
@@ -53,8 +53,8 @@
 #define PLATFORM_IS_LITTLE_ENDIAN (__BYTE_ORDER == __LITTLE_ENDIAN)
 #endif
 
-#if defined(OS_MACOSX) || defined(OS_SOLARIS) || defined(OS_FREEBSD) ||\
-    defined(OS_NETBSD) || defined(OS_OPENBSD) || defined(OS_DRAGONFLYBSD) ||\
+#if defined(OS_MACOSX) || defined(OS_SOLARIS) || defined(OS_FREEBSD) ||      \
+    defined(OS_NETBSD) || defined(OS_OPENBSD) || defined(OS_DRAGONFLYBSD) || \
     defined(OS_ANDROID) || defined(CYGWIN)
 // Use fread/fwrite/fflush on platforms without _unlocked variants
 #define fread_unlocked fread
@@ -62,8 +62,8 @@
 #define fflush_unlocked fflush
 #endif
 
-#if defined(OS_MACOSX) || defined(OS_FREEBSD) ||\
-    defined(OS_OPENBSD) || defined(OS_DRAGONFLYBSD)
+#if defined(OS_MACOSX) || defined(OS_FREEBSD) || defined(OS_OPENBSD) || \
+    defined(OS_DRAGONFLYBSD)
 // Use fsync() on platforms without fdatasync()
 #define fdatasync fsync
 #endif
@@ -120,10 +120,10 @@ class RWMutex {
   void WriteLock();
   void ReadUnlock();
   void WriteUnlock();
-  void AssertHeld() { }
+  void AssertHeld() {}
 
  private:
-  pthread_rwlock_t mu_; // the underlying platform mutex
+  pthread_rwlock_t mu_;  // the underlying platform mutex
 
   // No copying allowed
   RWMutex(const RWMutex&);
@@ -139,6 +139,7 @@ class CondVar {
   bool TimedWait(uint64_t abs_time_us);
   void Signal();
   void SignalAll();
+
  private:
   pthread_cond_t cv_;
   Mutex* mu_;
@@ -170,5 +171,5 @@ extern void Crash(const std::string& srcfile, int srcline);
 
 extern int GetMaxOpenFiles();
 
-} // namespace port
-} // namespace vidardb
+}  // namespace port
+}  // namespace vidardb

@@ -13,13 +13,12 @@
 #include <utility>
 #include <vector>
 
-#include "vidardb/convenience.h"
-#include "vidardb/db.h"
+#include "port/port.h"
 #include "util/options_helper.h"
 #include "util/string_util.h"
 #include "util/sync_point.h"
-
-#include "port/port.h"
+#include "vidardb/convenience.h"
+#include "vidardb/db.h"
 
 namespace vidardb {
 
@@ -54,9 +53,9 @@ Status PersistVidarDBOptions(const DBOptions& db_opt,
                    "  vidardb_version=" +
                    ToString(VIDARDB_MAJOR) + "." + ToString(VIDARDB_MINOR) +
                    "." + ToString(VIDARDB_PATCH) + "\n");
-  writable->Append("  options_file_version=" +
-                   ToString(VIDARDB_OPTION_FILE_MAJOR) + "." +
-                   ToString(VIDARDB_OPTION_FILE_MINOR) + "\n");
+  writable->Append(
+      "  options_file_version=" + ToString(VIDARDB_OPTION_FILE_MAJOR) + "." +
+      ToString(VIDARDB_OPTION_FILE_MINOR) + "\n");
   writable->Append("\n[" + opt_section_titles[kOptionSectionDBOptions] +
                    "]\n  ");
 
@@ -319,9 +318,8 @@ Status VidarDBOptionsParser::CheckSection(const OptionSection section,
   } else if (section == kOptionSectionTableOptions) {
     if (GetCFOptions(section_arg) == nullptr) {
       return InvalidArgument(
-          line_num, std::string(
-                        "Does not find a matched column family name in "
-                        "TableOptions section.  Column Family Name:") +
+          line_num, std::string("Does not find a matched column family name in "
+                                "TableOptions section.  Column Family Name:") +
                         section_arg);
     }
   } else if (section == kOptionSectionVersion) {

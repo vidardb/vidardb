@@ -3,27 +3,29 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 //
+#include "table/block.h"
+
 #include <stdio.h>
+
 #include <string>
 #include <vector>
 
 #include "db/dbformat.h"
-#include "memtable/memtable.h"
 #include "db/write_batch_internal.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
-#include "vidardb/iterator.h"
-#include "vidardb/table.h"
-#include "table/block.h"
+#include "memtable/memtable.h"
 #include "table/block_builder.h"
 #include "table/format.h"
 #include "util/random.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/iterator.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 
-static std::string RandomString(Random* rnd, int len) {
+static std::string RandomString(Random *rnd, int len) {
   std::string r;
   test::RandomString(rnd, len, &r);
   return r;
@@ -95,8 +97,7 @@ TEST_F(BlockTest, SimpleTest) {
   // read contents of block sequentially
   int count = 0;
   InternalIterator *iter = reader.NewIterator(options.comparator);
-  for (iter->SeekToFirst();iter->Valid(); count++, iter->Next()) {
-
+  for (iter->SeekToFirst(); iter->Valid(); count++, iter->Next()) {
     // read kv from block
     Slice k = iter->key();
     Slice v = iter->value();
@@ -110,7 +111,6 @@ TEST_F(BlockTest, SimpleTest) {
   // read block contents randomly
   iter = reader.NewIterator(options.comparator);
   for (int i = 0; i < num_records; i++) {
-
     // find a random key in the lookaside array
     int index = rnd.Uniform(num_records);
     Slice k(keys[index]);

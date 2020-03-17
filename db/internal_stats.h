@@ -9,10 +9,10 @@
 //
 
 #pragma once
-#include "db/version_set.h"
-
-#include <vector>
 #include <string>
+#include <vector>
+
+#include "db/version_set.h"
 
 class ColumnFamilyData;
 
@@ -143,8 +143,7 @@ class InternalStats {
           bytes_moved(c.bytes_moved),
           num_input_files_in_non_output_levels(
               c.num_input_files_in_non_output_levels),
-          num_input_files_in_output_level(
-              c.num_input_files_in_output_level),
+          num_input_files_in_output_level(c.num_input_files_in_output_level),
           num_output_files(c.num_output_files),
           num_input_records(c.num_input_records),
           num_dropped_records(c.num_dropped_records),
@@ -260,8 +259,8 @@ class InternalStats {
   struct CFStatsSnapshot {
     // ColumnFamily-level stats
     CompactionStats comp_stats;
-    uint64_t ingest_bytes;            // Bytes written to L0
-    uint64_t stall_count;             // Stall count
+    uint64_t ingest_bytes;  // Bytes written to L0
+    uint64_t stall_count;   // Stall count
     // Stats from compaction jobs - bytes written, bytes read, duration.
     uint64_t compact_bytes_write;
     uint64_t compact_bytes_read;
@@ -280,10 +279,10 @@ class InternalStats {
 
   struct DBStatsSnapshot {
     // DB-level stats
-    uint64_t ingest_bytes;            // Bytes written by user
-    uint64_t wal_bytes;               // Bytes written to WAL
-    uint64_t wal_synced;              // Number of times WAL is synced
-    uint64_t write_with_wal;          // Number of writes that request WAL
+    uint64_t ingest_bytes;    // Bytes written by user
+    uint64_t wal_bytes;       // Bytes written to WAL
+    uint64_t wal_synced;      // Number of times WAL is synced
+    uint64_t write_with_wal;  // Number of writes that request WAL
     // These count the number of writes processed by the calling thread or
     // another thread.
     uint64_t write_other;

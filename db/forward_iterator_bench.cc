@@ -19,6 +19,7 @@ int main() { return 0; }
 #else
 #include <gflags/gflags.h>
 #include <semaphore.h>
+
 #include <atomic>
 #include <bitset>
 #include <chrono>
@@ -30,11 +31,11 @@ int main() { return 0; }
 #include <random>
 #include <thread>
 
+#include "util/testharness.h"
 #include "vidardb/cache.h"
 #include "vidardb/db.h"
 #include "vidardb/status.h"
 #include "vidardb/table.h"
-#include "util/testharness.h"
 
 const int MAX_SHARDS = 100000;
 
@@ -282,8 +283,9 @@ struct StatsThread {
       }
       auto now = std::chrono::steady_clock::now();
       double elapsed =
-          std::chrono::duration_cast<std::chrono::duration<double> >(
-              now - tlast).count();
+          std::chrono::duration_cast<std::chrono::duration<double> >(now -
+                                                                     tlast)
+              .count();
       uint64_t w = ::stats.written.load();
       uint64_t r = ::stats.read.load();
       fprintf(stderr,

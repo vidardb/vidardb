@@ -9,10 +9,10 @@
 #include <vector>
 
 #include "port/port.h"
-#include "vidardb/env.h"
-#include "util/sst_file_manager_impl.h"
 #include "util/mutexlock.h"
+#include "util/sst_file_manager_impl.h"
 #include "util/sync_point.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 
@@ -153,7 +153,7 @@ void DeleteScheduler::BackgroundEmptyTrash() {
       mu_.Unlock();
       uint64_t deleted_bytes = 0;
       // Delete file from trash and update total_penlty value
-      Status s = DeleteTrashFile(path_in_trash,  &deleted_bytes);
+      Status s = DeleteTrashFile(path_in_trash, &deleted_bytes);
       total_deleted_bytes += deleted_bytes;
       mu_.Lock();
 
@@ -164,7 +164,8 @@ void DeleteScheduler::BackgroundEmptyTrash() {
       // Apply penlty if necessary
       uint64_t total_penlty =
           ((total_deleted_bytes * kMicrosInSecond) / rate_bytes_per_sec_);
-      while (!closing_ && !cv_.TimedWait(start_time + total_penlty)) {}
+      while (!closing_ && !cv_.TimedWait(start_time + total_penlty)) {
+      }
       TEST_SYNC_POINT_CALLBACK("DeleteScheduler::BackgroundEmptyTrash:Wait",
                                &total_penlty);
 

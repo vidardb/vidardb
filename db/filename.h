@@ -16,8 +16,9 @@
 
 #pragma once
 #include <stdint.h>
-#include <unordered_map>
+
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "port/port.h"
@@ -57,8 +58,7 @@ extern std::string ArchivalDirectory(const std::string& dbname);
 
 //  Return the name of the archived log file with the specified number
 //  in the db named by "dbname". The result will be prefixed with "dbname".
-extern std::string ArchivedLogFileName(const std::string& dbname,
-                                       uint64_t num);
+extern std::string ArchivedLogFileName(const std::string& dbname, uint64_t num);
 
 extern std::string MakeTableFileName(const std::string& name, uint64_t number);
 
@@ -76,7 +76,8 @@ extern uint64_t TableFileNameToNumber(const std::string& name);
 extern std::string TableFileName(const std::vector<DbPath>& db_paths,
                                  uint64_t number, uint32_t path_id);
 
-extern std::string TableSubFileName(const std::string& name, uint32_t number);  // Shichao
+extern std::string TableSubFileName(const std::string& name,
+                                    uint32_t number);  // Shichao
 
 // Sufficient buffer size for FormatFileNumber.
 const size_t kFormatFileNumberBufSize = 38;
@@ -138,8 +139,7 @@ extern std::string TempOptionsFileName(const std::string& dbname,
 
 // Return the name to use for a metadatabase. The result will be prefixed with
 // "dbname".
-extern std::string MetaDatabaseName(const std::string& dbname,
-                                    uint64_t number);
+extern std::string MetaDatabaseName(const std::string& dbname, uint64_t number);
 
 // Return the name of the Identity file which stores a unique number for the db
 // that will get regenerated if the db loses all its data and is recreated fresh

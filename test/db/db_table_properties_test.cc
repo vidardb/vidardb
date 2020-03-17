@@ -10,11 +10,11 @@
 #include <unordered_set>
 #include <vector>
 
-#include "test/db/db_test_util.h"
 #include "port/stack_trace.h"
-#include "vidardb/db.h"
+#include "test/db/db_test_util.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/db.h"
 
 #ifndef VIDARDB_LITE
 
@@ -92,7 +92,6 @@ TablePropertiesCollection
 DBTablePropertiesTest::TestGetPropertiesOfTablesInRange(
     std::vector<Range> ranges, std::size_t* num_properties,
     std::size_t* num_files) {
-
   // Since we deref zero element in the vector it can not be empty
   // otherwise we pass an address to some random memory
   EXPECT_GT(ranges.size(), 0U);

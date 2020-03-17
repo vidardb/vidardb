@@ -12,13 +12,11 @@
 #endif
 
 #include <inttypes.h>
+
 #include <cctype>
 #include <cstring>
 #include <unordered_map>
 
-#include "vidardb/cache.h"
-#include "vidardb/convenience.h"
-#include "vidardb/memtablerep.h"
 #include "util/options_helper.h"
 #include "util/options_parser.h"
 #include "util/options_sanity_check.h"
@@ -26,6 +24,9 @@
 #include "util/stderr_logger.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/cache.h"
+#include "vidardb/convenience.h"
+#include "vidardb/memtablerep.h"
 
 #ifndef GFLAGS
 bool FLAGS_enable_print = false;

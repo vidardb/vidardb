@@ -97,10 +97,7 @@ class ThreadLocalPtr {
   //     ---------------------------------------------------
   struct ThreadData {
     explicit ThreadData(StaticMeta* _inst)
-    : entries(),
-      next(nullptr),
-      prev(nullptr),
-      inst(_inst) {}
+        : entries(), next(nullptr), prev(nullptr), inst(_inst) {}
     std::vector<Entry> entries;
     ThreadData* next;
     ThreadData* prev;

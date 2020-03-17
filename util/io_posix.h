@@ -13,7 +13,9 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 #pragma once
 #include <unistd.h>
+
 #include <atomic>
+
 #include "vidardb/env.h"
 
 // For non linux platform, the following macros are used only as place
@@ -39,7 +41,7 @@ class PosixHelper {
 
 class PosixSequentialFile : public SequentialFile {
  private:
-//  std::string filename_;  // Shichao
+  //  std::string filename_;  // Shichao
   FILE* file_;
   int fd_;
   bool use_os_buffer_;
@@ -57,7 +59,7 @@ class PosixSequentialFile : public SequentialFile {
 class PosixDirectIOSequentialFile : public SequentialFile {
  public:
   explicit PosixDirectIOSequentialFile(const std::string& filename, int fd)
-//      : filename_(filename), fd_(fd) {}  // Shichao
+      //      : filename_(filename), fd_(fd) {}  // Shichao
       : SequentialFile(filename), fd_(fd) {}
 
   virtual ~PosixDirectIOSequentialFile() {}
@@ -67,14 +69,14 @@ class PosixDirectIOSequentialFile : public SequentialFile {
   Status InvalidateCache(size_t offset, size_t length) override;
 
  private:
-//  const std::string filename_;  // Shichao
+  //  const std::string filename_;  // Shichao
   int fd_ = -1;
   std::atomic<size_t> off_{0};  // read offset
 };
 
 class PosixRandomAccessFile : public RandomAccessFile {
  protected:
-//  std::string filename_;  // Shichao
+  //  std::string filename_;  // Shichao
   int fd_;
   bool use_os_buffer_;
 
@@ -109,7 +111,7 @@ class PosixDirectIORandomAccessFile : public PosixRandomAccessFile {
 
 class PosixWritableFile : public WritableFile {
  protected:
-//  const std::string filename_;  // Shichao
+  //  const std::string filename_;  // Shichao
   int fd_;
   uint64_t filesize_;
 #ifdef VIDARDB_FALLOCATE_PRESENT
@@ -159,7 +161,7 @@ class PosixDirectIOWritableFile : public PosixWritableFile {
 class PosixMmapReadableFile : public RandomAccessFile {
  private:
   int fd_;
-//  std::string filename_;  // Shichao
+  //  std::string filename_;  // Shichao
   void* mmapped_region_;
   size_t length_;
 
@@ -174,7 +176,7 @@ class PosixMmapReadableFile : public RandomAccessFile {
 
 class PosixMmapFile : public WritableFile {
  private:
-//  std::string filename_;  // Shichao
+  //  std::string filename_;  // Shichao
   int fd_;
   size_t page_size_;
   size_t map_size_;       // How much extra memory to map at a time

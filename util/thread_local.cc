@@ -8,9 +8,11 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #include "util/thread_local.h"
-#include "util/mutexlock.h"
-#include "port/likely.h"
+
 #include <stdlib.h>
+
+#include "port/likely.h"
+#include "util/mutexlock.h"
 
 namespace vidardb {
 
@@ -56,7 +58,7 @@ void NTAPI WinOnThreadExit(PVOID module, DWORD reason, PVOID reserved) {
   }
 }
 
-}  // wintlscleanup
+}  // namespace wintlscleanup
 
 #ifdef _WIN64
 
@@ -190,8 +192,8 @@ ThreadLocalPtr::StaticMeta::StaticMeta() : next_instance_id_(0), head_(this) {
   static struct A {
     ~A() {
 #ifndef VIDARDB_SUPPORT_THREAD_LOCAL
-      ThreadData* tls_ =
-        static_cast<ThreadData*>(pthread_getspecific(Instance()->pthread_key_));
+      ThreadData* tls_ = static_cast<ThreadData*>(
+          pthread_getspecific(Instance()->pthread_key_));
 #endif
       if (tls_) {
         OnThreadExit(tls_);
@@ -286,7 +288,7 @@ void* ThreadLocalPtr::StaticMeta::Swap(uint32_t id, void* ptr) {
 }
 
 bool ThreadLocalPtr::StaticMeta::CompareAndSwap(uint32_t id, void* ptr,
-    void*& expected) {
+                                                void*& expected) {
   auto* tls = GetThreadLocal();
   if (UNLIKELY(id >= tls->entries.size())) {
     // Need mutex to protect entries access within ReclaimId
@@ -298,7 +300,7 @@ bool ThreadLocalPtr::StaticMeta::CompareAndSwap(uint32_t id, void* ptr,
 }
 
 void ThreadLocalPtr::StaticMeta::Scrape(uint32_t id, std::vector<void*>* ptrs,
-    void* const replacement) {
+                                        void* const replacement) {
   MutexLock l(Mutex());
   for (ThreadData* t = head_.next; t != &head_; t = t->next) {
     if (id < t->entries.size()) {
@@ -368,21 +370,13 @@ ThreadLocalPtr::ThreadLocalPtr(UnrefHandler handler)
   }
 }
 
-ThreadLocalPtr::~ThreadLocalPtr() {
-  Instance()->ReclaimId(id_);
-}
+ThreadLocalPtr::~ThreadLocalPtr() { Instance()->ReclaimId(id_); }
 
-void* ThreadLocalPtr::Get() const {
-  return Instance()->Get(id_);
-}
+void* ThreadLocalPtr::Get() const { return Instance()->Get(id_); }
 
-void ThreadLocalPtr::Reset(void* ptr) {
-  Instance()->Reset(id_, ptr);
-}
+void ThreadLocalPtr::Reset(void* ptr) { Instance()->Reset(id_, ptr); }
 
-void* ThreadLocalPtr::Swap(void* ptr) {
-  return Instance()->Swap(id_, ptr);
-}
+void* ThreadLocalPtr::Swap(void* ptr) { return Instance()->Swap(id_, ptr); }
 
 bool ThreadLocalPtr::CompareAndSwap(void* ptr, void*& expected) {
   return Instance()->CompareAndSwap(id_, ptr, expected);

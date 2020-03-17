@@ -4,17 +4,18 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 
 #include <sstream>
-#include "vidardb/env.h"
+
 #include "util/iostats_context_imp.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 
 #ifndef IOS_CROSS_COMPILE
-# ifdef _WIN32
+#ifdef _WIN32
 __declspec(thread) IOStatsContext iostats_context;
-# else
+#else
 __thread IOStatsContext iostats_context;
-# endif
+#endif
 #endif  // IOS_CROSS_COMPILE
 
 void IOStatsContext::Reset() {

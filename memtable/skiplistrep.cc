@@ -10,8 +10,8 @@
 //
 #include "memtable/inlineskiplist.h"
 #include "memtable/memtable.h"
-#include "vidardb/memtablerep.h"
 #include "util/arena.h"
+#include "vidardb/memtablerep.h"
 
 namespace vidardb {
 namespace {
@@ -21,12 +21,14 @@ class SkipListRep : public MemTableRep {
   const size_t lookahead_;
 
   friend class LookaheadIterator;
-public:
+
+ public:
   explicit SkipListRep(const MemTableRep::KeyComparator& compare,
                        MemTableAllocator* allocator, const size_t lookahead)
-    : MemTableRep(allocator), skip_list_(compare, allocator), cmp_(compare),
-      lookahead_(lookahead) {
-  }
+      : MemTableRep(allocator),
+        skip_list_(compare, allocator),
+        cmp_(compare),
+        lookahead_(lookahead) {}
 
   virtual KeyHandle Allocate(const size_t len, char** buf) override {
     *buf = skip_list_.AllocateKey(len);
@@ -66,15 +68,14 @@ public:
 
   /******************************* Shichao ***********************************/
   virtual void RangeQuery(const LookupRange& range,
-                          std::list<RangeQueryKeyVal>& res,
-                          void* callback_args,
-                          bool (*callback_func)(void* arg, const char* entry))
-                          override {
+                          std::list<RangeQueryKeyVal>& res, void* callback_args,
+                          bool (*callback_func)(void* arg,
+                                                const char* entry)) override {
     SkipListRep::Iterator iter(&skip_list_);
     Slice dummy_slice;
 
     if (range.start_->user_key().compare(kRangeQueryMin) == 0) {
-      iter.SeekToFirst(); // Full search
+      iter.SeekToFirst();  // Full search
     } else {
       iter.Seek(dummy_slice, range.start_->memtable_key().data());
     }
@@ -94,7 +95,7 @@ public:
     return (end_count >= start_count) ? (end_count - start_count) : 0;
   }
 
-  virtual ~SkipListRep() override { }
+  virtual ~SkipListRep() override {}
 
   // Iteration over the contents of a skip list
   class Iterator : public MemTableRep::Iterator {
@@ -107,34 +108,26 @@ public:
         const InlineSkipList<const MemTableRep::KeyComparator&>* list)
         : iter_(list) {}
 
-    virtual ~Iterator() override { }
+    virtual ~Iterator() override {}
 
     // Returns true iff the iterator is positioned at a valid node.
-    virtual bool Valid() const override {
-      return iter_.Valid();
-    }
+    virtual bool Valid() const override { return iter_.Valid(); }
 
     // Returns the key at the current position.
     // REQUIRES: Valid()
-    virtual const char* key() const override {
-      return iter_.key();
-    }
+    virtual const char* key() const override { return iter_.key(); }
 
     // Advances to the next position.
     // REQUIRES: Valid()
-    virtual void Next() override {
-      iter_.Next();
-    }
+    virtual void Next() override { iter_.Next(); }
 
     // Advances to the previous position.
     // REQUIRES: Valid()
-    virtual void Prev() override {
-      iter_.Prev();
-    }
+    virtual void Prev() override { iter_.Prev(); }
 
     // Advance to the first entry with a key >= target
-    virtual void Seek(const Slice& user_key, const char* memtable_key)
-        override {
+    virtual void Seek(const Slice& user_key,
+                      const char* memtable_key) override {
       if (memtable_key != nullptr) {
         iter_.Seek(memtable_key);
       } else {
@@ -144,17 +137,14 @@ public:
 
     // Position at the first entry in list.
     // Final state of iterator is Valid() iff list is not empty.
-    virtual void SeekToFirst() override {
-      iter_.SeekToFirst();
-    }
+    virtual void SeekToFirst() override { iter_.SeekToFirst(); }
 
     // Position at the last entry in list.
     // Final state of iterator is Valid() iff list is not empty.
-    virtual void SeekToLast() override {
-      iter_.SeekToLast();
-    }
+    virtual void SeekToLast() override { iter_.SeekToLast(); }
+
    protected:
-    std::string tmp_;       // For passing to EncodeKey
+    std::string tmp_;  // For passing to EncodeKey
   };
 
   // Iterator over the contents of a skip list which also keeps track of the
@@ -163,16 +153,14 @@ public:
   // the target key hasn't been found.
   class LookaheadIterator : public MemTableRep::Iterator {
    public:
-    explicit LookaheadIterator(const SkipListRep& rep) :
-        rep_(rep), iter_(&rep_.skip_list_), prev_(iter_) {}
+    explicit LookaheadIterator(const SkipListRep& rep)
+        : rep_(rep), iter_(&rep_.skip_list_), prev_(iter_) {}
 
     virtual ~LookaheadIterator() override {}
 
-    virtual bool Valid() const override {
-      return iter_.Valid();
-    }
+    virtual bool Valid() const override { return iter_.Valid(); }
 
-    virtual const char *key() const override {
+    virtual const char* key() const override {
       assert(Valid());
       return iter_.key();
     }
@@ -203,11 +191,11 @@ public:
       prev_ = iter_;
     }
 
-    virtual void Seek(const Slice& internal_key, const char *memtable_key)
-        override {
-      const char *encoded_key =
-        (memtable_key != nullptr) ?
-            memtable_key : EncodeKey(&tmp_, internal_key);
+    virtual void Seek(const Slice& internal_key,
+                      const char* memtable_key) override {
+      const char* encoded_key = (memtable_key != nullptr)
+                                    ? memtable_key
+                                    : EncodeKey(&tmp_, internal_key);
 
       if (prev_.Valid() && rep_.cmp_(encoded_key, prev_.key()) >= 0) {
         // prev_.key() is smaller or equal to our target key; do a quick
@@ -238,7 +226,7 @@ public:
     }
 
    protected:
-    std::string tmp_;       // For passing to EncodeKey
+    std::string tmp_;  // For passing to EncodeKey
 
    private:
     const SkipListRep& rep_;
@@ -248,19 +236,20 @@ public:
 
   virtual MemTableRep::Iterator* GetIterator(Arena* arena = nullptr) override {
     if (lookahead_ > 0) {
-      void *mem =
-        arena ? arena->AllocateAligned(sizeof(SkipListRep::LookaheadIterator))
-              : operator new(sizeof(SkipListRep::LookaheadIterator));
+      void* mem =
+          arena ? arena->AllocateAligned(sizeof(SkipListRep::LookaheadIterator))
+                :
+                operator new(sizeof(SkipListRep::LookaheadIterator));
       return new (mem) SkipListRep::LookaheadIterator(*this);
     } else {
-      void *mem =
-        arena ? arena->AllocateAligned(sizeof(SkipListRep::Iterator))
-              : operator new(sizeof(SkipListRep::Iterator));
+      void* mem = arena ? arena->AllocateAligned(sizeof(SkipListRep::Iterator))
+                        :
+                        operator new(sizeof(SkipListRep::Iterator));
       return new (mem) SkipListRep::Iterator(&skip_list_);
     }
   }
 };
-}
+}  // namespace
 
 MemTableRep* SkipListFactory::CreateMemTableRep(
     const MemTableRep::KeyComparator& compare, MemTableAllocator* allocator,
@@ -268,4 +257,4 @@ MemTableRep* SkipListFactory::CreateMemTableRep(
   return new SkipListRep(compare, allocator, lookahead_);
 }
 
-} // namespace vidardb
+}  // namespace vidardb

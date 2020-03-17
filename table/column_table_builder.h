@@ -5,15 +5,16 @@
 
 #pragma once
 #include <stdint.h>
+
 #include <limits>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "table/table_builder.h"
 #include "vidardb/flush_block_policy.h"
 #include "vidardb/options.h"
 #include "vidardb/status.h"
-#include "table/table_builder.h"
 
 namespace vidardb {
 
@@ -41,8 +42,7 @@ class ColumnTableBuilder : public TableBuilder {
       const CompressionType compression_type,
       const CompressionOptions& compression_opts,
       const std::string* compression_dict,
-      const std::string& column_family_name,
-      const EnvOptions& env_options,
+      const std::string& column_family_name, const EnvOptions& env_options,
       bool main_column = true);
 
   // REQUIRES: Either Finish() or Abandon() has been called.

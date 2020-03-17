@@ -8,12 +8,14 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #include "memtable/inlineskiplist.h"
+
 #include <set>
-#include "vidardb/env.h"
+
 #include "util/concurrent_arena.h"
 #include "util/hash.h"
 #include "util/random.h"
 #include "util/testharness.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 

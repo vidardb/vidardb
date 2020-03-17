@@ -10,6 +10,7 @@
 #include "util/event_logger.h"
 
 #include <inttypes.h>
+
 #include <cassert>
 #include <sstream>
 #include <string>
@@ -17,7 +18,6 @@
 #include "util/string_util.h"
 
 namespace vidardb {
-
 
 EventLoggerStream::EventLoggerStream(Logger* logger)
     : logger_(logger), log_buffer_(nullptr), json_writer_(nullptr) {}
@@ -41,9 +41,7 @@ EventLoggerStream::~EventLoggerStream() {
   }
 }
 
-void EventLogger::Log(const JSONWriter& jwriter) {
-  Log(logger_, jwriter);
-}
+void EventLogger::Log(const JSONWriter& jwriter) { Log(logger_, jwriter); }
 
 void EventLogger::Log(Logger* logger, const JSONWriter& jwriter) {
 #ifdef VIDARDB_PRINT_EVENTS_TO_STDOUT
@@ -53,8 +51,8 @@ void EventLogger::Log(Logger* logger, const JSONWriter& jwriter) {
 #endif
 }
 
-void EventLogger::LogToBuffer(
-    LogBuffer* log_buffer, const JSONWriter& jwriter) {
+void EventLogger::LogToBuffer(LogBuffer* log_buffer,
+                              const JSONWriter& jwriter) {
 #ifdef VIDARDB_PRINT_EVENTS_TO_STDOUT
   printf("%s\n", jwriter.Get().c_str());
 #else

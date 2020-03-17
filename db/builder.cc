@@ -25,17 +25,17 @@
 #include "db/internal_stats.h"
 #include "db/table_cache.h"
 #include "db/version_edit.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
-#include "vidardb/iterator.h"
-#include "vidardb/options.h"
-#include "vidardb/table.h"
 #include "table/block_based_table_builder.h"
 #include "table/internal_iterator.h"
 #include "util/file_reader_writer.h"
 #include "util/iostats_context_imp.h"
 #include "util/stop_watch.h"
 #include "util/thread_status_util.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/iterator.h"
+#include "vidardb/options.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 
@@ -48,7 +48,8 @@ TableBuilder* NewTableBuilder(
         int_tbl_prop_collector_factories,
     uint32_t column_family_id, const std::string& column_family_name,
     WritableFileWriter* file, const CompressionType compression_type,
-    const CompressionOptions& compression_opts, const EnvOptions& env_options,  // Shichao
+    const CompressionOptions& compression_opts,
+    const EnvOptions& env_options,  // Shichao
     const std::string* compression_dict) {
   assert((column_family_id ==
           TablePropertiesCollectorFactory::Context::kUnknownColumnFamily) ==

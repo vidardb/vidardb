@@ -15,14 +15,16 @@
 #pragma once
 
 #include <stdint.h>
+
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "db/table_properties_collector.h"
-#include "vidardb/options.h"
-#include "vidardb/table_properties.h"
 #include "util/file_reader_writer.h"
 #include "util/mutable_cf_options.h"
+#include "vidardb/options.h"
+#include "vidardb/table_properties.h"
 
 namespace vidardb {
 
@@ -30,11 +32,10 @@ class Slice;
 class Status;
 
 struct TableReaderOptions {
-  TableReaderOptions(const ImmutableCFOptions& _ioptions,
-                     const EnvOptions& _env_options,
-                     const InternalKeyComparator& _internal_comparator,
-                     int _level = -1,
-                     const std::vector<uint32_t>& _cols = std::vector<uint32_t>())  // Shichao
+  TableReaderOptions(
+      const ImmutableCFOptions& _ioptions, const EnvOptions& _env_options,
+      const InternalKeyComparator& _internal_comparator, int _level = -1,
+      const std::vector<uint32_t>& _cols = std::vector<uint32_t>())  // Shichao
       : ioptions(_ioptions),
         env_options(_env_options),
         internal_comparator(_internal_comparator),

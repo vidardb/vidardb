@@ -14,7 +14,10 @@
 #include <string>
 #include <utility>
 #include <vector>
+
 #include "db/table_properties_collector.h"
+#include "util/event_logger.h"
+#include "util/mutable_cf_options.h"
 #include "vidardb/comparator.h"
 #include "vidardb/env.h"
 #include "vidardb/immutable_options.h"
@@ -23,8 +26,6 @@
 #include "vidardb/status.h"
 #include "vidardb/table_properties.h"
 #include "vidardb/types.h"
-#include "util/event_logger.h"
-#include "util/mutable_cf_options.h"
 
 namespace vidardb {
 

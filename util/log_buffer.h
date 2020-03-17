@@ -5,10 +5,11 @@
 
 #pragma once
 
-#include "vidardb/env.h"
-#include "util/arena.h"
-#include "port/sys_time.h"
 #include <ctime>
+
+#include "port/sys_time.h"
+#include "util/arena.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 

@@ -13,18 +13,18 @@ int main() {
 
 #include <gflags/gflags.h>
 
-#include "vidardb/db.h"
-#include "vidardb/table.h"
 #include "db/db_impl.h"
 #include "db/dbformat.h"
 #include "table/block_based_table_factory.h"
+#include "table/get_context.h"
 #include "table/internal_iterator.h"
 #include "table/table_builder.h"
-#include "table/get_context.h"
 #include "util/file_reader_writer.h"
 #include "util/histogram.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/db.h"
+#include "vidardb/table.h"
 
 using GFLAGS::ParseCommandLineFlags;
 using GFLAGS::SetUsageMessage;
@@ -74,8 +74,7 @@ void TableReaderBenchmark(Options& opts, EnvOptions& env_options,
                           bool through_db, bool measured_by_nanosecond) {
   vidardb::InternalKeyComparator ikc(opts.comparator);
 
-  std::string file_name = test::TmpDir()
-      + "/vidardb_table_reader_benchmark";
+  std::string file_name = test::TmpDir() + "/vidardb_table_reader_benchmark";
   std::string dbname = test::TmpDir() + "/vidardb_table_reader_bench_db";
   WriteOptions wo;
   Env* env = Env::Default();
@@ -164,10 +163,9 @@ void TableReaderBenchmark(Options& opts, EnvOptions& env_options,
           uint64_t start_time = Now(env, measured_by_nanosecond);
           if (!through_db) {
             std::string value;
-            GetContext get_context(ioptions.comparator,
-                                   ioptions.info_log, ioptions.statistics,
-                                   GetContext::kNotFound, Slice(key), &value,
-                                   nullptr, env);
+            GetContext get_context(ioptions.comparator, ioptions.info_log,
+                                   ioptions.statistics, GetContext::kNotFound,
+                                   Slice(key), &value, nullptr, env);
             s = table_reader->Get(read_options, key, &get_context);
           } else {
             s = db->Get(read_options, key, &result);
@@ -211,9 +209,10 @@ void TableReaderBenchmark(Options& opts, EnvOptions& env_options,
             }
           }
           if (count != r2_len) {
-            fprintf(
-                stderr, "Iterator cannot iterate expected number of entries. "
-                "Expected %d but got %d\n", r2_len, count);
+            fprintf(stderr,
+                    "Iterator cannot iterate expected number of entries. "
+                    "Expected %d but got %d\n",
+                    r2_len, count);
             assert(false);
           }
           delete iter;
@@ -248,14 +247,16 @@ void TableReaderBenchmark(Options& opts, EnvOptions& env_options,
 }  // namespace
 }  // namespace vidardb
 
-DEFINE_bool(query_empty, false, "query non-existing keys instead of existing "
+DEFINE_bool(query_empty, false,
+            "query non-existing keys instead of existing "
             "ones.");
 DEFINE_int32(num_keys1, 4096, "number of distinguish prefix of keys");
 DEFINE_int32(num_keys2, 512, "number of distinguish keys for each prefix");
 DEFINE_int32(iter, 3, "query non-existing keys instead of existing ones");
 DEFINE_int32(prefix_len, 16, "Prefix length used for iterators and indexes");
 DEFINE_bool(iterator, false, "For test iterator");
-DEFINE_bool(through_db, false, "If enable, a DB instance will be created and "
+DEFINE_bool(through_db, false,
+            "If enable, a DB instance will be created and "
             "the query will be against DB. Otherwise, will be directly against "
             "a table reader.");
 DEFINE_bool(mmap_read, true, "Whether use mmap read");

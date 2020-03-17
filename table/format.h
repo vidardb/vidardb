@@ -8,14 +8,15 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #pragma once
-#include <string>
 #include <stdint.h>
+
+#include <string>
+
+#include "port/port.h"  // noexcept
+#include "vidardb/options.h"
 #include "vidardb/slice.h"
 #include "vidardb/status.h"
-#include "vidardb/options.h"
 #include "vidardb/table.h"
-
-#include "port/port.h" // noexcept
 
 namespace vidardb {
 
@@ -49,13 +50,9 @@ class BlockHandle {
 
   // if the block handle's offset and size are both "0", we will view it
   // as a null block handle that points to no where.
-  bool IsNull() const {
-    return offset_ == 0 && size_ == 0;
-  }
+  bool IsNull() const { return offset_ == 0 && size_ == 0; }
 
-  static const BlockHandle& NullBlockHandle() {
-    return kNullBlockHandle;
-  }
+  static const BlockHandle& NullBlockHandle() { return kNullBlockHandle; }
 
   // Maximum encoding length of a BlockHandle
   enum { kMaxEncodedLength = 10 + 10 };
@@ -120,7 +117,7 @@ class Footer {
   enum {
     // Footer will always occupy exactly this many bytes.
     // It consists of two block handles, padding, and a magic number.
-      kEncodedLength = 2 * BlockHandle::kMaxEncodedLength + 8,
+    kEncodedLength = 2 * BlockHandle::kMaxEncodedLength + 8,
   };
 
   static const uint64_t kInvalidTableMagicNumber = 0;
@@ -157,8 +154,8 @@ Status ReadFooterFromFile(RandomAccessFileReader* file, uint64_t file_size,
 static const size_t kBlockTrailerSize = 5;
 
 struct BlockContents {
-  Slice data;           // Actual contents of data
-  bool cachable;        // True iff data can be cached
+  Slice data;     // Actual contents of data
+  bool cachable;  // True iff data can be cached
   CompressionType compression_type;
   std::unique_ptr<char[]> allocation;
 
@@ -175,7 +172,9 @@ struct BlockContents {
         compression_type(_compression_type),
         allocation(std::move(_data)) {}
 
-  BlockContents(BlockContents&& other) VIDARDB_NOEXCEPT { *this = std::move(other); }
+  BlockContents(BlockContents&& other) VIDARDB_NOEXCEPT {
+    *this = std::move(other);
+  }
 
   BlockContents& operator=(BlockContents&& other) {
     data = std::move(other.data);
@@ -192,8 +191,7 @@ extern Status ReadBlockContents(
     RandomAccessFileReader* file, const Footer& footer,
     const ReadOptions& options, const BlockHandle& handle,
     BlockContents* contents, Env* env, bool do_uncompress = true,
-    const Slice& compression_dict = Slice(),
-    Logger* info_log = nullptr);
+    const Slice& compression_dict = Slice(), Logger* info_log = nullptr);
 
 // The 'data' points to the raw block contents read in from file.
 // This method allocates a new heap buffer and the raw block
@@ -209,9 +207,7 @@ extern Status UncompressBlockContents(const char* data, size_t n,
 // Implementation details follow.  Clients should ignore,
 
 inline BlockHandle::BlockHandle()
-    : BlockHandle(~static_cast<uint64_t>(0),
-                  ~static_cast<uint64_t>(0)) {
-}
+    : BlockHandle(~static_cast<uint64_t>(0), ~static_cast<uint64_t>(0)) {}
 
 inline BlockHandle::BlockHandle(uint64_t _offset, uint64_t _size)
     : offset_(_offset), size_(_size) {}

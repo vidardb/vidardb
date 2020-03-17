@@ -19,26 +19,23 @@
 #include <utility>
 
 #include "db/dbformat.h"
-
+#include "table/block.h"
+#include "table/block_based_table_factory.h"
+#include "table/block_based_table_reader.h"
+#include "table/block_builder.h"
+#include "table/format.h"
+#include "table/meta_blocks.h"
+#include "table/table_builder.h"
+#include "util/coding.h"
+#include "util/compression.h"
+#include "util/crc32c.h"
+#include "util/stop_watch.h"
+#include "util/string_util.h"
 #include "vidardb/cache.h"
 #include "vidardb/comparator.h"
 #include "vidardb/env.h"
 #include "vidardb/flush_block_policy.h"
 #include "vidardb/table.h"
-
-#include "table/block.h"
-#include "table/block_based_table_reader.h"
-#include "table/block_builder.h"
-#include "table/block_based_table_factory.h"
-#include "table/format.h"
-#include "table/meta_blocks.h"
-#include "table/table_builder.h"
-
-#include "util/string_util.h"
-#include "util/coding.h"
-#include "util/compression.h"
-#include "util/crc32c.h"
-#include "util/stop_watch.h"
 
 namespace vidardb {
 
@@ -172,44 +169,41 @@ Slice CompressBlock(const Slice& raw,
       }
       break;  // fall back to no compression.
     case kZlibCompression:
-      if (Zlib_Compress(
-              compression_options,
-              GetCompressFormatForVersion(kZlibCompression),
-              raw.data(), raw.size(), compressed_output, compression_dict) &&
+      if (Zlib_Compress(compression_options,
+                        GetCompressFormatForVersion(kZlibCompression),
+                        raw.data(), raw.size(), compressed_output,
+                        compression_dict) &&
           GoodCompressionRatio(compressed_output->size(), raw.size())) {
         return *compressed_output;
       }
       break;  // fall back to no compression.
     case kBZip2Compression:
-      if (BZip2_Compress(
-              compression_options,
-              GetCompressFormatForVersion(kBZip2Compression),
-              raw.data(), raw.size(), compressed_output) &&
+      if (BZip2_Compress(compression_options,
+                         GetCompressFormatForVersion(kBZip2Compression),
+                         raw.data(), raw.size(), compressed_output) &&
           GoodCompressionRatio(compressed_output->size(), raw.size())) {
         return *compressed_output;
       }
       break;  // fall back to no compression.
     case kLZ4Compression:
-      if (LZ4_Compress(
-              compression_options,
-              GetCompressFormatForVersion(kLZ4Compression),
-              raw.data(), raw.size(), compressed_output, compression_dict) &&
+      if (LZ4_Compress(compression_options,
+                       GetCompressFormatForVersion(kLZ4Compression), raw.data(),
+                       raw.size(), compressed_output, compression_dict) &&
           GoodCompressionRatio(compressed_output->size(), raw.size())) {
         return *compressed_output;
       }
       break;  // fall back to no compression.
     case kLZ4HCCompression:
-      if (LZ4HC_Compress(
-              compression_options,
-              GetCompressFormatForVersion(kLZ4HCCompression),
-              raw.data(), raw.size(), compressed_output, compression_dict) &&
+      if (LZ4HC_Compress(compression_options,
+                         GetCompressFormatForVersion(kLZ4HCCompression),
+                         raw.data(), raw.size(), compressed_output,
+                         compression_dict) &&
           GoodCompressionRatio(compressed_output->size(), raw.size())) {
         return *compressed_output;
       }
-      break;     // fall back to no compression.
+      break;  // fall back to no compression.
     case kXpressCompression:
-      if (XPRESS_Compress(raw.data(), raw.size(),
-          compressed_output) &&
+      if (XPRESS_Compress(raw.data(), raw.size(), compressed_output) &&
           GoodCompressionRatio(compressed_output->size(), raw.size())) {
         return *compressed_output;
       }
@@ -220,8 +214,9 @@ Slice CompressBlock(const Slice& raw,
           GoodCompressionRatio(compressed_output->size(), raw.size())) {
         return *compressed_output;
       }
-      break;     // fall back to no compression.
-    default: {}  // Do not recognize this compression type
+      break;  // fall back to no compression.
+    default: {
+    }  // Do not recognize this compression type
   }
 
   // Compression method is not supported, or not good compression ratio, so just
@@ -286,9 +281,8 @@ struct BlockBasedTableBuilder::Rep {
         internal_comparator(icomparator),
         file(f),
         data_block(table_options.block_restart_interval),
-        index_builder(
-            CreateIndexBuilder(&internal_comparator,
-                               table_options.index_block_restart_interval)),
+        index_builder(CreateIndexBuilder(
+            &internal_comparator, table_options.index_block_restart_interval)),
         compression_type(_compression_type),
         compression_opts(_compression_opts),
         compression_dict(_compression_dict),
@@ -399,9 +393,9 @@ void BlockBasedTableBuilder::WriteBlock(const Slice& raw_block_contents,
     if (is_data_block && r->compression_dict && r->compression_dict->size()) {
       compression_dict = *r->compression_dict;
     }
-    block_contents = CompressBlock(raw_block_contents, r->compression_opts,
-                                   &type, compression_dict,
-                                   &r->compressed_output);
+    block_contents =
+        CompressBlock(raw_block_contents, r->compression_opts, &type,
+                      compression_dict, &r->compressed_output);
   } else {
     RecordTick(r->ioptions.statistics, NUMBER_BLOCK_NOT_COMPRESSED);
     type = kNoCompression;
@@ -435,9 +429,7 @@ void BlockBasedTableBuilder::WriteRawBlock(const Slice& block_contents,
   }
 }
 
-Status BlockBasedTableBuilder::status() const {
-  return rep_->status;
-}
+Status BlockBasedTableBuilder::status() const { return rep_->status; }
 
 Status BlockBasedTableBuilder::Finish() {
   Rep* r = rep_;
@@ -553,9 +545,7 @@ uint64_t BlockBasedTableBuilder::NumEntries() const {
   return rep_->props.num_entries;
 }
 
-uint64_t BlockBasedTableBuilder::FileSize() const {
-  return rep_->offset;
-}
+uint64_t BlockBasedTableBuilder::FileSize() const { return rep_->offset; }
 
 bool BlockBasedTableBuilder::NeedCompact() const {
   for (const auto& collector : rep_->table_properties_collectors) {

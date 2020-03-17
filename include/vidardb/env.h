@@ -23,11 +23,13 @@
 #define STORAGE_VIDARDB_INCLUDE_ENV_H_
 
 #include <stdint.h>
+
 #include <cstdarg>
 #include <limits>
 #include <memory>
 #include <string>
 #include <vector>
+
 #include "vidardb/status.h"
 #include "vidardb/thread_status.h"
 
@@ -50,13 +52,11 @@ struct DBOptions;
 class ThreadStatusUpdater;
 struct ThreadStatus;
 
-using std::unique_ptr;
 using std::shared_ptr;
-
+using std::unique_ptr;
 
 // Options while opening a file to read/write
 struct EnvOptions {
-
   // construct with default Options
   EnvOptions();
 
@@ -66,10 +66,10 @@ struct EnvOptions {
   // If true, then allow caching of data in environment buffers
   bool use_os_buffer = true;
 
-   // If true, then use mmap to read data
+  // If true, then use mmap to read data
   bool use_mmap_reads = false;
 
-   // If true, then use mmap to write data
+  // If true, then use mmap to write data
   bool use_mmap_writes = true;
 
   // If true, then use O_DIRECT for reading data
@@ -137,8 +137,7 @@ class Env {
   // The returned file will only be accessed by one thread at a time.
   virtual Status NewSequentialFile(const std::string& fname,
                                    unique_ptr<SequentialFile>* result,
-                                   const EnvOptions& options)
-                                   = 0;
+                                   const EnvOptions& options) = 0;
 
   // Create a brand new random access read-only file with the
   // specified name.  On success, stores a pointer to the new file in
@@ -149,8 +148,7 @@ class Env {
   // The returned file may be concurrently accessed by multiple threads.
   virtual Status NewRandomAccessFile(const std::string& fname,
                                      unique_ptr<RandomAccessFile>* result,
-                                     const EnvOptions& options)
-                                     = 0;
+                                     const EnvOptions& options) = 0;
 
   // Create an object that writes to a new file with the specified
   // name.  Deletes any existing file with the same name and creates a
@@ -254,11 +252,7 @@ class Env {
   enum Priority { LOW, HIGH, TOTAL };
 
   // Priority for requesting bytes in rate limiter scheduler
-  enum IOPriority {
-    IO_LOW = 0,
-    IO_HIGH = 1,
-    IO_TOTAL = 2
-  };
+  enum IOPriority { IO_LOW = 0, IO_HIGH = 1, IO_TOTAL = 2 };
 
   // Arrange to run "(*function)(arg)" once in a background thread, in
   // the thread pool specified by pri. By default, jobs go to the 'LOW'
@@ -309,9 +303,7 @@ class Env {
   // Returns the number of nano-seconds since some fixed point in time. Only
   // useful for computing deltas of time in one run.
   // Default implementation simply relies on NowMicros
-  virtual uint64_t NowNanos() {
-    return NowMicros() * 1000;
-  }
+  virtual uint64_t NowNanos() { return NowMicros() * 1000; }
 
   // Sleep/delay the thread for the perscribed number of micro-seconds.
   virtual void SleepForMicroseconds(int micros) = 0;
@@ -324,7 +316,7 @@ class Env {
 
   // Get full directory name for this db.
   virtual Status GetAbsolutePath(const std::string& db_path,
-      std::string* output_path) = 0;
+                                 std::string* output_path) = 0;
 
   // The number of background worker threads of a specific thread pool
   // for this environment. 'LOW' is the default pool.
@@ -353,8 +345,8 @@ class Env {
   // OptimizeForManifestWrite will create a new EnvOptions object that is a copy
   // of the EnvOptions in the parameters, but is optimized for writing manifest
   // files. Default implementation returns the copy of the same object.
-  virtual EnvOptions OptimizeForManifestWrite(const EnvOptions& env_options)
-      const;
+  virtual EnvOptions OptimizeForManifestWrite(
+      const EnvOptions& env_options) const;
 
   // Returns the status of all threads that belong to the current Env.
   virtual Status GetThreadList(std::vector<ThreadStatus>* thread_list) {
@@ -390,10 +382,9 @@ ThreadStatusUpdater* CreateThreadStatusUpdater();
 // A file abstraction for reading sequentially through a file
 class SequentialFile {
  public:
-  SequentialFile() { }
+  SequentialFile() {}
   /********************** Shichao ************************/
-  SequentialFile(const std::string& filename)
-    : filename_(filename) { }
+  SequentialFile(const std::string& filename) : filename_(filename) {}
   /********************** Shichao ************************/
   virtual ~SequentialFile();
 
@@ -424,9 +415,7 @@ class SequentialFile {
   }
 
   /********************** Shichao ************************/
-  virtual std::string GetFileName() {
-    return filename_;
-  }
+  virtual std::string GetFileName() { return filename_; }
   /********************** Shichao ************************/
 
  protected:
@@ -436,10 +425,9 @@ class SequentialFile {
 // A file abstraction for randomly reading the contents of a file.
 class RandomAccessFile {
  public:
-  RandomAccessFile() { }
+  RandomAccessFile() {}
   /********************** Shichao ************************/
-  RandomAccessFile(const std::string& filename)
-    : filename_(filename) { }
+  RandomAccessFile(const std::string& filename) : filename_(filename) {}
   /********************** Shichao ************************/
   virtual ~RandomAccessFile();
 
@@ -457,9 +445,7 @@ class RandomAccessFile {
 
   // Used by the file_reader_writer to decide if the ReadAhead wrapper
   // should simply forward the call and do not enact buffering or locking.
-  virtual bool ShouldForwardRawRequest() const {
-    return false;
-  }
+  virtual bool ShouldForwardRawRequest() const { return false; }
 
   // For cases when read-ahead is implemented in the platform dependent
   // layer
@@ -481,18 +467,14 @@ class RandomAccessFile {
   //
   // Note: these IDs are only valid for the duration of the process.
   virtual size_t GetUniqueId(char* id, size_t max_size) const {
-    return 0; // Default implementation to prevent issues with backwards
-              // compatibility.
+    return 0;  // Default implementation to prevent issues with backwards
+               // compatibility.
   };
 
   /********************** Shichao ************************/
-  virtual std::string GetFileName() {
-    return filename_;
-  }
+  virtual std::string GetFileName() { return filename_; }
 
-  virtual size_t ReadaheadSize() {
-    return 0;
-  }
+  virtual size_t ReadaheadSize() { return 0; }
   /********************** Shichao ************************/
 
   enum AccessPattern { NORMAL, RANDOM, SEQUENTIAL, WILLNEED, DONTNEED };
@@ -516,24 +498,22 @@ class RandomAccessFile {
 class WritableFile {
  public:
   WritableFile()
-    : last_preallocated_block_(0),
-      preallocation_block_size_(0),
-      io_priority_(Env::IO_TOTAL) { }
+      : last_preallocated_block_(0),
+        preallocation_block_size_(0),
+        io_priority_(Env::IO_TOTAL) {}
 
   /********************** Shichao ************************/
   WritableFile(const std::string& filename)
-    : last_preallocated_block_(0),
-      preallocation_block_size_(0),
-      io_priority_(Env::IO_TOTAL),
-      filename_(filename) { }
+      : last_preallocated_block_(0),
+        preallocation_block_size_(0),
+        io_priority_(Env::IO_TOTAL),
+        filename_(filename) {}
   /********************** Shichao ************************/
 
   virtual ~WritableFile();
 
   // Indicates if the class makes use of unbuffered I/O
-  virtual bool UseOSBuffer() const {
-    return true;
-  }
+  virtual bool UseOSBuffer() const { return true; }
 
   const size_t c_DefaultPageSize = 4 * 1024;
 
@@ -548,7 +528,8 @@ class WritableFile {
 
   // Positioned write for unbuffered access default forward
   // to simple append as most of the tests are buffered by default
-  virtual Status PositionedAppend(const Slice& /* data */, uint64_t /* offset */) {
+  virtual Status PositionedAppend(const Slice& /* data */,
+                                  uint64_t /* offset */) {
     return Status::NotSupported();
   }
 
@@ -556,12 +537,10 @@ class WritableFile {
   // before closing. It is not always possible to keep track of the file
   // size due to whole pages writes. The behavior is undefined if called
   // with other writes to follow.
-  virtual Status Truncate(uint64_t size) {
-    return Status::OK();
-  }
+  virtual Status Truncate(uint64_t size) { return Status::OK(); }
   virtual Status Close() = 0;
   virtual Status Flush() = 0;
-  virtual Status Sync() = 0; // sync data
+  virtual Status Sync() = 0;  // sync data
 
   /*
    * Sync data and/or metadata as well.
@@ -569,15 +548,11 @@ class WritableFile {
    * Override this method for environments where we need to sync
    * metadata as well.
    */
-  virtual Status Fsync() {
-    return Sync();
-  }
+  virtual Status Fsync() { return Sync(); }
 
   // true if Sync() and Fsync() are safe to call concurrently with Append()
   // and Flush().
-  virtual bool IsSyncThreadSafe() const {
-    return false;
-  }
+  virtual bool IsSyncThreadSafe() const { return false; }
 
   // Indicates the upper layers if the current WritableFile implementation
   // uses direct IO.
@@ -587,23 +562,17 @@ class WritableFile {
    * Change the priority in rate limiter if rate limiting is enabled.
    * If rate limiting is not enabled, this call has no effect.
    */
-  virtual void SetIOPriority(Env::IOPriority pri) {
-    io_priority_ = pri;
-  }
+  virtual void SetIOPriority(Env::IOPriority pri) { io_priority_ = pri; }
 
   virtual Env::IOPriority GetIOPriority() { return io_priority_; }
 
   /*
    * Get the size of valid data in the file.
    */
-  virtual uint64_t GetFileSize() {
-    return 0;
-  }
+  virtual uint64_t GetFileSize() { return 0; }
 
   /********************** Shichao ************************/
-  virtual std::string GetFileName() {
-    return filename_;
-  }
+  virtual std::string GetFileName() { return filename_; }
   /********************** Shichao ************************/
 
   /*
@@ -624,7 +593,7 @@ class WritableFile {
 
   // For documentation, refer to RandomAccessFile::GetUniqueId()
   virtual size_t GetUniqueId(char* id, size_t max_size) const {
-    return 0; // Default implementation to prevent issues with backwards
+    return 0;  // Default implementation to prevent issues with backwards
   }
 
   // Remove any kind of caching of data from the offset to offset+length
@@ -641,7 +610,9 @@ class WritableFile {
   // This asks the OS to initiate flushing the cached data to disk,
   // without waiting for completion.
   // Default implementation does nothing.
-  virtual Status RangeSync(uint64_t offset, uint64_t nbytes) { return Status::OK(); }
+  virtual Status RangeSync(uint64_t offset, uint64_t nbytes) {
+    return Status::OK();
+  }
 
   // PrepareWrite performs any necessary preparation for a write
   // before the write actually occurs.  This allows for pre-allocation
@@ -657,10 +628,10 @@ class WritableFile {
     // cover this write would be and Allocate to that point.
     const auto block_size = preallocation_block_size_;
     size_t new_last_preallocated_block =
-      (offset + len + block_size - 1) / block_size;
+        (offset + len + block_size - 1) / block_size;
     if (new_last_preallocated_block > last_preallocated_block_) {
       size_t num_spanned_blocks =
-        new_last_preallocated_block - last_preallocated_block_;
+          new_last_preallocated_block - last_preallocated_block_;
       Allocate(block_size * last_preallocated_block_,
                block_size * num_spanned_blocks);
       last_preallocated_block_ = new_last_preallocated_block;
@@ -736,7 +707,8 @@ class Logger {
   // and format.  Any log with level under the internal log level
   // of *this (see @SetInfoLogLevel and @GetInfoLogLevel) will not be
   // printed.
-  virtual void Logv(const InfoLogLevel log_level, const char* format, va_list ap);
+  virtual void Logv(const InfoLogLevel log_level, const char* format,
+                    va_list ap);
 
   virtual size_t GetLogFileSize() const { return kDoNotSupportGetLogFileSize; }
   // Flush to the OS buffers
@@ -753,12 +725,12 @@ class Logger {
   InfoLogLevel log_level_;
 };
 
-
 // Identifies a locked file.
 class FileLock {
  public:
-  FileLock() { }
+  FileLock() {}
   virtual ~FileLock();
+
  private:
   // No copying allowed
   FileLock(const FileLock&);
@@ -781,21 +753,21 @@ extern void Fatal(const shared_ptr<Logger>& info_log, const char* format, ...);
 // Log the specified data to *info_log if info_log is non-nullptr.
 // The default info log level is InfoLogLevel::ERROR.
 extern void Log(const shared_ptr<Logger>& info_log, const char* format, ...)
-#   if defined(__GNUC__) || defined(__clang__)
-    __attribute__((__format__ (__printf__, 2, 3)))
-#   endif
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((__format__(__printf__, 2, 3)))
+#endif
     ;
 
-extern void LogFlush(Logger *info_log);
+extern void LogFlush(Logger* info_log);
 
 extern void Log(const InfoLogLevel log_level, Logger* info_log,
                 const char* format, ...);
 
 // The default info log level is InfoLogLevel::ERROR.
 extern void Log(Logger* info_log, const char* format, ...)
-#   if defined(__GNUC__) || defined(__clang__)
-    __attribute__((__format__ (__printf__, 2, 3)))
-#   endif
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((__format__(__printf__, 2, 3)))
+#endif
     ;
 
 // a set of log functions with different log levels.
@@ -821,7 +793,7 @@ extern Status ReadFileToString(Env* env, const std::string& fname,
 class EnvWrapper : public Env {
  public:
   // Initialize an EnvWrapper that delegates all calls to *t
-  explicit EnvWrapper(Env* t) : target_(t) { }
+  explicit EnvWrapper(Env* t) : target_(t) {}
   virtual ~EnvWrapper();
 
   // Return the target to which this Env forwards all calls
@@ -959,9 +931,7 @@ class EnvWrapper : public Env {
     return target_->GetThreadStatusUpdater();
   }
 
-  uint64_t GetThreadID() const override {
-    return target_->GetThreadID();
-  }
+  uint64_t GetThreadID() const override { return target_->GetThreadID(); }
 
  private:
   Env* target_;
@@ -974,7 +944,7 @@ class EnvWrapper : public Env {
 // protected virtual methods.
 class WritableFileWrapper : public WritableFile {
  public:
-  explicit WritableFileWrapper(WritableFile* t) : target_(t) { }
+  explicit WritableFileWrapper(WritableFile* t) : target_(t) {}
 
   Status Append(const Slice& data) override { return target_->Append(data); }
   Status PositionedAppend(const Slice& data, uint64_t offset) override {

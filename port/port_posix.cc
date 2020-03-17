@@ -17,10 +17,12 @@
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/time.h>
 #include <sys/resource.h>
+#include <sys/time.h>
 #include <unistd.h>
+
 #include <cstdlib>
+
 #include "util/logging.h"
 
 namespace vidardb {
@@ -41,16 +43,14 @@ Mutex::Mutex(bool adaptive) {
   } else {
     pthread_mutexattr_t mutex_attr;
     PthreadCall("init mutex attr", pthread_mutexattr_init(&mutex_attr));
-    PthreadCall("set mutex attr",
-                pthread_mutexattr_settype(&mutex_attr,
-                                          PTHREAD_MUTEX_ADAPTIVE_NP));
+    PthreadCall("set mutex attr", pthread_mutexattr_settype(
+                                      &mutex_attr, PTHREAD_MUTEX_ADAPTIVE_NP));
     PthreadCall("init mutex", pthread_mutex_init(&mu_, &mutex_attr));
-    PthreadCall("destroy mutex attr",
-                pthread_mutexattr_destroy(&mutex_attr));
+    PthreadCall("destroy mutex attr", pthread_mutexattr_destroy(&mutex_attr));
   }
 #else
   PthreadCall("init mutex", pthread_mutex_init(&mu_, nullptr));
-#endif // VIDARDB_PTHREAD_ADAPTIVE_MUTEX
+#endif  // VIDARDB_PTHREAD_ADAPTIVE_MUTEX
 }
 
 Mutex::~Mutex() { PthreadCall("destroy mutex", pthread_mutex_destroy(&mu_)); }
@@ -75,9 +75,8 @@ void Mutex::AssertHeld() {
 #endif
 }
 
-CondVar::CondVar(Mutex* mu)
-    : mu_(mu) {
-    PthreadCall("init cv", pthread_cond_init(&cv_, nullptr));
+CondVar::CondVar(Mutex* mu) : mu_(mu) {
+  PthreadCall("init cv", pthread_cond_init(&cv_, nullptr));
 }
 
 CondVar::~CondVar() { PthreadCall("destroy cv", pthread_cond_destroy(&cv_)); }
@@ -113,9 +112,7 @@ bool CondVar::TimedWait(uint64_t abs_time_us) {
   return false;
 }
 
-void CondVar::Signal() {
-  PthreadCall("signal", pthread_cond_signal(&cv_));
-}
+void CondVar::Signal() { PthreadCall("signal", pthread_cond_signal(&cv_)); }
 
 void CondVar::SignalAll() {
   PthreadCall("broadcast", pthread_cond_broadcast(&cv_));
@@ -125,15 +122,25 @@ RWMutex::RWMutex() {
   PthreadCall("init mutex", pthread_rwlock_init(&mu_, nullptr));
 }
 
-RWMutex::~RWMutex() { PthreadCall("destroy mutex", pthread_rwlock_destroy(&mu_)); }
+RWMutex::~RWMutex() {
+  PthreadCall("destroy mutex", pthread_rwlock_destroy(&mu_));
+}
 
-void RWMutex::ReadLock() { PthreadCall("read lock", pthread_rwlock_rdlock(&mu_)); }
+void RWMutex::ReadLock() {
+  PthreadCall("read lock", pthread_rwlock_rdlock(&mu_));
+}
 
-void RWMutex::WriteLock() { PthreadCall("write lock", pthread_rwlock_wrlock(&mu_)); }
+void RWMutex::WriteLock() {
+  PthreadCall("write lock", pthread_rwlock_wrlock(&mu_));
+}
 
-void RWMutex::ReadUnlock() { PthreadCall("read unlock", pthread_rwlock_unlock(&mu_)); }
+void RWMutex::ReadUnlock() {
+  PthreadCall("read unlock", pthread_rwlock_unlock(&mu_));
+}
 
-void RWMutex::WriteUnlock() { PthreadCall("write unlock", pthread_rwlock_unlock(&mu_)); }
+void RWMutex::WriteUnlock() {
+  PthreadCall("write unlock", pthread_rwlock_unlock(&mu_));
+}
 
 int PhysicalCoreID() {
 #if defined(__i386__) || defined(__x86_64__)

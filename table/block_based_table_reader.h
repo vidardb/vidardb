@@ -15,18 +15,19 @@
 #pragma once
 
 #include <stdint.h>
-#include <memory>
-#include <utility>
-#include <string>
 
-#include "vidardb/options.h"
-#include "vidardb/statistics.h"
-#include "vidardb/status.h"
-#include "vidardb/table.h"
+#include <memory>
+#include <string>
+#include <utility>
+
 #include "table/table_properties_internal.h"
 #include "table/table_reader.h"
 #include "util/coding.h"
 #include "util/file_reader_writer.h"
+#include "vidardb/options.h"
+#include "vidardb/statistics.h"
+#include "vidardb/status.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 
@@ -156,9 +157,10 @@ class BlockBasedTable : public TableReader {
   //
   // REQUIRES: raw_block is heap-allocated. PutDataBlockToCache() will be
   // responsible for releasing its memory if error occurs.
-  static Status PutDataBlockToCache(
-      const Slice& block_cache_key, Cache* block_cache, Statistics* statistics,
-      CachableEntry<Block>* block, Block* raw_block);
+  static Status PutDataBlockToCache(const Slice& block_cache_key,
+                                    Cache* block_cache, Statistics* statistics,
+                                    CachableEntry<Block>* block,
+                                    Block* raw_block);
 
   // Read block cache from block caches (if set): block_cache
   // On success, Status::OK with be returned and @block will be populated with

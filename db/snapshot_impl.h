@@ -31,7 +31,7 @@ class SnapshotImpl : public Snapshot {
   SnapshotImpl* prev_;
   SnapshotImpl* next_;
 
-  SnapshotList* list_;                 // just for sanity checks
+  SnapshotList* list_;  // just for sanity checks
 
   int64_t unix_time_;
 
@@ -44,13 +44,19 @@ class SnapshotList {
   SnapshotList() {
     list_.prev_ = &list_;
     list_.next_ = &list_;
-    list_.number_ = 0xFFFFFFFFL;      // placeholder marker, for debugging
+    list_.number_ = 0xFFFFFFFFL;  // placeholder marker, for debugging
     count_ = 0;
   }
 
   bool empty() const { return list_.next_ == &list_; }
-  SnapshotImpl* oldest() const { assert(!empty()); return list_.next_; }
-  SnapshotImpl* newest() const { assert(!empty()); return list_.prev_; }
+  SnapshotImpl* oldest() const {
+    assert(!empty());
+    return list_.next_;
+  }
+  SnapshotImpl* newest() const {
+    assert(!empty());
+    return list_.prev_;
+  }
 
   const SnapshotImpl* New(SnapshotImpl* s, SequenceNumber seq,
                           uint64_t unix_time, bool is_write_conflict_boundary) {

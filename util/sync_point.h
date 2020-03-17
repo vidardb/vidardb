@@ -5,13 +5,14 @@
 #pragma once
 
 #include <assert.h>
+
 #include <condition_variable>
+#include <functional>
 #include <mutex>
 #include <string>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
-#include <functional>
 
 // This is only set from db_stress.cc and for testing only.
 // If non-zero, kill at various points in source code with probability 1/this
@@ -98,8 +99,8 @@ class SyncPoint {
   bool PredecessorsAllCleared(const std::string& point);
 
   // successor/predecessor map loaded from LoadDependency
-  std::unordered_map<std::string, std::vector<std::string>> successors_;
-  std::unordered_map<std::string, std::vector<std::string>> predecessors_;
+  std::unordered_map<std::string, std::vector<std::string> > successors_;
+  std::unordered_map<std::string, std::vector<std::string> > predecessors_;
   std::unordered_map<std::string, std::function<void(void*)> > callbacks_;
 
   std::mutex mutex_;

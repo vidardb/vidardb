@@ -18,6 +18,7 @@
 #define STORAGE_VIDARDB_INCLUDE_STATUS_H_
 
 #include <string>
+
 #include "vidardb/slice.h"
 
 namespace vidardb {
@@ -33,14 +34,14 @@ class Status {
   Status& operator=(const Status& s);
   Status(Status&& s)
 #if !(defined _MSC_VER) || ((defined _MSC_VER) && (_MSC_VER >= 1900))
-    noexcept
+      noexcept
 #endif
-  ;
+      ;
   Status& operator=(Status&& s)
 #if !(defined _MSC_VER) || ((defined _MSC_VER) && (_MSC_VER >= 1900))
-    noexcept
+      noexcept
 #endif
-  ;
+      ;
   bool operator==(const Status& rhs) const;
   bool operator!=(const Status& rhs) const;
 
@@ -227,7 +228,7 @@ inline Status::Status(const Status& s) : code_(s.code_), subcode_(s.subcode_) {
 inline Status& Status::operator=(const Status& s) {
   // The following condition catches both aliasing (when this == &s),
   // and the common case where both s and *this are ok.
-  if(this != &s) {
+  if (this != &s) {
     code_ = s.code_;
     subcode_ = s.subcode_;
     delete[] state_;
@@ -238,23 +239,23 @@ inline Status& Status::operator=(const Status& s) {
 
 inline Status::Status(Status&& s)
 #if !(defined _MSC_VER) || ((defined _MSC_VER) && (_MSC_VER >= 1900))
-noexcept
+    noexcept
 #endif
-  : Status() {
+    : Status() {
   *this = std::move(s);
 }
 
 inline Status& Status::operator=(Status&& s)
 #if !(defined _MSC_VER) || ((defined _MSC_VER) && (_MSC_VER >= 1900))
-noexcept
+    noexcept
 #endif
 {
-  if(this != &s) {
+  if (this != &s) {
     code_ = std::move(s.code_);
     s.code_ = kOk;
     subcode_ = std::move(s.subcode_);
     s.subcode_ = kNone;
-    delete [] state_;
+    delete[] state_;
     state_ = nullptr;
     std::swap(state_, s.state_);
   }

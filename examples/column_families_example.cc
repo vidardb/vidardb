@@ -7,8 +7,8 @@
 #include <vector>
 
 #include "vidardb/db.h"
-#include "vidardb/slice.h"
 #include "vidardb/options.h"
+#include "vidardb/slice.h"
 
 using namespace vidardb;
 
@@ -34,11 +34,11 @@ int main() {
   // open DB with two column families
   std::vector<ColumnFamilyDescriptor> column_families;
   // have to open default column family
-  column_families.push_back(ColumnFamilyDescriptor(
-      kDefaultColumnFamilyName, ColumnFamilyOptions()));
+  column_families.push_back(
+      ColumnFamilyDescriptor(kDefaultColumnFamilyName, ColumnFamilyOptions()));
   // open the new one, too
-  column_families.push_back(ColumnFamilyDescriptor(
-      "new_cf", ColumnFamilyOptions()));
+  column_families.push_back(
+      ColumnFamilyDescriptor("new_cf", ColumnFamilyOptions()));
   std::vector<ColumnFamilyHandle*> handles;
   s = DB::Open(DBOptions(), kDBPath, column_families, &handles, &db);
   assert(s.ok());

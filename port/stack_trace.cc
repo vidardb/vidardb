@@ -5,8 +5,9 @@
 //
 #include "port/stack_trace.h"
 
-#if defined(VIDARDB_LITE) || !(defined(VIDARDB_BACKTRACE) || defined(OS_MACOSX)) || \
-    defined(CYGWIN) || defined(OS_FREEBSD)
+#if defined(VIDARDB_LITE) ||                                                  \
+    !(defined(VIDARDB_BACKTRACE) || defined(OS_MACOSX)) || defined(CYGWIN) || \
+    defined(OS_FREEBSD)
 
 // noop
 
@@ -19,13 +20,13 @@ void PrintStack(int first_frames_to_skip) {}
 
 #else
 
+#include <cxxabi.h>
 #include <execinfo.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <cxxabi.h>
 
 namespace vidardb {
 namespace port {

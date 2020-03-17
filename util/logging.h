@@ -11,9 +11,11 @@
 // with macros.
 
 #pragma once
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
+
 #include <string>
+
 #include "port/port.h"
 
 namespace vidardb {

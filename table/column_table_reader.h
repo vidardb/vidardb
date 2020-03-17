@@ -6,18 +6,19 @@
 #pragma once
 
 #include <stdint.h>
-#include <memory>
-#include <utility>
-#include <string>
 
-#include "vidardb/options.h"
-#include "vidardb/statistics.h"
-#include "vidardb/status.h"
-#include "vidardb/table.h"
+#include <memory>
+#include <string>
+#include <utility>
+
 #include "table/table_properties_internal.h"
 #include "table/table_reader.h"
 #include "util/coding.h"
 #include "util/file_reader_writer.h"
+#include "vidardb/options.h"
+#include "vidardb/statistics.h"
+#include "vidardb/status.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 
@@ -60,15 +61,14 @@ class ColumnTable : public TableReader {
   //
   // @param file must remain live while this Table is in use.
   // @param prefetch_index sets prefetching of index blocks at startup.
-  static Status Open(const ImmutableCFOptions& ioptions,
-                     const EnvOptions& env_options,
-                     const ColumnTableOptions& table_options,
-                     const InternalKeyComparator& internal_key_comparator,
-                     unique_ptr<RandomAccessFileReader>&& file,
-                     uint64_t file_size, unique_ptr<TableReader>* table_reader,
-                     bool prefetch_index = true, int level = -1,
-                     const std::vector<uint32_t>& cols =
-                             std::vector<uint32_t>());
+  static Status Open(
+      const ImmutableCFOptions& ioptions, const EnvOptions& env_options,
+      const ColumnTableOptions& table_options,
+      const InternalKeyComparator& internal_key_comparator,
+      unique_ptr<RandomAccessFileReader>&& file, uint64_t file_size,
+      unique_ptr<TableReader>* table_reader, bool prefetch_index = true,
+      int level = -1,
+      const std::vector<uint32_t>& cols = std::vector<uint32_t>());
 
   // Returns a new iterator over the table contents.
   // The result of NewIterator() is initially invalid (caller must
@@ -146,16 +146,18 @@ class ColumnTable : public TableReader {
   //
   // REQUIRES: raw_block is heap-allocated. PutDataBlockToCache() will be
   // responsible for releasing its memory if error occurs.
-  static Status PutDataBlockToCache(
-      const Slice& block_cache_key, Cache* block_cache, Statistics* statistics,
-      CachableEntry<Block>* block, Block* raw_block);
+  static Status PutDataBlockToCache(const Slice& block_cache_key,
+                                    Cache* block_cache, Statistics* statistics,
+                                    CachableEntry<Block>* block,
+                                    Block* raw_block);
 
   // Read block cache from block caches (if set): block_cache.
   // On success, Status::OK with be returned and @block will be populated with
   // pointer to the block as well as its block handle.
-  static Status GetDataBlockFromCache(
-      const Slice& block_cache_key, Cache* block_cache, Statistics* statistics,
-      ColumnTable::CachableEntry<Block>* block);
+  static Status GetDataBlockFromCache(const Slice& block_cache_key,
+                                      Cache* block_cache,
+                                      Statistics* statistics,
+                                      ColumnTable::CachableEntry<Block>* block);
 
   // input_iter: if it is not null, update this one and return it as Iterator
   static InternalIterator* NewDataBlockIterator(
@@ -178,8 +180,7 @@ class ColumnTable : public TableReader {
       const ReadOptions& read_options, BlockIter* input_iter = nullptr,
       CachableEntry<IndexReader>* index_entry = nullptr);
 
-  explicit ColumnTable(Rep* rep)
-      : rep_(rep), compaction_optimized_(false) {}
+  explicit ColumnTable(Rep* rep) : rep_(rep), compaction_optimized_(false) {}
 
   // Helper functions for DumpTable()
   Status DumpIndexBlock(WritableFile* out_file);

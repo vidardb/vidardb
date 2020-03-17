@@ -9,14 +9,15 @@
 #include <cstdlib>
 #include <unordered_set>
 #include <vector>
+
+#include "table/block_based_table_factory.h"
+#include "util/logging.h"
+#include "util/string_util.h"
 #include "vidardb/cache.h"
 #include "vidardb/convenience.h"
 #include "vidardb/memtablerep.h"
 #include "vidardb/options.h"
 #include "vidardb/table.h"
-#include "table/block_based_table_factory.h"
-#include "util/logging.h"
-#include "util/string_util.h"
 
 namespace vidardb {
 
@@ -307,7 +308,7 @@ bool ParseOptionHelper(char* opt_address, const OptionType& opt_type,
   return true;
 }
 
-}  // anonymouse namespace
+}  // namespace
 
 bool SerializeSingleOptionHelper(const char* opt_address,
                                  const OptionType opt_type,
@@ -408,8 +409,7 @@ bool SerializeSingleOptionHelper(const char* opt_address,
   return true;
 }
 
-
-template<typename OptionsType>
+template <typename OptionsType>
 bool ParseMemtableOptions(const std::string& name, const std::string& value,
                           OptionsType* new_options) {
   if (name == "write_buffer_size") {
@@ -428,7 +428,7 @@ bool ParseMemtableOptions(const std::string& name, const std::string& value,
   return true;
 }
 
-template<typename OptionsType>
+template <typename OptionsType>
 bool ParseCompactionOptions(const std::string& name, const std::string& value,
                             OptionsType* new_options) {
   if (name == "disable_auto_compactions") {
@@ -486,7 +486,7 @@ bool ParseCompactionOptions(const std::string& name, const std::string& value,
   return true;
 }
 
-template<typename OptionsType>
+template <typename OptionsType>
 bool ParseMiscOptions(const std::string& name, const std::string& value,
                       OptionsType* new_options) {
   if (name == "max_sequential_skip_in_iterations") {
@@ -521,8 +521,8 @@ Status GetMutableOptionsFromStrings(
       } else if (ParseCompactionOptions(o.first, o.second, new_options)) {
       } else if (ParseMiscOptions(o.first, o.second, new_options)) {
       } else {
-        return Status::InvalidArgument(
-            "unsupported dynamic option: " + o.first);
+        return Status::InvalidArgument("unsupported dynamic option: " +
+                                       o.first);
       }
     } catch (std::exception& e) {
       return Status::InvalidArgument("error parsing " + o.first + ":" +
@@ -707,9 +707,8 @@ Status ParseColumnFamilyOption(const std::string& name,
       switch (opt_info.verification) {
         case OptionVerificationType::kByName:
         case OptionVerificationType::kByNameAllowNull:
-          return Status::NotSupported(
-              "Deserializing the specified CF option " + name +
-                  " is not supported");
+          return Status::NotSupported("Deserializing the specified CF option " +
+                                      name + " is not supported");
         case OptionVerificationType::kDeprecated:
           return Status::OK();
         default:
@@ -718,8 +717,8 @@ Status ParseColumnFamilyOption(const std::string& name,
       }
     }
   } catch (const std::exception&) {
-    return Status::InvalidArgument(
-        "unable to parse the specified option " + name);
+    return Status::InvalidArgument("unable to parse the specified option " +
+                                   name);
   }
   return Status::OK();
 }
@@ -875,36 +874,33 @@ Status GetStringFromTableFactory(std::string* opts_str, const TableFactory* tf,
   return Status::OK();
 }
 
-Status ParseDBOption(const std::string& name,
-                     const std::string& org_value,
+Status ParseDBOption(const std::string& name, const std::string& org_value,
                      DBOptions* new_options,
                      bool input_strings_escaped = false) {
   const std::string& value =
       input_strings_escaped ? UnescapeOptionString(org_value) : org_value;
   try {
-
-      auto iter = db_options_type_info.find(name);
-      if (iter == db_options_type_info.end()) {
-        return Status::InvalidArgument("Unrecognized option DBOptions:", name);
-      }
-      const auto& opt_info = iter->second;
-      if (ParseOptionHelper(
-              reinterpret_cast<char*>(new_options) + opt_info.offset,
-              opt_info.type, value)) {
+    auto iter = db_options_type_info.find(name);
+    if (iter == db_options_type_info.end()) {
+      return Status::InvalidArgument("Unrecognized option DBOptions:", name);
+    }
+    const auto& opt_info = iter->second;
+    if (ParseOptionHelper(
+            reinterpret_cast<char*>(new_options) + opt_info.offset,
+            opt_info.type, value)) {
+      return Status::OK();
+    }
+    switch (opt_info.verification) {
+      case OptionVerificationType::kByName:
+      case OptionVerificationType::kByNameAllowNull:
+        return Status::NotSupported("Deserializing the specified DB option " +
+                                    name + " is not supported");
+      case OptionVerificationType::kDeprecated:
         return Status::OK();
-      }
-      switch (opt_info.verification) {
-        case OptionVerificationType::kByName:
-        case OptionVerificationType::kByNameAllowNull:
-          return Status::NotSupported(
-              "Deserializing the specified DB option " + name +
-                  " is not supported");
-        case OptionVerificationType::kDeprecated:
-          return Status::OK();
-        default:
-          return Status::InvalidArgument(
-              "Unable to parse the specified DB option " + name);
-      }
+      default:
+        return Status::InvalidArgument(
+            "Unable to parse the specified DB option " + name);
+    }
 
   } catch (const std::exception&) {
     return Status::InvalidArgument("Unable to parse DBOptions:", name);
@@ -966,8 +962,7 @@ Status GetBlockBasedTableOptionsFromMap(
 }
 
 Status GetBlockBasedTableOptionsFromString(
-    const BlockBasedTableOptions& table_options,
-    const std::string& opts_str,
+    const BlockBasedTableOptions& table_options, const std::string& opts_str,
     BlockBasedTableOptions* new_table_options) {
   std::unordered_map<std::string, std::string> opts_map;
   Status s = StringToMap(opts_str, &opts_map);
@@ -978,14 +973,15 @@ Status GetBlockBasedTableOptionsFromString(
                                           new_table_options);
 }
 
-Status GetMemTableRepFactoryFromString(const std::string& opts_str,
+Status GetMemTableRepFactoryFromString(
+    const std::string& opts_str,
     std::unique_ptr<MemTableRepFactory>* new_mem_factory) {
   std::vector<std::string> opts_list = StringSplit(opts_str, ':');
   size_t len = opts_list.size();
 
   if (opts_list.size() <= 0 || opts_list.size() > 2) {
     return Status::InvalidArgument("Can't parse memtable_factory option ",
-                                     opts_str);
+                                   opts_str);
   }
 
   MemTableRepFactory* mem_factory = nullptr;
@@ -1004,7 +1000,7 @@ Status GetMemTableRepFactoryFromString(const std::string& opts_str,
                                    opts_str);
   }
 
-  if (mem_factory != nullptr){
+  if (mem_factory != nullptr) {
     new_mem_factory->reset(mem_factory);
   }
 
@@ -1031,7 +1027,7 @@ Status GetColumnFamilyOptionsFromMapInternal(
   }
   for (const auto& o : opts_map) {
     auto s = ParseColumnFamilyOption(o.first, o.second, new_options,
-                                 input_strings_escaped);
+                                     input_strings_escaped);
     if (!s.ok()) {
       if (s.IsNotSupported()) {
         // If the deserialization of the specified option is not supported
@@ -1051,10 +1047,9 @@ Status GetColumnFamilyOptionsFromMapInternal(
   return Status::OK();
 }
 
-Status GetColumnFamilyOptionsFromString(
-    const ColumnFamilyOptions& base_options,
-    const std::string& opts_str,
-    ColumnFamilyOptions* new_options) {
+Status GetColumnFamilyOptionsFromString(const ColumnFamilyOptions& base_options,
+                                        const std::string& opts_str,
+                                        ColumnFamilyOptions* new_options) {
   std::unordered_map<std::string, std::string> opts_map;
   Status s = StringToMap(opts_str, &opts_map);
   if (!s.ok()) {
@@ -1067,8 +1062,8 @@ Status GetDBOptionsFromMap(
     const DBOptions& base_options,
     const std::unordered_map<std::string, std::string>& opts_map,
     DBOptions* new_options, bool input_strings_escaped) {
-  return GetDBOptionsFromMapInternal(
-      base_options, opts_map, new_options, input_strings_escaped);
+  return GetDBOptionsFromMapInternal(base_options, opts_map, new_options,
+                                     input_strings_escaped);
 }
 
 Status GetDBOptionsFromMapInternal(
@@ -1082,8 +1077,8 @@ Status GetDBOptionsFromMapInternal(
     unsupported_options_names->clear();
   }
   for (const auto& o : opts_map) {
-    auto s = ParseDBOption(o.first, o.second,
-                           new_options, input_strings_escaped);
+    auto s =
+        ParseDBOption(o.first, o.second, new_options, input_strings_escaped);
     if (!s.ok()) {
       if (s.IsNotSupported()) {
         // If the deserialization of the specified option is not supported
@@ -1103,10 +1098,9 @@ Status GetDBOptionsFromMapInternal(
   return Status::OK();
 }
 
-Status GetDBOptionsFromString(
-    const DBOptions& base_options,
-    const std::string& opts_str,
-    DBOptions* new_options) {
+Status GetDBOptionsFromString(const DBOptions& base_options,
+                              const std::string& opts_str,
+                              DBOptions* new_options) {
   std::unordered_map<std::string, std::string> opts_map;
   Status s = StringToMap(opts_str, &opts_map);
   if (!s.ok()) {
@@ -1126,8 +1120,8 @@ Status GetOptionsFromString(const Options& base_options,
   ColumnFamilyOptions new_cf_options(base_options);
   for (const auto& o : opts_map) {
     if (ParseDBOption(o.first, o.second, &new_db_options).ok()) {
-    } else if (ParseColumnFamilyOption(
-        o.first, o.second, &new_cf_options).ok()) {
+    } else if (ParseColumnFamilyOption(o.first, o.second, &new_cf_options)
+                   .ok()) {
     } else {
       return Status::InvalidArgument("Can't parse option " + o.first);
     }

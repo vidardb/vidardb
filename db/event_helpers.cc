@@ -8,7 +8,7 @@
 namespace vidardb {
 
 namespace {
-template<class T>
+template <class T>
 inline T SafeDivide(T a, T b) {
   return b == 0 ? 0 : a / b;
 }
@@ -17,7 +17,8 @@ inline T SafeDivide(T a, T b) {
 void EventHelpers::AppendCurrentTime(JSONWriter* jwriter) {
   *jwriter << "time_micros"
            << std::chrono::duration_cast<std::chrono::microseconds>(
-                  std::chrono::system_clock::now().time_since_epoch()).count();
+                  std::chrono::system_clock::now().time_since_epoch())
+                  .count();
 }
 
 #ifndef VIDARDB_LITE
@@ -102,16 +103,15 @@ void EventHelpers::LogAndNotifyTableFileCreationFinished(
 }
 
 void EventHelpers::LogAndNotifyTableFileDeletion(
-    EventLogger* event_logger, int job_id,
-    uint64_t file_number, const std::string& file_path,
-    const Status& status, const std::string& dbname,
+    EventLogger* event_logger, int job_id, uint64_t file_number,
+    const std::string& file_path, const Status& status,
+    const std::string& dbname,
     const std::vector<std::shared_ptr<EventListener>>& listeners) {
-
   JSONWriter jwriter;
   AppendCurrentTime(&jwriter);
 
-  jwriter << "job" << job_id
-          << "event" << "table_file_deletion"
+  jwriter << "job" << job_id << "event"
+          << "table_file_deletion"
           << "file_number" << file_number;
   if (!status.ok()) {
     jwriter << "status" << status.ToString();

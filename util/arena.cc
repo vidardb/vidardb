@@ -14,8 +14,9 @@
 #ifndef OS_WIN
 #include <sys/mman.h>
 #endif
-#include "port/port.h"
 #include <algorithm>
+
+#include "port/port.h"
 #include "vidardb/env.h"
 
 namespace vidardb {

@@ -9,8 +9,10 @@
 #pragma once
 
 #include <stdint.h>
-#include <string>
+
 #include <map>
+#include <string>
+
 #include "vidardb/status.h"
 #include "vidardb/types.h"
 

@@ -13,13 +13,14 @@
 // * Strings are encoded prefixed by their length in varint format
 
 #pragma once
-#include <algorithm>
 #include <stdint.h>
 #include <string.h>
+
+#include <algorithm>
 #include <string>
 
-#include "vidardb/write_batch.h"
 #include "port/port.h"
+#include "vidardb/write_batch.h"
 
 namespace vidardb {
 
@@ -50,8 +51,10 @@ extern Slice GetSliceUntil(Slice* slice, char delimiter);
 // in *v and return a pointer just past the parsed value, or return
 // nullptr on error.  These routines only look at bytes in the range
 // [p..limit-1]
-extern const char* GetVarint32Ptr(const char* p,const char* limit, uint32_t* v);
-extern const char* GetVarint64Ptr(const char* p,const char* limit, uint64_t* v);
+extern const char* GetVarint32Ptr(const char* p, const char* limit,
+                                  uint32_t* v);
+extern const char* GetVarint64Ptr(const char* p, const char* limit,
+                                  uint64_t* v);
 
 // Returns the length of the varint32 or varint64 encoding of "v"
 extern int VarintLength(uint64_t v);
@@ -77,19 +80,19 @@ inline uint32_t DecodeFixed32(const char* ptr) {
     memcpy(&result, ptr, sizeof(result));  // gcc optimizes this to a plain load
     return result;
   } else {
-    return ((static_cast<uint32_t>(static_cast<unsigned char>(ptr[0])))
-        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[1])) << 8)
-        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[2])) << 16)
-        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[3])) << 24));
+    return ((static_cast<uint32_t>(static_cast<unsigned char>(ptr[0]))) |
+            (static_cast<uint32_t>(static_cast<unsigned char>(ptr[1])) << 8) |
+            (static_cast<uint32_t>(static_cast<unsigned char>(ptr[2])) << 16) |
+            (static_cast<uint32_t>(static_cast<unsigned char>(ptr[3])) << 24));
   }
 }
 
 // Only used in column store for sub-column key
 inline uint32_t DecodeFixed32BigEndian(const char* ptr) {
-  return ((static_cast<uint32_t>(static_cast<unsigned char>(ptr[0])) << 24)
-        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[1])) << 16)
-        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[2])) << 8)
-        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[3]))));
+  return ((static_cast<uint32_t>(static_cast<unsigned char>(ptr[0])) << 24) |
+          (static_cast<uint32_t>(static_cast<unsigned char>(ptr[1])) << 16) |
+          (static_cast<uint32_t>(static_cast<unsigned char>(ptr[2])) << 8) |
+          (static_cast<uint32_t>(static_cast<unsigned char>(ptr[3]))));
 }
 
 inline uint64_t DecodeFixed64(const char* ptr) {
@@ -112,11 +115,9 @@ inline uint64_t DecodeFixed64BigEndian(const char* ptr) {
 }
 
 // Internal routine for use by fallback path of GetVarint32Ptr
-extern const char* GetVarint32PtrFallback(const char* p,
-                                          const char* limit,
+extern const char* GetVarint32PtrFallback(const char* p, const char* limit,
                                           uint32_t* value);
-inline const char* GetVarint32Ptr(const char* p,
-                                  const char* limit,
+inline const char* GetVarint32Ptr(const char* p, const char* limit,
                                   uint32_t* value) {
   if (p < limit) {
     uint32_t result = *(reinterpret_cast<const unsigned char*>(p));
@@ -252,7 +253,7 @@ inline bool GetFixed32BigEndian(const Slice* input, uint32_t* value) {
     return false;
   }
   *value = DecodeFixed32BigEndian(input->data());
-//  input->remove_prefix(sizeof(uint64_t));
+  //  input->remove_prefix(sizeof(uint64_t));
   return true;
 }
 
@@ -270,7 +271,7 @@ inline bool GetFixed64BigEndian(const Slice* input, uint64_t* value) {
     return false;
   }
   *value = DecodeFixed64BigEndian(input->data());
-//  input->remove_prefix(sizeof(uint64_t));
+  //  input->remove_prefix(sizeof(uint64_t));
   return true;
 }
 

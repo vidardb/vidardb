@@ -7,8 +7,8 @@
 using namespace std;
 
 #include "vidardb/db.h"
-#include "vidardb/status.h"
 #include "vidardb/options.h"
+#include "vidardb/status.h"
 using namespace vidardb;
 
 string kDBPath = "/tmp/range_query_example";
@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
   system("rm -rf /tmp/range_query_example");
 
   // open database
-  DB* db; // db ref
+  DB* db;  // db ref
   Options options;
   options.create_if_missing = true;
   Status s = DB::Open(options, kDBPath, &db);
@@ -56,20 +56,20 @@ int main(int argc, char* argv[]) {
 
   ReadOptions read_options;
   // read_options.batch_capacity = 0; // full search
-  read_options.batch_capacity = 2; // in batch
+  read_options.batch_capacity = 2;  // in batch
 
-//  Range range; // full search
-//  Range range("2", "4"); // [2, 4]
-  Range range("1", "6"); // [1, 6]
-//  Range range("1", kRangeQueryMax); // [1, max]
+  //  Range range; // full search
+  //  Range range("2", "4"); // [2, 4]
+  Range range("1", "6");  // [1, 6]
+                          //  Range range("1", kRangeQueryMax); // [1, max]
 
   list<RangeQueryKeyVal> res;
   bool next = true;
-  while (next) { // range query loop
+  while (next) {  // range query loop
     size_t total_size = 0;
     next = db->RangeQuery(read_options, range, res, &s);
     assert(s.ok());
-    cout<< "{ ";
+    cout << "{ ";
     for (auto it : res) {
       total_size += it.user_key.size() + it.user_val.size();
       cout << it.user_key << "=" << it.user_val << " ";

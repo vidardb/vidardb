@@ -9,9 +9,9 @@
 #include <memory>
 #include <string>
 
+#include "db/dbformat.h"
 #include "vidardb/flush_block_policy.h"
 #include "vidardb/table.h"
-#include "db/dbformat.h"
 
 namespace vidardb {
 

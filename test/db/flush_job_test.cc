@@ -3,20 +3,21 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
+#include "db/flush_job.h"
+
 #include <algorithm>
 #include <map>
 #include <string>
 
-#include "db/flush_job.h"
 #include "db/column_family.h"
 #include "db/version_set.h"
 #include "db/writebuffer.h"
-#include "vidardb/cache.h"
+#include "table/mock_table.h"
 #include "util/file_reader_writer.h"
 #include "util/string_util.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
-#include "table/mock_table.h"
+#include "vidardb/cache.h"
 
 namespace vidardb {
 

@@ -20,10 +20,10 @@
 
 #include "db/filename.h"
 #include "db/version_set.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
 #include "util/mock_env.h"
 #include "util/mutexlock.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 

@@ -14,6 +14,7 @@
 #endif
 
 #include <inttypes.h>
+
 #include <algorithm>
 #include <atomic>
 #include <set>
@@ -60,7 +61,10 @@ class VersionBuilder::Rep {
   // kLevel0 -- NewestFirstBySeqNo
   // kLevelNon0 -- BySmallestKey
   struct FileComparator {
-    enum SortMethod { kLevel0 = 0, kLevelNon0 = 1, } sort_method;
+    enum SortMethod {
+      kLevel0 = 0,
+      kLevelNon0 = 1,
+    } sort_method;
     const InternalKeyComparator* internal_comparator;
 
     bool operator()(FileMetaData* f1, FileMetaData* f2) const {
@@ -309,11 +313,11 @@ class VersionBuilder::Rep {
 
         auto* file_meta = files_meta[file_idx].first;
         int level = files_meta[file_idx].second;
-        table_cache_->FindTable(
-            env_options_, *(base_vstorage_->InternalComparator()),
-            file_meta->fd, &file_meta->table_reader_handle, false /*no_io */,
-            true /* record_read_stats */,
-            internal_stats->GetFileReadHist(level), level);
+        table_cache_->FindTable(env_options_,
+                                *(base_vstorage_->InternalComparator()),
+                                file_meta->fd, &file_meta->table_reader_handle,
+                                false /*no_io */, true /* record_read_stats */,
+                                internal_stats->GetFileReadHist(level), level);
         if (file_meta->table_reader_handle != nullptr) {
           // Load table_reader
           file_meta->fd.table_reader = table_cache_->GetTableReaderFromHandle(

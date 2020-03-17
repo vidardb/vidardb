@@ -9,11 +9,11 @@
 #include <string>
 #include <vector>
 
-#include "vidardb/env.h"
-#include "vidardb/options.h"
+#include "table/block_based_table_factory.h"
 #include "util/options_helper.h"
 #include "util/options_sanity_check.h"
-#include "table/block_based_table_factory.h"
+#include "vidardb/env.h"
+#include "vidardb/options.h"
 
 namespace vidardb {
 

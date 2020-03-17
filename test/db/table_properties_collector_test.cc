@@ -8,6 +8,8 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
+#include "db/table_properties_collector.h"
+
 #include <map>
 #include <memory>
 #include <string>
@@ -16,9 +18,6 @@
 
 #include "db/db_impl.h"
 #include "db/dbformat.h"
-#include "db/table_properties_collector.h"
-#include "vidardb/immutable_options.h"
-#include "vidardb/table.h"
 #include "table/block_based_table_factory.h"
 #include "table/meta_blocks.h"
 #include "table/table_builder.h"
@@ -26,6 +25,8 @@
 #include "util/file_reader_writer.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/immutable_options.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 
@@ -53,36 +54,36 @@ void MakeBuilder(const Options& options, const ImmutableCFOptions& ioptions,
 
   builder->reset(NewTableBuilder(
       ioptions, internal_comparator, int_tbl_prop_collector_factories,
-      kTestColumnFamilyId, kTestColumnFamilyName,
-      writable->get(), options.compression, options.compression_opts));
+      kTestColumnFamilyId, kTestColumnFamilyName, writable->get(),
+      options.compression, options.compression_opts));
 }
 }  // namespace
 
 // Collects keys that starts with "A" in a table.
-class RegularKeysStartWithA: public TablePropertiesCollector {
+class RegularKeysStartWithA : public TablePropertiesCollector {
  public:
   const char* Name() const override { return "RegularKeysStartWithA"; }
 
   Status Finish(UserCollectedProperties* properties) override {
-     std::string encoded;
-     std::string encoded_num_puts;
-     std::string encoded_num_deletes;
-     std::string encoded_num_single_deletes;
-     std::string encoded_num_size_changes;
-     PutVarint32(&encoded, count_);
-     PutVarint32(&encoded_num_puts, num_puts_);
-     PutVarint32(&encoded_num_deletes, num_deletes_);
-     PutVarint32(&encoded_num_single_deletes, num_single_deletes_);
-     PutVarint32(&encoded_num_size_changes, num_size_changes_);
-     *properties = UserCollectedProperties{
-         {"TablePropertiesTest", message_},
-         {"Count", encoded},
-         {"NumPuts", encoded_num_puts},
-         {"NumDeletes", encoded_num_deletes},
-         {"NumSingleDeletes", encoded_num_single_deletes},
-         {"NumSizeChanges", encoded_num_size_changes},
-     };
-     return Status::OK();
+    std::string encoded;
+    std::string encoded_num_puts;
+    std::string encoded_num_deletes;
+    std::string encoded_num_single_deletes;
+    std::string encoded_num_size_changes;
+    PutVarint32(&encoded, count_);
+    PutVarint32(&encoded_num_puts, num_puts_);
+    PutVarint32(&encoded_num_deletes, num_deletes_);
+    PutVarint32(&encoded_num_single_deletes, num_single_deletes_);
+    PutVarint32(&encoded_num_size_changes, num_size_changes_);
+    *properties = UserCollectedProperties{
+        {"TablePropertiesTest", message_},
+        {"Count", encoded},
+        {"NumPuts", encoded_num_puts},
+        {"NumDeletes", encoded_num_deletes},
+        {"NumSingleDeletes", encoded_num_single_deletes},
+        {"NumSizeChanges", encoded_num_size_changes},
+    };
+    return Status::OK();
   }
 
   Status AddUserKey(const Slice& user_key, const Slice& value, EntryType type,
@@ -284,8 +285,7 @@ void TestCustomizedTablePropertiesCollector(
   test::StringSink* fwf =
       static_cast<test::StringSink*>(writer->writable_file());
   std::unique_ptr<RandomAccessFileReader> fake_file_reader(
-      test::GetRandomAccessFileReader(
-          new test::StringSource(fwf->contents())));
+      test::GetRandomAccessFileReader(new test::StringSource(fwf->contents())));
   TableProperties* props;
   Status s = ReadTableProperties(fake_file_reader.get(), fwf->contents().size(),
                                  magic_number, Env::Default(), nullptr, &props);
@@ -334,7 +334,7 @@ void TestCustomizedTablePropertiesCollector(
 TEST_P(TablePropertiesTest, CustomizedTablePropertiesCollector) {
   // Test properties collectors with internal keys or regular keys
   // for block based table
-  for (bool encode_as_internal : { true, false }) {
+  for (bool encode_as_internal : {true, false}) {
     Options options;
     BlockBasedTableOptions table_options;
     table_options.flush_block_policy_factory =
@@ -385,9 +385,8 @@ void TestInternalKeyPropertiesCollector(
     // HACK: Set options.info_log to avoid writing log in
     // SanitizeOptions().
     options.info_log = std::make_shared<test::NullLogger>();
-    options = SanitizeOptions("db",            // just a place holder
-                              &pikc,
-                              options);
+    options = SanitizeOptions("db",  // just a place holder
+                              &pikc, options);
     GetIntTblPropCollectorFactory(options, &int_tbl_prop_collector_factories);
     options.comparator = comparator;
   } else {

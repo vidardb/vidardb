@@ -5,22 +5,22 @@
 
 #include "table/column_table_factory.h"
 
-#include <memory>
-#include <string>
 #include <stdint.h>
 
+#include <memory>
+#include <string>
+
 #include "port/port.h"
-#include "vidardb/flush_block_policy.h"
-#include "vidardb/cache.h"
-#include "vidardb/splitter.h"
 #include "table/column_table_builder.h"
 #include "table/column_table_reader.h"
 #include "table/format.h"
+#include "vidardb/cache.h"
+#include "vidardb/flush_block_policy.h"
+#include "vidardb/splitter.h"
 
 namespace vidardb {
 
-ColumnTableFactory::ColumnTableFactory(
-    const ColumnTableOptions& table_options)
+ColumnTableFactory::ColumnTableFactory(const ColumnTableOptions& table_options)
     : table_options_(table_options) {
   if (table_options_.flush_block_policy_factory == nullptr) {
     table_options_.flush_block_policy_factory.reset(
@@ -126,8 +126,7 @@ const ColumnTableOptions& ColumnTableFactory::table_options() const {
   return table_options_;
 }
 
-TableFactory* NewColumnTableFactory(
-    const ColumnTableOptions& table_options) {
+TableFactory* NewColumnTableFactory(const ColumnTableOptions& table_options) {
   return new ColumnTableFactory(table_options);
 }
 

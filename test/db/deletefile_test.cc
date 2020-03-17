@@ -9,7 +9,12 @@
 
 #ifndef VIDARDB_LITE
 
-#include "vidardb/db.h"
+#include <stdlib.h>
+
+#include <map>
+#include <string>
+#include <vector>
+
 #include "db/db_impl.h"
 #include "db/filename.h"
 #include "db/version_set.h"
@@ -17,12 +22,9 @@
 #include "util/string_util.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/db.h"
 #include "vidardb/env.h"
 #include "vidardb/transaction_log.h"
-#include <vector>
-#include <stdlib.h>
-#include <map>
-#include <string>
 
 namespace vidardb {
 
@@ -39,11 +41,11 @@ class DeleteFileTest : public testing::Test {
     env_ = Env::Default();
     options_.delete_obsolete_files_period_micros = 0;  // always do full purge
     options_.enable_thread_tracking = true;
-    options_.write_buffer_size = 1024*1024*1000;
-    options_.target_file_size_base = 1024*1024*1000;
-    options_.max_bytes_for_level_base = 1024*1024*1000;
-    options_.WAL_ttl_seconds = 300; // Used to test log files
-    options_.WAL_size_limit_MB = 1024; // Used to test log files
+    options_.write_buffer_size = 1024 * 1024 * 1000;
+    options_.target_file_size_base = 1024 * 1024 * 1000;
+    options_.max_bytes_for_level_base = 1024 * 1024 * 1000;
+    options_.WAL_ttl_seconds = 300;     // Used to test log files
+    options_.WAL_size_limit_MB = 1024;  // Used to test log files
     dbname_ = test::TmpDir() + "/deletefile_test";
     options_.wal_dir = dbname_ + "/wal_files";
 
@@ -82,7 +84,7 @@ class DeleteFileTest : public testing::Test {
     WriteOptions options;
     options.sync = false;
     ReadOptions roptions;
-    for (int i = startkey; i < (numkeys + startkey) ; i++) {
+    for (int i = startkey; i < (numkeys + startkey); i++) {
       std::string temp = ToString(i);
       Slice key(temp);
       Slice value(temp);
@@ -90,10 +92,8 @@ class DeleteFileTest : public testing::Test {
     }
   }
 
-  int numKeysInLevels(
-    std::vector<LiveFileMetaData> &metadata,
-    std::vector<int> *keysperlevel = nullptr) {
-
+  int numKeysInLevels(std::vector<LiveFileMetaData>& metadata,
+                      std::vector<int>* keysperlevel = nullptr) {
     if (keysperlevel != nullptr) {
       keysperlevel->resize(numlevels_);
     }
@@ -109,8 +109,7 @@ class DeleteFileTest : public testing::Test {
       }
       fprintf(stderr, "level %d name %s smallest %s largest %s\n",
               metadata[i].level, metadata[i].name.c_str(),
-              metadata[i].smallestkey.c_str(),
-              metadata[i].largestkey.c_str());
+              metadata[i].smallestkey.c_str(), metadata[i].largestkey.c_str());
     }
     return numKeys;
   }
@@ -130,10 +129,8 @@ class DeleteFileTest : public testing::Test {
     ASSERT_OK(dbi->TEST_CompactRange(0, nullptr, nullptr));
   }
 
-  void CheckFileTypeCounts(std::string& dir,
-                            int required_log,
-                            int required_sst,
-                            int required_manifest) {
+  void CheckFileTypeCounts(std::string& dir, int required_log, int required_sst,
+                           int required_manifest) {
     std::vector<std::string> filenames;
     env_->GetChildren(dir, &filenames);
 
@@ -151,7 +148,6 @@ class DeleteFileTest : public testing::Test {
     ASSERT_EQ(required_sst, sst_cnt);
     ASSERT_EQ(required_manifest, manifest_cnt);
   }
-
 };
 
 TEST_F(DeleteFileTest, AddKeysAndQueryLevels) {
@@ -218,7 +214,7 @@ TEST_F(DeleteFileTest, PurgeObsoleteFilesTest) {
 
   // this time, we keep an iterator alive
   ReopenDB(true);
-  Iterator *itr = 0;
+  Iterator* itr = 0;
   CreateTwoLevels();
   itr = db_->NewIterator(ReadOptions());
   db_->CompactRange(compact_options, &first_slice, &last_slice);
@@ -248,12 +244,12 @@ TEST_F(DeleteFileTest, DeleteFileWithIterator) {
   }
 
   Status status = db_->DeleteFile(level2file);
-  fprintf(stdout, "Deletion status %s: %s\n",
-          level2file.c_str(), status.ToString().c_str());
+  fprintf(stdout, "Deletion status %s: %s\n", level2file.c_str(),
+          status.ToString().c_str());
   ASSERT_TRUE(status.ok());
   it->SeekToFirst();
   int numKeysIterated = 0;
-  while(it->Valid()) {
+  while (it->Valid()) {
     numKeysIterated++;
     it->Next();
   }
@@ -368,7 +364,7 @@ TEST_F(DeleteFileTest, DeleteNonDefaultColumnFamily) {
   delete db;
 }
 
-} //namespace vidardb
+}  // namespace vidardb
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);

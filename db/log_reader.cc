@@ -10,16 +10,16 @@
 #include "db/log_reader.h"
 
 #include <stdio.h>
-#include "vidardb/env.h"
+
 #include "util/coding.h"
 #include "util/crc32c.h"
 #include "util/file_reader_writer.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 namespace log {
 
-Reader::Reporter::~Reporter() {
-}
+Reader::Reporter::~Reporter() {}
 
 Reader::Reader(std::shared_ptr<Logger> info_log,
                unique_ptr<SequentialFileReader>&& _file, Reporter* reporter,
@@ -39,9 +39,7 @@ Reader::Reader(std::shared_ptr<Logger> info_log,
       log_number_(log_num),
       recycled_(false) {}
 
-Reader::~Reader() {
-  delete[] backing_store_;
-}
+Reader::~Reader() { delete[] backing_store_; }
 
 bool Reader::SkipToInitialBlock() {
   size_t initial_offset_in_block = initial_offset_ % kBlockSize;
@@ -151,7 +149,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
           // in clean shutdown we don't expect any error in the log files
           ReportCorruption(drop_size, "truncated header");
         }
-      // fall-thru
+        // fall-thru
 
       case kEof:
         if (in_fragmented_record) {
@@ -181,7 +179,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
           }
           return false;
         }
-      // fall-thru
+        // fall-thru
 
       case kBadRecord:
         if (in_fragmented_record) {
@@ -193,16 +191,15 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
 
       case kBadRecordLen:
       case kBadRecordChecksum:
-        if (recycled_ &&
-            wal_recovery_mode ==
-                WALRecoveryMode::kTolerateCorruptedTailRecords) {
+        if (recycled_ && wal_recovery_mode ==
+                             WALRecoveryMode::kTolerateCorruptedTailRecords) {
           scratch->clear();
           return false;
         }
-	if (record_type == kBadRecordLen)
-	  ReportCorruption(drop_size, "bad record length");
-	else
-	  ReportCorruption(drop_size, "checksum mismatch");
+        if (record_type == kBadRecordLen)
+          ReportCorruption(drop_size, "bad record length");
+        else
+          ReportCorruption(drop_size, "checksum mismatch");
         if (in_fragmented_record) {
           ReportCorruption(scratch->size(), "error in middle of record");
           in_fragmented_record = false;
@@ -225,9 +222,7 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
   return false;
 }
 
-uint64_t Reader::LastRecordOffset() {
-  return last_record_offset_;
-}
+uint64_t Reader::LastRecordOffset() { return last_record_offset_; }
 
 void Reader::UnmarkEOF() {
   if (read_error_) {
@@ -260,8 +255,8 @@ void Reader::UnmarkEOF() {
   }
 
   Slice read_buffer;
-  Status status = file_->Read(remaining, &read_buffer,
-    backing_store_ + eof_offset_);
+  Status status =
+      file_->Read(remaining, &read_buffer, backing_store_ + eof_offset_);
 
   size_t added = read_buffer.size();
   end_of_buffer_offset_ += added;
@@ -278,11 +273,11 @@ void Reader::UnmarkEOF() {
   if (read_buffer.data() != backing_store_ + eof_offset_) {
     // Read did not write to backing_store_
     memmove(backing_store_ + eof_offset_, read_buffer.data(),
-      read_buffer.size());
+            read_buffer.size());
   }
 
   buffer_ = Slice(backing_store_ + consumed_bytes,
-    eof_offset_ + added - consumed_bytes);
+                  eof_offset_ + added - consumed_bytes);
 
   if (added < remaining) {
     eof_ = true;
@@ -303,7 +298,7 @@ void Reader::ReportDrop(size_t bytes, const Status& reason) {
   }
 }
 
-bool Reader::ReadMore(size_t* drop_size, int *error) {
+bool Reader::ReadMore(size_t* drop_size, int* error) {
   if (!eof_ && !read_error_) {
     // Last read was a full read, so this is a trailer to skip
     buffer_.clear();
@@ -343,7 +338,7 @@ unsigned int Reader::ReadPhysicalRecord(Slice* result, size_t* drop_size) {
     if (buffer_.size() < (size_t)kHeaderSize) {
       int r;
       if (!ReadMore(drop_size, &r)) {
-	return r;
+        return r;
       }
       continue;
     }
@@ -362,11 +357,11 @@ unsigned int Reader::ReadPhysicalRecord(Slice* result, size_t* drop_size) {
       header_size = kRecyclableHeaderSize;
       // We need enough for the larger header
       if (buffer_.size() < (size_t)kRecyclableHeaderSize) {
-	int r;
-	if (!ReadMore(drop_size, &r)) {
+        int r;
+        if (!ReadMore(drop_size, &r)) {
           return r;
         }
-	continue;
+        continue;
       }
       const uint32_t log_num = DecodeFixed32(header + 7);
       if (log_num != log_number_) {

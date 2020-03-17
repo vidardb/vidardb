@@ -7,8 +7,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
-#include "test/db/db_test_util.h"
 #include "port/stack_trace.h"
+#include "test/db/db_test_util.h"
 #include "util/sync_point.h"
 namespace vidardb {
 
@@ -84,9 +84,8 @@ Options DeletionTriggerOptions(Options options) {
   return options;
 }
 
-bool HaveOverlappingKeyRanges(
-    const Comparator* c,
-    const SstFileMetaData& a, const SstFileMetaData& b) {
+bool HaveOverlappingKeyRanges(const Comparator* c, const SstFileMetaData& a,
+                              const SstFileMetaData& b) {
   if (c->Compare(a.smallestkey, b.smallestkey) >= 0) {
     if (c->Compare(a.smallestkey, b.largestkey) <= 0) {
       // b.smallestkey <= a.smallestkey <= b.largestkey
@@ -111,18 +110,15 @@ bool HaveOverlappingKeyRanges(
 // Identifies all files between level "min_level" and "max_level"
 // which has overlapping key range with "input_file_meta".
 void GetOverlappingFileNumbersForLevelCompaction(
-    const ColumnFamilyMetaData& cf_meta,
-    const Comparator* comparator,
-    int min_level, int max_level,
-    const SstFileMetaData* input_file_meta,
+    const ColumnFamilyMetaData& cf_meta, const Comparator* comparator,
+    int min_level, int max_level, const SstFileMetaData* input_file_meta,
     std::set<std::string>* overlapping_file_names) {
   std::set<const SstFileMetaData*> overlapping_files;
   overlapping_files.insert(input_file_meta);
   for (int m = min_level; m <= max_level; ++m) {
     for (auto& file : cf_meta.levels[m].files) {
       for (auto* included_file : overlapping_files) {
-        if (HaveOverlappingKeyRanges(
-                comparator, *included_file, file)) {
+        if (HaveOverlappingKeyRanges(comparator, *included_file, file)) {
           overlapping_files.insert(&file);
           overlapping_file_names->insert(file.name);
           break;
@@ -145,12 +141,9 @@ void VerifyCompactionResult(
 #endif
 }
 
-const SstFileMetaData* PickFileRandomly(
-    const ColumnFamilyMetaData& cf_meta,
-    Random* rand,
-    int* level = nullptr) {
-  auto file_id = rand->Uniform(static_cast<int>(
-      cf_meta.file_count)) + 1;
+const SstFileMetaData* PickFileRandomly(const ColumnFamilyMetaData& cf_meta,
+                                        Random* rand, int* level = nullptr) {
+  auto file_id = rand->Uniform(static_cast<int>(cf_meta.file_count)) + 1;
   for (auto& level_meta : cf_meta.levels) {
     if (file_id <= level_meta.files.size()) {
       if (level != nullptr) {
@@ -456,7 +449,6 @@ TEST_F(DBCompactionTest, DisableStatsUpdateReopen) {
   }
 }
 
-
 TEST_P(DBCompactionTestWithParam, CompactionTrigger) {
   const int kNumKeysPerFile = 100;
 
@@ -598,7 +590,7 @@ TEST_F(DBCompactionTest, BGCompactionsAllowed) {
 
 TEST_P(DBCompactionTestWithParam, CompactionsGenerateMultipleFiles) {
   Options options = CurrentOptions();
-  options.write_buffer_size = 100000000;        // Large write buffer
+  options.write_buffer_size = 100000000;  // Large write buffer
   options.max_subcompactions = max_subcompactions_;
   CreateAndReopenWithCF({"pikachu"}, options);
 
@@ -664,7 +656,7 @@ TEST_F(DBCompactionTest, ZeroSeqIdCompaction) {
   compact_opt.compression = kNoCompression;
   compact_opt.output_file_size_limit = 4096;
   const size_t key_len =
-    static_cast<size_t>(compact_opt.output_file_size_limit) / 5;
+      static_cast<size_t>(compact_opt.output_file_size_limit) / 5;
 
   DestroyAndReopen(options);
 
@@ -802,14 +794,8 @@ TEST_P(DBCompactionTestWithParam, TrivialMoveNonOverlappingFiles) {
   DestroyAndReopen(options);
   // non overlapping ranges
   std::vector<std::pair<int32_t, int32_t>> ranges = {
-    {100, 199},
-    {300, 399},
-    {0, 99},
-    {200, 299},
-    {600, 699},
-    {400, 499},
-    {500, 550},
-    {551, 599},
+      {100, 199}, {300, 399}, {0, 99},    {200, 299},
+      {600, 699}, {400, 499}, {500, 550}, {551, 599},
   };
   int32_t value_size = 10 * 1024;  // 10 KB
 
@@ -852,14 +838,10 @@ TEST_P(DBCompactionTestWithParam, TrivialMoveNonOverlappingFiles) {
   DestroyAndReopen(options);
   // Same ranges as above but overlapping
   ranges = {
-    {100, 199},
-    {300, 399},
-    {0, 99},
-    {200, 299},
-    {600, 699},
-    {400, 499},
-    {500, 560},  // this range overlap with the next one
-    {551, 599},
+      {100, 199}, {300, 399}, {0, 99},    {200, 299},
+      {600, 699}, {400, 499}, {500, 560},  // this range overlap with the next
+                                           // one
+      {551, 599},
   };
   for (size_t i = 0; i < ranges.size(); i++) {
     for (int32_t j = ranges[i].first; j <= ranges[i].second; j++) {
@@ -1828,7 +1810,6 @@ TEST_P(DBCompactionTestWithParam, ManualCompaction) {
   }
 }
 
-
 TEST_P(DBCompactionTestWithParam, ManualLevelCompactionOutputPathId) {
   Options options = CurrentOptions();
   options.db_paths.emplace_back(dbname_ + "_2", 2 * 10485760);
@@ -1961,14 +1942,13 @@ TEST_P(DBCompactionTestWithParam, DISABLED_CompactFilesOnLevelCompaction) {
       auto file_meta = PickFileRandomly(cf_meta, &rnd, &level);
       compaction_input_file_names.push_back(file_meta->name);
       GetOverlappingFileNumbersForLevelCompaction(
-          cf_meta, options.comparator, level, output_level,
-          file_meta, &overlapping_file_names);
+          cf_meta, options.comparator, level, output_level, file_meta,
+          &overlapping_file_names);
     }
 
-    ASSERT_OK(dbfull()->CompactFiles(
-        CompactionOptions(), handles_[1],
-        compaction_input_file_names,
-        output_level));
+    ASSERT_OK(dbfull()->CompactFiles(CompactionOptions(), handles_[1],
+                                     compaction_input_file_names,
+                                     output_level));
 
     // Make sure all overlapping files do not exist after compaction
     dbfull()->GetColumnFamilyMetaData(handles_[1], &cf_meta);
@@ -1991,8 +1971,7 @@ TEST_P(DBCompactionTestWithParam, PartialCompactionFailure) {
   options.write_buffer_size = kKeysPerBuffer * kKvSize;
   options.max_write_buffer_number = 2;
   options.target_file_size_base =
-      options.write_buffer_size *
-      (options.max_write_buffer_number - 1);
+      options.write_buffer_size * (options.max_write_buffer_number - 1);
   options.level0_file_num_compaction_trigger = kNumL1Files;
   options.max_bytes_for_level_base =
       options.level0_file_num_compaction_trigger *
@@ -2012,10 +1991,9 @@ TEST_P(DBCompactionTestWithParam, PartialCompactionFailure) {
 
   DestroyAndReopen(options);
 
-  const int kNumInsertedKeys =
-      options.level0_file_num_compaction_trigger *
-      (options.max_write_buffer_number - 1) *
-      kKeysPerBuffer;
+  const int kNumInsertedKeys = options.level0_file_num_compaction_trigger *
+                               (options.max_write_buffer_number - 1) *
+                               kKeysPerBuffer;
 
   Random rnd(301);
   std::vector<std::string> keys;
@@ -2414,7 +2392,7 @@ INSTANTIATE_TEST_CASE_P(
                       CompactionPri::kOldestSmallestSeqFirst,
                       CompactionPri::kMinOverlappingRatio));
 
-#endif // !defined(VIDARDB_LITE)
+#endif  // !defined(VIDARDB_LITE)
 }  // namespace vidardb
 
 int main(int argc, char** argv) {

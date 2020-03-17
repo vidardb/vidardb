@@ -22,13 +22,15 @@
 //     num_restarts: uint32
 // restarts[i] contains the offset within the block of the ith restart point.
 
-#include <algorithm>
-#include <assert.h>
-#include "vidardb/comparator.h"
-
 #include "column_block_builder.h"
+
+#include <assert.h>
+
+#include <algorithm>
+
 #include "db/dbformat.h"
 #include "util/coding.h"
+#include "vidardb/comparator.h"
 
 namespace vidardb {
 
@@ -37,12 +39,12 @@ size_t ColumnBlockBuilder::EstimateSizeAfterKV(const Slice& key,
   size_t estimate = CurrentSizeEstimate();
   estimate += value.size();
   if (counter_ >= block_restart_interval_) {
-    estimate += sizeof(uint32_t); // a new restart entry.
+    estimate += sizeof(uint32_t);  // a new restart entry.
     estimate += key.size();
     estimate += VarintLength(key.size());
   }
 
-  estimate += VarintLength(value.size()); // varint for value length.
+  estimate += VarintLength(value.size());  // varint for value length.
 
   return estimate;
 }

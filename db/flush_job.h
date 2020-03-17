@@ -12,31 +12,31 @@
 #include <deque>
 #include <limits>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
-#include <string>
 
-#include "db/dbformat.h"
 #include "db/column_family.h"
+#include "db/dbformat.h"
+#include "db/flush_scheduler.h"
+#include "db/internal_stats.h"
+#include "db/job_context.h"
 #include "db/log_writer.h"
-#include "memtable/memtable_list.h"
 #include "db/snapshot_impl.h"
 #include "db/version_edit.h"
+#include "db/write_controller.h"
+#include "db/write_thread.h"
+#include "memtable/memtable_list.h"
 #include "port/port.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
-#include "vidardb/memtablerep.h"
-#include "vidardb/transaction_log.h"
 #include "table/scoped_arena_iterator.h"
 #include "util/event_logger.h"
 #include "util/instrumented_mutex.h"
 #include "util/stop_watch.h"
 #include "util/thread_local.h"
-#include "db/internal_stats.h"
-#include "db/write_controller.h"
-#include "db/flush_scheduler.h"
-#include "db/write_thread.h"
-#include "db/job_context.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/memtablerep.h"
+#include "vidardb/transaction_log.h"
 
 namespace vidardb {
 

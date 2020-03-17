@@ -16,11 +16,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "vidardb/comparator.h"
 #include "table/format.h"
 #include "util/coding.h"
 #include "util/logging.h"
 #include "util/perf_context_imp.h"
+#include "vidardb/comparator.h"
 
 namespace vidardb {
 
@@ -32,8 +32,7 @@ namespace vidardb {
 // If any errors are detected, returns nullptr.  Otherwise, returns a
 // pointer to the key delta (just past the three decoded values).
 static inline const char* DecodeEntry(const char* p, const char* limit,
-                                      uint32_t* shared,
-                                      uint32_t* non_shared,
+                                      uint32_t* shared, uint32_t* non_shared,
                                       uint32_t* value_length) {
   if (limit - p < 3) return nullptr;
   *shared = reinterpret_cast<const unsigned char*>(p)[0];
@@ -172,9 +171,8 @@ bool BlockIter::BinarySeek(const Slice& target, uint32_t left, uint32_t right,
     uint32_t mid = (left + right + 1) / 2;
     uint32_t region_offset = GetRestartPoint(mid);
     uint32_t shared, non_shared, value_length;
-    const char* key_ptr =
-        DecodeEntry(data_ + region_offset, data_ + restarts_, &shared,
-                    &non_shared, &value_length);
+    const char* key_ptr = DecodeEntry(data_ + region_offset, data_ + restarts_,
+                                      &shared, &non_shared, &value_length);
     if (key_ptr == nullptr || (shared != 0)) {
       CorruptionError();
       return false;
@@ -199,7 +197,7 @@ bool BlockIter::BinarySeek(const Slice& target, uint32_t left, uint32_t right,
 }
 
 uint32_t Block::NumRestarts() const {
-  assert(size_ >= 2*sizeof(uint32_t));
+  assert(size_ >= 2 * sizeof(uint32_t));
   return DecodeFixed32(data_ + size_ - sizeof(uint32_t));
 }
 
@@ -237,7 +235,7 @@ static inline const char* DecodeKeyOrValue(const char* p, const char* limit,
     if ((p = GetVarint32Ptr(p, limit, length)) == nullptr) return nullptr;
   }
 
-  if (static_cast<uint32_t>(limit - p) <  *length) {
+  if (static_cast<uint32_t>(limit - p) < *length) {
     return nullptr;
   }
   return p;
@@ -321,7 +319,7 @@ bool ColumnBlockIter::ParseNextKey() {
 // Binary search in restart array to find the first restart point
 // with a key >= target (TODO: this comment is inaccurate)
 bool ColumnBlockIter::BinarySeek(const Slice& target, uint32_t left,
-                                    uint32_t right, uint32_t* index) {
+                                 uint32_t right, uint32_t* index) {
   assert(left <= right);
 
   while (left < right) {
@@ -355,7 +353,7 @@ bool ColumnBlockIter::BinarySeek(const Slice& target, uint32_t left,
 
 InternalIterator* Block::NewIterator(const Comparator* cmp, BlockIter* iter,
                                      bool column) {
-  if (size_ < 2*sizeof(uint32_t)) {
+  if (size_ < 2 * sizeof(uint32_t)) {
     if (iter != nullptr) {
       iter->SetStatus(Status::Corruption("bad block contents"));
       return iter;
@@ -375,17 +373,15 @@ InternalIterator* Block::NewIterator(const Comparator* cmp, BlockIter* iter,
     if (iter != nullptr) {
       iter->Initialize(cmp, data_, restart_offset_, num_restarts);
     } else {
-      iter = column ?
-              new ColumnBlockIter(cmp, data_, restart_offset_, num_restarts):
-              new BlockIter(cmp, data_, restart_offset_, num_restarts);
+      iter = column ? new ColumnBlockIter(cmp, data_, restart_offset_,
+                                          num_restarts)
+                    : new BlockIter(cmp, data_, restart_offset_, num_restarts);
     }
   }
 
   return iter;
 }
 
-size_t Block::ApproximateMemoryUsage() const {
-  return usable_size();
-}
+size_t Block::ApproximateMemoryUsage() const { return usable_size(); }
 
 }  // namespace vidardb

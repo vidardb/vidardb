@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+
 #include "vidardb/options.h"
 
 namespace vidardb {
@@ -50,7 +51,7 @@ struct ImmutableCFOptions {
   TableFactory* table_factory;
 
   Options::TablePropertiesCollectorFactories
-    table_properties_collector_factories;
+      table_properties_collector_factories;
 
   bool advise_random_on_open;
 

@@ -4,8 +4,8 @@
 //  of patent rights can be found in the PATENTS file in the same directory.
 //
 #pragma once
-#include "vidardb/env.h"
 #include "util/statistics.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 // Auto-scoped.
@@ -13,18 +13,15 @@ namespace vidardb {
 // is not nullptr. It is also saved into *elapsed if the pointer is not nullptr.
 class StopWatch {
  public:
-  StopWatch(Env * const env, Statistics* statistics,
-            const uint32_t hist_type,
+  StopWatch(Env* const env, Statistics* statistics, const uint32_t hist_type,
             uint64_t* elapsed = nullptr)
-    : env_(env),
-      statistics_(statistics),
-      hist_type_(hist_type),
-      elapsed_(elapsed),
-      stats_enabled_(statistics && statistics->HistEnabledForType(hist_type)),
-      start_time_((stats_enabled_ || elapsed != nullptr) ?
-                  env->NowMicros() : 0) {
-  }
-
+      : env_(env),
+        statistics_(statistics),
+        hist_type_(hist_type),
+        elapsed_(elapsed),
+        stats_enabled_(statistics && statistics->HistEnabledForType(hist_type)),
+        start_time_((stats_enabled_ || elapsed != nullptr) ? env->NowMicros()
+                                                           : 0) {}
 
   ~StopWatch() {
     if (elapsed_) {
@@ -32,8 +29,9 @@ class StopWatch {
     }
     if (stats_enabled_) {
       statistics_->measureTime(hist_type_,
-          (elapsed_ != nullptr) ? *elapsed_ :
-                                  (env_->NowMicros() - start_time_));
+                               (elapsed_ != nullptr)
+                                   ? *elapsed_
+                                   : (env_->NowMicros() - start_time_));
     }
   }
 
@@ -76,4 +74,4 @@ class StopWatchNano {
   uint64_t start_;
 };
 
-} // namespace vidardb
+}  // namespace vidardb

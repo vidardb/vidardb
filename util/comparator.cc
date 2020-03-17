@@ -7,22 +7,25 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
+#include "vidardb/comparator.h"
+
+#include <stdint.h>
+
 #include <algorithm>
 #include <memory>
-#include <stdint.h>
-#include "vidardb/comparator.h"
-#include "vidardb/slice.h"
+
 #include "port/port.h"
 #include "util/logging.h"
+#include "vidardb/slice.h"
 
 namespace vidardb {
 
-Comparator::~Comparator() { }
+Comparator::~Comparator() {}
 
 namespace {
 class BytewiseComparatorImpl : public Comparator {
  public:
-  BytewiseComparatorImpl() { }
+  BytewiseComparatorImpl() {}
 
   virtual const char* Name() const override {
     return "leveldb.BytewiseComparator";
@@ -94,7 +97,7 @@ class BytewiseComparatorImpl : public Comparator {
       const uint8_t byte = (*key)[i];
       if (byte != static_cast<uint8_t>(0xff)) {
         (*key)[i] = byte + 1;
-        key->resize(i+1);
+        key->resize(i + 1);
         return;
       }
     }
@@ -104,7 +107,7 @@ class BytewiseComparatorImpl : public Comparator {
 
 class ReverseBytewiseComparatorImpl : public BytewiseComparatorImpl {
  public:
-  ReverseBytewiseComparatorImpl() { }
+  ReverseBytewiseComparatorImpl() {}
 
   virtual const char* Name() const override {
     return "vidardb.ReverseBytewiseComparator";
@@ -115,7 +118,7 @@ class ReverseBytewiseComparatorImpl : public BytewiseComparatorImpl {
   }
 };
 
-}// namespace
+}  // namespace
 
 const Comparator* BytewiseComparator() {
   static BytewiseComparatorImpl bytewise;

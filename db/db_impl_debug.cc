@@ -112,13 +112,9 @@ Status DBImpl::TEST_WaitForCompact() {
   return bg_error_;
 }
 
-void DBImpl::TEST_LockMutex() {
-  mutex_.Lock();
-}
+void DBImpl::TEST_LockMutex() { mutex_.Lock(); }
 
-void DBImpl::TEST_UnlockMutex() {
-  mutex_.Unlock();
-}
+void DBImpl::TEST_UnlockMutex() { mutex_.Unlock(); }
 
 void* DBImpl::TEST_BeginWrite() {
   auto w = new WriteThread::Writer();

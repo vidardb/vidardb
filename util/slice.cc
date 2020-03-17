@@ -7,10 +7,13 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
-#include <algorithm>
 #include "vidardb/slice.h"
-#include "util/string_util.h"
+
 #include <stdio.h>
+
+#include <algorithm>
+
+#include "util/string_util.h"
 
 namespace vidardb {
 

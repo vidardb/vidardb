@@ -13,16 +13,16 @@
 #include <memory>
 #include <string>
 
+#include "db/dbformat.h"
 #include "vidardb/flush_block_policy.h"
 #include "vidardb/table.h"
-#include "db/dbformat.h"
 
 namespace vidardb {
 
 struct EnvOptions;
 
 using std::unique_ptr;
-//class BlockBasedTableBuilder;
+// class BlockBasedTableBuilder;
 
 class BlockBasedTableFactory : public TableFactory {
  public:

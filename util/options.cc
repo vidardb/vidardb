@@ -13,6 +13,7 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #include "vidardb/options.h"
+
 #include "vidardb/immutable_options.h"
 
 #ifndef __STDC_FORMAT_MACROS
@@ -20,20 +21,21 @@
 #endif
 
 #include <inttypes.h>
+
 #include <limits>
 
-#include "vidardb/cache.h"
-#include "vidardb/comparator.h"
-#include "vidardb/env.h"
-#include "vidardb/sst_file_manager.h"
-#include "vidardb/memtablerep.h"
-#include "vidardb/slice.h"
-#include "vidardb/table.h"
-#include "vidardb/table_properties.h"
-#include "vidardb/wal_filter.h"
 #include "table/block_based_table_factory.h"
 #include "util/compression.h"
 #include "util/statistics.h"
+#include "vidardb/cache.h"
+#include "vidardb/comparator.h"
+#include "vidardb/env.h"
+#include "vidardb/memtablerep.h"
+#include "vidardb/slice.h"
+#include "vidardb/sst_file_manager.h"
+#include "vidardb/table.h"
+#include "vidardb/table_properties.h"
+#include "vidardb/wal_filter.h"
 
 namespace vidardb {
 
@@ -320,125 +322,122 @@ DBOptions::DBOptions(const Options& options)
       export_path(options.export_path) {   // Shichao
 }
 
-static const char* const access_hints[] = {
-  "NONE", "NORMAL", "SEQUENTIAL", "WILLNEED"
-};
+static const char* const access_hints[] = {"NONE", "NORMAL", "SEQUENTIAL",
+                                           "WILLNEED"};
 
 void DBOptions::Dump(Logger* log) const {
-    Header(log, "         Options.error_if_exists: %d", error_if_exists);
-    Header(log, "       Options.create_if_missing: %d", create_if_missing);
-    Header(log, "         Options.paranoid_checks: %d", paranoid_checks);
-    Header(log, "                     Options.env: %p", env);
-    Header(log, "                Options.info_log: %p", info_log.get());
-    Header(log, "          Options.max_open_files: %d", max_open_files);
-    Header(log,
-        "Options.max_file_opening_threads: %d", max_file_opening_threads);
-    Header(log,
-        "      Options.max_total_wal_size: %" PRIu64, max_total_wal_size);
-    Header(log, "       Options.disableDataSync: %d", disableDataSync);
-    Header(log, "             Options.use_fsync: %d", use_fsync);
-    Header(log, "     Options.max_log_file_size: %" VIDARDB_PRIszt,
+  Header(log, "         Options.error_if_exists: %d", error_if_exists);
+  Header(log, "       Options.create_if_missing: %d", create_if_missing);
+  Header(log, "         Options.paranoid_checks: %d", paranoid_checks);
+  Header(log, "                     Options.env: %p", env);
+  Header(log, "                Options.info_log: %p", info_log.get());
+  Header(log, "          Options.max_open_files: %d", max_open_files);
+  Header(log, "Options.max_file_opening_threads: %d", max_file_opening_threads);
+  Header(log, "      Options.max_total_wal_size: %" PRIu64, max_total_wal_size);
+  Header(log, "       Options.disableDataSync: %d", disableDataSync);
+  Header(log, "             Options.use_fsync: %d", use_fsync);
+  Header(log, "     Options.max_log_file_size: %" VIDARDB_PRIszt,
          max_log_file_size);
-    Header(log, "Options.max_manifest_file_size: %" PRIu64,
+  Header(log, "Options.max_manifest_file_size: %" PRIu64,
          max_manifest_file_size);
-    Header(log, "     Options.log_file_time_to_roll: %" VIDARDB_PRIszt,
+  Header(log, "     Options.log_file_time_to_roll: %" VIDARDB_PRIszt,
          log_file_time_to_roll);
-    Header(log, "     Options.keep_log_file_num: %" VIDARDB_PRIszt,
+  Header(log, "     Options.keep_log_file_num: %" VIDARDB_PRIszt,
          keep_log_file_num);
-    Header(log, "  Options.recycle_log_file_num: %" VIDARDB_PRIszt,
-           recycle_log_file_num);
-    Header(log, "       Options.allow_os_buffer: %d", allow_os_buffer);
-    Header(log, "      Options.allow_mmap_reads: %d", allow_mmap_reads);
-    Header(log, "      Options.allow_fallocate: %d", allow_fallocate);
-    Header(log, "     Options.allow_mmap_writes: %d", allow_mmap_writes);
-    Header(log, "         Options.create_missing_column_families: %d",
-        create_missing_column_families);
-    Header(log, "                             Options.db_log_dir: %s",
-        db_log_dir.c_str());
-    Header(log, "                                Options.wal_dir: %s",
-        wal_dir.c_str());
-    Header(log, "               Options.table_cache_numshardbits: %d",
-        table_cache_numshardbits);
-    Header(log, "    Options.delete_obsolete_files_period_micros: %" PRIu64,
-        delete_obsolete_files_period_micros);
-    Header(log, "             Options.base_background_compactions: %d",
-           base_background_compactions);
-    Header(log, "             Options.max_background_compactions: %d",
-        max_background_compactions);
-    Header(log, "                     Options.max_subcompactions: %" PRIu32,
-        max_subcompactions);
-    Header(log, "                 Options.max_background_flushes: %d",
-        max_background_flushes);
-    Header(log, "                        Options.WAL_ttl_seconds: %" PRIu64,
-        WAL_ttl_seconds);
-    Header(log, "                      Options.WAL_size_limit_MB: %" PRIu64,
-        WAL_size_limit_MB);
-    Header(log,
+  Header(log, "  Options.recycle_log_file_num: %" VIDARDB_PRIszt,
+         recycle_log_file_num);
+  Header(log, "       Options.allow_os_buffer: %d", allow_os_buffer);
+  Header(log, "      Options.allow_mmap_reads: %d", allow_mmap_reads);
+  Header(log, "      Options.allow_fallocate: %d", allow_fallocate);
+  Header(log, "     Options.allow_mmap_writes: %d", allow_mmap_writes);
+  Header(log, "         Options.create_missing_column_families: %d",
+         create_missing_column_families);
+  Header(log, "                             Options.db_log_dir: %s",
+         db_log_dir.c_str());
+  Header(log, "                                Options.wal_dir: %s",
+         wal_dir.c_str());
+  Header(log, "               Options.table_cache_numshardbits: %d",
+         table_cache_numshardbits);
+  Header(log, "    Options.delete_obsolete_files_period_micros: %" PRIu64,
+         delete_obsolete_files_period_micros);
+  Header(log, "             Options.base_background_compactions: %d",
+         base_background_compactions);
+  Header(log, "             Options.max_background_compactions: %d",
+         max_background_compactions);
+  Header(log, "                     Options.max_subcompactions: %" PRIu32,
+         max_subcompactions);
+  Header(log, "                 Options.max_background_flushes: %d",
+         max_background_flushes);
+  Header(log, "                        Options.WAL_ttl_seconds: %" PRIu64,
+         WAL_ttl_seconds);
+  Header(log, "                      Options.WAL_size_limit_MB: %" PRIu64,
+         WAL_size_limit_MB);
+  Header(log,
          "            Options.manifest_preallocation_size: %" VIDARDB_PRIszt,
          manifest_preallocation_size);
-    Header(log, "                         Options.allow_os_buffer: %d",
-        allow_os_buffer);
-    Header(log, "                        Options.allow_mmap_reads: %d",
-        allow_mmap_reads);
-    Header(log, "                       Options.allow_mmap_writes: %d",
-        allow_mmap_writes);
-    Header(log, "                     Options.is_fd_close_on_exec: %d",
-        is_fd_close_on_exec);
-    Header(log, "                   Options.stats_dump_period_sec: %u",
-        stats_dump_period_sec);
-    Header(log, "                   Options.advise_random_on_open: %d",
-        advise_random_on_open);
-    Header(log,
+  Header(log, "                         Options.allow_os_buffer: %d",
+         allow_os_buffer);
+  Header(log, "                        Options.allow_mmap_reads: %d",
+         allow_mmap_reads);
+  Header(log, "                       Options.allow_mmap_writes: %d",
+         allow_mmap_writes);
+  Header(log, "                     Options.is_fd_close_on_exec: %d",
+         is_fd_close_on_exec);
+  Header(log, "                   Options.stats_dump_period_sec: %u",
+         stats_dump_period_sec);
+  Header(log, "                   Options.advise_random_on_open: %d",
+         advise_random_on_open);
+  Header(log,
          "                    Options.db_write_buffer_size: %" VIDARDB_PRIszt
          "d",
          db_write_buffer_size);
-    Header(log, "         Options.access_hint_on_compaction_start: %s",
-        access_hints[access_hint_on_compaction_start]);
-    Header(log, "  Options.new_table_reader_for_compaction_inputs: %d",
+  Header(log, "         Options.access_hint_on_compaction_start: %s",
+         access_hints[access_hint_on_compaction_start]);
+  Header(log, "  Options.new_table_reader_for_compaction_inputs: %d",
          new_table_reader_for_compaction_inputs);
-    Header(log,
+  Header(log,
          "               Options.compaction_readahead_size: %" VIDARDB_PRIszt
          "d",
          compaction_readahead_size);
-    Header(
-        log,
-        "               Options.random_access_max_buffer_size: %" VIDARDB_PRIszt
-        "d",
-        random_access_max_buffer_size);
-    Header(log,
+  Header(
+      log,
+      "               Options.random_access_max_buffer_size: %" VIDARDB_PRIszt
+      "d",
+      random_access_max_buffer_size);
+  Header(log,
          "              Options.writable_file_max_buffer_size: %" VIDARDB_PRIszt
          "d",
          writable_file_max_buffer_size);
-    Header(log, "                      Options.use_adaptive_mutex: %d",
-        use_adaptive_mutex);
-    Header(
-        log, "     Options.sst_file_manager.rate_bytes_per_sec: %" PRIi64,
-        sst_file_manager ? sst_file_manager->GetDeleteRateBytesPerSecond() : 0);
-    Header(log, "                          Options.bytes_per_sync: %" PRIu64,
-        bytes_per_sync);
-    Header(log, "                      Options.wal_bytes_per_sync: %" PRIu64,
-        wal_bytes_per_sync);
-    Header(log, "                       Options.wal_recovery_mode: %d",
-        wal_recovery_mode);
-    Header(log, "                  Options.enable_thread_tracking: %d",
-        enable_thread_tracking);
-    Header(log, "         Options.allow_concurrent_memtable_write: %d",
-           allow_concurrent_memtable_write);
-    Header(log, "      Options.enable_write_thread_adaptive_yield: %d",
-           enable_write_thread_adaptive_yield);
-    Header(log, "             Options.write_thread_max_yield_usec: %" PRIu64,
-           write_thread_max_yield_usec);
-    Header(log, "            Options.write_thread_slow_yield_usec: %" PRIu64,
-           write_thread_slow_yield_usec);
-    if (row_cache) {
-      Header(log, "                               Options.row_cache: %" PRIu64,
+  Header(log, "                      Options.use_adaptive_mutex: %d",
+         use_adaptive_mutex);
+  Header(
+      log, "     Options.sst_file_manager.rate_bytes_per_sec: %" PRIi64,
+      sst_file_manager ? sst_file_manager->GetDeleteRateBytesPerSecond() : 0);
+  Header(log, "                          Options.bytes_per_sync: %" PRIu64,
+         bytes_per_sync);
+  Header(log, "                      Options.wal_bytes_per_sync: %" PRIu64,
+         wal_bytes_per_sync);
+  Header(log, "                       Options.wal_recovery_mode: %d",
+         wal_recovery_mode);
+  Header(log, "                  Options.enable_thread_tracking: %d",
+         enable_thread_tracking);
+  Header(log, "         Options.allow_concurrent_memtable_write: %d",
+         allow_concurrent_memtable_write);
+  Header(log, "      Options.enable_write_thread_adaptive_yield: %d",
+         enable_write_thread_adaptive_yield);
+  Header(log, "             Options.write_thread_max_yield_usec: %" PRIu64,
+         write_thread_max_yield_usec);
+  Header(log, "            Options.write_thread_slow_yield_usec: %" PRIu64,
+         write_thread_slow_yield_usec);
+  if (row_cache) {
+    Header(log, "                               Options.row_cache: %" PRIu64,
            row_cache->GetCapacity());
-    } else {
-      Header(log, "                               Options.row_cache: None");
-    }
+  } else {
+    Header(log, "                               Options.row_cache: None");
+  }
 #ifndef VIDARDB_LITE
-    Header(log, "       Options.wal_filter: %s",
-           wal_filter ? wal_filter->Name() : "None");
+  Header(log, "       Options.wal_filter: %s",
+         wal_filter ? wal_filter->Name() : "None");
 #endif  // VIDARDB_LITE
 }  // DBOptions::Dump
 
@@ -447,128 +446,128 @@ void ColumnFamilyOptions::Dump(Logger* log) const {
   Header(log, "        Options.memtable_factory: %s", memtable_factory->Name());
   Header(log, "           Options.table_factory: %s", table_factory->Name());
   Header(log, "           table_factory options: %s",
-      table_factory->GetPrintableTableOptions().c_str());
+         table_factory->GetPrintableTableOptions().c_str());
   Header(log, "       Options.write_buffer_size: %" VIDARDB_PRIszt,
-       write_buffer_size);
+         write_buffer_size);
   Header(log, " Options.max_write_buffer_number: %d", max_write_buffer_number);
-    if (!compression_per_level.empty()) {
-      for (unsigned int i = 0; i < compression_per_level.size(); i++) {
-        Header(log, "       Options.compression[%d]: %s", i,
-            CompressionTypeToString(compression_per_level[i]).c_str());
-      }
-    } else {
-      Header(log, "         Options.compression: %s",
-          CompressionTypeToString(compression).c_str());
+  if (!compression_per_level.empty()) {
+    for (unsigned int i = 0; i < compression_per_level.size(); i++) {
+      Header(log, "       Options.compression[%d]: %s", i,
+             CompressionTypeToString(compression_per_level[i]).c_str());
     }
-    Header(log, "                 Options.bottommost_compression: %s",
-           bottommost_compression == kDisableCompressionOption
-               ? "Disabled"
-               : CompressionTypeToString(bottommost_compression).c_str());
-    Header(log, "            Options.num_levels: %d", num_levels);
-    Header(log, "       Options.min_write_buffer_number_to_merge: %d",
-        min_write_buffer_number_to_merge);
-    Header(log, "    Options.max_write_buffer_number_to_maintain: %d",
+  } else {
+    Header(log, "         Options.compression: %s",
+           CompressionTypeToString(compression).c_str());
+  }
+  Header(log, "                 Options.bottommost_compression: %s",
+         bottommost_compression == kDisableCompressionOption
+             ? "Disabled"
+             : CompressionTypeToString(bottommost_compression).c_str());
+  Header(log, "            Options.num_levels: %d", num_levels);
+  Header(log, "       Options.min_write_buffer_number_to_merge: %d",
+         min_write_buffer_number_to_merge);
+  Header(log, "    Options.max_write_buffer_number_to_maintain: %d",
          max_write_buffer_number_to_maintain);
-    Header(log, "           Options.compression_opts.window_bits: %d",
-        compression_opts.window_bits);
-    Header(log, "                 Options.compression_opts.level: %d",
-        compression_opts.level);
-    Header(log, "              Options.compression_opts.strategy: %d",
-        compression_opts.strategy);
+  Header(log, "           Options.compression_opts.window_bits: %d",
+         compression_opts.window_bits);
+  Header(log, "                 Options.compression_opts.level: %d",
+         compression_opts.level);
+  Header(log, "              Options.compression_opts.strategy: %d",
+         compression_opts.strategy);
+  Header(log,
+         "        Options.compression_opts.max_dict_bytes: %" VIDARDB_PRIszt,
+         compression_opts.max_dict_bytes);
+  Header(log, "     Options.level0_file_num_compaction_trigger: %d",
+         level0_file_num_compaction_trigger);
+  Header(log, "         Options.level0_slowdown_writes_trigger: %d",
+         level0_slowdown_writes_trigger);
+  Header(log, "             Options.level0_stop_writes_trigger: %d",
+         level0_stop_writes_trigger);
+  Header(log, "                  Options.target_file_size_base: %" PRIu64,
+         target_file_size_base);
+  Header(log, "            Options.target_file_size_multiplier: %d",
+         target_file_size_multiplier);
+  Header(log, "               Options.max_bytes_for_level_base: %" PRIu64,
+         max_bytes_for_level_base);
+  Header(log, "Options.level_compaction_dynamic_level_bytes: %d",
+         level_compaction_dynamic_level_bytes);
+  Header(log, "         Options.max_bytes_for_level_multiplier: %d",
+         max_bytes_for_level_multiplier);
+  for (size_t i = 0; i < max_bytes_for_level_multiplier_additional.size();
+       i++) {
     Header(log,
-        "        Options.compression_opts.max_dict_bytes: %" VIDARDB_PRIszt,
-        compression_opts.max_dict_bytes);
-    Header(log, "     Options.level0_file_num_compaction_trigger: %d",
-        level0_file_num_compaction_trigger);
-    Header(log, "         Options.level0_slowdown_writes_trigger: %d",
-        level0_slowdown_writes_trigger);
-    Header(log, "             Options.level0_stop_writes_trigger: %d",
-        level0_stop_writes_trigger);
-    Header(log, "                  Options.target_file_size_base: %" PRIu64,
-        target_file_size_base);
-    Header(log, "            Options.target_file_size_multiplier: %d",
-        target_file_size_multiplier);
-    Header(log, "               Options.max_bytes_for_level_base: %" PRIu64,
-        max_bytes_for_level_base);
-    Header(log, "Options.level_compaction_dynamic_level_bytes: %d",
-        level_compaction_dynamic_level_bytes);
-    Header(log, "         Options.max_bytes_for_level_multiplier: %d",
-        max_bytes_for_level_multiplier);
-    for (size_t i = 0; i < max_bytes_for_level_multiplier_additional.size();
-         i++) {
-      Header(log,
-          "Options.max_bytes_for_level_multiplier_addtl[%" VIDARDB_PRIszt
-                "]: %d",
+           "Options.max_bytes_for_level_multiplier_addtl[%" VIDARDB_PRIszt
+           "]: %d",
            i, max_bytes_for_level_multiplier_additional[i]);
-    }
-    Header(log, "      Options.max_sequential_skip_in_iterations: %" PRIu64,
-        max_sequential_skip_in_iterations);
-    Header(log, "             Options.expanded_compaction_factor: %d",
-        expanded_compaction_factor);
-    Header(log, "               Options.source_compaction_factor: %d",
-        source_compaction_factor);
-    Header(log, "         Options.max_grandparent_overlap_factor: %d",
-        max_grandparent_overlap_factor);
+  }
+  Header(log, "      Options.max_sequential_skip_in_iterations: %" PRIu64,
+         max_sequential_skip_in_iterations);
+  Header(log, "             Options.expanded_compaction_factor: %d",
+         expanded_compaction_factor);
+  Header(log, "               Options.source_compaction_factor: %d",
+         source_compaction_factor);
+  Header(log, "         Options.max_grandparent_overlap_factor: %d",
+         max_grandparent_overlap_factor);
 
-    Header(log,
+  Header(log,
          "                       Options.arena_block_size: %" VIDARDB_PRIszt,
          arena_block_size);
-    Header(log, "  Options.soft_pending_compaction_bytes_limit: %" PRIu64,
-           soft_pending_compaction_bytes_limit);
-    Header(log, "  Options.hard_pending_compaction_bytes_limit: %" PRIu64,
+  Header(log, "  Options.soft_pending_compaction_bytes_limit: %" PRIu64,
+         soft_pending_compaction_bytes_limit);
+  Header(log, "  Options.hard_pending_compaction_bytes_limit: %" PRIu64,
          hard_pending_compaction_bytes_limit);
-    Header(log, "      Options.rate_limit_delay_max_milliseconds: %u",
-        rate_limit_delay_max_milliseconds);
-    Header(log, "               Options.disable_auto_compactions: %d",
-        disable_auto_compactions);
-    Header(log, "                          Options.filter_deletes: %d",
-        filter_deletes);
-    Header(log, "          Options.verify_checksums_in_compaction: %d",
-        verify_checksums_in_compaction);
-    Header(log, "                        Options.compaction_style: %d",
-        compaction_style);
-    Header(log, "                          Options.compaction_pri: %d",
-           compaction_pri);
-    Header(log, " Options.compaction_options_universal.size_ratio: %u",
-        compaction_options_universal.size_ratio);
-    Header(log, "Options.compaction_options_universal.min_merge_width: %u",
-        compaction_options_universal.min_merge_width);
-    Header(log, "Options.compaction_options_universal.max_merge_width: %u",
-        compaction_options_universal.max_merge_width);
-    Header(log, "Options.compaction_options_universal."
-            "max_size_amplification_percent: %u",
-        compaction_options_universal.max_size_amplification_percent);
-    Header(log,
-        "Options.compaction_options_universal.compression_size_percent: %d",
-        compaction_options_universal.compression_size_percent);
-    Header(log,
-        "Options.compaction_options_fifo.max_table_files_size: %" PRIu64,
-        compaction_options_fifo.max_table_files_size);
-    std::string collector_names;
-    for (const auto& collector_factory : table_properties_collector_factories) {
-      collector_names.append(collector_factory->Name());
-      collector_names.append("; ");
-    }
-    Header(log, "                  Options.table_properties_collectors: %s",
-        collector_names.c_str());
-    Header(log, "              Options.min_partial_merge_operands: %u",
-        min_partial_merge_operands);
+  Header(log, "      Options.rate_limit_delay_max_milliseconds: %u",
+         rate_limit_delay_max_milliseconds);
+  Header(log, "               Options.disable_auto_compactions: %d",
+         disable_auto_compactions);
+  Header(log, "                          Options.filter_deletes: %d",
+         filter_deletes);
+  Header(log, "          Options.verify_checksums_in_compaction: %d",
+         verify_checksums_in_compaction);
+  Header(log, "                        Options.compaction_style: %d",
+         compaction_style);
+  Header(log, "                          Options.compaction_pri: %d",
+         compaction_pri);
+  Header(log, " Options.compaction_options_universal.size_ratio: %u",
+         compaction_options_universal.size_ratio);
+  Header(log, "Options.compaction_options_universal.min_merge_width: %u",
+         compaction_options_universal.min_merge_width);
+  Header(log, "Options.compaction_options_universal.max_merge_width: %u",
+         compaction_options_universal.max_merge_width);
+  Header(log,
+         "Options.compaction_options_universal."
+         "max_size_amplification_percent: %u",
+         compaction_options_universal.max_size_amplification_percent);
+  Header(log,
+         "Options.compaction_options_universal.compression_size_percent: %d",
+         compaction_options_universal.compression_size_percent);
+  Header(log, "Options.compaction_options_fifo.max_table_files_size: %" PRIu64,
+         compaction_options_fifo.max_table_files_size);
+  std::string collector_names;
+  for (const auto& collector_factory : table_properties_collector_factories) {
+    collector_names.append(collector_factory->Name());
+    collector_names.append("; ");
+  }
+  Header(log, "                  Options.table_properties_collectors: %s",
+         collector_names.c_str());
+  Header(log, "              Options.min_partial_merge_operands: %u",
+         min_partial_merge_operands);
 
-    Header(log,
+  Header(log,
          "                   Options.max_successive_merges: %" VIDARDB_PRIszt,
          max_successive_merges);
-    Header(log, "               Options.optimize_filters_for_hits: %d",
-        optimize_filters_for_hits);
-    Header(log, "               Options.paranoid_file_checks: %d",
+  Header(log, "               Options.optimize_filters_for_hits: %d",
+         optimize_filters_for_hits);
+  Header(log, "               Options.paranoid_file_checks: %d",
          paranoid_file_checks);
-    Header(log, "               Options.report_bg_io_stats: %d",
-           report_bg_io_stats);
+  Header(log, "               Options.report_bg_io_stats: %d",
+         report_bg_io_stats);
 }  // ColumnFamilyOptions::Dump
 
 void Options::Dump(Logger* log) const {
   DBOptions::Dump(log);
   ColumnFamilyOptions::Dump(log);
-}   // Options::Dump
+}  // Options::Dump
 
 void Options::DumpCFOptions(Logger* log) const {
   ColumnFamilyOptions::Dump(log);
@@ -578,13 +577,11 @@ void Options::DumpCFOptions(Logger* log) const {
 // The goal of this method is to create a configuration that
 // allows an application to write all files into L0 and
 // then do a single compaction to output all files into L1.
-Options*
-Options::PrepareForBulkLoad()
-{
+Options* Options::PrepareForBulkLoad() {
   // never slowdown ingest.
-  level0_file_num_compaction_trigger = (1<<30);
-  level0_slowdown_writes_trigger = (1<<30);
-  level0_stop_writes_trigger = (1<<30);
+  level0_file_num_compaction_trigger = (1 << 30);
+  level0_slowdown_writes_trigger = (1 << 30);
+  level0_stop_writes_trigger = (1 << 30);
 
   // no auto compactions please. The application should issue a
   // manual compaction after all data is loaded into L0.
@@ -593,7 +590,7 @@ Options::PrepareForBulkLoad()
 
   // A manual compaction run should pick all files in L0 in
   // a single compaction run.
-  source_compaction_factor = (1<<30);
+  source_compaction_factor = (1 << 30);
 
   // It is better to have only 2 levels, otherwise a manual
   // compaction would compact at every possible level, thereby
@@ -743,8 +740,8 @@ ColumnFamilyOptions* ColumnFamilyOptions::OptimizeAdaptiveLevelStyleCompaction(
 
   compression_per_level.resize(num_levels);
   for (int i = 0; i < num_levels; ++i) {
-    compression_per_level[i] = Snappy_Supported() ?
-        kSnappyCompression : kNoCompression;
+    compression_per_level[i] =
+        Snappy_Supported() ? kSnappyCompression : kNoCompression;
   }
   return this;
 }
@@ -769,8 +766,7 @@ ReadOptions::ReadOptions()
       tailing(false),
       total_order_seek(false),
       pin_data(false),
-      readahead_size(0) {
-}
+      readahead_size(0) {}
 
 ReadOptions::ReadOptions(bool cksum, bool cache)
     : verify_checksums(cksum),
@@ -781,7 +777,6 @@ ReadOptions::ReadOptions(bool cksum, bool cache)
       tailing(false),
       total_order_seek(false),
       pin_data(false),
-      readahead_size(0) {
-}
+      readahead_size(0) {}
 
 }  // namespace vidardb

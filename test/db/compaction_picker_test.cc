@@ -3,12 +3,13 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
-#include "db/compaction.h"
 #include "db/compaction_picker.h"
+
 #include <limits>
 #include <string>
 #include <utility>
 
+#include "db/compaction.h"
 #include "util/logging.h"
 #include "util/string_util.h"
 #include "util/testharness.h"
@@ -60,14 +61,13 @@ class CompactionPickerTest : public testing::Test {
                                     std::numeric_limits<uint64_t>::max());
   }
 
-  ~CompactionPickerTest() {
-  }
+  ~CompactionPickerTest() {}
 
   void NewVersionStorage(int num_levels, CompactionStyle style) {
     DeleteVersionStorage();
     options_.num_levels = num_levels;
-    vstorage_.reset(new VersionStorageInfo(
-        &icmp_, ucmp_, options_.num_levels, style, nullptr));
+    vstorage_.reset(new VersionStorageInfo(&icmp_, ucmp_, options_.num_levels,
+                                           style, nullptr));
     vstorage_->CalculateBaseBytes(ioptions_, mutable_cf_options_);
   }
 
@@ -230,8 +230,8 @@ TEST_F(CompactionPickerTest, NeedsCompactionLevel) {
       NewVersionStorage(kLevels, kCompactionStyleLevel);
       for (int i = 0; i < file_count; ++i) {
         Add(level, i, ToString((i + 100) * 1000).c_str(),
-            ToString((i + 100) * 1000 + 999).c_str(),
-            file_size, 0, i * 100, i * 100 + 99);
+            ToString((i + 100) * 1000 + 999).c_str(), file_size, 0, i * 100,
+            i * 100 + 99);
       }
       UpdateVersionStorageInfo();
       ASSERT_EQ(vstorage_->CompactionScoreLevel(0), level);
@@ -379,8 +379,7 @@ TEST_F(CompactionPickerTest, LevelTriggerDynamic4) {
 #ifndef VIDARDB_LITE
 TEST_F(CompactionPickerTest, NeedsCompactionUniversal) {
   NewVersionStorage(1, kCompactionStyleUniversal);
-  UniversalCompactionPicker universal_compaction_picker(
-      ioptions_, &icmp_);
+  UniversalCompactionPicker universal_compaction_picker(ioptions_, &icmp_);
   // must return false when there's no files.
   ASSERT_EQ(universal_compaction_picker.NeedsCompaction(vstorage_.get()),
             false);
@@ -477,8 +476,8 @@ TEST_F(CompactionPickerTest, NeedsCompactionFIFO) {
   for (int i = 1; i <= kFileCount; ++i) {
     NewVersionStorage(1, kCompactionStyleFIFO);
     Add(0, i, ToString((i + 100) * 1000).c_str(),
-        ToString((i + 100) * 1000 + 999).c_str(),
-        kFileSize, 0, i * 100, i * 100 + 99);
+        ToString((i + 100) * 1000 + 999).c_str(), kFileSize, 0, i * 100,
+        i * 100 + 99);
     current_size += kFileSize;
     UpdateVersionStorageInfo();
     ASSERT_EQ(level_compaction_picker.NeedsCompaction(vstorage_.get()),
@@ -608,7 +607,7 @@ TEST_F(CompactionPickerTest, OverlappingUserKeys) {
   UpdateVersionStorageInfo();
 
   std::unique_ptr<Compaction> compaction(level_compaction_picker.PickCompaction(
-              cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
+      cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
   ASSERT_TRUE(compaction.get() != nullptr);
   ASSERT_EQ(1U, compaction->num_input_levels());
   ASSERT_EQ(2U, compaction->num_input_files(0));
@@ -627,7 +626,7 @@ TEST_F(CompactionPickerTest, OverlappingUserKeys2) {
   UpdateVersionStorageInfo();
 
   std::unique_ptr<Compaction> compaction(level_compaction_picker.PickCompaction(
-              cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
+      cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
   ASSERT_TRUE(compaction.get() != nullptr);
   ASSERT_EQ(2U, compaction->num_input_levels());
   ASSERT_EQ(2U, compaction->num_input_files(0));
@@ -652,7 +651,7 @@ TEST_F(CompactionPickerTest, OverlappingUserKeys3) {
   UpdateVersionStorageInfo();
 
   std::unique_ptr<Compaction> compaction(level_compaction_picker.PickCompaction(
-              cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
+      cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
   ASSERT_TRUE(compaction.get() != nullptr);
   ASSERT_EQ(2U, compaction->num_input_levels());
   ASSERT_EQ(5U, compaction->num_input_files(0));

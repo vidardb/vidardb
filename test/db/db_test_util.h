@@ -30,6 +30,13 @@
 #include "db/db_impl.h"
 #include "db/dbformat.h"
 #include "db/filename.h"
+#include "table/block_based_table_factory.h"
+#include "table/mock_table.h"
+#include "table/scoped_arena_iterator.h"
+#include "util/compression.h"
+#include "util/mock_env.h"
+#include "util/mutexlock.h"
+#include "util/string_util.h"
 #include "vidardb/cache.h"
 #include "vidardb/convenience.h"
 #include "vidardb/db.h"
@@ -38,14 +45,6 @@
 #include "vidardb/slice.h"
 #include "vidardb/statistics.h"
 #include "vidardb/table.h"
-#include "table/block_based_table_factory.h"
-#include "table/mock_table.h"
-#include "table/scoped_arena_iterator.h"
-#include "util/compression.h"
-#include "util/mock_env.h"
-#include "util/mutexlock.h"
-
-#include "util/string_util.h"
 // SyncPoint is not supported in Released Windows Mode.
 #if !(defined NDEBUG) || !defined(OS_WIN)
 #include "util/sync_point.h"

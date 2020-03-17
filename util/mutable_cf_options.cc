@@ -10,13 +10,15 @@
 #endif
 
 #include <inttypes.h>
-#include <limits>
+
 #include <cassert>
+#include <limits>
 #include <string>
+
 #include "port/port.h"
 #include "vidardb/env.h"
-#include "vidardb/options.h"
 #include "vidardb/immutable_options.h"
+#include "vidardb/options.h"
 
 namespace vidardb {
 
@@ -28,7 +30,7 @@ uint64_t MultiplyCheckOverflow(uint64_t op1, int op2) {
   if (op2 <= 0) {
     return op1;
   }
-  uint64_t casted_op2 = (uint64_t) op2;
+  uint64_t casted_op2 = (uint64_t)op2;
   if (std::numeric_limits<uint64_t>::max() / op1 < casted_op2) {
     return op1;
   }
@@ -72,8 +74,7 @@ void MutableCFOptions::Dump(Logger* log) const {
       arena_block_size);
   Log(log, "                    max_successive_merges: %" VIDARDB_PRIszt,
       max_successive_merges);
-  Log(log, "                           filter_deletes: %d",
-      filter_deletes);
+  Log(log, "                           filter_deletes: %d", filter_deletes);
   Log(log, "                 disable_auto_compactions: %d",
       disable_auto_compactions);
   Log(log, "      soft_pending_compaction_bytes_limit: %" PRIu64,

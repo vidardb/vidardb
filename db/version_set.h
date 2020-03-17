@@ -33,19 +33,19 @@
 #include <utility>
 #include <vector>
 
-#include "db/dbformat.h"
-#include "db/version_builder.h"
-#include "db/version_edit.h"
-#include "port/port.h"
-#include "db/table_cache.h"
+#include "db/column_family.h"
 #include "db/compaction.h"
 #include "db/compaction_picker.h"
-#include "db/column_family.h"
-#include "db/log_reader.h"
+#include "db/dbformat.h"
 #include "db/file_indexer.h"
+#include "db/log_reader.h"
+#include "db/table_cache.h"
+#include "db/version_builder.h"
+#include "db/version_edit.h"
 #include "db/write_controller.h"
-#include "vidardb/env.h"
+#include "port/port.h"
 #include "util/instrumented_mutex.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 
@@ -144,9 +144,7 @@ class VersionStorageInfo {
   void UpdateFilesByCompactionPri(const MutableCFOptions& mutable_cf_options);
 
   void GenerateLevel0NonOverlapping();
-  bool level0_non_overlapping() const {
-    return level0_non_overlapping_;
-  }
+  bool level0_non_overlapping() const { return level0_non_overlapping_; }
 
   int MaxInputLevel() const;
 
@@ -511,9 +509,7 @@ class Version {
   ColumnFamilyData* cfd() const { return cfd_; }
 
   // Return the next Version in the linked list. Used for debug only
-  Version* TEST_Next() const {
-    return next_;
-  }
+  Version* TEST_Next() const { return next_; }
 
   VersionStorageInfo* storage_info() { return &storage_info_; }
 
@@ -562,10 +558,10 @@ class Version {
   TableCache* table_cache_;
 
   VersionStorageInfo storage_info_;
-  VersionSet* vset_;            // VersionSet to which this Version belongs
-  Version* next_;               // Next version in linked list
-  Version* prev_;               // Previous version in linked list
-  int refs_;                    // Number of live refs to this version
+  VersionSet* vset_;  // VersionSet to which this Version belongs
+  Version* next_;     // Next version in linked list
+  Version* prev_;     // Previous version in linked list
+  int refs_;          // Number of live refs to this version
 
   // A version number that uniquely represents this version. This is
   // used for debugging and logging purposes only.
@@ -703,7 +699,7 @@ class VersionSet {
                             FileMetaData** metadata, ColumnFamilyData** cfd);
 
   // This function doesn't support leveldb SST filenames
-  void GetLiveFilesMetaData(std::vector<LiveFileMetaData> *metadata);
+  void GetLiveFilesMetaData(std::vector<LiveFileMetaData>* metadata);
 
   void GetObsoleteFiles(std::vector<FileMetaData*>* files,
                         std::vector<std::string>* manifest_filenames,

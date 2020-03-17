@@ -7,11 +7,11 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
-#include "test/db/db_test_util.h"
 #include "port/stack_trace.h"
+#include "test/db/db_test_util.h"
+#include "util/sst_file_manager_impl.h"
 #include "vidardb/sst_file_manager.h"
 #include "vidardb/sst_file_writer.h"
-#include "util/sst_file_manager_impl.h"
 
 namespace vidardb {
 

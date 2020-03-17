@@ -9,22 +9,22 @@
 
 #pragma once
 
-#include <unordered_map>
-#include <string>
-#include <vector>
 #include <atomic>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
-#include "memtable/memtable_list.h"
-#include "db/write_batch_internal.h"
-#include "db/write_controller.h"
 #include "db/table_cache.h"
 #include "db/table_properties_collector.h"
+#include "db/write_batch_internal.h"
+#include "db/write_controller.h"
+#include "memtable/memtable_list.h"
+#include "util/mutable_cf_options.h"
+#include "util/thread_local.h"
 #include "vidardb/compaction_job_stats.h"
 #include "vidardb/db.h"
 #include "vidardb/env.h"
 #include "vidardb/options.h"
-#include "util/mutable_cf_options.h"
-#include "util/thread_local.h"
 
 namespace vidardb {
 
@@ -50,8 +50,8 @@ extern const double kSlowdownRatio;
 class ColumnFamilyHandleImpl : public ColumnFamilyHandle {
  public:
   // create while holding the mutex
-  ColumnFamilyHandleImpl(
-      ColumnFamilyData* cfd, DBImpl* db, InstrumentedMutex* mutex);
+  ColumnFamilyHandleImpl(ColumnFamilyData* cfd, DBImpl* db,
+                         InstrumentedMutex* mutex);
   // destroy without mutex
   virtual ~ColumnFamilyHandleImpl();
   virtual ColumnFamilyData* cfd() const { return cfd_; }
@@ -231,7 +231,7 @@ class ColumnFamilyData {
   Version* current() { return current_; }
   Version* dummy_versions() { return dummy_versions_; }
   void SetCurrent(Version* _current);
-  uint64_t GetNumLiveVersions() const;  // REQUIRE: DB mutex held
+  uint64_t GetNumLiveVersions() const;    // REQUIRE: DB mutex held
   uint64_t GetTotalSstFilesSize() const;  // REQUIRE: DB mutex held
   void SetMemtable(MemTable* new_mem) { mem_ = new_mem; }
 
@@ -333,8 +333,8 @@ class ColumnFamilyData {
   Version* dummy_versions_;  // Head of circular doubly-linked list of versions.
   Version* current_;         // == dummy_versions->prev_
 
-  std::atomic<int> refs_;      // outstanding references to ColumnFamilyData
-  bool dropped_;               // true if client dropped it
+  std::atomic<int> refs_;  // outstanding references to ColumnFamilyData
+  bool dropped_;           // true if client dropped it
 
   const InternalKeyComparator internal_comparator_;
   std::vector<std::unique_ptr<IntTblPropCollectorFactory>>
@@ -415,8 +415,7 @@ class ColumnFamilySet {
   // ColumnFamilySet supports iteration
   class iterator {
    public:
-    explicit iterator(ColumnFamilyData* cfd)
-        : current_(cfd) {}
+    explicit iterator(ColumnFamilyData* cfd) : current_(cfd) {}
     iterator& operator++() {
       // dropped column families might still be included in this iteration
       // (we're only removing them when client drops the last reference to the

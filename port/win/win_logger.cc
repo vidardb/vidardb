@@ -11,18 +11,18 @@
 // where enough posix functionality is available.
 
 #include "port/win/win_logger.h"
-#include "port/win/io_win.h"
 
-#include <algorithm>
+#include <fcntl.h>
 #include <stdio.h>
 #include <time.h>
-#include <fcntl.h>
+
+#include <algorithm>
 #include <atomic>
 
-#include "vidardb/env.h"
-
 #include "port/sys_time.h"
+#include "port/win/io_win.h"
 #include "util/iostats_context_imp.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 
@@ -128,7 +128,7 @@ void WinLogger::Logv(const char* format, va_list ap) {
 
     DWORD bytesWritten = 0;
     BOOL ret = WriteFile(file_, base, static_cast<DWORD>(write_size),
-      &bytesWritten, NULL);
+                         &bytesWritten, NULL);
     if (ret == FALSE) {
       std::string errSz = GetWindowsErrSz(GetLastError());
       fprintf(stderr, errSz.c_str());
@@ -155,6 +155,6 @@ void WinLogger::Logv(const char* format, va_list ap) {
 
 size_t WinLogger::GetLogFileSize() const { return log_size_; }
 
-}
+}  // namespace port
 
 }  // namespace vidardb

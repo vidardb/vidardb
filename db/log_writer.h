@@ -72,8 +72,8 @@ class Writer {
   // Create a writer that will append data to "*dest".
   // "*dest" must be initially empty.
   // "*dest" must remain live while this Writer is in use.
-  explicit Writer(unique_ptr<WritableFileWriter>&& dest,
-                  uint64_t log_number, bool recycle_log_files);
+  explicit Writer(unique_ptr<WritableFileWriter>&& dest, uint64_t log_number,
+                  bool recycle_log_files);
   ~Writer();
 
   Status AddRecord(const Slice& slice);
@@ -83,7 +83,7 @@ class Writer {
 
  private:
   unique_ptr<WritableFileWriter> dest_;
-  size_t block_offset_;       // Current offset in block
+  size_t block_offset_;  // Current offset in block
   uint64_t log_number_;
   bool recycle_log_files_;
 

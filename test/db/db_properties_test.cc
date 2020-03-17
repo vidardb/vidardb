@@ -12,14 +12,14 @@
 #include <algorithm>
 #include <string>
 
-#include "test/db/db_test_util.h"
 #include "port/stack_trace.h"
+#include "test/db/db_test_util.h"
+#include "util/random.h"
+#include "util/string_util.h"
 #include "vidardb/options.h"
 #include "vidardb/perf_context.h"
 #include "vidardb/perf_level.h"
 #include "vidardb/table.h"
-#include "util/random.h"
-#include "util/string_util.h"
 
 namespace vidardb {
 
@@ -947,7 +947,8 @@ class CountingUserTblPropCollector : public TablePropertiesCollector {
     std::string encoded;
     PutVarint32(&encoded, count_);
     *properties = UserCollectedProperties{
-        {"CountingUserTblPropCollector", message_}, {"Count", encoded},
+        {"CountingUserTblPropCollector", message_},
+        {"Count", encoded},
     };
     return Status::OK();
   }

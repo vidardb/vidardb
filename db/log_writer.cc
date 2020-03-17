@@ -10,16 +10,17 @@
 #include "db/log_writer.h"
 
 #include <stdint.h>
-#include "vidardb/env.h"
+
 #include "util/coding.h"
 #include "util/crc32c.h"
 #include "util/file_reader_writer.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 namespace log {
 
-Writer::Writer(unique_ptr<WritableFileWriter>&& dest,
-               uint64_t log_number, bool recycle_log_files)
+Writer::Writer(unique_ptr<WritableFileWriter>&& dest, uint64_t log_number,
+               bool recycle_log_files)
     : dest_(std::move(dest)),
       block_offset_(0),
       log_number_(log_number),
@@ -30,8 +31,7 @@ Writer::Writer(unique_ptr<WritableFileWriter>&& dest,
   }
 }
 
-Writer::~Writer() {
-}
+Writer::~Writer() {}
 
 Status Writer::AddRecord(const Slice& slice) {
   const char* ptr = slice.data();

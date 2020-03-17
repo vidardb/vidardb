@@ -20,9 +20,10 @@
 #define STORAGE_VIDARDB_INCLUDE_SLICE_H_
 
 #include <assert.h>
-#include <cstdio>
 #include <stddef.h>
 #include <string.h>
+
+#include <cstdio>
 #include <string>
 
 namespace vidardb {
@@ -30,18 +31,18 @@ namespace vidardb {
 class Slice {
  public:
   // Create an empty slice.
-  Slice() : data_(""), size_(0) { }
+  Slice() : data_(""), size_(0) {}
 
   // Create a slice that refers to d[0,n-1].
-  Slice(const char* d, size_t n) : data_(d), size_(n) { }
+  Slice(const char* d, size_t n) : data_(d), size_(n) {}
 
   // Create a slice that refers to the contents of "s"
   /* implicit */
-  Slice(const std::string& s) : data_(s.data()), size_(s.size()) { }
+  Slice(const std::string& s) : data_(s.data()), size_(s.size()) {}
 
   // Create a slice that refers to s[0,strlen(s)-1]
   /* implicit */
-  Slice(const char* s) : data_(s), size_(strlen(s)) { }
+  Slice(const char* s) : data_(s), size_(strlen(s)) {}
 
   // Create a single slice from SliceParts using buf as storage.
   // buf must exist as long as the returned Slice exists.
@@ -64,7 +65,10 @@ class Slice {
   }
 
   // Change this slice to refer to an empty array
-  void clear() { data_ = ""; size_ = 0; }
+  void clear() {
+    data_ = "";
+    size_ = 0;
+  }
 
   // Drop the first "n" bytes from this slice.
   void remove_prefix(size_t n) {
@@ -97,8 +101,7 @@ class Slice {
 
   // Return true iff "x" is a prefix of "*this"
   bool starts_with(const Slice& x) const {
-    return ((size_ >= x.size_) &&
-            (memcmp(data_, x.data_, x.size_) == 0));
+    return ((size_ >= x.size_) && (memcmp(data_, x.data_, x.size_) == 0));
   }
 
   bool ends_with(const Slice& x) const {
@@ -109,7 +112,7 @@ class Slice {
   // Compare two slices and returns the first byte where they differ
   size_t difference_offset(const Slice& b) const;
 
- // private: make these public for vidardbjni access
+  // private: make these public for vidardbjni access
   const char* data_;
   size_t size_;
 
@@ -119,8 +122,8 @@ class Slice {
 // A set of Slices that are virtually concatenated together.  'parts' points
 // to an array of Slices.  The number of elements in the array is 'num_parts'.
 struct SliceParts {
-  SliceParts(const Slice* _parts, int _num_parts) :
-      parts(_parts), num_parts(_num_parts) { }
+  SliceParts(const Slice* _parts, int _num_parts)
+      : parts(_parts), num_parts(_num_parts) {}
   SliceParts() : parts(nullptr), num_parts(0) {}
 
   const Slice* parts;
@@ -132,16 +135,16 @@ inline bool operator==(const Slice& x, const Slice& y) {
           (memcmp(x.data(), y.data(), x.size()) == 0));
 }
 
-inline bool operator!=(const Slice& x, const Slice& y) {
-  return !(x == y);
-}
+inline bool operator!=(const Slice& x, const Slice& y) { return !(x == y); }
 
 inline int Slice::compare(const Slice& b) const {
   const size_t min_len = (size_ < b.size_) ? size_ : b.size_;
   int r = memcmp(data_, b.data_, min_len);
   if (r == 0) {
-    if (size_ < b.size_) r = -1;
-    else if (size_ > b.size_) r = +1;
+    if (size_ < b.size_)
+      r = -1;
+    else if (size_ > b.size_)
+      r = +1;
   }
   return r;
 }

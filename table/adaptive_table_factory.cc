@@ -10,9 +10,9 @@
 #ifndef VIDARDB_LITE
 #include "table/adaptive_table_factory.h"
 
-#include "table/table_builder.h"
-#include "table/format.h"
 #include "port/port.h"
+#include "table/format.h"
+#include "table/table_builder.h"
 #include "util/instrumented_mutex.h"  // Shichao
 
 namespace vidardb {
@@ -23,7 +23,7 @@ AdaptiveTableFactory::AdaptiveTableFactory(
     std::shared_ptr<TableFactory> table_factory_to_write,
     std::shared_ptr<TableFactory> block_based_table_factory,
     std::shared_ptr<TableFactory> column_table_factory,  // Shichao
-    int knob)  // Shichao
+    int knob)                                            // Shichao
     : table_factory_to_write_(table_factory_to_write),
       block_based_table_factory_(block_based_table_factory),
       column_table_factory_(column_table_factory) {  // Shichao
@@ -58,11 +58,11 @@ Status AdaptiveTableFactory::NewTableReader(
   if (footer.table_magic_number() == kBlockBasedTableMagicNumber) {
     return block_based_table_factory_->NewTableReader(
         table_reader_options, std::move(file), file_size, table);
-  /***************************** Shichao *****************************/
+    /***************************** Shichao *****************************/
   } else if (footer.table_magic_number() == kColumnTableMagicNumber) {
     return column_table_factory_->NewTableReader(
         table_reader_options, std::move(file), file_size, table);
-  /***************************** Shichao *****************************/
+    /***************************** Shichao *****************************/
   } else {
     return Status::NotSupported("Unidentified table format");
   }
@@ -78,7 +78,7 @@ TableBuilder* AdaptiveTableFactory::NewTableBuilder(
   /******************************** Shichao ********************************/
   mutex_->Lock();
   auto it = output_levels_.find(file->writable_file()->GetFileName());
-  int output_level = it==output_levels_.end()? 0: it->second;
+  int output_level = it == output_levels_.end() ? 0 : it->second;
   mutex_->Unlock();
 
   if (output_level < knob_) {
@@ -126,11 +126,11 @@ std::string AdaptiveTableFactory::GetPrintableTableOptions() const {
 /***************************** Shichao *****************************/
 void AdaptiveTableFactory::SetWriteTableFactory(
     std::shared_ptr<TableFactory> table_factory_to_write) {
-    table_factory_to_write_ = table_factory_to_write;
+  table_factory_to_write_ = table_factory_to_write;
 }
 
-void AdaptiveTableFactory::SetOutputLevel(
-    const std::string& file_name, int output_level) {
+void AdaptiveTableFactory::SetOutputLevel(const std::string& file_name,
+                                          int output_level) {
   mutex_->Lock();
   output_levels_[file_name] = output_level;
   mutex_->Unlock();
@@ -143,7 +143,8 @@ extern TableFactory* NewAdaptiveTableFactory(
     std::shared_ptr<TableFactory> column_table_factory,  // Shichao
     int knob) {                                          // Shichao
   return new AdaptiveTableFactory(table_factory_to_write,
-      block_based_table_factory, column_table_factory, knob);  // Shichao
+                                  block_based_table_factory,
+                                  column_table_factory, knob);  // Shichao
 }
 
 }  // namespace vidardb

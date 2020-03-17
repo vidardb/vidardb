@@ -4,9 +4,9 @@
 //  of patent rights can be found in the PATENTS file in the same directory.
 //
 #pragma once
-#include "vidardb/env.h"
 #include "util/perf_level_imp.h"
 #include "util/stop_watch.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 
@@ -19,9 +19,7 @@ class PerfStepTimer {
         start_(0),
         metric_(metric) {}
 
-  ~PerfStepTimer() {
-    Stop();
-  }
+  ~PerfStepTimer() { Stop(); }
 
   void Start() {
     if (enabled_) {

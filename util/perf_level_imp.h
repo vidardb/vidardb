@@ -4,8 +4,8 @@
 //  of patent rights can be found in the PATENTS file in the same directory.
 //
 #pragma once
-#include "vidardb/perf_level.h"
 #include "port/port.h"
+#include "vidardb/perf_level.h"
 
 namespace vidardb {
 

@@ -7,9 +7,9 @@
 using namespace std;
 
 #include "vidardb/db.h"
-#include "vidardb/status.h"
 #include "vidardb/options.h"
 #include "vidardb/splitter.h"
+#include "vidardb/status.h"
 #include "vidardb/table.h"
 using namespace vidardb;
 
@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
   system("rm -rf /tmp/range_query_column_example");
 
   // open database
-  DB* db; // db ref
+  DB* db;  // db ref
   Options options;
   options.create_if_missing = true;
 
@@ -39,35 +39,35 @@ int main(int argc, char* argv[]) {
   // insert data
   WriteOptions write_options;
   // write_options.sync = true;
-  Splitter *splitter = opts->splitter.get();
-  s = db->Put(write_options, "1", 
-      splitter->Stitch(vector<string>{"chen1", "33", "hangzhou"}));
+  Splitter* splitter = opts->splitter.get();
+  s = db->Put(write_options, "1",
+              splitter->Stitch(vector<string>{"chen1", "33", "hangzhou"}));
   assert(s.ok());
-  s = db->Put(write_options, "2", 
-      splitter->Stitch(vector<string>{"wang2", "32", "wuhan"}));
+  s = db->Put(write_options, "2",
+              splitter->Stitch(vector<string>{"wang2", "32", "wuhan"}));
   assert(s.ok());
-  s = db->Put(write_options, "3", 
-      splitter->Stitch(vector<string>{"zhao3", "35", "nanjing"}));
+  s = db->Put(write_options, "3",
+              splitter->Stitch(vector<string>{"zhao3", "35", "nanjing"}));
   assert(s.ok());
-  s = db->Put(write_options, "4", 
-      splitter->Stitch(vector<string>{"liao4", "28", "beijing"}));
+  s = db->Put(write_options, "4",
+              splitter->Stitch(vector<string>{"liao4", "28", "beijing"}));
   assert(s.ok());
-  s = db->Put(write_options, "5", 
-      splitter->Stitch(vector<string>{"jiang5", "30", "shanghai"}));
+  s = db->Put(write_options, "5",
+              splitter->Stitch(vector<string>{"jiang5", "30", "shanghai"}));
   assert(s.ok());
-  s = db->Put(write_options, "6", 
-      splitter->Stitch(vector<string>{"lian6", "30", "changsha"}));
+  s = db->Put(write_options, "6",
+              splitter->Stitch(vector<string>{"lian6", "30", "changsha"}));
   assert(s.ok());
   s = db->Delete(write_options, "1");
   assert(s.ok());
-  s = db->Put(write_options, "3", 
-      splitter->Stitch(vector<string>{"zhao333", "35", "nanjing"}));
+  s = db->Put(write_options, "3",
+              splitter->Stitch(vector<string>{"zhao333", "35", "nanjing"}));
   assert(s.ok());
-  s = db->Put(write_options, "6", 
-      splitter->Stitch(vector<string>{"lian666", "30", "changsha"}));
+  s = db->Put(write_options, "6",
+              splitter->Stitch(vector<string>{"lian666", "30", "changsha"}));
   assert(s.ok());
-  s = db->Put(write_options, "1", 
-      splitter->Stitch(vector<string>{"chen1111", "33", "hangzhou"}));
+  s = db->Put(write_options, "1",
+              splitter->Stitch(vector<string>{"chen1111", "33", "hangzhou"}));
   assert(s.ok());
   s = db->Delete(write_options, "3");
   assert(s.ok());
@@ -78,18 +78,18 @@ int main(int argc, char* argv[]) {
 
   ReadOptions read_options;
   // read_options.batch_capacity = 0; // full search
-  read_options.batch_capacity = 2; // in batch
+  read_options.batch_capacity = 2;  // in batch
   read_options.columns = {1, 3};
   read_options.splitter = splitter;
 
-//  Range range; // full search
+  //  Range range; // full search
   // Range range("2", "5"); // [2, 5]
-  Range range("1", "6"); // [1, 6]
-//  Range range("1", kRangeQueryMax); // [1, max]
+  Range range("1", "6");  // [1, 6]
+                          //  Range range("1", kRangeQueryMax); // [1, max]
 
   list<RangeQueryKeyVal> res;
   bool next = true;
-  while (next) { // range query loop
+  while (next) {  // range query loop
     size_t total_size = 0;
     next = db->RangeQuery(read_options, range, res, &s);
     assert(s.ok());

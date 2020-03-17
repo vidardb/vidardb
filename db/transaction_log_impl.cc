@@ -9,7 +9,9 @@
 #endif
 
 #include "db/transaction_log_impl.h"
+
 #include <inttypes.h>
+
 #include "db/write_batch_internal.h"
 #include "util/file_reader_writer.h"
 
@@ -37,7 +39,7 @@ TransactionLogIteratorImpl::TransactionLogIteratorImpl(
 
   reporter_.env = options_->env;
   reporter_.info_log = options_->info_log.get();
-  SeekToStartSequence(); // Seek till starting sequence
+  SeekToStartSequence();  // Seek till starting sequence
 }
 
 Status TransactionLogIteratorImpl::OpenLogFile(
@@ -64,7 +66,7 @@ Status TransactionLogIteratorImpl::OpenLogFile(
   return s;
 }
 
-BatchResult TransactionLogIteratorImpl::GetBatch()  {
+BatchResult TransactionLogIteratorImpl::GetBatch() {
   assert(isValid_);  //  cannot call in a non valid state.
   BatchResult result;
   result.sequence = currentBatchSeq_;
@@ -72,17 +74,12 @@ BatchResult TransactionLogIteratorImpl::GetBatch()  {
   return result;
 }
 
-Status TransactionLogIteratorImpl::status() {
-  return currentStatus_;
-}
+Status TransactionLogIteratorImpl::status() { return currentStatus_; }
 
-bool TransactionLogIteratorImpl::Valid() {
-  return started_ && isValid_;
-}
+bool TransactionLogIteratorImpl::Valid() { return started_ && isValid_; }
 
-bool TransactionLogIteratorImpl::RestrictedRead(
-    Slice* record,
-    std::string* scratch) {
+bool TransactionLogIteratorImpl::RestrictedRead(Slice* record,
+                                                std::string* scratch) {
   // Don't read if no more complete entries to read from logs
   if (currentLastSeq_ >= versions_->LastSequence()) {
     return false;
@@ -90,9 +87,8 @@ bool TransactionLogIteratorImpl::RestrictedRead(
   return currentLogReader_->ReadRecord(record, scratch);
 }
 
-void TransactionLogIteratorImpl::SeekToStartSequence(
-    uint64_t startFileIndex,
-    bool strict) {
+void TransactionLogIteratorImpl::SeekToStartSequence(uint64_t startFileIndex,
+                                                     bool strict) {
   std::string scratch;
   Slice record;
   started_ = false;
@@ -108,23 +104,25 @@ void TransactionLogIteratorImpl::SeekToStartSequence(
   }
   while (RestrictedRead(&record, &scratch)) {
     if (record.size() < WriteBatchInternal::kHeader) {
-      reporter_.Corruption(
-        record.size(), Status::Corruption("very small log record"));
+      reporter_.Corruption(record.size(),
+                           Status::Corruption("very small log record"));
       continue;
     }
     UpdateCurrentWriteBatch(record);
     if (currentLastSeq_ >= startingSequenceNumber_) {
       if (strict && currentBatchSeq_ != startingSequenceNumber_) {
-        currentStatus_ = Status::Corruption("Gap in sequence number. Could not "
-                                            "seek to required sequence number");
+        currentStatus_ = Status::Corruption(
+            "Gap in sequence number. Could not "
+            "seek to required sequence number");
         reporter_.Info(currentStatus_.ToString().c_str());
         return;
       } else if (strict) {
-        reporter_.Info("Could seek required sequence number. Iterator will "
-                       "continue.");
+        reporter_.Info(
+            "Could seek required sequence number. Iterator will "
+            "continue.");
       }
       isValid_ = true;
-      started_ = true; // set started_ as we could seek till starting sequence
+      started_ = true;  // set started_ as we could seek till starting sequence
       return;
     } else {
       isValid_ = false;
@@ -136,12 +134,14 @@ void TransactionLogIteratorImpl::SeekToStartSequence(
   // If strict is set, we want to seek exactly till the start sequence and it
   // should have been present in the file we scanned above
   if (strict) {
-    currentStatus_ = Status::Corruption("Gap in sequence number. Could not "
-                                        "seek to required sequence number");
+    currentStatus_ = Status::Corruption(
+        "Gap in sequence number. Could not "
+        "seek to required sequence number");
     reporter_.Info(currentStatus_.ToString().c_str());
   } else if (files_->size() != 1) {
-    currentStatus_ = Status::Corruption("Start sequence was not found, "
-                                        "skipping to the next available");
+    currentStatus_ = Status::Corruption(
+        "Start sequence was not found, "
+        "skipping to the next available");
     reporter_.Info(currentStatus_.ToString().c_str());
     // Let NextImpl find the next available entry. started_ remains false
     // because we don't want to check for gaps while moving to start sequence
@@ -149,9 +149,7 @@ void TransactionLogIteratorImpl::SeekToStartSequence(
   }
 }
 
-void TransactionLogIteratorImpl::Next() {
-  return NextImpl(false);
-}
+void TransactionLogIteratorImpl::Next() { return NextImpl(false); }
 
 void TransactionLogIteratorImpl::NextImpl(bool internal) {
   std::string scratch;
@@ -161,15 +159,15 @@ void TransactionLogIteratorImpl::NextImpl(bool internal) {
     // Runs every time until we can seek to the start sequence
     return SeekToStartSequence();
   }
-  while(true) {
+  while (true) {
     assert(currentLogReader_);
     if (currentLogReader_->IsEOF()) {
       currentLogReader_->UnmarkEOF();
     }
     while (RestrictedRead(&record, &scratch)) {
       if (record.size() < WriteBatchInternal::kHeader) {
-        reporter_.Corruption(
-          record.size(), Status::Corruption("very small log record"));
+        reporter_.Corruption(record.size(),
+                             Status::Corruption("very small log record"));
         continue;
       } else {
         // started_ should be true if called by application
@@ -206,8 +204,7 @@ void TransactionLogIteratorImpl::NextImpl(bool internal) {
 }
 
 bool TransactionLogIteratorImpl::IsBatchExpected(
-    const WriteBatch* batch,
-    const SequenceNumber expectedSeq) {
+    const WriteBatch* batch, const SequenceNumber expectedSeq) {
   assert(batch);
   SequenceNumber batchSeq = WriteBatchInternal::Sequence(batch);
   if (batchSeq != expectedSeq) {
@@ -245,8 +242,8 @@ void TransactionLogIteratorImpl::UpdateCurrentWriteBatch(const Slice& record) {
   }
 
   currentBatchSeq_ = WriteBatchInternal::Sequence(batch.get());
-  currentLastSeq_ = currentBatchSeq_ +
-                    WriteBatchInternal::Count(batch.get()) - 1;
+  currentLastSeq_ =
+      currentBatchSeq_ + WriteBatchInternal::Count(batch.get()) - 1;
   // currentBatchSeq_ can only change here
   assert(currentLastSeq_ <= versions_->LastSequence());
 

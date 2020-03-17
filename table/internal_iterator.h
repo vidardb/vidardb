@@ -11,11 +11,12 @@
 
 #pragma once
 
+#include <list>  // Shichao
 #include <string>
-#include <list>    // Shichao
+
 #include "vidardb/iterator.h"
+#include "vidardb/options.h"  // Quanzhao
 #include "vidardb/status.h"
-#include "vidardb/options.h" // Quanzhao
 
 namespace vidardb {
 

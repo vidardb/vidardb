@@ -10,11 +10,11 @@
 #include <thread>
 #include <vector>
 
-#include "vidardb/db.h"
-#include "vidardb/env.h"
 #include "util/string_util.h"
 #include "util/sync_point.h"
 #include "util/testharness.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 
@@ -35,8 +35,7 @@ class FlushedFileCollector : public EventListener {
   FlushedFileCollector() {}
   ~FlushedFileCollector() {}
 
-  virtual void OnFlushCompleted(
-      DB* db, const FlushJobInfo& info) override {
+  virtual void OnFlushCompleted(DB* db, const FlushJobInfo& info) override {
     std::lock_guard<std::mutex> lock(mutex_);
     flushed_files_.push_back(info.file_path);
   }

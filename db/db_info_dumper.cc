@@ -11,13 +11,14 @@
 
 #include <inttypes.h>
 #include <stdio.h>
-#include <string>
+
 #include <algorithm>
+#include <string>
 #include <vector>
 
 #include "db/filename.h"
-#include "vidardb/options.h"
 #include "vidardb/env.h"
+#include "vidardb/options.h"
 
 namespace vidardb {
 
@@ -38,8 +39,7 @@ void DumpDBFileSummary(const DBOptions& options, const std::string& dbname) {
   Header(options.info_log, "DB SUMMARY\n");
   // Get files in dbname dir
   if (!env->GetChildren(dbname, &files).ok()) {
-    Error(options.info_log,
-          "Error when reading %s dir\n", dbname.c_str());
+    Error(options.info_log, "Error when reading %s dir\n", dbname.c_str());
   }
   std::sort(files.begin(), files.end());
   for (std::string file : files) {
@@ -62,8 +62,7 @@ void DumpDBFileSummary(const DBOptions& options, const std::string& dbname) {
         env->GetFileSize(dbname + "/" + file, &file_size);
         char str[16];
         snprintf(str, sizeof(str), "%" PRIu64, file_size);
-        wal_info.append(file).append(" size: ").
-            append(str).append(" ; ");
+        wal_info.append(file).append(" size: ").append(str).append(" ; ");
         break;
       case kTableFile:
         if (++file_num < 10) {
@@ -79,9 +78,8 @@ void DumpDBFileSummary(const DBOptions& options, const std::string& dbname) {
   for (auto& db_path : options.db_paths) {
     if (dbname.compare(db_path.path) != 0) {
       if (!env->GetChildren(db_path.path, &files).ok()) {
-        Error(options.info_log,
-            "Error when reading %s dir\n",
-            db_path.path.c_str());
+        Error(options.info_log, "Error when reading %s dir\n",
+              db_path.path.c_str());
         continue;
       }
       std::sort(files.begin(), files.end());
@@ -103,9 +101,8 @@ void DumpDBFileSummary(const DBOptions& options, const std::string& dbname) {
   // Get wal file in wal_dir
   if (dbname.compare(options.wal_dir) != 0) {
     if (!env->GetChildren(options.wal_dir, &files).ok()) {
-      Error(options.info_log,
-          "Error when reading %s dir\n",
-          options.wal_dir.c_str());
+      Error(options.info_log, "Error when reading %s dir\n",
+            options.wal_dir.c_str());
       return;
     }
     wal_info.clear();
@@ -115,8 +112,7 @@ void DumpDBFileSummary(const DBOptions& options, const std::string& dbname) {
           env->GetFileSize(options.wal_dir + "/" + file, &file_size);
           char str[16];
           snprintf(str, sizeof(str), "%" PRIu64, file_size);
-          wal_info.append(file).append(" size: ").
-              append(str).append(" ; ");
+          wal_info.append(file).append(" size: ").append(str).append(" ; ");
         }
       }
     }

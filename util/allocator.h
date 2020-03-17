@@ -11,8 +11,8 @@
 // when the allocator object is destroyed. See the Arena class for more info.
 
 #pragma once
-#include <cstddef>
 #include <cerrno>
+#include <cstddef>
 
 namespace vidardb {
 

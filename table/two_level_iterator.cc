@@ -10,11 +10,11 @@
 #include "table/two_level_iterator.h"
 
 #include "db/pinned_iterators_manager.h"
-#include "vidardb/options.h"
-#include "vidardb/table.h"
 #include "table/block.h"
 #include "table/format.h"
 #include "util/arena.h"
+#include "vidardb/options.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 
@@ -147,11 +147,10 @@ void TwoLevelIterator::Prev() {
   SkipEmptyDataBlocksBackward();
 }
 
-
 void TwoLevelIterator::SkipEmptyDataBlocksForward() {
   while (second_level_iter_.iter() == nullptr ||
          (!second_level_iter_.Valid() &&
-         !second_level_iter_.status().IsIncomplete())) {
+          !second_level_iter_.status().IsIncomplete())) {
     // Move to next block
     if (!first_level_iter_.Valid()) {
       SetSecondLevelIterator(nullptr);
@@ -168,7 +167,7 @@ void TwoLevelIterator::SkipEmptyDataBlocksForward() {
 void TwoLevelIterator::SkipEmptyDataBlocksBackward() {
   while (second_level_iter_.iter() == nullptr ||
          (!second_level_iter_.Valid() &&
-         !second_level_iter_.status().IsIncomplete())) {
+          !second_level_iter_.status().IsIncomplete())) {
     // Move to next block
     if (!first_level_iter_.Valid()) {
       SetSecondLevelIterator(nullptr);

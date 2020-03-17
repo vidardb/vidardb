@@ -54,15 +54,13 @@ Status GetBlockBasedTableOptionsFromMap(
 // BlockBasedTableOptions as part of the string for block-based table factory:
 //   "write_buffer_size=1024;block_based_table_factory={block_size=4k};"
 //   "max_write_buffer_num=2"
-Status GetColumnFamilyOptionsFromString(
-    const ColumnFamilyOptions& base_options,
-    const std::string& opts_str,
-    ColumnFamilyOptions* new_options);
+Status GetColumnFamilyOptionsFromString(const ColumnFamilyOptions& base_options,
+                                        const std::string& opts_str,
+                                        ColumnFamilyOptions* new_options);
 
-Status GetDBOptionsFromString(
-    const DBOptions& base_options,
-    const std::string& opts_str,
-    DBOptions* new_options);
+Status GetDBOptionsFromString(const DBOptions& base_options,
+                              const std::string& opts_str,
+                              DBOptions* new_options);
 
 Status GetStringFromDBOptions(std::string* opts_str,
                               const DBOptions& db_options,
@@ -76,8 +74,7 @@ Status GetStringFromCompressionType(std::string* compression_str,
                                     CompressionType compression_type);
 
 Status GetBlockBasedTableOptionsFromString(
-    const BlockBasedTableOptions& table_options,
-    const std::string& opts_str,
+    const BlockBasedTableOptions& table_options, const std::string& opts_str,
     BlockBasedTableOptions* new_table_options);
 
 Status GetMemTableRepFactoryFromString(

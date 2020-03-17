@@ -4,6 +4,7 @@
 //  of patent rights can be found in the PATENTS file in the same directory.
 
 #include "db/compaction_iterator.h"
+
 #include "util/testharness.h"
 #include "util/testutil.h"
 
@@ -18,9 +19,9 @@ class CompactionIteratorTest : public testing::Test {
                     SequenceNumber last_sequence) {
     iter_.reset(new test::VectorIterator(ks, vs));
     iter_->SeekToFirst();
-    c_iter_.reset(new CompactionIterator(
-        iter_.get(), cmp_, last_sequence, &snapshots_,
-        kMaxSequenceNumber, Env::Default(), false));
+    c_iter_.reset(new CompactionIterator(iter_.get(), cmp_, last_sequence,
+                                         &snapshots_, kMaxSequenceNumber,
+                                         Env::Default(), false));
   }
 
   const Comparator* cmp_;

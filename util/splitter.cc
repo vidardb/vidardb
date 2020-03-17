@@ -3,11 +3,13 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
+#include "vidardb/splitter.h"
+
 #include <string>
 #include <vector>
-#include "string_util.h"
+
 #include "coding.h"
-#include "vidardb/splitter.h"
+#include "string_util.h"
 
 namespace vidardb {
 
@@ -40,13 +42,14 @@ std::vector<std::string> EncodingSplitter::Split(const std::string& s) const {
 
 std::string EncodingSplitter::Stitch(const std::vector<std::string>& v) const {
   std::string result;
-  for (const auto& s: v) {
+  for (const auto& s : v) {
     Append(result, s, false);
   }
   return result;
 }
 
-void EncodingSplitter::Append(std::string& ss, const Slice& s, bool last) const {
+void EncodingSplitter::Append(std::string& ss, const Slice& s,
+                              bool last) const {
   std::string length;
   PutFixed32(&length, s.size());
   ss.append(length);

@@ -13,12 +13,14 @@
 #define __STDC_FORMAT_MACROS
 #endif
 
-#include <cmath>
-#include <inttypes.h>
 #include <errno.h>
+#include <inttypes.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#include <cmath>
+
 #include "vidardb/env.h"
 #include "vidardb/slice.h"
 
@@ -41,14 +43,12 @@ int AppendHumanMicros(uint64_t micros, char* output, int len,
                     static_cast<double>(micros) / 1000000);
   } else if (micros < 1000000ll * 60 * 60 && !fixed_format) {
     return snprintf(output, len, "%02" PRIu64 ":%05.3f M:S",
-        micros / 1000000 / 60,
-        static_cast<double>(micros % 60000000) / 1000000);
+                    micros / 1000000 / 60,
+                    static_cast<double>(micros % 60000000) / 1000000);
   } else {
-    return snprintf(output, len,
-        "%02" PRIu64 ":%02" PRIu64 ":%05.3f H:M:S",
-        micros / 1000000 / 3600,
-        (micros / 1000000 / 60) % 60,
-        static_cast<double>(micros % 60000000) / 1000000);
+    return snprintf(output, len, "%02" PRIu64 ":%02" PRIu64 ":%05.3f H:M:S",
+                    micros / 1000000 / 3600, (micros / 1000000 / 60) % 60,
+                    static_cast<double>(micros % 60000000) / 1000000);
   }
 }
 
@@ -127,8 +127,8 @@ bool ConsumeDecimalNumber(Slice* in, uint64_t* val) {
       ++digits;
       const unsigned int delta = (c - '0');
       static const uint64_t kMaxUint64 = ~static_cast<uint64_t>(0);
-      if (v > kMaxUint64/10 ||
-          (v == kMaxUint64/10 && delta > kMaxUint64%10)) {
+      if (v > kMaxUint64 / 10 ||
+          (v == kMaxUint64 / 10 && delta > kMaxUint64 % 10)) {
         // Overflow
         return false;
       }

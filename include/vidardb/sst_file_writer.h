@@ -10,6 +10,7 @@
 
 #pragma once
 #include <string>
+
 #include "vidardb/env.h"
 #include "vidardb/immutable_options.h"
 #include "vidardb/types.h"

@@ -11,21 +11,19 @@
 #include <atomic>
 #include <deque>
 #include <limits>
+#include <memory>
 #include <set>
+#include <string>
 #include <utility>
 #include <vector>
-#include <string>
-#include <memory>
-
-#include "port/port.h"
-
-#include "vidardb/env.h"
-#include "vidardb/options.h"
-#include "vidardb/types.h"
-#include "vidardb/transaction_log.h"
-#include "vidardb/status.h"
 
 #include "db/version_set.h"
+#include "port/port.h"
+#include "vidardb/env.h"
+#include "vidardb/options.h"
+#include "vidardb/status.h"
+#include "vidardb/transaction_log.h"
+#include "vidardb/types.h"
 
 namespace vidardb {
 

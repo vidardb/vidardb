@@ -8,24 +8,25 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #include "db/db_iter.h"
-#include <stdexcept>
+
 #include <deque>
-#include <string>
 #include <limits>
+#include <stdexcept>
+#include <string>
 
 #include "db/dbformat.h"
 #include "db/filename.h"
 #include "db/pinned_iterators_manager.h"
 #include "port/port.h"
-#include "vidardb/env.h"
-#include "vidardb/iterator.h"
-#include "vidardb/options.h"
 #include "table/internal_iterator.h"
 #include "util/arena.h"
 #include "util/logging.h"
 #include "util/mutexlock.h"
 #include "util/perf_context_imp.h"
 #include "util/string_util.h"
+#include "vidardb/env.h"
+#include "vidardb/iterator.h"
+#include "vidardb/options.h"
 
 namespace vidardb {
 
@@ -47,7 +48,7 @@ static void DumpInternalIter(Iterator* iter) {
 // combines multiple entries for the same userkey found in the DB
 // representation into a single entry while accounting for sequence
 // numbers, deletion markers, overwrites, etc.
-class DBIter: public Iterator {
+class DBIter : public Iterator {
  public:
   // The following is grossly complicated. TODO: clean it up
   // Which direction is the iterator currently moving?
@@ -55,10 +56,7 @@ class DBIter: public Iterator {
   //     the exact entry that yields this->key(), this->value()
   // (2) When moving backwards, the internal iterator is positioned
   //     just before all entries whose user key == this->key().
-  enum Direction {
-    kForward,
-    kReverse
-  };
+  enum Direction { kForward, kReverse };
 
   // LocalStatistics contain Statistics counters that will be aggregated per
   // each iterator instance and then will be sent to the global statistics when
@@ -260,8 +258,8 @@ class DBIter: public Iterator {
 inline bool DBIter::ParseKey(ParsedInternalKey* ikey) {
   if (!ParseInternalKey(iter_->key(), ikey)) {
     status_ = Status::Corruption("corrupted internal key in DBIter");
-    Log(InfoLogLevel::ERROR_LEVEL,
-        logger_, "corrupted internal key in DBIter: %s",
+    Log(InfoLogLevel::ERROR_LEVEL, logger_,
+        "corrupted internal key in DBIter: %s",
         iter_->key().ToString(true).c_str());
     return false;
   } else {
@@ -336,13 +334,14 @@ void DBIter::FindNextUserEntryInternal(bool skipping) {
 
     if (ParseKey(&ikey)) {
       if (iterate_upper_bound_ != nullptr &&
-          user_comparator_->Compare(ikey.user_key, *iterate_upper_bound_) >= 0) {
+          user_comparator_->Compare(ikey.user_key, *iterate_upper_bound_) >=
+              0) {
         break;
       }
 
       if (ikey.sequence <= sequence_) {
-        if (skipping &&
-           user_comparator_->Compare(ikey.user_key, saved_key_.GetKey()) <= 0) {
+        if (skipping && user_comparator_->Compare(ikey.user_key,
+                                                  saved_key_.GetKey()) <= 0) {
           num_skipped++;  // skip this entry
           PERF_COUNTER_ADD(internal_key_skipped_count, 1);
         } else {
@@ -378,8 +377,8 @@ void DBIter::FindNextUserEntryInternal(bool skipping) {
     if (skipping && num_skipped > max_skip_) {
       num_skipped = 0;
       std::string last_key;
-      AppendInternalKey(&last_key, ParsedInternalKey(saved_key_.GetKey(), 0,
-                                                     kTypeDeletion));
+      AppendInternalKey(
+          &last_key, ParsedInternalKey(saved_key_.GetKey(), 0, kTypeDeletion));
       iter_->Seek(last_key);
       RecordTick(statistics_, NUMBER_OF_RESEEKS_IN_ITERATION);
     } else {

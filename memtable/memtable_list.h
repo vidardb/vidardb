@@ -10,22 +10,22 @@
 //
 #pragma once
 
-#include <string>
-#include <list>
-#include <vector>
-#include <set>
 #include <deque>
+#include <list>
+#include <set>
+#include <string>
+#include <vector>
 
 #include "db/dbformat.h"
 #include "db/filename.h"
 #include "memtable/memtable.h"
 #include "memtable/skiplist.h"
+#include "util/instrumented_mutex.h"
+#include "util/log_buffer.h"
 #include "vidardb/db.h"
 #include "vidardb/iterator.h"
 #include "vidardb/options.h"
 #include "vidardb/types.h"
-#include "util/instrumented_mutex.h"
-#include "util/log_buffer.h"
 
 namespace vidardb {
 

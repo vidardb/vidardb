@@ -7,6 +7,7 @@
 #define STORAGE_VIDARDB_INCLUDE_PERF_CONTEXT_H
 
 #include <stdint.h>
+
 #include <string>
 
 #include "vidardb/perf_level.h"
@@ -18,17 +19,16 @@ namespace vidardb {
 // Use SetPerfLevel(PerfLevel::kEnableTime) to enable time stats.
 
 struct PerfContext {
-
-  void Reset(); // reset all performance counters to zero
+  void Reset();  // reset all performance counters to zero
 
   std::string ToString(bool exclude_zero_counters = false) const;
 
-  uint64_t user_key_comparison_count; // total number of user key comparisons
-  uint64_t block_cache_hit_count;     // total number of block cache hits
-  uint64_t block_read_count;          // total number of block reads (with IO)
-  uint64_t block_read_byte;           // total number of bytes from block reads
-  uint64_t block_read_time;           // total nanos spent on block reads
-  uint64_t block_checksum_time;       // total nanos spent on block checksum
+  uint64_t user_key_comparison_count;  // total number of user key comparisons
+  uint64_t block_cache_hit_count;      // total number of block cache hits
+  uint64_t block_read_count;           // total number of block reads (with IO)
+  uint64_t block_read_byte;            // total number of bytes from block reads
+  uint64_t block_read_time;            // total nanos spent on block reads
+  uint64_t block_checksum_time;        // total nanos spent on block checksum
   uint64_t block_decompress_time;  // total nanos spent on block decompression
   // total number of internal keys skipped over during iteration.
   // There are several reasons for it:
@@ -58,9 +58,9 @@ struct PerfContext {
   //
   uint64_t internal_delete_skipped_count;
 
-  uint64_t get_snapshot_time;       // total nanos spent on getting snapshot
-  uint64_t get_from_memtable_time;  // total nanos spent on querying memtables
-  uint64_t get_from_memtable_count;    // number of mem tables queried
+  uint64_t get_snapshot_time;        // total nanos spent on getting snapshot
+  uint64_t get_from_memtable_time;   // total nanos spent on querying memtables
+  uint64_t get_from_memtable_count;  // number of mem tables queried
   // total nanos spent after Get() finds a key
   uint64_t get_post_process_time;
   uint64_t get_from_output_files_time;  // total nanos reading from output files
@@ -87,7 +87,7 @@ struct PerfContext {
   // total nanos spent on writing a record, excluding the above three times
   uint64_t write_pre_and_post_process_time;
 
-  uint64_t db_mutex_lock_nanos;      // time spent on acquiring DB mutex.
+  uint64_t db_mutex_lock_nanos;  // time spent on acquiring DB mutex.
   // Time spent on waiting with a condition variable created with DB mutex.
   uint64_t db_condition_wait_nanos;
   // Time spent on merge operator.
@@ -123,6 +123,6 @@ extern __declspec(thread) PerfContext perf_context;
 extern __thread PerfContext perf_context;
 #endif
 
-}
+}  // namespace vidardb
 
 #endif

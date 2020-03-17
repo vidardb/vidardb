@@ -8,9 +8,10 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 #pragma once
 #include <string>
-#include "vidardb/env.h"
-#include "util/aligned_buffer.h"
+
 #include "port/port.h"
+#include "util/aligned_buffer.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 
@@ -18,7 +19,7 @@ class Statistics;
 class HistogramImpl;
 
 std::unique_ptr<RandomAccessFile> NewReadaheadRandomAccessFile(
-  std::unique_ptr<RandomAccessFile>&& file, size_t readahead_size);
+    std::unique_ptr<RandomAccessFile>&& file, size_t readahead_size);
 
 class SequentialFileReader {
  private:
@@ -50,10 +51,10 @@ class SequentialFileReader {
 class RandomAccessFileReader {
  private:
   std::unique_ptr<RandomAccessFile> file_;
-  Env*            env_;
-  Statistics*     stats_;
-  uint32_t        hist_type_;
-  HistogramImpl*  file_read_hist_;
+  Env* env_;
+  Statistics* stats_;
+  uint32_t hist_type_;
+  HistogramImpl* file_read_hist_;
 
  public:
   explicit RandomAccessFileReader(std::unique_ptr<RandomAccessFile>&& raf,
@@ -71,7 +72,8 @@ class RandomAccessFileReader {
     *this = std::move(o);
   }
 
-  RandomAccessFileReader& operator=(RandomAccessFileReader&& o) VIDARDB_NOEXCEPT{
+  RandomAccessFileReader& operator=(RandomAccessFileReader&& o)
+      VIDARDB_NOEXCEPT {
     file_ = std::move(o.file_);
     env_ = std::move(o.env_);
     stats_ = std::move(o.stats_);
@@ -92,21 +94,21 @@ class RandomAccessFileReader {
 class WritableFileWriter {
  private:
   std::unique_ptr<WritableFile> writable_file_;
-  AlignedBuffer           buf_;
-  size_t                  max_buffer_size_;
+  AlignedBuffer buf_;
+  size_t max_buffer_size_;
   // Actually written data size can be used for truncate
   // not counting padding data
-  uint64_t                filesize_;
+  uint64_t filesize_;
   // This is necessary when we use unbuffered access
   // and writes must happen on aligned offsets
   // so we need to go back and write that page again
-  uint64_t                next_write_offset_;
-  bool                    pending_sync_;
-  bool                    pending_fsync_;
-  const bool              direct_io_;
-  const bool              use_os_buffer_;
-  uint64_t                last_sync_size_;
-  uint64_t                bytes_per_sync_;
+  uint64_t next_write_offset_;
+  bool pending_sync_;
+  bool pending_fsync_;
+  const bool direct_io_;
+  const bool use_os_buffer_;
+  uint64_t last_sync_size_;
+  uint64_t bytes_per_sync_;
 
  public:
   WritableFileWriter(std::unique_ptr<WritableFile>&& file,
@@ -122,7 +124,6 @@ class WritableFileWriter {
         use_os_buffer_(writable_file_->UseOSBuffer()),
         last_sync_size_(0),
         bytes_per_sync_(options.bytes_per_sync) {
-
     buf_.Alignment(writable_file_->GetRequiredBufferAlignment());
     buf_.AllocateNewBuffer(65536);
   }

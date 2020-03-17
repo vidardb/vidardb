@@ -16,29 +16,25 @@
 
 #include "db/dbformat.h"
 #include "db/filename.h"
-
-#include "vidardb/cache.h"
-#include "vidardb/comparator.h"
-#include "vidardb/env.h"
-#include "vidardb/flush_block_policy.h"
-#include "vidardb/table.h"
-#include "vidardb/splitter.h"
-
 #include "table/block.h"
-#include "table/column_table_reader.h"
 #include "table/block_builder.h"
 #include "table/column_block_builder.h"
 #include "table/column_table_factory.h"
+#include "table/column_table_reader.h"
 #include "table/format.h"
 #include "table/meta_blocks.h"
 #include "table/table_builder.h"
-
-#include "util/string_util.h"
 #include "util/coding.h"
 #include "util/compression.h"
 #include "util/crc32c.h"
 #include "util/stop_watch.h"
 #include "util/string_util.h"
+#include "vidardb/cache.h"
+#include "vidardb/comparator.h"
+#include "vidardb/env.h"
+#include "vidardb/flush_block_policy.h"
+#include "vidardb/splitter.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 
@@ -172,44 +168,41 @@ Slice CompressBlock(const Slice& raw,
       }
       break;  // fall back to no compression.
     case kZlibCompression:
-      if (Zlib_Compress(
-              compression_options,
-              GetCompressFormatForVersion(kZlibCompression),
-              raw.data(), raw.size(), compressed_output, compression_dict) &&
+      if (Zlib_Compress(compression_options,
+                        GetCompressFormatForVersion(kZlibCompression),
+                        raw.data(), raw.size(), compressed_output,
+                        compression_dict) &&
           GoodCompressionRatio(compressed_output->size(), raw.size())) {
         return *compressed_output;
       }
       break;  // fall back to no compression.
     case kBZip2Compression:
-      if (BZip2_Compress(
-              compression_options,
-              GetCompressFormatForVersion(kBZip2Compression),
-              raw.data(), raw.size(), compressed_output) &&
+      if (BZip2_Compress(compression_options,
+                         GetCompressFormatForVersion(kBZip2Compression),
+                         raw.data(), raw.size(), compressed_output) &&
           GoodCompressionRatio(compressed_output->size(), raw.size())) {
         return *compressed_output;
       }
       break;  // fall back to no compression.
     case kLZ4Compression:
-      if (LZ4_Compress(
-              compression_options,
-              GetCompressFormatForVersion(kLZ4Compression),
-              raw.data(), raw.size(), compressed_output, compression_dict) &&
+      if (LZ4_Compress(compression_options,
+                       GetCompressFormatForVersion(kLZ4Compression), raw.data(),
+                       raw.size(), compressed_output, compression_dict) &&
           GoodCompressionRatio(compressed_output->size(), raw.size())) {
         return *compressed_output;
       }
       break;  // fall back to no compression.
     case kLZ4HCCompression:
-      if (LZ4HC_Compress(
-              compression_options,
-              GetCompressFormatForVersion(kLZ4HCCompression),
-              raw.data(), raw.size(), compressed_output, compression_dict) &&
+      if (LZ4HC_Compress(compression_options,
+                         GetCompressFormatForVersion(kLZ4HCCompression),
+                         raw.data(), raw.size(), compressed_output,
+                         compression_dict) &&
           GoodCompressionRatio(compressed_output->size(), raw.size())) {
         return *compressed_output;
       }
-      break;     // fall back to no compression.
+      break;  // fall back to no compression.
     case kXpressCompression:
-      if (XPRESS_Compress(raw.data(), raw.size(),
-          compressed_output) &&
+      if (XPRESS_Compress(raw.data(), raw.size(), compressed_output) &&
           GoodCompressionRatio(compressed_output->size(), raw.size())) {
         return *compressed_output;
       }
@@ -220,8 +213,9 @@ Slice CompressBlock(const Slice& raw,
           GoodCompressionRatio(compressed_output->size(), raw.size())) {
         return *compressed_output;
       }
-      break;     // fall back to no compression.
-    default: {}  // Do not recognize this compression type
+      break;  // fall back to no compression.
+    default: {
+    }  // Do not recognize this compression type
   }
 
   // Compression method is not supported, or not good compression ratio, so just
@@ -274,8 +268,7 @@ struct ColumnTableBuilder::Rep {
   const EnvOptions& env_options;
   std::vector<std::unique_ptr<ColumnTableBuilder>> builders;
 
-  Rep(bool _main_column,
-      const ImmutableCFOptions& _ioptions,
+  Rep(bool _main_column, const ImmutableCFOptions& _ioptions,
       const ColumnTableOptions& table_opt,
       const InternalKeyComparator& icomparator,
       const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
@@ -284,20 +277,19 @@ struct ColumnTableBuilder::Rep {
       const CompressionType _compression_type,
       const CompressionOptions& _compression_opts,
       const std::string* _compression_dict,
-      const std::string& _column_family_name,
-      const EnvOptions& _env_options)
+      const std::string& _column_family_name, const EnvOptions& _env_options)
       : main_column(_main_column),
         ioptions(_ioptions),
         table_options(table_opt),
         internal_comparator(icomparator),
         column_comparator(main_column ? new ColumnKeyComparator() : nullptr),
         file(f),
-        data_block(main_column ?
-                new BlockBuilder(table_options.block_restart_interval) :
-                new ColumnBlockBuilder(table_options.block_restart_interval)),
-        index_builder(
-            CreateIndexBuilder(&internal_comparator,
-                               table_options.index_block_restart_interval)),
+        data_block(
+            main_column
+                ? new BlockBuilder(table_options.block_restart_interval)
+                : new ColumnBlockBuilder(table_options.block_restart_interval)),
+        index_builder(CreateIndexBuilder(
+            &internal_comparator, table_options.index_block_restart_interval)),
         compression_type(_compression_type),
         compression_opts(_compression_opts),
         compression_dict(_compression_dict),
@@ -317,18 +309,15 @@ struct ColumnTableBuilder::Rep {
 };
 
 ColumnTableBuilder::ColumnTableBuilder(
-    const ImmutableCFOptions& ioptions,
-    const ColumnTableOptions& table_options,
+    const ImmutableCFOptions& ioptions, const ColumnTableOptions& table_options,
     const InternalKeyComparator& internal_comparator,
     const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
         int_tbl_prop_collector_factories,
     uint32_t column_family_id, WritableFileWriter* file,
     const CompressionType compression_type,
     const CompressionOptions& compression_opts,
-    const std::string* compression_dict,
-    const std::string& column_family_name,
-    const EnvOptions& env_options,
-    bool main_column) {
+    const std::string* compression_dict, const std::string& column_family_name,
+    const EnvOptions& env_options, bool main_column) {
   rep_ = new Rep(main_column, ioptions, table_options, internal_comparator,
                  int_tbl_prop_collector_factories, column_family_id, file,
                  compression_type, compression_opts, compression_dict,
@@ -346,13 +335,14 @@ void ColumnTableBuilder::CreateSubcolumnBuilders(Rep* r) {
   Env::IOPriority pri = r->file->writable_file()->GetIOPriority();
   for (auto i = 0u; i < r->table_options.column_count; i++) {
     unique_ptr<WritableFile> file;
-    std::string col_fname(TableSubFileName(fname, i+1));
-    r->status = NewWritableFile(r->ioptions.env, col_fname, &file,
-                                r->env_options);
+    std::string col_fname(TableSubFileName(fname, i + 1));
+    r->status =
+        NewWritableFile(r->ioptions.env, col_fname, &file, r->env_options);
     assert(r->status.ok());
     file->SetIOPriority(pri);
-    r->builders[i].reset(new ColumnTableBuilder(r->ioptions, r->table_options,
-        *(r->column_comparator), nullptr, r->column_family_id,
+    r->builders[i].reset(new ColumnTableBuilder(
+        r->ioptions, r->table_options, *(r->column_comparator), nullptr,
+        r->column_family_id,
         new WritableFileWriter(std::move(file), r->env_options),
         r->compression_type, r->compression_opts, r->compression_dict,
         r->column_family_name, r->env_options, false));
@@ -377,8 +367,8 @@ void ColumnTableBuilder::AddInSubcolumnBuilders(Rep* r, const Slice& key,
     }
 
     // empty key to subcolumn data block, but tail index should not empty key
-    auto should_flush = rep->flush_block_policy->
-            Update(key, vals.empty()? Slice(): vals[i]);
+    auto should_flush =
+        rep->flush_block_policy->Update(key, vals.empty() ? Slice() : vals[i]);
     if (should_flush) {
       assert(!rep->data_block->empty());
       r->builders[i]->Flush();
@@ -391,10 +381,10 @@ void ColumnTableBuilder::AddInSubcolumnBuilders(Rep* r, const Slice& key,
     rep->last_key.assign(key.data(), key.size());
     // sub column format (, vals[i]): (, vals[i+0]), (, vals[i+1])
     // however, key is stored in the first elem of every restart
-    rep->data_block->Add(key, vals.empty()? Slice(): vals[i]);
+    rep->data_block->Add(key, vals.empty() ? Slice() : vals[i]);
     rep->props.num_entries++;
     rep->props.raw_key_size += rep->data_block->IsKeyStored() ? key.size() : 0;
-    rep->props.raw_value_size += vals.empty()? 0: vals[i].size();
+    rep->props.raw_value_size += vals.empty() ? 0 : vals[i].size();
     rep->index_builder->OnKeyAdded(key);
   }
 }
@@ -461,8 +451,7 @@ void ColumnTableBuilder::Flush() {
   ++r->props.num_data_blocks;
 }
 
-void ColumnTableBuilder::WriteBlock(BlockBuilder* block,
-                                    BlockHandle* handle,
+void ColumnTableBuilder::WriteBlock(BlockBuilder* block, BlockHandle* handle,
                                     bool is_data_block) {
   WriteBlock(block->Finish(), handle, is_data_block);
   block->Reset();
@@ -484,9 +473,9 @@ void ColumnTableBuilder::WriteBlock(const Slice& raw_block_contents,
     if (is_data_block && r->compression_dict && r->compression_dict->size()) {
       compression_dict = *r->compression_dict;
     }
-    block_contents = CompressBlock(raw_block_contents, r->compression_opts,
-                                   &type, compression_dict,
-                                   &r->compressed_output);
+    block_contents =
+        CompressBlock(raw_block_contents, r->compression_opts, &type,
+                      compression_dict, &r->compressed_output);
   } else {
     RecordTick(r->ioptions.statistics, NUMBER_BLOCK_NOT_COMPRESSED);
     type = kNoCompression;
@@ -579,7 +568,7 @@ Status ColumnTableBuilder::Finish() {
       uint32_t column_count = r->builders.size();
       meta_column_block_builder.Add(r->main_column, column_count);
       for (auto i = 0u; i < column_count; i++) {
-          meta_column_block_builder.Add(i+1, r->builders[i]->rep_->offset);
+        meta_column_block_builder.Add(i + 1, r->builders[i]->rep_->offset);
       }
 
       BlockHandle column_block_handle;
@@ -691,9 +680,7 @@ uint64_t ColumnTableBuilder::NumEntries() const {
   return rep_->props.num_entries;
 }
 
-uint64_t ColumnTableBuilder::FileSize() const {
-  return rep_->offset;
-}
+uint64_t ColumnTableBuilder::FileSize() const { return rep_->offset; }
 
 uint64_t ColumnTableBuilder::FileSizeTotal() const {
   uint64_t res = rep_->offset;

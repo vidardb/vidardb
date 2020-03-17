@@ -29,24 +29,20 @@ int main() {
 #else
 
 #define __STDC_FORMAT_MACROS
+#include <gflags/gflags.h>
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+
 #include <algorithm>
 #include <chrono>
 #include <exception>
 #include <thread>
 
-#include <gflags/gflags.h>
 #include "db/db_impl.h"
 #include "db/version_set.h"
 #include "port/port.h"
-#include "vidardb/cache.h"
-#include "vidardb/env.h"
-#include "vidardb/slice.h"
-#include "vidardb/statistics.h"
-#include "vidardb/write_batch.h"
 #include "util/coding.h"
 #include "util/compression.h"
 #include "util/crc32c.h"
@@ -56,6 +52,11 @@ int main() {
 #include "util/random.h"
 #include "util/string_util.h"
 #include "util/testutil.h"
+#include "vidardb/cache.h"
+#include "vidardb/env.h"
+#include "vidardb/slice.h"
+#include "vidardb/statistics.h"
+#include "vidardb/write_batch.h"
 
 using GFLAGS::ParseCommandLineFlags;
 using GFLAGS::RegisterFlagValidator;
@@ -65,9 +66,7 @@ static const long KB = 1024;
 
 static bool ValidateUint32Range(const char* flagname, uint64_t value) {
   if (value > std::numeric_limits<uint32_t>::max()) {
-    fprintf(stderr,
-            "Invalid value for --%s: %lu, overflow\n",
-            flagname,
+    fprintf(stderr, "Invalid value for --%s: %lu, overflow\n", flagname,
             (unsigned long)value);
     return false;
   }
@@ -78,7 +77,7 @@ DEFINE_uint64(seed, 2341234, "Seed for PRNG");
 static const bool FLAGS_seed_dummy __attribute__((unused)) =
     RegisterFlagValidator(&FLAGS_seed, &ValidateUint32Range);
 
-DEFINE_int64(max_key, 1 * KB* KB,
+DEFINE_int64(max_key, 1 * KB * KB,
              "Max number of key/values to place in database");
 
 DEFINE_int32(column_families, 10, "Number of column families");
@@ -198,13 +197,16 @@ DEFINE_int32(max_background_flushes, vidardb::Options().max_background_flushes,
              "The maximum number of concurrent background flushes "
              "that can occur in parallel.");
 
-DEFINE_int32(universal_size_ratio, 0, "The ratio of file sizes that trigger"
+DEFINE_int32(universal_size_ratio, 0,
+             "The ratio of file sizes that trigger"
              " compaction in universal style");
 
-DEFINE_int32(universal_min_merge_width, 0, "The minimum number of files to "
+DEFINE_int32(universal_min_merge_width, 0,
+             "The minimum number of files to "
              "compact in universal style compaction");
 
-DEFINE_int32(universal_max_merge_width, 0, "The max number of files to compact"
+DEFINE_int32(universal_max_merge_width, 0,
+             "The max number of files to compact"
              " in universal style compaction");
 
 DEFINE_int32(universal_max_size_amplification_percent, 0,
@@ -239,8 +241,8 @@ static const bool FLAGS_subcompactions_dummy __attribute__((unused)) =
 
 static bool ValidateInt32Positive(const char* flagname, int32_t value) {
   if (value < 0) {
-    fprintf(stderr, "Invalid value for --%s: %d, must be >=0\n",
-            flagname, value);
+    fprintf(stderr, "Invalid value for --%s: %d, must be >=0\n", flagname,
+            value);
     return false;
   }
   return true;
@@ -249,11 +251,13 @@ DEFINE_int32(reopen, 10, "Number of times database reopens");
 static const bool FLAGS_reopen_dummy __attribute__((unused)) =
     RegisterFlagValidator(&FLAGS_reopen, &ValidateInt32Positive);
 
-DEFINE_int32(bloom_bits, 10, "Bloom filter bits per key. "
+DEFINE_int32(bloom_bits, 10,
+             "Bloom filter bits per key. "
              "Negative means use default settings.");
 
-DEFINE_bool(use_block_based_filter, false, "use block based filter"
-              "instead of full filter for block based table");
+DEFINE_bool(use_block_based_filter, false,
+            "use block based filter"
+            "instead of full filter for block based table");
 
 DEFINE_string(db, "", "Use the db with the following name.");
 
@@ -305,9 +309,9 @@ DEFINE_int32(compact_files_one_in, 0,
              "operations IN AVERAGE.  0 indicates CompactFiles() is disabled.");
 
 static bool ValidateInt32Percent(const char* flagname, int32_t value) {
-  if (value < 0 || value>100) {
-    fprintf(stderr, "Invalid value for --%s: %d, 0<= pct <=100 \n",
-            flagname, value);
+  if (value < 0 || value > 100) {
+    fprintf(stderr, "Invalid value for --%s: %d, 0<= pct <=100 \n", flagname,
+            value);
     return false;
   }
   return true;
@@ -340,7 +344,8 @@ DEFINE_int32(nooverwritepercent, 60,
 static const bool FLAGS_nooverwritepercent_dummy __attribute__((__unused__)) =
     RegisterFlagValidator(&FLAGS_nooverwritepercent, &ValidateInt32Percent);
 
-DEFINE_int32(iterpercent, 10, "Ratio of iterations to total workload"
+DEFINE_int32(iterpercent, 10,
+             "Ratio of iterations to total workload"
              " (expressed as a percentage)");
 static const bool FLAGS_iterpercent_dummy __attribute__((unused)) =
     RegisterFlagValidator(&FLAGS_iterpercent, &ValidateInt32Percent);
@@ -371,7 +376,7 @@ enum vidardb::CompressionType StringToCompressionType(const char* ctype) {
     return vidardb::kZSTDNotFinalCompression;
 
   fprintf(stdout, "Cannot parse compression type '%s'\n", ctype);
-  return vidardb::kSnappyCompression; //default value
+  return vidardb::kSnappyCompression;  // default value
 }
 
 std::vector<std::string> SplitString(std::string src) {
@@ -407,15 +412,13 @@ DEFINE_uint64(log2_keys_per_lock, 2, "Log2 of number of keys per lock");
 static const bool FLAGS_log2_keys_per_lock_dummy __attribute__((unused)) =
     RegisterFlagValidator(&FLAGS_log2_keys_per_lock, &ValidateUint32Range);
 
-DEFINE_bool(filter_deletes, false, "On true, deletes use KeyMayExist to drop"
+DEFINE_bool(filter_deletes, false,
+            "On true, deletes use KeyMayExist to drop"
             " the delete if key not present");
 
 DEFINE_bool(in_place_update, false, "On true, does inplace update in memtable");
 
-enum RepFactory {
-  kSkipList,
-  kHashSkipList
-};
+enum RepFactory { kSkipList, kHashSkipList };
 
 namespace {
 enum RepFactory StringToRepFactory(const char* ctype) {
@@ -446,9 +449,9 @@ DEFINE_int32(prefix_size, 7, "Control the prefix size for HashSkipListRep");
 static const bool FLAGS_prefix_size_dummy __attribute__((unused)) =
     RegisterFlagValidator(&FLAGS_prefix_size, &ValidatePrefixSize);
 
-DEFINE_bool(use_merge, false, "On true, replaces all writes with a Merge "
+DEFINE_bool(use_merge, false,
+            "On true, replaces all writes with a Merge "
             "that behaves like a Put");
-
 
 namespace vidardb {
 
@@ -459,7 +462,7 @@ static std::string Key(int64_t val) {
   PutFixed64(&little_endian_key, val);
   assert(little_endian_key.size() == sizeof(val));
   big_endian_key.resize(sizeof(val));
-  for (size_t i = 0 ; i < sizeof(val); ++i) {
+  for (size_t i = 0; i < sizeof(val); ++i) {
     big_endian_key[i] = little_endian_key[sizeof(val) - 1 - i];
   }
   return big_endian_key;
@@ -471,7 +474,6 @@ static std::string StringToHex(const std::string& str) {
   return result;
 }
 
-
 class StressTest;
 namespace {
 
@@ -479,7 +481,7 @@ class Stats {
  private:
   uint64_t start_;
   uint64_t finish_;
-  double  seconds_;
+  double seconds_;
   long done_;
   long gets_;
   long prefixes_;
@@ -498,7 +500,7 @@ class Stats {
   HistogramImpl hist_;
 
  public:
-  Stats() { }
+  Stats() {}
 
   void Start() {
     next_report_ = 100;
@@ -558,16 +560,23 @@ class Stats {
       last_op_finish_ = now;
     }
 
-      done_++;
+    done_++;
     if (FLAGS_progress_reports) {
       if (done_ >= next_report_) {
-        if      (next_report_ < 1000)   next_report_ += 100;
-        else if (next_report_ < 5000)   next_report_ += 500;
-        else if (next_report_ < 10000)  next_report_ += 1000;
-        else if (next_report_ < 50000)  next_report_ += 5000;
-        else if (next_report_ < 100000) next_report_ += 10000;
-        else if (next_report_ < 500000) next_report_ += 50000;
-        else                            next_report_ += 100000;
+        if (next_report_ < 1000)
+          next_report_ += 100;
+        else if (next_report_ < 5000)
+          next_report_ += 500;
+        else if (next_report_ < 10000)
+          next_report_ += 1000;
+        else if (next_report_ < 50000)
+          next_report_ += 5000;
+        else if (next_report_ < 100000)
+          next_report_ += 10000;
+        else if (next_report_ < 500000)
+          next_report_ += 50000;
+        else
+          next_report_ += 100000;
         fprintf(stdout, "... finished %ld ops%30s\r", done_, "");
       }
     }
@@ -588,19 +597,13 @@ class Stats {
     iterator_size_sums_ += count;
   }
 
-  void AddIterations(int n) {
-    iterations_ += n;
-  }
+  void AddIterations(int n) { iterations_ += n; }
 
-  void AddDeletes(int n) {
-    deletes_ += n;
-  }
+  void AddDeletes(int n) { deletes_ += n; }
 
   void AddSingleDeletes(size_t n) { single_deletes_ += n; }
 
-  void AddErrors(int n) {
-    errors_ += n;
-  }
+  void AddErrors(int n) { errors_ += n; }
 
   void AddNumCompactFilesSucceed(int n) { num_compact_files_succeed_ += n; }
 
@@ -616,19 +619,19 @@ class Stats {
     double elapsed = (finish_ - start_) * 1e-6;
     double bytes_mb = bytes_ / 1048576.0;
     double rate = bytes_mb / elapsed;
-    double throughput = (double)done_/elapsed;
+    double throughput = (double)done_ / elapsed;
 
     fprintf(stdout, "%-12s: ", name);
-    fprintf(stdout, "%.3f micros/op %ld ops/sec\n",
-            seconds_ * 1e6 / done_, (long)throughput);
+    fprintf(stdout, "%.3f micros/op %ld ops/sec\n", seconds_ * 1e6 / done_,
+            (long)throughput);
     fprintf(stdout, "%-12s: Wrote %.2f MB (%.2f MB/sec) (%ld%% of %ld ops)\n",
-            "", bytes_mb, rate, (100*writes_)/done_, done_);
+            "", bytes_mb, rate, (100 * writes_) / done_, done_);
     fprintf(stdout, "%-12s: Wrote %ld times\n", "", writes_);
     fprintf(stdout, "%-12s: Deleted %ld times\n", "", deletes_);
     fprintf(stdout, "%-12s: Single deleted %" VIDARDB_PRIszt " times\n", "",
-           single_deletes_);
-    fprintf(stdout, "%-12s: %ld read and %ld found the key\n", "",
-            gets_, founds_);
+            single_deletes_);
+    fprintf(stdout, "%-12s: %ld read and %ld found the key\n", "", gets_,
+            founds_);
     fprintf(stdout, "%-12s: Prefix scanned %ld times\n", "", prefixes_);
     fprintf(stdout, "%-12s: Iterator size sum is %ld\n", "",
             iterator_size_sums_);
@@ -712,73 +715,39 @@ class SharedState {
 
   ~SharedState() {}
 
-  port::Mutex* GetMutex() {
-    return &mu_;
-  }
+  port::Mutex* GetMutex() { return &mu_; }
 
-  port::CondVar* GetCondVar() {
-    return &cv_;
-  }
+  port::CondVar* GetCondVar() { return &cv_; }
 
-  StressTest* GetStressTest() const {
-    return stress_test_;
-  }
+  StressTest* GetStressTest() const { return stress_test_; }
 
-  int64_t GetMaxKey() const {
-    return max_key_;
-  }
+  int64_t GetMaxKey() const { return max_key_; }
 
-  uint32_t GetNumThreads() const {
-    return num_threads_;
-  }
+  uint32_t GetNumThreads() const { return num_threads_; }
 
-  void IncInitialized() {
-    num_initialized_++;
-  }
+  void IncInitialized() { num_initialized_++; }
 
-  void IncOperated() {
-    num_populated_++;
-  }
+  void IncOperated() { num_populated_++; }
 
-  void IncDone() {
-    num_done_++;
-  }
+  void IncDone() { num_done_++; }
 
-  void IncVotedReopen() {
-    vote_reopen_ = (vote_reopen_ + 1) % num_threads_;
-  }
+  void IncVotedReopen() { vote_reopen_ = (vote_reopen_ + 1) % num_threads_; }
 
-  bool AllInitialized() const {
-    return num_initialized_ >= num_threads_;
-  }
+  bool AllInitialized() const { return num_initialized_ >= num_threads_; }
 
-  bool AllOperated() const {
-    return num_populated_ >= num_threads_;
-  }
+  bool AllOperated() const { return num_populated_ >= num_threads_; }
 
-  bool AllDone() const {
-    return num_done_ >= num_threads_;
-  }
+  bool AllDone() const { return num_done_ >= num_threads_; }
 
-  bool AllVotedReopen() {
-    return (vote_reopen_ == 0);
-  }
+  bool AllVotedReopen() { return (vote_reopen_ == 0); }
 
-  void SetStart() {
-    start_ = true;
-  }
+  void SetStart() { start_ = true; }
 
-  void SetStartVerify() {
-    start_verify_ = true;
-  }
+  void SetStartVerify() { start_verify_ = true; }
 
-  bool Started() const {
-    return start_;
-  }
+  bool Started() const { return start_; }
 
-  bool VerifyStarted() const {
-    return start_verify_;
-  }
+  bool VerifyStarted() const { return start_verify_; }
 
   void SetVerificationFailure() { verification_failure_.store(true); }
 
@@ -851,7 +820,7 @@ class SharedState {
   // Keys that should not be overwritten
   std::vector<std::set<size_t> > no_overwrite_ids_;
 
-  std::vector<std::vector<uint32_t>> values_;
+  std::vector<std::vector<uint32_t> > values_;
   // Has to make it owned by a smart ptr as port::Mutex is not copyable
   // and storing it in the container may require copying depending on the impl.
   std::vector<std::vector<std::unique_ptr<port::Mutex> > > key_locks_;
@@ -861,8 +830,8 @@ const uint32_t SharedState::SENTINEL = 0xffffffff;
 
 // Per-thread state for concurrent executions of the same benchmark.
 struct ThreadState {
-  uint32_t tid; // 0..n-1
-  Random rand;  // Has different seeds for different threads
+  uint32_t tid;  // 0..n-1
+  Random rand;   // Has different seeds for different threads
   SharedState* shared;
   Stats stats;
 
@@ -872,27 +841,22 @@ struct ThreadState {
 
 class DbStressListener : public EventListener {
  public:
-  DbStressListener(
-      const std::string& db_name,
-      const std::vector<DbPath>& db_paths) :
-      db_name_(db_name),
-      db_paths_(db_paths),
-      rand_(301) {}
+  DbStressListener(const std::string& db_name,
+                   const std::vector<DbPath>& db_paths)
+      : db_name_(db_name), db_paths_(db_paths), rand_(301) {}
   virtual ~DbStressListener() {}
 #ifndef VIDARDB_LITE
-  virtual void OnFlushCompleted(
-      DB* db, const FlushJobInfo& info) override {
+  virtual void OnFlushCompleted(DB* db, const FlushJobInfo& info) override {
     assert(db);
     assert(db->GetName() == db_name_);
     assert(IsValidColumnFamilyName(info.cf_name));
     VerifyFilePath(info.file_path);
     // pretending doing some work here
-    std::this_thread::sleep_for(
-        std::chrono::microseconds(rand_.Uniform(5000)));
+    std::this_thread::sleep_for(std::chrono::microseconds(rand_.Uniform(5000)));
   }
 
-  virtual void OnCompactionCompleted(
-      DB *db, const CompactionJobInfo& ci) override {
+  virtual void OnCompactionCompleted(DB* db,
+                                     const CompactionJobInfo& ci) override {
     assert(db);
     assert(db->GetName() == db_name_);
     assert(IsValidColumnFamilyName(ci.cf_name));
@@ -904,12 +868,10 @@ class DbStressListener : public EventListener {
       VerifyFilePath(file_path);
     }
     // pretending doing some work here
-    std::this_thread::sleep_for(
-        std::chrono::microseconds(rand_.Uniform(5000)));
+    std::this_thread::sleep_for(std::chrono::microseconds(rand_.Uniform(5000)));
   }
 
-  virtual void OnTableFileCreated(
-      const TableFileCreationInfo& info) override {
+  virtual void OnTableFileCreated(const TableFileCreationInfo& info) override {
     assert(info.db_name == db_name_);
     assert(IsValidColumnFamilyName(info.cf_name));
     VerifyFilePath(info.file_path);
@@ -1086,7 +1048,9 @@ class StressTest {
          }},
         {"target_file_size_multiplier",
          {
-             ToString(FLAGS_target_file_size_multiplier), "1", "2",
+             ToString(FLAGS_target_file_size_multiplier),
+             "1",
+             "2",
          }},
         {"max_bytes_for_level_base",
          {
@@ -1096,7 +1060,9 @@ class StressTest {
          }},
         {"max_bytes_for_level_multiplier",
          {
-             ToString(FLAGS_max_bytes_for_level_multiplier), "1", "2",
+             ToString(FLAGS_max_bytes_for_level_multiplier),
+             "1",
+             "2",
          }},
         {"max_sequential_skip_in_iterations", {"4", "8", "12"}},
     };
@@ -1138,7 +1104,7 @@ class StressTest {
 
       auto now = FLAGS_env->NowMicros();
       fprintf(stdout, "%s Starting database operations\n",
-              FLAGS_env->TimeToString(now/1000000).c_str());
+              FLAGS_env->TimeToString(now / 1000000).c_str());
 
       shared.SetStart();
       shared.GetCondVar()->SignalAll();
@@ -1149,10 +1115,10 @@ class StressTest {
       now = FLAGS_env->NowMicros();
       if (FLAGS_test_batches_snapshots) {
         fprintf(stdout, "%s Limited verification already done during gets\n",
-                FLAGS_env->TimeToString((uint64_t) now/1000000).c_str());
+                FLAGS_env->TimeToString((uint64_t)now / 1000000).c_str());
       } else {
         fprintf(stdout, "%s Starting verification\n",
-                FLAGS_env->TimeToString((uint64_t) now/1000000).c_str());
+                FLAGS_env->TimeToString((uint64_t)now / 1000000).c_str());
       }
 
       shared.SetStartVerify();
@@ -1174,7 +1140,7 @@ class StressTest {
     auto now = FLAGS_env->NowMicros();
     if (!FLAGS_test_batches_snapshots) {
       fprintf(stdout, "%s Verification successful\n",
-              FLAGS_env->TimeToString(now/1000000).c_str());
+              FLAGS_env->TimeToString(now / 1000000).c_str());
     }
     PrintStatistics();
 
@@ -1194,7 +1160,6 @@ class StressTest {
   }
 
  private:
-
   static void ThreadBody(void* v) {
     ThreadState* thread = reinterpret_cast<ThreadState*>(v);
     SharedState* shared = thread->shared;
@@ -1233,7 +1198,6 @@ class StressTest {
         shared->GetCondVar()->SignalAll();
       }
     }
-
   }
 
   static void PoolSizeChangeThread(void* v) {
@@ -1274,10 +1238,8 @@ class StressTest {
   Status MultiPut(ThreadState* thread, const WriteOptions& writeoptions,
                   ColumnFamilyHandle* column_family, const Slice& key,
                   const Slice& value, size_t sz) {
-    std::string keys[10] = {"9", "8", "7", "6", "5",
-                            "4", "3", "2", "1", "0"};
-    std::string values[10] = {"9", "8", "7", "6", "5",
-                              "4", "3", "2", "1", "0"};
+    std::string keys[10] = {"9", "8", "7", "6", "5", "4", "3", "2", "1", "0"};
+    std::string values[10] = {"9", "8", "7", "6", "5", "4", "3", "2", "1", "0"};
     Slice value_slices[10];
     WriteBatch batch;
     Status s;
@@ -1304,8 +1266,7 @@ class StressTest {
   // in DB atomically i.e in a single batch. Also refer MultiGet.
   Status MultiDelete(ThreadState* thread, const WriteOptions& writeoptions,
                      ColumnFamilyHandle* column_family, const Slice& key) {
-    std::string keys[10] = {"9", "7", "5", "3", "1",
-                            "8", "6", "4", "2", "0"};
+    std::string keys[10] = {"9", "7", "5", "3", "1", "8", "6", "4", "2", "0"};
 
     WriteBatch batch;
     Status s;
@@ -1360,7 +1321,7 @@ class StressTest {
           fprintf(stderr, "error expected prefix = %c actual = %c\n",
                   expected_prefix, actual_prefix);
         }
-        (values[i])[0] = ' '; // blank out the differing character
+        (values[i])[0] = ' ';  // blank out the differing character
         thread->stats.AddGets(1, 1);
       }
     }
@@ -1372,8 +1333,8 @@ class StressTest {
         fprintf(stderr, "error : inconsistent values for key %s: %s, %s\n",
                 key.ToString(true).c_str(), StringToHex(values[0]).c_str(),
                 StringToHex(values[i]).c_str());
-      // we continue after error rather than exiting so that we can
-      // find more errors if any
+        // we continue after error rather than exiting so that we can
+        // find more errors if any
       }
     }
 
@@ -1387,8 +1348,7 @@ class StressTest {
   // index i that all the i'th values are of the form "0"+V, "1"+V,..."9"+V.
   // ASSUMES that MultiPut was used to put (K, V)
   Status MultiPrefixScan(ThreadState* thread, const ReadOptions& readoptions,
-                         ColumnFamilyHandle* column_family,
-                         const Slice& key) {
+                         ColumnFamilyHandle* column_family, const Slice& key) {
     std::string prefixes[10] = {"0", "1", "2", "3", "4",
                                 "5", "6", "7", "8", "9"};
     Slice prefix_slices[10];
@@ -1424,13 +1384,14 @@ class StressTest {
           fprintf(stderr, "error expected first = %c actual = %c\n",
                   expected_first, actual_first);
         }
-        (values[i])[0] = ' '; // blank out the differing character
+        (values[i])[0] = ' ';  // blank out the differing character
       }
       // make sure all values are equivalent
       for (int i = 0; i < 10; i++) {
         if (values[i] != values[0]) {
-          fprintf(stderr, "error : %d, inconsistent values for prefix %s: %s, %s\n",
-                  i, prefixes[i].c_str(), StringToHex(values[0]).c_str(),
+          fprintf(stderr,
+                  "error : %d, inconsistent values for prefix %s: %s, %s\n", i,
+                  prefixes[i].c_str(), StringToHex(values[0]).c_str(),
                   StringToHex(values[i]).c_str());
           // we continue after error rather than exiting so that we can
           // find more errors if any
@@ -1491,8 +1452,8 @@ class StressTest {
   Status SetOptions(ThreadState* thread) {
     assert(FLAGS_set_options_one_in > 0);
     std::unordered_map<std::string, std::string> opts;
-    std::string name = options_index_[
-      thread->rand.Next() % options_index_.size()];
+    std::string name =
+        options_index_[thread->rand.Next() % options_index_.size()];
     int value_idx = thread->rand.Next() % options_table_[name].size();
     if (name == "soft_rate_limit" || name == "hard_rate_limit") {
       opts["soft_rate_limit"] = options_table_["soft_rate_limit"][value_idx];
@@ -1501,11 +1462,11 @@ class StressTest {
                name == "level0_slowdown_writes_trigger" ||
                name == "level0_stop_writes_trigger") {
       opts["level0_file_num_compaction_trigger"] =
-        options_table_["level0_file_num_compaction_trigger"][value_idx];
+          options_table_["level0_file_num_compaction_trigger"][value_idx];
       opts["level0_slowdown_writes_trigger"] =
-        options_table_["level0_slowdown_writes_trigger"][value_idx];
+          options_table_["level0_slowdown_writes_trigger"][value_idx];
       opts["level0_stop_writes_trigger"] =
-        options_table_["level0_stop_writes_trigger"][value_idx];
+          options_table_["level0_stop_writes_trigger"][value_idx];
     } else {
       opts[name] = options_table_[name][value_idx];
     }
@@ -1543,8 +1504,7 @@ class StressTest {
           if (thread->shared->AllVotedReopen()) {
             thread->shared->GetStressTest()->Reopen();
             thread->shared->GetCondVar()->SignalAll();
-          }
-          else {
+          } else {
             thread->shared->GetCondVar()->Wait();
           }
           // Commenting this out as we don't want to reset stats on each open.
@@ -1563,8 +1523,7 @@ class StressTest {
         if (thread->rand.OneIn(FLAGS_clear_column_family_one_in)) {
           // drop column family and then create it again (can't drop default)
           int cf = thread->rand.Next() % (FLAGS_column_families - 1) + 1;
-          std::string new_name =
-              ToString(new_column_family_name_.fetch_add(1));
+          std::string new_name = ToString(new_column_family_name_.fetch_add(1));
           {
             MutexLock l(thread->shared->GetMutex());
             fprintf(
@@ -1578,7 +1537,7 @@ class StressTest {
           delete column_families_[cf];
           if (!s.ok()) {
             fprintf(stderr, "dropping column family error: %s\n",
-                s.ToString().c_str());
+                    s.ToString().c_str());
             std::terminate();
           }
           s = db_->CreateColumnFamily(ColumnFamilyOptions(options_), new_name,
@@ -1587,7 +1546,7 @@ class StressTest {
           thread->shared->ClearColumnFamily(cf);
           if (!s.ok()) {
             fprintf(stderr, "creating column family error: %s\n",
-                s.ToString().c_str());
+                    s.ToString().c_str());
             std::terminate();
           }
           thread->shared->UnlockColumnFamily(cf);
@@ -1732,7 +1691,7 @@ class StressTest {
           }
           shared->Put(rand_column_family, rand_key, value_base);
           Status s;
-            s = db_->Put(write_opts, column_family, key, v);
+          s = db_->Put(write_opts, column_family, key, v);
           if (!s.ok()) {
             fprintf(stderr, "put or merge error: %s\n", s.ToString().c_str());
             std::terminate();
@@ -1863,8 +1822,8 @@ class StressTest {
 
   void VerificationAbort(SharedState* shared, std::string msg, int cf,
                          int64_t key) const {
-    printf("Verification failed for column family %d key %" PRIi64 ": %s\n", cf, key,
-           msg.c_str());
+    printf("Verification failed for column family %d key %" PRIi64 ": %s\n", cf,
+           key, msg.c_str());
     shared->SetVerificationFailure();
   }
 
@@ -1905,27 +1864,27 @@ class StressTest {
     return true;
   }
 
-  static void PrintKeyValue(int cf, int64_t key, const char* value,
-                            size_t sz) {
+  static void PrintKeyValue(int cf, int64_t key, const char* value, size_t sz) {
     if (!FLAGS_verbose) {
       return;
     }
-    fprintf(stdout, "[CF %d] %" PRIi64 " == > (%" VIDARDB_PRIszt ") ", cf, key, sz);
+    fprintf(stdout, "[CF %d] %" PRIi64 " == > (%" VIDARDB_PRIszt ") ", cf, key,
+            sz);
     for (size_t i = 0; i < sz; i++) {
       fprintf(stdout, "%X", value[i]);
     }
     fprintf(stdout, "\n");
   }
 
-  static size_t GenerateValue(uint32_t rand, char *v, size_t max_sz) {
+  static size_t GenerateValue(uint32_t rand, char* v, size_t max_sz) {
     size_t value_sz = ((rand % 3) + 1) * FLAGS_value_size_mult;
     assert(value_sz <= max_sz && value_sz >= sizeof(uint32_t));
     *((uint32_t*)v) = rand;
-    for (size_t i=sizeof(uint32_t); i < value_sz; i++) {
+    for (size_t i = sizeof(uint32_t); i < value_sz; i++) {
       v[i] = (char)(rand ^ i);
     }
     v[value_sz] = '\0';
-    return value_sz; // the size of the value set.
+    return value_sz;  // the size of the value set.
   }
 
   void PrintEnv() const {
@@ -2060,7 +2019,6 @@ class StressTest {
                 "--rep_factory\n");
     }
 
-
     // set universal style compaction configurations, if applicable
     if (FLAGS_universal_size_ratio != 0) {
       options_.compaction_options_universal.size_ratio =
@@ -2160,7 +2118,7 @@ class StressTest {
     num_times_reopened_++;
     auto now = FLAGS_env->NowMicros();
     fprintf(stdout, "%s Reopening database for the %dth time\n",
-            FLAGS_env->TimeToString(now/1000000).c_str(),
+            FLAGS_env->TimeToString(now / 1000000).c_str(),
             num_times_reopened_);
     Open();
   }
@@ -2181,7 +2139,7 @@ class StressTest {
   std::vector<std::string> column_family_names_;
   std::atomic<int> new_column_family_name_;
   int num_times_reopened_;
-  std::unordered_map<std::string, std::vector<std::string>> options_table_;
+  std::unordered_map<std::string, std::vector<std::string> > options_table_;
   std::vector<std::string> options_index_;
 };
 
@@ -2196,7 +2154,7 @@ int main(int argc, char** argv) {
     dbstats = vidardb::CreateDBStatistics();
   }
   FLAGS_compression_type_e =
-    StringToCompressionType(FLAGS_compression_type.c_str());
+      StringToCompressionType(FLAGS_compression_type.c_str());
   FLAGS_rep_factory = StringToRepFactory(FLAGS_memtablerep.c_str());
 
   // The number of background threads should be at least as much the
@@ -2215,31 +2173,30 @@ int main(int argc, char** argv) {
             "test_batches_snapshots test!\n");
     exit(1);
   }
-  if ((FLAGS_readpercent + FLAGS_prefixpercent +
-       FLAGS_writepercent + FLAGS_delpercent + FLAGS_iterpercent) != 100) {
-      fprintf(stderr,
-              "Error: Read+Prefix+Write+Delete+Iterate percents != 100!\n");
-      exit(1);
+  if ((FLAGS_readpercent + FLAGS_prefixpercent + FLAGS_writepercent +
+       FLAGS_delpercent + FLAGS_iterpercent) != 100) {
+    fprintf(stderr,
+            "Error: Read+Prefix+Write+Delete+Iterate percents != 100!\n");
+    exit(1);
   }
   if (FLAGS_disable_wal == 1 && FLAGS_reopen > 0) {
-      fprintf(stderr, "Error: Db cannot reopen safely with disable_wal set!\n");
-      exit(1);
+    fprintf(stderr, "Error: Db cannot reopen safely with disable_wal set!\n");
+    exit(1);
   }
   if ((unsigned)FLAGS_reopen >= FLAGS_ops_per_thread) {
-      fprintf(stderr,
-              "Error: #DB-reopens should be < ops_per_thread\n"
-              "Provided reopens = %d and ops_per_thread = %lu\n",
-              FLAGS_reopen,
-              (unsigned long)FLAGS_ops_per_thread);
-      exit(1);
+    fprintf(stderr,
+            "Error: #DB-reopens should be < ops_per_thread\n"
+            "Provided reopens = %d and ops_per_thread = %lu\n",
+            FLAGS_reopen, (unsigned long)FLAGS_ops_per_thread);
+    exit(1);
   }
 
   // Choose a location for the test database if none given with --db=<path>
   if (FLAGS_db.empty()) {
-      std::string default_db_path;
-      vidardb::Env::Default()->GetTestDirectory(&default_db_path);
-      default_db_path += "/dbstress";
-      FLAGS_db = default_db_path;
+    std::string default_db_path;
+    vidardb::Env::Default()->GetTestDirectory(&default_db_path);
+    default_db_path += "/dbstress";
+    FLAGS_db = default_db_path;
   }
 
   vidardb_kill_odds = FLAGS_kill_random_test;

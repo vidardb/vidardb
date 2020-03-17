@@ -5,8 +5,8 @@
 //
 #include "db/write_controller.h"
 
-#include "vidardb/env.h"
 #include "util/testharness.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 

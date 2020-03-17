@@ -17,11 +17,10 @@
 
 #include "db/compaction.h"
 #include "db/version_set.h"
+#include "util/mutable_cf_options.h"
 #include "vidardb/env.h"
 #include "vidardb/options.h"
 #include "vidardb/status.h"
-#include "util/mutable_cf_options.h"
-
 
 namespace vidardb {
 

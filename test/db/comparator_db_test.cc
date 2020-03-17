@@ -7,13 +7,13 @@
 #include <map>
 #include <string>
 
-#include "vidardb/db.h"
-#include "vidardb/env.h"
 #include "util/hash.h"
 #include "util/kv_map.h"
 #include "util/string_util.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
 
 using std::unique_ptr;
 

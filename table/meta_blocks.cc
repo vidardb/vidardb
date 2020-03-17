@@ -13,21 +13,20 @@
 #include <string>
 
 #include "db/table_properties_collector.h"
-#include "vidardb/table.h"
-#include "vidardb/table_properties.h"
 #include "table/block.h"
 #include "table/format.h"
 #include "table/internal_iterator.h"
 #include "table/table_properties_internal.h"
 #include "util/coding.h"
+#include "vidardb/table.h"
+#include "vidardb/table_properties.h"
 
 namespace vidardb {
 
 MetaIndexBuilder::MetaIndexBuilder()
     : meta_index_block_(new BlockBuilder(1 /* restart interval */)) {}
 
-void MetaIndexBuilder::Add(const std::string& key,
-                           const BlockHandle& handle) {
+void MetaIndexBuilder::Add(const std::string& key, const BlockHandle& handle) {
   std::string handle_encoding;
   handle.EncodeTo(&handle_encoding);
   meta_block_handles_.insert({key, handle_encoding});
@@ -120,22 +119,20 @@ void MetaColumnBlockBuilder::Add(uint32_t key, uint64_t value) {
 }
 
 void MetaColumnBlockBuilder::Add(const std::string& key,
-                             const std::string& value) {
-    meta_column_block_->Add(key, value);
+                                 const std::string& value) {
+  meta_column_block_->Add(key, value);
 }
 
-Slice MetaColumnBlockBuilder::Finish() {
-  return meta_column_block_->Finish();
-}
+Slice MetaColumnBlockBuilder::Finish() { return meta_column_block_->Finish(); }
 /******************************* Shichao *****************************/
 
-void LogPropertiesCollectionError(
-    Logger* info_log, const std::string& method, const std::string& name) {
+void LogPropertiesCollectionError(Logger* info_log, const std::string& method,
+                                  const std::string& name) {
   assert(method == "Add" || method == "Finish");
 
   std::string msg =
-    "Encountered error when calling TablePropertiesCollector::" +
-    method + "() with collector name: " + name;
+      "Encountered error when calling TablePropertiesCollector::" + method +
+      "() with collector name: " + name;
   Log(InfoLogLevel::ERROR_LEVEL, info_log, "%s", msg.c_str());
 }
 
@@ -243,8 +240,9 @@ Status ReadProperties(const Slice& handle_value, RandomAccessFileReader* file,
       if (!GetVarint64(&raw_val, &val)) {
         // skip malformed value
         auto error_msg =
-          "Detect malformed value in properties meta-block:"
-          "\tkey: " + key + "\tval: " + raw_val.ToString();
+            "Detect malformed value in properties meta-block:"
+            "\tkey: " +
+            key + "\tval: " + raw_val.ToString();
         Log(InfoLogLevel::ERROR_LEVEL, logger, "%s", error_msg.c_str());
         continue;
       }
@@ -308,12 +306,12 @@ Status ReadMetaColumnBlock(const Slice& handle_value,
       file_sizes.resize(*column_num);
     } else {
       Slice val = iter->value();
-      GetFixed64(&val, &file_sizes[i-1]);
+      GetFixed64(&val, &file_sizes[i - 1]);
     }
   }
 
   if (s.ok()) {
-    assert(*column_num == i-1);
+    assert(*column_num == i - 1);
   }
 
   return s;

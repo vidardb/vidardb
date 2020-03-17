@@ -4,9 +4,11 @@
 //  of patent rights can be found in the PATENTS file in the same directory.
 
 #include "db/write_thread.h"
+
 #include <chrono>
 #include <limits>
 #include <thread>
+
 #include "db/column_family.h"
 #include "port/port.h"
 #include "util/sync_point.h"

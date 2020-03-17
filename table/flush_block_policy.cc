@@ -8,12 +8,13 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
-#include "vidardb/options.h"
 #include "vidardb/flush_block_policy.h"
-#include "vidardb/slice.h"
-#include "table/block_builder.h"
 
 #include <cassert>
+
+#include "table/block_builder.h"
+#include "vidardb/options.h"
+#include "vidardb/slice.h"
 
 namespace vidardb {
 
@@ -26,14 +27,12 @@ class FlushBlockBySizePolicy : public FlushBlockPolicy {
   //                               reaches the configured
   FlushBlockBySizePolicy(const uint64_t block_size,
                          const uint64_t block_size_deviation,
-                         const BlockBuilder& data_block_builder) :
-      block_size_(block_size),
-      block_size_deviation_(block_size_deviation),
-      data_block_builder_(data_block_builder) {
-  }
+                         const BlockBuilder& data_block_builder)
+      : block_size_(block_size),
+        block_size_deviation_(block_size_deviation),
+        data_block_builder_(data_block_builder) {}
 
-  virtual bool Update(const Slice& key,
-                      const Slice& value) override {
+  virtual bool Update(const Slice& key, const Slice& value) override {
     // it makes no sense to flush when the data block is empty
     if (data_block_builder_.empty()) {
       return false;
@@ -53,12 +52,10 @@ class FlushBlockBySizePolicy : public FlushBlockPolicy {
   bool BlockAlmostFull(const Slice& key, const Slice& value) const {
     const auto curr_size = data_block_builder_.CurrentSizeEstimate();
     const auto estimated_size_after =
-      data_block_builder_.EstimateSizeAfterKV(key, value);
+        data_block_builder_.EstimateSizeAfterKV(key, value);
 
-    return
-      estimated_size_after > block_size_ &&
-      block_size_deviation_ > 0 &&
-      curr_size * 100 > block_size_ * (100 - block_size_deviation_);
+    return estimated_size_after > block_size_ && block_size_deviation_ > 0 &&
+           curr_size * 100 > block_size_ * (100 - block_size_deviation_);
   }
 
   const uint64_t block_size_;
@@ -69,18 +66,18 @@ class FlushBlockBySizePolicy : public FlushBlockPolicy {
 FlushBlockPolicy* FlushBlockBySizePolicyFactory::NewFlushBlockPolicy(
     const BlockBasedTableOptions& table_options,
     const BlockBuilder& data_block_builder) const {
-  return new FlushBlockBySizePolicy(
-      table_options.block_size, table_options.block_size_deviation,
-      data_block_builder);
+  return new FlushBlockBySizePolicy(table_options.block_size,
+                                    table_options.block_size_deviation,
+                                    data_block_builder);
 }
 
 /***************************** Shichao ******************************/
 FlushBlockPolicy* FlushBlockBySizePolicyFactory::NewFlushBlockPolicy(
     const ColumnTableOptions& table_options,
     const BlockBuilder& data_block_builder) const {
-  return new FlushBlockBySizePolicy(
-      table_options.block_size, table_options.block_size_deviation,
-      data_block_builder);
+  return new FlushBlockBySizePolicy(table_options.block_size,
+                                    table_options.block_size_deviation,
+                                    data_block_builder);
 }
 /***************************** Shichao ******************************/
 

@@ -6,11 +6,11 @@
 // This file defines a collection of statistics collectors.
 #pragma once
 
-#include "vidardb/table_properties.h"
-
 #include <memory>
 #include <string>
 #include <vector>
+
+#include "vidardb/table_properties.h"
 
 namespace vidardb {
 

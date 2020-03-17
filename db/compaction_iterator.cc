@@ -11,6 +11,7 @@
 //  of patent rights can be found in the PATENTS file in the same directory.
 
 #include "db/compaction_iterator.h"
+
 #include "table/internal_iterator.h"
 
 namespace vidardb {
@@ -62,12 +63,12 @@ void CompactionIterator::SeekToFirst() {
 void CompactionIterator::Next() {
   // If there is a merge output, return it before continuing to process the
   // input.
-    // Only advance the input iterator if there is no merge output and the
-    // iterator is not already at the next record.
-    if (!at_next_) {
-      input_->Next();
-    }
-    NextFromInput();
+  // Only advance the input iterator if there is no merge output and the
+  // iterator is not already at the next record.
+  if (!at_next_) {
+    input_->Next();
+  }
+  NextFromInput();
 
   if (valid_) {
     // Record that we've ouputted a record for the current key.
@@ -143,8 +144,9 @@ void CompactionIterator::NextFromInput() {
     SequenceNumber last_snapshot = current_user_key_snapshot_;
     SequenceNumber prev_snapshot = 0;  // 0 means no previous snapshot
     current_user_key_snapshot_ =
-        visible_at_tip_ ? visible_at_tip_ : findEarliestVisibleSnapshot(
-                                                ikey_.sequence, &prev_snapshot);
+        visible_at_tip_
+            ? visible_at_tip_
+            : findEarliestVisibleSnapshot(ikey_.sequence, &prev_snapshot);
 
     if (clear_and_output_next_key_) {
       // In the previous iteration we encountered a single delete that we could

@@ -3,11 +3,12 @@
 // LICENSE file in the root directory of this source tree. An additional grant
 // of patent rights can be found in the PATENTS file in the same directory.
 #include <cstdio>
-#include <string>
 #include <iostream>
+#include <string>
+
 #include "vidardb/db.h"
-#include "vidardb/slice.h"
 #include "vidardb/options.h"
+#include "vidardb/slice.h"
 using namespace std;
 using namespace vidardb;
 
@@ -51,8 +52,9 @@ int main() {
 
   Iterator* iter = db->NewIterator(ReadOptions());
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-      cout << "key:" << iter->key().ToString()
-           << " value:" << iter->value().ToString() << endl;;
+    cout << "key:" << iter->key().ToString()
+         << " value:" << iter->value().ToString() << endl;
+    ;
   }
   delete iter;
 

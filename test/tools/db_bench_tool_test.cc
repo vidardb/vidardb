@@ -8,6 +8,7 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #include "vidardb/db_bench_tool.h"
+
 #include "util/options_parser.h"
 #include "util/random.h"
 #include "util/testharness.h"

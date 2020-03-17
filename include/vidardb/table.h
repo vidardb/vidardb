@@ -23,8 +23,8 @@
 #include "vidardb/immutable_options.h"
 #include "vidardb/iterator.h"
 #include "vidardb/options.h"
-#include "vidardb/status.h"
 #include "vidardb/splitter.h"
+#include "vidardb/status.h"
 
 namespace vidardb {
 
@@ -137,7 +137,8 @@ struct ColumnTableOptions {
 // Create default column table factory.
 extern TableFactory* NewColumnTableFactory(
     const ColumnTableOptions& table_options = ColumnTableOptions());
-/*********************************  Shichao  ************************************/
+/*********************************  Shichao
+ * ************************************/
 
 class RandomAccessFileReader;
 
@@ -204,9 +205,8 @@ class TableFactory {
   //
   // If the function cannot find a way to sanitize the input DB Options,
   // a non-ok Status will be returned.
-  virtual Status SanitizeOptions(
-      const DBOptions& db_opts,
-      const ColumnFamilyOptions& cf_opts) const = 0;
+  virtual Status SanitizeOptions(const DBOptions& db_opts,
+                                 const ColumnFamilyOptions& cf_opts) const = 0;
 
   // Return a string that contains printable format of table configurations.
   // VidarDB prints configurations at DB Open().
@@ -236,8 +236,9 @@ class TableFactory {
 // @table_factory_to_write: the table factory used when writing to new files.
 // @block_based_table_factory:  block based table factory to use. If NULL, use
 //                              a default one.
-// @column_table_factory: column table factory to use. If NULL, use a default one.
-// @knob: starting from which level to use column table factory. Default value 
+// @column_table_factory: column table factory to use. If NULL, use a default
+// one.
+// @knob: starting from which level to use column table factory. Default value
 //        is -1 which means using the default @table_factory_to_write.
 extern TableFactory* NewAdaptiveTableFactory(
     std::shared_ptr<TableFactory> table_factory_to_write = nullptr,

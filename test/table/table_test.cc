@@ -18,16 +18,9 @@
 #include <vector>
 
 #include "db/dbformat.h"
-#include "memtable/memtable.h"
 #include "db/write_batch_internal.h"
 #include "db/writebuffer.h"
-#include "vidardb/cache.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
-#include "vidardb/iterator.h"
-#include "vidardb/memtablerep.h"
-#include "vidardb/perf_context.h"
-#include "vidardb/statistics.h"
+#include "memtable/memtable.h"
 #include "table/block.h"
 #include "table/block_based_table_builder.h"
 #include "table/block_based_table_factory.h"
@@ -44,6 +37,13 @@
 #include "util/string_util.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
+#include "vidardb/cache.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/iterator.h"
+#include "vidardb/memtablerep.h"
+#include "vidardb/perf_context.h"
+#include "vidardb/statistics.h"
 
 namespace vidardb {
 
@@ -142,7 +142,7 @@ class Constructor {
  public:
   explicit Constructor(const Comparator* cmp)
       : data_(stl_wrappers::LessOfComparator(cmp)) {}
-  virtual ~Constructor() { }
+  virtual ~Constructor() {}
 
   void Add(const std::string& key, const Slice& value) {
     data_[key] = value.ToString();
@@ -162,8 +162,8 @@ class Constructor {
       keys->push_back(kv.first);
     }
     data_.clear();
-    Status s = FinishImpl(options, ioptions, table_options,
-                          internal_comparator, *kvmap);
+    Status s = FinishImpl(options, ioptions, table_options, internal_comparator,
+                          *kvmap);
     ASSERT_TRUE(s.ok()) << s.ToString();
   }
 
@@ -191,15 +191,11 @@ class Constructor {
   stl_wrappers::KVMap data_;
 };
 
-class BlockConstructor: public Constructor {
+class BlockConstructor : public Constructor {
  public:
   explicit BlockConstructor(const Comparator* cmp)
-      : Constructor(cmp),
-        comparator_(cmp),
-        block_(nullptr) { }
-  ~BlockConstructor() {
-    delete block_;
-  }
+      : Constructor(cmp), comparator_(cmp), block_(nullptr) {}
+  ~BlockConstructor() { delete block_; }
   virtual Status FinishImpl(const Options& options,
                             const ImmutableCFOptions& ioptions,
                             const BlockBasedTableOptions& table_options,
@@ -282,12 +278,11 @@ class KeyConvertingIterator : public InternalIterator {
   void operator=(const KeyConvertingIterator&);
 };
 
-class TableConstructor: public Constructor {
+class TableConstructor : public Constructor {
  public:
   explicit TableConstructor(const Comparator* cmp,
                             bool convert_to_internal_key = false)
-      : Constructor(cmp),
-        convert_to_internal_key_(convert_to_internal_key) {}
+      : Constructor(cmp), convert_to_internal_key_(convert_to_internal_key) {}
   ~TableConstructor() { Reset(); }
 
   virtual Status FinishImpl(const Options& options,
@@ -303,11 +298,10 @@ class TableConstructor: public Constructor {
         int_tbl_prop_collector_factories;
     std::string column_family_name;
     builder.reset(ioptions.table_factory->NewTableBuilder(
-        TableBuilderOptions(ioptions, internal_comparator,
-                            &int_tbl_prop_collector_factories,
-                            options.compression, CompressionOptions(),
-                            nullptr /* compression_dict */, column_family_name,
-                            EnvOptions()),
+        TableBuilderOptions(
+            ioptions, internal_comparator, &int_tbl_prop_collector_factories,
+            options.compression, CompressionOptions(),
+            nullptr /* compression_dict */, column_family_name, EnvOptions()),
         TablePropertiesCollectorFactory::Context::kUnknownColumnFamily,
         file_writer_.get()));
 
@@ -359,9 +353,7 @@ class TableConstructor: public Constructor {
         std::move(file_reader_), GetSink()->contents().size(), &table_reader_);
   }
 
-  virtual TableReader* GetTableReader() {
-    return table_reader_.get();
-  }
+  virtual TableReader* GetTableReader() { return table_reader_.get(); }
 
   virtual bool AnywayDeleteIterator() const override {
     return convert_to_internal_key_;
@@ -394,7 +386,7 @@ class TableConstructor: public Constructor {
 };
 uint64_t TableConstructor::cur_uniq_id_ = 1;
 
-class MemTableConstructor: public Constructor {
+class MemTableConstructor : public Constructor {
  public:
   explicit MemTableConstructor(const Comparator* cmp, WriteBuffer* wb)
       : Constructor(cmp),
@@ -408,9 +400,7 @@ class MemTableConstructor: public Constructor {
                              kMaxSequenceNumber);
     memtable_->Ref();
   }
-  ~MemTableConstructor() {
-    delete memtable_->Unref();
-  }
+  ~MemTableConstructor() { delete memtable_->Unref(); }
   virtual Status FinishImpl(const Options&, const ImmutableCFOptions& ioptions,
                             const BlockBasedTableOptions& table_options,
                             const InternalKeyComparator& internal_comparator,
@@ -463,17 +453,14 @@ class InternalIteratorFromIterator : public InternalIterator {
   unique_ptr<Iterator> it_;
 };
 
-class DBConstructor: public Constructor {
+class DBConstructor : public Constructor {
  public:
   explicit DBConstructor(const Comparator* cmp)
-      : Constructor(cmp),
-        comparator_(cmp) {
+      : Constructor(cmp), comparator_(cmp) {
     db_ = nullptr;
     NewDB();
   }
-  ~DBConstructor() {
-    delete db_;
-  }
+  ~DBConstructor() { delete db_; }
   virtual Status FinishImpl(const Options& options,
                             const ImmutableCFOptions& ioptions,
                             const BlockBasedTableOptions& table_options,
@@ -516,12 +503,7 @@ class DBConstructor: public Constructor {
   DB* db_;
 };
 
-enum TestType {
-  BLOCK_BASED_TABLE_TEST,
-  BLOCK_TEST,
-  MEMTABLE_TEST,
-  DB_TEST
-};
+enum TestType { BLOCK_BASED_TABLE_TEST, BLOCK_TEST, MEMTABLE_TEST, DB_TEST };
 
 struct TestArgs {
   TestType type;
@@ -533,10 +515,8 @@ struct TestArgs {
 
 static std::vector<TestArgs> GenerateArgList() {
   std::vector<TestArgs> test_args;
-  std::vector<TestType> test_types = {
-      BLOCK_BASED_TABLE_TEST,
-      BLOCK_TEST,
-      MEMTABLE_TEST, DB_TEST};
+  std::vector<TestType> test_types = {BLOCK_BASED_TABLE_TEST, BLOCK_TEST,
+                                      MEMTABLE_TEST, DB_TEST};
   std::vector<bool> reverse_compare_types = {false, true};
   std::vector<int> restart_intervals = {16, 1, 1024};
 
@@ -632,8 +612,8 @@ class HarnessTest : public testing::Test {
         table_options_.block_size = 256;
         options_.table_factory.reset(
             new BlockBasedTableFactory(table_options_));
-        constructor_ = new MemTableConstructor(options_.comparator,
-                                               &write_buffer_);
+        constructor_ =
+            new MemTableConstructor(options_.comparator, &write_buffer_);
         break;
       case DB_TEST:
         table_options_.block_size = 256;
@@ -731,8 +711,8 @@ class HarnessTest : public testing::Test {
         case 2: {
           std::string key = PickRandomKey(rnd, keys);
           model_iter = data.lower_bound(key);
-          if (kVerbose) fprintf(stderr, "Seek '%s'\n",
-                                EscapeString(key).c_str());
+          if (kVerbose)
+            fprintf(stderr, "Seek '%s'\n", EscapeString(key).c_str());
           iter->Seek(Slice(key));
           ASSERT_EQ(ToString(data, model_iter), ToString(iter));
           break;
@@ -743,7 +723,7 @@ class HarnessTest : public testing::Test {
             if (kVerbose) fprintf(stderr, "Prev\n");
             iter->Prev();
             if (model_iter == data.begin()) {
-              model_iter = data.end();   // Wrap around to invalid value
+              model_iter = data.end();  // Wrap around to invalid value
             } else {
               --model_iter;
             }
@@ -837,8 +817,7 @@ static bool Between(uint64_t val, uint64_t low, uint64_t high) {
   bool result = (val >= low) && (val <= high);
   if (!result) {
     fprintf(stderr, "Value %llu is not in range [%llu, %llu]\n",
-            (unsigned long long)(val),
-            (unsigned long long)(low),
+            (unsigned long long)(val), (unsigned long long)(low),
             (unsigned long long)(high));
   }
   return result;
@@ -868,22 +847,18 @@ class TablePropertyTest : public testing::Test {};
 // This test serves as the living tutorial for the prefix scan of user collected
 // properties.
 TEST_F(TablePropertyTest, PrefixScanTest) {
-  UserCollectedProperties props{{"num.111.1", "1"},
-                                {"num.111.2", "2"},
-                                {"num.111.3", "3"},
-                                {"num.333.1", "1"},
-                                {"num.333.2", "2"},
-                                {"num.333.3", "3"},
-                                {"num.555.1", "1"},
-                                {"num.555.2", "2"},
-                                {"num.555.3", "3"}, };
+  UserCollectedProperties props{
+      {"num.111.1", "1"}, {"num.111.2", "2"}, {"num.111.3", "3"},
+      {"num.333.1", "1"}, {"num.333.2", "2"}, {"num.333.3", "3"},
+      {"num.555.1", "1"}, {"num.555.2", "2"}, {"num.555.3", "3"},
+  };
 
   // prefixes that exist
   for (const std::string& prefix : {"num.111", "num.333", "num.555"}) {
     int num = 0;
     for (auto pos = props.lower_bound(prefix);
          pos != props.end() &&
-             pos->first.compare(0, prefix.size(), prefix) == 0;
+         pos->first.compare(0, prefix.size(), prefix) == 0;
          ++pos) {
       ++num;
       auto key = prefix + "." + ToString(num);
@@ -1077,50 +1052,32 @@ TEST_F(BlockBasedTableTest, PrefetchTest) {
   // [ k05         ]    k05
   // [ k06 k07     ]    k07
 
-
   // Simple
   PrefetchRange(&c, &opt, &table_options, keys,
-                /*key_range=*/ "k01", "k05",
-                /*keys_in_cache=*/ {"k01", "k02", "k03", "k04", "k05"},
-                /*keys_not_in_cache=*/ {"k06", "k07"});
-  PrefetchRange(&c, &opt, &table_options, keys,
-                "k01", "k01",
-                {"k01", "k02", "k03"},
-                {"k04", "k05", "k06", "k07"});
+                /*key_range=*/"k01", "k05",
+                /*keys_in_cache=*/{"k01", "k02", "k03", "k04", "k05"},
+                /*keys_not_in_cache=*/{"k06", "k07"});
+  PrefetchRange(&c, &opt, &table_options, keys, "k01", "k01",
+                {"k01", "k02", "k03"}, {"k04", "k05", "k06", "k07"});
   // odd
-  PrefetchRange(&c, &opt, &table_options, keys,
-                "a", "z",
-                {"k01", "k02", "k03", "k04", "k05", "k06", "k07"},
-                {});
-  PrefetchRange(&c, &opt, &table_options, keys,
-                "k00", "k00",
-                {"k01", "k02", "k03"},
-                {"k04", "k05", "k06", "k07"});
+  PrefetchRange(&c, &opt, &table_options, keys, "a", "z",
+                {"k01", "k02", "k03", "k04", "k05", "k06", "k07"}, {});
+  PrefetchRange(&c, &opt, &table_options, keys, "k00", "k00",
+                {"k01", "k02", "k03"}, {"k04", "k05", "k06", "k07"});
   // Edge cases
-  PrefetchRange(&c, &opt, &table_options, keys,
-                "k00", "k06",
-                {"k01", "k02", "k03", "k04", "k05", "k06", "k07"},
-                {});
-  PrefetchRange(&c, &opt, &table_options, keys,
-                "k00", "zzz",
-                {"k01", "k02", "k03", "k04", "k05", "k06", "k07"},
-                {});
+  PrefetchRange(&c, &opt, &table_options, keys, "k00", "k06",
+                {"k01", "k02", "k03", "k04", "k05", "k06", "k07"}, {});
+  PrefetchRange(&c, &opt, &table_options, keys, "k00", "zzz",
+                {"k01", "k02", "k03", "k04", "k05", "k06", "k07"}, {});
   // null keys
-  PrefetchRange(&c, &opt, &table_options, keys,
-                nullptr, nullptr,
-                {"k01", "k02", "k03", "k04", "k05", "k06", "k07"},
-                {});
-  PrefetchRange(&c, &opt, &table_options, keys,
-                "k04", nullptr,
-                {"k04", "k05", "k06", "k07"},
-                {"k01", "k02", "k03"});
-  PrefetchRange(&c, &opt, &table_options, keys,
-                nullptr, "k05",
-                {"k01", "k02", "k03", "k04", "k05"},
-                {"k06", "k07"});
+  PrefetchRange(&c, &opt, &table_options, keys, nullptr, nullptr,
+                {"k01", "k02", "k03", "k04", "k05", "k06", "k07"}, {});
+  PrefetchRange(&c, &opt, &table_options, keys, "k04", nullptr,
+                {"k04", "k05", "k06", "k07"}, {"k01", "k02", "k03"});
+  PrefetchRange(&c, &opt, &table_options, keys, nullptr, "k05",
+                {"k01", "k02", "k03", "k04", "k05"}, {"k06", "k07"});
   // invalid
-  PrefetchRange(&c, &opt, &table_options, keys,
-                "k06", "k00", {}, {},
+  PrefetchRange(&c, &opt, &table_options, keys, "k06", "k00", {}, {},
                 Status::InvalidArgument(Slice("k06 "), Slice("k07")));
   c.ResetTableReader();
 }
@@ -1652,9 +1609,9 @@ TEST_F(BlockBasedTableTest, BlockReadCountTest) {
       internal_key = InternalKey(user_key, 0, kTypeValue);
       encoded_key = internal_key.Encode().ToString();
 
-      get_context = GetContext(options.comparator, nullptr, nullptr,
-                               GetContext::kNotFound, user_key, &value, nullptr,
-                               nullptr);
+      get_context =
+          GetContext(options.comparator, nullptr, nullptr,
+                     GetContext::kNotFound, user_key, &value, nullptr, nullptr);
       perf_context.Reset();
       ASSERT_OK(reader->Get(ReadOptions(), encoded_key, &get_context));
       ASSERT_EQ(get_context.State(), GetContext::kNotFound);
@@ -1750,20 +1707,20 @@ TEST_F(GeneralTableTest, ApproximateOffsetOfPlain) {
   BlockBasedTableOptions table_options;
   table_options.block_size = 1024;
   const ImmutableCFOptions ioptions(options);
-  c.Finish(options, ioptions, table_options, internal_comparator,
-           &keys, &kvmap);
+  c.Finish(options, ioptions, table_options, internal_comparator, &keys,
+           &kvmap);
 
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("abc"),       0,      0));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k01"),       0,      0));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k01a"),      0,      0));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k02"),       0,      0));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k03"),       0,      0));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k04"),   10000,  11000));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("abc"), 0, 0));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k01"), 0, 0));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k01a"), 0, 0));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k02"), 0, 0));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k03"), 0, 0));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k04"), 10000, 11000));
   ASSERT_TRUE(Between(c.ApproximateOffsetOf("k04a"), 210000, 211000));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k05"),  210000, 211000));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k06"),  510000, 511000));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k07"),  510000, 511000));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("xyz"),  610000, 612000));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k05"), 210000, 211000));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k06"), 510000, 511000));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k07"), 510000, 511000));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("xyz"), 610000, 612000));
   c.ResetTableReader();
 }
 
@@ -1785,12 +1742,12 @@ static void DoCompressionTest(CompressionType comp) {
   const ImmutableCFOptions ioptions(options);
   c.Finish(options, ioptions, table_options, ikc, &keys, &kvmap);
 
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("abc"),       0,      0));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k01"),       0,      0));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k02"),       0,      0));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k03"),    2000,   3000));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k04"),    2000,   3000));
-  ASSERT_TRUE(Between(c.ApproximateOffsetOf("xyz"),    4000,   6100));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("abc"), 0, 0));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k01"), 0, 0));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k02"), 0, 0));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k03"), 2000, 3000));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("k04"), 2000, 3000));
+  ASSERT_TRUE(Between(c.ApproximateOffsetOf("xyz"), 4000, 6100));
   c.ResetTableReader();
 }
 
@@ -1826,8 +1783,7 @@ TEST_F(GeneralTableTest, ApproximateOffsetOfCompressed) {
 
   if (!XPRESS_Supported()) {
     fprintf(stderr, "skipping xpress and xpress compression tests\n");
-  }
-  else {
+  } else {
     compression_state.push_back(kXpressCompression);
   }
 
@@ -1910,8 +1866,7 @@ TEST_F(MemTableTest, Simple) {
   ScopedArenaIterator iter(memtable->NewIterator(ReadOptions(), &arena));
   iter->SeekToFirst();
   while (iter->Valid()) {
-    fprintf(stderr, "key: '%s' -> '%s'\n",
-            iter->key().ToString().c_str(),
+    fprintf(stderr, "key: '%s' -> '%s'\n", iter->key().ToString().c_str(),
             iter->value().ToString().c_str());
     iter->Next();
   }
@@ -2043,7 +1998,6 @@ TEST_P(IndexBlockRestartIntervalTest, IndexBlockRestartInterval) {
   ASSERT_EQ(kv_iter, kvmap.end());
   c.ResetTableReader();
 }
-
 
 }  // namespace vidardb
 

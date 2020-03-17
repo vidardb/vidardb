@@ -19,6 +19,7 @@
 #endif
 
 #include <inttypes.h>
+
 #include <limits>
 #include <queue>
 #include <string>
@@ -1158,9 +1159,10 @@ void UniversalCompactionPicker::SortedRun::Dump(char* out_buf,
     if (file->fd.GetPathId() == 0 || !print_path) {
       snprintf(out_buf, out_buf_size, "file %" PRIu64, file->fd.GetNumber());
     } else {
-      snprintf(out_buf, out_buf_size, "file %" PRIu64
-                                      "(path "
-                                      "%" PRIu32 ")",
+      snprintf(out_buf, out_buf_size,
+               "file %" PRIu64
+               "(path "
+               "%" PRIu32 ")",
                file->fd.GetNumber(), file->fd.GetPathId());
     }
   } else {
@@ -1811,8 +1813,9 @@ Compaction* FIFOCompactionPicker::PickCompaction(
     inputs[0].files.push_back(f);
     char tmp_fsize[16];
     AppendHumanBytes(f->fd.GetFileSize(), tmp_fsize, sizeof(tmp_fsize));
-    LogToBuffer(log_buffer, "[%s] FIFO compaction: picking file %" PRIu64
-                            " with size %s for deletion",
+    LogToBuffer(log_buffer,
+                "[%s] FIFO compaction: picking file %" PRIu64
+                " with size %s for deletion",
                 cf_name.c_str(), f->fd.GetNumber(), tmp_fsize);
     if (total_size <= ioptions_.compaction_options_fifo.max_table_files_size) {
       break;

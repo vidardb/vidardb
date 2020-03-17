@@ -5,9 +5,9 @@
 
 #include <atomic>
 
-#include "vidardb/env.h"
 #include "util/thread_status_updater.h"
 #include "util/thread_status_util.h"
+#include "vidardb/env.h"
 
 namespace vidardb {
 
@@ -15,8 +15,8 @@ namespace vidardb {
 // the delay for debugging purpose.
 static std::atomic<int> states_delay[ThreadStatus::NUM_STATE_TYPES];
 
-void ThreadStatusUtil::TEST_SetStateDelay(
-    const ThreadStatus::StateType state, int micro) {
+void ThreadStatusUtil::TEST_SetStateDelay(const ThreadStatus::StateType state,
+                                          int micro) {
   states_delay[state].store(micro, std::memory_order_relaxed);
 }
 

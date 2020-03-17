@@ -5,16 +5,15 @@
 
 #include <mutex>
 
-#include "util/thread_status_updater.h"
 #include "db/column_family.h"
+#include "util/thread_status_updater.h"
 
 namespace vidardb {
 
 #ifndef NDEBUG
 #ifdef VIDARDB_USING_THREAD_STATUS
 void ThreadStatusUpdater::TEST_VerifyColumnFamilyInfoMap(
-    const std::vector<ColumnFamilyHandle*>& handles,
-    bool check_exist) {
+    const std::vector<ColumnFamilyHandle*>& handles, bool check_exist) {
   std::unique_lock<std::mutex> lock(thread_list_mutex_);
   if (check_exist) {
     assert(cf_info_map_.size() == handles.size());
@@ -35,12 +34,9 @@ void ThreadStatusUpdater::TEST_VerifyColumnFamilyInfoMap(
 #else
 
 void ThreadStatusUpdater::TEST_VerifyColumnFamilyInfoMap(
-    const std::vector<ColumnFamilyHandle*>& handles,
-    bool check_exist) {
-}
+    const std::vector<ColumnFamilyHandle*>& handles, bool check_exist) {}
 
 #endif  // VIDARDB_USING_THREAD_STATUS
 #endif  // !NDEBUG
-
 
 }  // namespace vidardb

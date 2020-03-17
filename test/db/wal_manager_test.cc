@@ -5,24 +5,24 @@
 
 #ifndef VIDARDB_LITE
 
+#include "db/wal_manager.h"
+
 #include <map>
 #include <string>
 
-#include "vidardb/cache.h"
-#include "vidardb/write_batch.h"
-
-#include "db/wal_manager.h"
-#include "db/log_writer.h"
 #include "db/column_family.h"
+#include "db/db_impl.h"
+#include "db/log_writer.h"
 #include "db/version_set.h"
 #include "db/writebuffer.h"
+#include "table/mock_table.h"
 #include "util/file_reader_writer.h"
 #include "util/mock_env.h"
 #include "util/string_util.h"
 #include "util/testharness.h"
 #include "util/testutil.h"
-#include "table/mock_table.h"
-#include "db/db_impl.h"
+#include "vidardb/cache.h"
+#include "vidardb/write_batch.h"
 
 namespace vidardb {
 
@@ -61,7 +61,7 @@ class WalManagerTest : public testing::Test {
   // NOT thread safe
   void Put(const std::string& key, const std::string& value) {
     assert(current_log_writer_.get() != nullptr);
-    uint64_t seq =  versions_->LastSequence() + 1;
+    uint64_t seq = versions_->LastSequence() + 1;
     WriteBatch batch;
     batch.Put(key, value);
     WriteBatchInternal::SetSequence(&batch, seq);
@@ -77,7 +77,8 @@ class WalManagerTest : public testing::Test {
     ASSERT_OK(env_->NewWritableFile(fname, &file, env_options_));
     unique_ptr<WritableFileWriter> file_writer(
         new WritableFileWriter(std::move(file), env_options_));
-    current_log_writer_.reset(new log::Writer(std::move(file_writer), 0, false));
+    current_log_writer_.reset(
+        new log::Writer(std::move(file_writer), 0, false));
   }
 
   void CreateArchiveLogs(int num_logs, int entries_per_log) {
@@ -128,7 +129,7 @@ TEST_F(WalManagerTest, ReadFirstRecordCache) {
   unique_ptr<WritableFileWriter> file_writer(
       new WritableFileWriter(std::move(file), EnvOptions()));
   log::Writer writer(std::move(file_writer), 1,
-		     db_options_.recycle_log_file_num > 0);
+                     db_options_.recycle_log_file_num > 0);
   WriteBatch batch;
   batch.Put("foo", "bar");
   WriteBatchInternal::SetSequence(&batch, 10);

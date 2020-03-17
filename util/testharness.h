@@ -12,6 +12,7 @@
 #include <gtest/gtest.h>
 
 #include <string>
+
 #include "vidardb/env.h"
 
 namespace vidardb {

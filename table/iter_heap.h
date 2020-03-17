@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include "vidardb/comparator.h"
 #include "table/iterator_wrapper.h"
+#include "vidardb/comparator.h"
 
 namespace vidardb {
 
@@ -15,12 +15,13 @@ namespace vidardb {
 // iterator with the max/largest key on top.
 class MaxIteratorComparator {
  public:
-  MaxIteratorComparator(const Comparator* comparator) :
-    comparator_(comparator) {}
+  MaxIteratorComparator(const Comparator* comparator)
+      : comparator_(comparator) {}
 
   bool operator()(IteratorWrapper* a, IteratorWrapper* b) const {
     return comparator_->Compare(a->key(), b->key()) < 0;
   }
+
  private:
   const Comparator* comparator_;
 };
@@ -29,12 +30,13 @@ class MaxIteratorComparator {
 // iterator with the min/smallest key on top.
 class MinIteratorComparator {
  public:
-  MinIteratorComparator(const Comparator* comparator) :
-    comparator_(comparator) {}
+  MinIteratorComparator(const Comparator* comparator)
+      : comparator_(comparator) {}
 
   bool operator()(IteratorWrapper* a, IteratorWrapper* b) const {
     return comparator_->Compare(a->key(), b->key()) > 0;
   }
+
  private:
   const Comparator* comparator_;
 };

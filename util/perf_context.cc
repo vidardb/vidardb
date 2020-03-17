@@ -5,16 +5,17 @@
 //
 
 #include <sstream>
+
 #include "util/perf_context_imp.h"
 
 namespace vidardb {
 
 #if defined(NPERF_CONTEXT) || defined(IOS_CROSS_COMPILE)
-  PerfContext perf_context;
+PerfContext perf_context;
 #elif _WIN32
-  __declspec(thread) PerfContext perf_context;
+__declspec(thread) PerfContext perf_context;
 #else
-  __thread PerfContext perf_context;
+__thread PerfContext perf_context;
 #endif
 
 void PerfContext::Reset() {
@@ -113,4 +114,4 @@ std::string PerfContext::ToString(bool exclude_zero_counters) const {
 #endif
 }
 
-}
+}  // namespace vidardb

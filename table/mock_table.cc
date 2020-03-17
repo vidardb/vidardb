@@ -9,10 +9,10 @@
 
 #include "db/dbformat.h"
 #include "port/port.h"
-#include "vidardb/table_properties.h"
 #include "table/get_context.h"
 #include "util/coding.h"
 #include "util/file_reader_writer.h"
+#include "vidardb/table_properties.h"
 
 namespace vidardb {
 namespace mock {

@@ -7,6 +7,7 @@
 
 #include <assert.h>
 #include <stdint.h>
+
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -14,10 +15,10 @@
 #include <type_traits>
 #include <vector>
 
+#include "util/instrumented_mutex.h"
 #include "vidardb/status.h"
 #include "vidardb/types.h"
 #include "vidardb/write_batch.h"
-#include "util/instrumented_mutex.h"
 
 namespace vidardb {
 
@@ -125,13 +126,9 @@ class WriteThread {
     }
 
     // returns the aggregate status of this Writer
-    Status FinalStatus() {
-      return status;
-    }
+    Status FinalStatus() { return status; }
 
-    bool ShouldWriteToMemtable() {
-      return !disable_memtable;
-    }
+    bool ShouldWriteToMemtable() { return !disable_memtable; }
 
     bool ShouldWriteToWAL() { return !disableWAL; }
 
@@ -145,7 +142,7 @@ class WriteThread {
     std::condition_variable& StateCV() {
       assert(made_waitable);
       return *static_cast<std::condition_variable*>(
-                 static_cast<void*>(&state_cv_bytes));
+          static_cast<void*>(&state_cv_bytes));
     }
   };
 

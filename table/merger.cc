@@ -12,9 +12,6 @@
 #include <vector>
 
 #include "db/pinned_iterators_manager.h"
-#include "vidardb/comparator.h"
-#include "vidardb/iterator.h"
-#include "vidardb/options.h"
 #include "table/internal_iterator.h"
 #include "table/iter_heap.h"
 #include "table/iterator_wrapper.h"
@@ -23,6 +20,9 @@
 #include "util/perf_context_imp.h"
 #include "util/stop_watch.h"
 #include "util/sync_point.h"
+#include "vidardb/comparator.h"
+#include "vidardb/iterator.h"
+#include "vidardb/options.h"
 
 namespace vidardb {
 // Without anonymous namespace here, we fail the warning -Wmissing-prototypes
@@ -272,10 +272,7 @@ class MergingIterator : public InternalIterator {
   // depending on the direction.
   IteratorWrapper* current_;
   // Which direction is the iterator moving?
-  enum Direction {
-    kForward,
-    kReverse
-  };
+  enum Direction { kForward, kReverse };
   Direction direction_;
   MergerMinIterHeap minHeap_;
   // Max heap is used for reverse iteration, which is way less common than
@@ -329,7 +326,6 @@ InternalIterator* NewMergingIterator(const Comparator* cmp,
 MergeIteratorBuilder::MergeIteratorBuilder(const Comparator* comparator,
                                            Arena* a)
     : first_iter(nullptr), use_merging_iter(false), arena(a) {
-
   auto mem = arena->AllocateAligned(sizeof(MergingIterator));
   merge_iter = new (mem) MergingIterator(comparator, nullptr, 0, true);
 }

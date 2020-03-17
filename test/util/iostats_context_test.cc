@@ -4,6 +4,7 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 
 #include "vidardb/iostats_context.h"
+
 #include "util/testharness.h"
 
 namespace vidardb {

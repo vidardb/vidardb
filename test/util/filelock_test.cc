@@ -3,12 +3,12 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 //
-#include "vidardb/status.h"
-#include "vidardb/env.h"
-
 #include <vector>
+
 #include "util/coding.h"
 #include "util/testharness.h"
+#include "vidardb/env.h"
+#include "vidardb/status.h"
 
 namespace vidardb {
 
@@ -18,21 +18,17 @@ class LockTest : public testing::Test {
   std::string file_;
   vidardb::Env* env_;
 
-  LockTest() : file_(test::TmpDir() + "/db_testlock_file"),
-               env_(vidardb::Env::Default()) {
+  LockTest()
+      : file_(test::TmpDir() + "/db_testlock_file"),
+        env_(vidardb::Env::Default()) {
     current_ = this;
   }
 
-  ~LockTest() {
-  }
+  ~LockTest() {}
 
-  Status LockFile(FileLock** db_lock) {
-    return env_->LockFile(file_, db_lock);
-  }
+  Status LockFile(FileLock** db_lock) { return env_->LockFile(file_, db_lock); }
 
-  Status UnlockFile(FileLock* db_lock) {
-    return env_->UnlockFile(db_lock);
-  }
+  Status UnlockFile(FileLock* db_lock) { return env_->UnlockFile(db_lock); }
 };
 LockTest* LockTest::current_;
 
@@ -48,7 +44,6 @@ TEST_F(LockTest, LockBySameThread) {
 
   // release the lock
   ASSERT_OK(UnlockFile(lock1));
-
 }
 
 }  // namespace vidardb

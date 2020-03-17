@@ -8,6 +8,7 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #include "vidardb/iterator.h"
+
 #include "table/internal_iterator.h"
 #include "table/iterator_wrapper.h"
 #include "util/arena.h"
@@ -22,7 +23,7 @@ Cleanable::Cleanable() {
 Cleanable::~Cleanable() {
   if (cleanup_.function != nullptr) {
     (*cleanup_.function)(cleanup_.arg1, cleanup_.arg2);
-    for (Cleanup* c = cleanup_.next; c != nullptr; ) {
+    for (Cleanup* c = cleanup_.next; c != nullptr;) {
       (*c->function)(c->arg1, c->arg2);
       Cleanup* next = c->next;
       delete c;
@@ -60,7 +61,7 @@ Status Iterator::GetProperty(std::string prop_name, std::string* prop) {
 namespace {
 class EmptyIterator : public Iterator {
  public:
-  explicit EmptyIterator(const Status& s) : status_(s) { }
+  explicit EmptyIterator(const Status& s) : status_(s) {}
   virtual bool Valid() const override { return false; }
   virtual void Seek(const Slice& target) override {}
   virtual void SeekToFirst() override {}
@@ -105,9 +106,7 @@ class EmptyInternalIterator : public InternalIterator {
 };
 }  // namespace
 
-Iterator* NewEmptyIterator() {
-  return new EmptyIterator(Status::OK());
-}
+Iterator* NewEmptyIterator() { return new EmptyIterator(Status::OK()); }
 
 Iterator* NewErrorIterator(const Status& status) {
   return new EmptyIterator(status);

@@ -4,6 +4,7 @@
 //  of patent rights can be found in the PATENTS file in the same directory.
 
 #include <string>
+
 #include "db/version_edit.h"
 #include "db/version_set.h"
 #include "util/logging.h"
@@ -31,7 +32,7 @@ class VersionBuilderTest : public testing::Test {
         ioptions_(options_),
         mutable_cf_options_(options_, ioptions_),
         vstorage_(&icmp_, ucmp_, options_.num_levels, kCompactionStyleLevel,
-                 nullptr),
+                  nullptr),
         file_num_(1) {
     mutable_cf_options_.RefreshDerivedOptions(ioptions_);
     size_being_compacted_.resize(options_.num_levels);
@@ -285,10 +286,8 @@ TEST_F(VersionBuilderTest, EstimatedActiveKeys) {
   for (uint32_t i = 0; i < kNumFiles; ++i) {
     Add(static_cast<int>(i / kFilesPerLevel), i + 1,
         ToString((i + 100) * 1000).c_str(),
-        ToString((i + 100) * 1000 + 999).c_str(),
-        100U,  0, 100, 100,
-        kEntriesPerFile, kDeletionsPerFile,
-        (i < kTotalSamples));
+        ToString((i + 100) * 1000 + 999).c_str(), 100U, 0, 100, 100,
+        kEntriesPerFile, kDeletionsPerFile, (i < kTotalSamples));
   }
   // minus 2X for the number of deletion entries because:
   // 1x for deletion entry does not count as a data entry.

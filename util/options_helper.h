@@ -5,14 +5,14 @@
 
 #pragma once
 
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
+#include "util/mutable_cf_options.h"
 #include "vidardb/options.h"
 #include "vidardb/status.h"
 #include "vidardb/table.h"
-#include "util/mutable_cf_options.h"
 
 #ifndef VIDARDB_LITE
 namespace vidardb {
@@ -498,13 +498,14 @@ static std::unordered_map<std::string, CompactionStyle>
         {"kCompactionStyleFIFO", kCompactionStyleFIFO},
         {"kCompactionStyleNone", kCompactionStyleNone}};
 
-static std::unordered_map<std::string,
-                          WALRecoveryMode> wal_recovery_mode_string_map = {
-    {"kTolerateCorruptedTailRecords",
-     WALRecoveryMode::kTolerateCorruptedTailRecords},
-    {"kAbsoluteConsistency", WALRecoveryMode::kAbsoluteConsistency},
-    {"kPointInTimeRecovery", WALRecoveryMode::kPointInTimeRecovery},
-    {"kSkipAnyCorruptedRecords", WALRecoveryMode::kSkipAnyCorruptedRecords}};
+static std::unordered_map<std::string, WALRecoveryMode>
+    wal_recovery_mode_string_map = {
+        {"kTolerateCorruptedTailRecords",
+         WALRecoveryMode::kTolerateCorruptedTailRecords},
+        {"kAbsoluteConsistency", WALRecoveryMode::kAbsoluteConsistency},
+        {"kPointInTimeRecovery", WALRecoveryMode::kPointInTimeRecovery},
+        {"kSkipAnyCorruptedRecords",
+         WALRecoveryMode::kSkipAnyCorruptedRecords}};
 
 static std::unordered_map<std::string, DBOptions::AccessHint>
     access_hint_string_map = {{"NONE", DBOptions::AccessHint::NONE},

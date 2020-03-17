@@ -14,6 +14,7 @@
 
 #include <inttypes.h>
 #include <stdio.h>
+
 #include "port/port.h"
 #include "util/coding.h"
 #include "util/perf_context_imp.h"
@@ -61,9 +62,7 @@ std::string InternalKey::DebugString(bool hex) const {
   return result;
 }
 
-const char* InternalKeyComparator::Name() const {
-  return name_.c_str();
-}
+const char* InternalKeyComparator::Name() const { return name_.c_str(); }
 
 int InternalKeyComparator::Compare(const Slice& akey, const Slice& bkey) const {
   // Order by:
@@ -106,9 +105,8 @@ int InternalKeyComparator::Compare(const ParsedInternalKey& a,
   return r;
 }
 
-void InternalKeyComparator::FindShortestSeparator(
-      std::string* start,
-      const Slice& limit) const {
+void InternalKeyComparator::FindShortestSeparator(std::string* start,
+                                                  const Slice& limit) const {
   // Attempt to shorten the user portion of the key
   Slice user_start = ExtractUserKey(*start);
   Slice user_limit = ExtractUserKey(limit);
@@ -118,7 +116,8 @@ void InternalKeyComparator::FindShortestSeparator(
       user_comparator_->Compare(user_start, tmp) < 0) {
     // User key has become shorter physically, but larger logically.
     // Tack on the earliest possible number to the shortened user key.
-    PutFixed64(&tmp, PackSequenceAndType(kMaxSequenceNumber,kValueTypeForSeek));
+    PutFixed64(&tmp,
+               PackSequenceAndType(kMaxSequenceNumber, kValueTypeForSeek));
     assert(this->Compare(*start, tmp) < 0);
     assert(this->Compare(tmp, limit) < 0);
     start->swap(tmp);
@@ -133,7 +132,8 @@ void InternalKeyComparator::FindShortSuccessor(std::string* key) const {
       user_comparator_->Compare(user_key, tmp) < 0) {
     // User key has become shorter physically, but larger logically.
     // Tack on the earliest possible number to the shortened user key.
-    PutFixed64(&tmp, PackSequenceAndType(kMaxSequenceNumber,kValueTypeForSeek));
+    PutFixed64(&tmp,
+               PackSequenceAndType(kMaxSequenceNumber, kValueTypeForSeek));
     assert(this->Compare(*key, tmp) < 0);
     key->swap(tmp);
   }

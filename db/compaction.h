@@ -8,9 +8,9 @@
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 #pragma once
+#include "db/version_set.h"
 #include "util/arena.h"
 #include "util/mutable_cf_options.h"
-#include "db/version_set.h"
 
 namespace vidardb {
 
@@ -245,7 +245,7 @@ class Compaction {
   static bool IsFullCompaction(VersionStorageInfo* vstorage,
                                const std::vector<CompactionInputFiles>& inputs);
 
-  const int start_level_;    // the lowest level to be compacted
+  const int start_level_;   // the lowest level to be compacted
   const int output_level_;  // levels to which output files are stored
   uint64_t max_output_file_size_;
   uint64_t max_grandparent_overlap_bytes_;
@@ -254,7 +254,7 @@ class Compaction {
   VersionEdit edit_;
   const int number_levels_;
   ColumnFamilyData* cfd_;
-  Arena arena_;          // Arena used to allocate space for file_levels_
+  Arena arena_;  // Arena used to allocate space for file_levels_
 
   const uint32_t output_path_id_;
   CompressionType output_compression_;
@@ -270,7 +270,7 @@ class Compaction {
   // State used to check for number of overlapping grandparent files
   // (grandparent == "output_level_ + 1")
   std::vector<FileMetaData*> grandparents_;
-  const double score_;         // score that was used to pick this compaction.
+  const double score_;  // score that was used to pick this compaction.
 
   // Is this compaction creating a file in the bottom most level?
   const bool bottommost_level_;

@@ -41,7 +41,7 @@ class Splitter {
 // For example: s1|s2|s3...
 class PipeSplitter : public Splitter {
  public:
-  PipeSplitter() { }
+  PipeSplitter() {}
 
   virtual const std::string Name() const override {
     return "vidardb.PipeSplitter";
@@ -51,7 +51,8 @@ class PipeSplitter : public Splitter {
 
   virtual std::string Stitch(const std::vector<std::string>& v) const override;
 
-  virtual void Append(std::string& ss, const Slice& s, bool last) const override;
+  virtual void Append(std::string& ss, const Slice& s,
+                      bool last) const override;
 
  private:
   const char delim = '|';
@@ -65,7 +66,7 @@ class PipeSplitter : public Splitter {
 //   string
 class EncodingSplitter : public Splitter {
  public:
-  EncodingSplitter() { }
+  EncodingSplitter() {}
 
   virtual const std::string Name() const override {
     return "vidardb.EncodingSplitter";
@@ -75,7 +76,8 @@ class EncodingSplitter : public Splitter {
 
   virtual std::string Stitch(const std::vector<std::string>& v) const override;
 
-  virtual void Append(std::string& ss, const Slice& s, bool last) const override;
+  virtual void Append(std::string& ss, const Slice& s,
+                      bool last) const override;
 };
 
 }  // namespace vidardb

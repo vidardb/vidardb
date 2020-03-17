@@ -1,8 +1,8 @@
 #ifndef GLOBAL_H_
 #define GLOBAL_H_
 
-#include <iostream>
 #include <chrono>
+#include <iostream>
 using namespace std::chrono;
 using namespace std;
 

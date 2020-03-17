@@ -10,6 +10,7 @@
 #include "memtable/memtable_allocator.h"
 
 #include <assert.h>
+
 #include "db/writebuffer.h"
 #include "util/arena.h"
 

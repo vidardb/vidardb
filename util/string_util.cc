@@ -8,10 +8,11 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 //
+#include "util/string_util.h"
+
 #include <sstream>
 #include <string>
 #include <vector>
-#include "util/string_util.h"
 
 namespace vidardb {
 

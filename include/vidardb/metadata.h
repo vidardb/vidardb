@@ -27,8 +27,8 @@ struct SstFileMetaData;
 struct ColumnFamilyMetaData {
   ColumnFamilyMetaData() : size(0), name("") {}
   ColumnFamilyMetaData(const std::string& _name, uint64_t _size,
-                       const std::vector<LevelMetaData>&& _levels) :
-      size(_size), name(_name), levels(_levels) {}
+                       const std::vector<LevelMetaData>&& _levels)
+      : size(_size), name(_name), levels(_levels) {}
 
   // The size of this column family in bytes, which is equal to the sum of
   // the file size of its "levels".
@@ -44,9 +44,8 @@ struct ColumnFamilyMetaData {
 // The metadata that describes a level.
 struct LevelMetaData {
   LevelMetaData(int _level, uint64_t _size,
-                const std::vector<SstFileMetaData>&& _files) :
-      level(_level), size(_size),
-      files(_files) {}
+                const std::vector<SstFileMetaData>&& _files)
+      : level(_level), size(_size), files(_files) {}
 
   // The level which this meta data describes.
   const int level;
@@ -60,17 +59,19 @@ struct LevelMetaData {
 // The metadata that describes a SST file.
 struct SstFileMetaData {
   SstFileMetaData() {}
-  SstFileMetaData(const std::string& _file_name,
-                  const std::string& _path, uint64_t _size,
-                  SequenceNumber _smallest_seqno,
+  SstFileMetaData(const std::string& _file_name, const std::string& _path,
+                  uint64_t _size, SequenceNumber _smallest_seqno,
                   SequenceNumber _largest_seqno,
                   const std::string& _smallestkey,
-                  const std::string& _largestkey,
-                  bool _being_compacted) :
-    size(_size), name(_file_name),  // Shichao
-    db_path(_path), smallest_seqno(_smallest_seqno), largest_seqno(_largest_seqno),
-    smallestkey(_smallestkey), largestkey(_largestkey),
-    being_compacted(_being_compacted) {}
+                  const std::string& _largestkey, bool _being_compacted)
+      : size(_size),
+        name(_file_name),  // Shichao
+        db_path(_path),
+        smallest_seqno(_smallest_seqno),
+        largest_seqno(_largest_seqno),
+        smallestkey(_smallestkey),
+        largestkey(_largestkey),
+        being_compacted(_being_compacted) {}
 
   // File size in bytes.
   uint64_t size;
@@ -81,17 +82,15 @@ struct SstFileMetaData {
 
   SequenceNumber smallest_seqno;  // Smallest sequence number in file.
   SequenceNumber largest_seqno;   // Largest sequence number in file.
-  std::string smallestkey;     // Smallest user defined key in the file.
-  std::string largestkey;      // Largest user defined key in the file.
+  std::string smallestkey;        // Smallest user defined key in the file.
+  std::string largestkey;         // Largest user defined key in the file.
   bool being_compacted;  // true if the file is currently being compacted.
 };
 
 // The full set of metadata associated with each SST file.
 struct LiveFileMetaData : SstFileMetaData {
   std::string column_family_name;  // Name of the column family
-  int level;               // Level at which this file resides.
+  int level;                       // Level at which this file resides.
 };
-
-
 
 }  // namespace vidardb

@@ -67,8 +67,7 @@ Status WritableFileWriter::Append(const Slice& data) {
   }
 
   // Flush only when I/O is buffered
-  if (use_os_buffer_ &&
-    (buf_.Capacity() - buf_.CurrentSize()) < left) {
+  if (use_os_buffer_ && (buf_.Capacity() - buf_.CurrentSize()) < left) {
     if (buf_.CurrentSize() > 0) {
       s = Flush();
       if (!s.ok()) {
@@ -189,8 +188,9 @@ Status WritableFileWriter::Flush() {
   // Xfs does neighbor page flushing outside of the specified ranges. We
   // need to make sure sync range is far from the write offset.
   if (!direct_io_ && bytes_per_sync_) {
-    const uint64_t kBytesNotSyncRange = 1024 * 1024;  // recent 1MB is not synced.
-    const uint64_t kBytesAlignWhenSync = 4 * 1024;    // Align 4KB.
+    const uint64_t kBytesNotSyncRange =
+        1024 * 1024;                                // recent 1MB is not synced.
+    const uint64_t kBytesAlignWhenSync = 4 * 1024;  // Align 4KB.
     if (filesize_ > kBytesNotSyncRange) {
       uint64_t offset_sync_to = filesize_ - kBytesNotSyncRange;
       offset_sync_to -= offset_sync_to % kBytesAlignWhenSync;
@@ -229,8 +229,8 @@ Status WritableFileWriter::Sync(bool use_fsync) {
 Status WritableFileWriter::SyncWithoutFlush(bool use_fsync) {
   if (!writable_file_->IsSyncThreadSafe()) {
     return Status::NotSupported(
-      "Can't WritableFileWriter::SyncWithoutFlush() because "
-      "WritableFile::IsSyncThreadSafe() is false");
+        "Can't WritableFileWriter::SyncWithoutFlush() because "
+        "WritableFile::IsSyncThreadSafe() is false");
   }
   TEST_SYNC_POINT("WritableFileWriter::SyncWithoutFlush:1");
   Status s = SyncInternal(use_fsync);
@@ -290,7 +290,6 @@ Status WritableFileWriter::WriteBuffered(const char* data, size_t size) {
   return s;
 }
 
-
 // This flushes the accumulated data in the buffer. We pad data with zeros if
 // necessary to the whole page.
 // However, during automatic flushes padding would not be necessary.
@@ -307,8 +306,7 @@ Status WritableFileWriter::WriteUnbuffered() {
   assert((next_write_offset_ % alignment) == 0);
 
   // Calculate whole page final file advance if all writes succeed
-  size_t file_advance =
-    TruncateToPageBoundary(alignment, buf_.CurrentSize());
+  size_t file_advance = TruncateToPageBoundary(alignment, buf_.CurrentSize());
 
   // Calculate the leftover tail, we write it here padded with zeros BUT we
   // will write
@@ -359,7 +357,6 @@ Status WritableFileWriter::WriteUnbuffered() {
   return s;
 }
 
-
 namespace {
 class ReadaheadRandomAccessFile : public RandomAccessFile {
  public:
@@ -381,7 +378,8 @@ class ReadaheadRandomAccessFile : public RandomAccessFile {
 
   ReadaheadRandomAccessFile(const ReadaheadRandomAccessFile&) = delete;
 
-  ReadaheadRandomAccessFile& operator=(const ReadaheadRandomAccessFile&) = delete;
+  ReadaheadRandomAccessFile& operator=(const ReadaheadRandomAccessFile&) =
+      delete;
 
   virtual Status Read(uint64_t offset, size_t n, Slice* result,
                       char* scratch) const override {
@@ -413,7 +411,7 @@ class ReadaheadRandomAccessFile : public RandomAccessFile {
     }
     Slice readahead_result;
     Status s = file_->Read(offset + copied, readahead_size_, &readahead_result,
-      buffer_.get());
+                           buffer_.get());
     if (!s.ok()) {
       return s;
     }
@@ -443,27 +441,25 @@ class ReadaheadRandomAccessFile : public RandomAccessFile {
   }
 
   /********************** Shichao ************************/
-  virtual size_t ReadaheadSize() override {
-    return readahead_size_;
-  }
+  virtual size_t ReadaheadSize() override { return readahead_size_; }
   /********************** Shichao ************************/
 
  private:
   std::unique_ptr<RandomAccessFile> file_;
-  size_t               readahead_size_;
-  const bool           forward_calls_;
+  size_t readahead_size_;
+  const bool forward_calls_;
 
-  mutable std::mutex   lock_;
+  mutable std::mutex lock_;
   mutable std::unique_ptr<char[]> buffer_;
-  mutable uint64_t     buffer_offset_;
-  mutable size_t       buffer_len_;
+  mutable uint64_t buffer_offset_;
+  mutable size_t buffer_len_;
 };
 }  // namespace
 
 std::unique_ptr<RandomAccessFile> NewReadaheadRandomAccessFile(
-    std::unique_ptr<RandomAccessFile>&& file, size_t readahead_size) {\
+    std::unique_ptr<RandomAccessFile>&& file, size_t readahead_size) {
   std::unique_ptr<RandomAccessFile> result(
-    new ReadaheadRandomAccessFile(std::move(file), readahead_size));
+      new ReadaheadRandomAccessFile(std::move(file), readahead_size));
   return result;
 }
 

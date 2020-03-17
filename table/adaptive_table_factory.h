@@ -12,6 +12,7 @@
 #ifndef VIDARDB_LITE
 
 #include <string>
+
 #include "vidardb/options.h"
 #include "vidardb/table.h"
 
@@ -35,7 +36,7 @@ class AdaptiveTableFactory : public TableFactory {
       std::shared_ptr<TableFactory> table_factory_to_write,
       std::shared_ptr<TableFactory> block_based_table_factory,
       std::shared_ptr<TableFactory> column_table_factory,  // Shichao
-      int knob);  // Shichao
+      int knob);                                           // Shichao
 
   const char* Name() const override { return "AdaptiveTableFactory"; }
 
@@ -62,8 +63,7 @@ class AdaptiveTableFactory : public TableFactory {
       std::shared_ptr<TableFactory> table_factory_to_write);
 
   // thread-safe
-  void SetOutputLevel(
-      const std::string& file_name, int output_level);
+  void SetOutputLevel(const std::string& file_name, int output_level);
 
   int GetKnob() const { return knob_; }
   /********************** Shichao **********************/

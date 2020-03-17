@@ -13,19 +13,18 @@
 
 #include "port/win/port_win.h"
 
-#include <io.h>
-#include "port/dirent.h"
-#include "port/sys_time.h"
-
-#include <cstdlib>
-#include <stdio.h>
 #include <assert.h>
+#include <io.h>
+#include <stdio.h>
 #include <string.h>
 
-#include <memory>
-#include <exception>
 #include <chrono>
+#include <cstdlib>
+#include <exception>
+#include <memory>
 
+#include "port/dirent.h"
+#include "port/sys_time.h"
 #include "util/logging.h"
 
 namespace vidardb {
@@ -41,7 +40,7 @@ void gettimeofday(struct timeval* tv, struct timezone* /* tz */) {
 
   tv->tv_sec = static_cast<long>(secNow.count());
   tv->tv_usec = static_cast<long>(usNow.count() -
-      duration_cast<microseconds>(secNow).count());
+                                  duration_cast<microseconds>(secNow).count());
 }
 
 Mutex::~Mutex() {}
@@ -64,7 +63,6 @@ void CondVar::Wait() {
 }
 
 bool CondVar::TimedWait(uint64_t abs_time_us) {
-
   using namespace std::chrono;
 
   // MSVC++ library implements wait_until in terms of wait_for so
@@ -72,9 +70,9 @@ bool CondVar::TimedWait(uint64_t abs_time_us) {
   microseconds usAbsTime(abs_time_us);
 
   microseconds usNow(
-    duration_cast<microseconds>(system_clock::now().time_since_epoch()));
+      duration_cast<microseconds>(system_clock::now().time_since_epoch()));
   microseconds relTimeUs =
-    (usAbsTime > usNow) ? (usAbsTime - usNow) : microseconds::zero();
+      (usAbsTime > usNow) ? (usAbsTime - usNow) : microseconds::zero();
 
   // Caller must ensure that mutex is held prior to calling this method
   std::unique_lock<std::mutex> lk(mu_->getLock(), std::adopt_lock);
@@ -244,8 +242,8 @@ __declspec(noinline) void WINAPI InitializeJemalloc() {
   atexit(je_uninit);
 }
 
-}  // port
-}  // vidardb
+}  // namespace port
+}  // namespace vidardb
 
 extern "C" {
 
@@ -273,14 +271,15 @@ const CRT_Startup_Routine p_vidardb_init_jemalloc =
 #pragma comment(linker, "/INCLUDE:_p_vidardb_init_jemalloc")
 
 #pragma section(".CRT$XCT", read)
-JEMALLOC_SECTION(".CRT$XCT") JEMALLOC_ATTR(used) static const void(
-    WINAPI* p_vidardb_init_jemalloc)(void) = vidardb::port::InitializeJemalloc;
+JEMALLOC_SECTION(".CRT$XCT")
+JEMALLOC_ATTR(used) static const void(WINAPI* p_vidardb_init_jemalloc)(void) =
+    vidardb::port::InitializeJemalloc;
 
 #endif  // _WIN64
 
 }  // extern "C"
 
-#endif // JEMALLOC_NON_INIT
+#endif  // JEMALLOC_NON_INIT
 
 // Global operators to be replaced by a linker
 

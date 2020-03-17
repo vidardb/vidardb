@@ -3,8 +3,10 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 //
-#include <vector>
 #include "util/file_reader_writer.h"
+
+#include <vector>
+
 #include "util/random.h"
 #include "util/testharness.h"
 
@@ -24,9 +26,7 @@ TEST_F(WritableFileWriterTest, RangeSync) {
       size_ += data.size();
       return Status::OK();
     }
-    virtual Status Truncate(uint64_t size) override {
-      return Status::OK();
-    }
+    virtual Status Truncate(uint64_t size) override { return Status::OK(); }
     Status Close() override {
       EXPECT_GE(size_, last_synced_ + kMb);
       EXPECT_LT(size_, last_synced_ + 2 * kMb);
@@ -47,7 +47,9 @@ TEST_F(WritableFileWriterTest, RangeSync) {
     }
 
    protected:
-    Status Allocate(uint64_t offset, uint64_t len) override { return Status::OK(); }
+    Status Allocate(uint64_t offset, uint64_t len) override {
+      return Status::OK();
+    }
     Status RangeSync(uint64_t offset, uint64_t nbytes) override {
       EXPECT_EQ(offset % 4096, 0u);
       EXPECT_EQ(nbytes % 4096, 0u);

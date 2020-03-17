@@ -4,15 +4,15 @@
 //  of patent rights can be found in the PATENTS file in the same directory.
 //
 // Test for issue 178: a manual compaction causes deleted data to reappear.
+#include <cstdlib>
 #include <iostream>
 #include <sstream>
-#include <cstdlib>
 
+#include "port/port.h"
+#include "util/testharness.h"
 #include "vidardb/db.h"
 #include "vidardb/slice.h"
 #include "vidardb/write_batch.h"
-#include "util/testharness.h"
-#include "port/port.h"
 
 using namespace vidardb;
 
@@ -26,9 +26,7 @@ std::string Key1(int i) {
   return buf;
 }
 
-std::string Key2(int i) {
-  return Key1(i) + "_xxx";
-}
+std::string Key2(int i) { return Key1(i) + "_xxx"; }
 
 class ManualCompactionTest : public testing::Test {
  public:
@@ -45,10 +43,10 @@ TEST_F(ManualCompactionTest, CompactTouchesAllKeys) {
   for (int iter = 0; iter < 2; ++iter) {
     DB* db;
     Options options;
-    if (iter == 0) { // level compaction
+    if (iter == 0) {  // level compaction
       options.num_levels = 3;
       options.compaction_style = kCompactionStyleLevel;
-    } else { // universal compaction
+    } else {  // universal compaction
       options.compaction_style = kCompactionStyleUniversal;
     }
     options.create_if_missing = true;
