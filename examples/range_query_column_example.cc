@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
   TableFactory* table_factory = NewColumnTableFactory();
   ColumnTableOptions* opts =
       static_cast<ColumnTableOptions*>(table_factory->GetOptions());
-  opts->column_num = M;
+  opts->column_count = M;
   // opts->splitter.reset(new PipeSplitter()); // default EncodingSplitter
   options.table_factory.reset(table_factory);
 

@@ -746,19 +746,19 @@ Status ColumnTable::Open(const ImmutableCFOptions& ioptions,
       return s;
     }
 
-    uint32_t column_num;
+    uint32_t column_count;
     std::vector<uint64_t> file_sizes;
     s = ReadMetaColumnBlock(meta_iter->value(), rep->file.get(), rep->footer,
-                            ioptions.env, ioptions.info_log, &column_num,
+                            ioptions.env, ioptions.info_log, &column_count,
                             file_sizes);
     if (!s.ok()) {
       return s;
     }
 
-    rep->tables.resize(column_num);
+    rep->tables.resize(column_count);
     rep->main_column = rep->tables.empty()? false: true;
-    if (rep->main_column && column_num != rep->table_options.column_num) {
-      return Status::InvalidArgument("table_options.column_num");
+    if (rep->main_column && column_count != rep->table_options.column_count) {
+      return Status::InvalidArgument("table_options.column_count");
     }
     if (rep->main_column) {
       rep->column_comparator.reset(new ColumnKeyComparator());
@@ -766,7 +766,7 @@ Status ColumnTable::Open(const ImmutableCFOptions& ioptions,
 
     size_t readahead = rep->file->file()->ReadaheadSize();
     std::string fname = rep->file->file()->GetFileName();
-    for (auto i = 0u; i < column_num; i++) {
+    for (auto i = 0u; i < column_count; i++) {
       // filter unnecessary columns, cols starts from 1
       if (!cols.empty() &&
           std::find(cols.begin(), cols.end(), i+1) == cols.end()) {
@@ -1154,18 +1154,18 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 };
 
 inline static ReadOptions SanitizeColumnReadOptions(
-        uint32_t column_num, const ReadOptions& read_options) {
+        uint32_t column_count, const ReadOptions& read_options) {
   ReadOptions ro = read_options;
   if (ro.columns.empty()) { // all columns
-    ro.columns.resize(column_num);
-    for (uint32_t i = 0; i < column_num; i++) {
+    ro.columns.resize(column_count);
+    for (uint32_t i = 0; i < column_count; i++) {
       ro.columns[i] = i;
     }
     return ro;
   }
 
   for (auto& i : ro.columns) {
-    assert(i <= column_num);
+    assert(i <= column_count);
     --i; // index from 0
   }
   return ro;
@@ -1174,7 +1174,7 @@ inline static ReadOptions SanitizeColumnReadOptions(
 InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
                                            Arena* arena) {
   ReadOptions ro = SanitizeColumnReadOptions(
-      rep_->table_options.column_num, read_options);
+      rep_->table_options.column_count, read_options);
 
   std::vector<InternalIterator*> iters; // main column
   iters.push_back(NewTwoLevelIterator(new BlockEntryIteratorState(this, ro),
@@ -1192,7 +1192,7 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
 Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
                         GetContext* get_context) {
   ReadOptions ro = SanitizeColumnReadOptions(
-      rep_->table_options.column_num, read_options);
+      rep_->table_options.column_count, read_options);
   BlockIter iiter;
   NewIndexIterator(ro, &iiter);
 
@@ -1280,7 +1280,7 @@ Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end) {
 Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end,
                              const ReadOptions& read_options) {
   ReadOptions ro = SanitizeColumnReadOptions(
-      rep_->table_options.column_num, read_options);
+      rep_->table_options.column_count, read_options);
   auto& comparator = rep_->internal_comparator;
   // pre-condition
   if (begin && end && comparator.Compare(*begin, *end) > 0) {

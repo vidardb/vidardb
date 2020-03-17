@@ -131,7 +131,7 @@ struct ColumnTableOptions {
   std::shared_ptr<Splitter> splitter;
 
   // Total column number excluding key
-  uint32_t column_num = 0;
+  uint32_t column_count = 0;
 };
 
 // Create default column table factory.
