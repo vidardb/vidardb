@@ -302,7 +302,9 @@ class MemTable {
   const MemTableOptions* GetMemTableOptions() const { return &moptions_; }
 
   // Reformat the user value by specified column index.
-  // Note: Column index must be from 1 to MAX_COLUMN_INDEX
+  // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
+  //       Index 0 means only querying the user keys, and 
+  //       the value column index is from 1 to MAX_COLUMN_INDEX.
   const std::string ReformatUserValue(const std::string& user_value,
                                       const std::vector<uint32_t>& columns,
                                       const Splitter* splitter) const {
@@ -310,13 +312,19 @@ class MemTable {
       return user_value;
     }
 
+    if (columns.size() == 1 && columns[0] == 0) {
+      return ""; // only query the user keys
+    }
+
     std::vector<std::string> result;
     result.reserve(columns.size());
     // TODO: split slice in-place and extract the target attrs directly
     std::vector<std::string> user_vals = splitter->Split(user_value);
-    for (auto index : columns) {  // from 1 to MAX_COLUMN_INDEX
+    for (auto index : columns) {  // from 0 to MAX_COLUMN_INDEX
       assert(index <= user_vals.size());
-      result.emplace_back(std::move(user_vals[index-1]));
+      if (index > 0) { // only process the value columns
+        result.emplace_back(std::move(user_vals[index-1]));
+      }
     }
 
     return splitter->Stitch(result);

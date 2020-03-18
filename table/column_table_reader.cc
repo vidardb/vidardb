@@ -276,7 +276,7 @@ struct ColumnTable::Rep {
   std::unique_ptr<const BlockContents> compression_dict_block;
 
   bool main_column;
-  std::vector<unique_ptr<ColumnTable>> tables;
+  std::vector<unique_ptr<ColumnTable>> tables; // sub colum tables
 };
 
 // Load the meta-block from the file. On success, return the loaded meta block
@@ -767,7 +767,9 @@ Status ColumnTable::Open(const ImmutableCFOptions& ioptions,
     size_t readahead = rep->file->file()->ReadaheadSize();
     std::string fname = rep->file->file()->GetFileName();
     for (auto i = 0u; i < column_count; i++) {
-      // filter unnecessary columns, cols starts from 1
+      // filter unnecessary columns, cols starts from 0 to MAX_COLUMN_INDEX and
+      // index 0 means only querying the user keys, and the value column index
+      // is from 1 to MAX_COLUMN_INDEX
       if (!cols.empty() &&
           std::find(cols.begin(), cols.end(), i+1) == cols.end()) {
         continue;
@@ -1153,20 +1155,22 @@ class ColumnTable::ColumnIterator : public InternalIterator {
   uint64_t num_entries_;  // used in rangrquery
 };
 
+// Note: Column index must be from 0 to MAX_COLUMN_INDEX.
+//       Index 0 means only querying the user keys, and 
+//       the value column index is from 1 to MAX_COLUMN_INDEX.
 inline static ReadOptions SanitizeColumnReadOptions(
         uint32_t column_count, const ReadOptions& read_options) {
   ReadOptions ro = read_options;
-  if (ro.columns.empty()) { // all columns
+  if (ro.columns.empty()) { // all value columns
     ro.columns.resize(column_count);
     for (uint32_t i = 0; i < column_count; i++) {
-      ro.columns[i] = i;
+      ro.columns[i] = i + 1; // from 1 to MAX_COLUMN_INDEX
     }
     return ro;
   }
 
   for (auto& i : ro.columns) {
     assert(i <= column_count);
-    --i; // index from 0
   }
   return ro;
 }
@@ -1180,9 +1184,12 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
   iters.push_back(NewTwoLevelIterator(new BlockEntryIteratorState(this, ro),
                                       NewIndexIterator(ro), arena));
   for (const auto& column_index : ro.columns) { // sub column
+    if (column_index < 1) { // only process the value columns
+      continue;
+    }
     iters.push_back(NewTwoLevelIterator(
-        new BlockEntryIteratorState(rep_->tables[column_index].get(), ro),
-        rep_->tables[column_index]->NewIndexIterator(ro), arena));
+        new BlockEntryIteratorState(rep_->tables[column_index-1].get(), ro),
+        rep_->tables[column_index-1]->NewIndexIterator(ro), arena));
   }
   return new ColumnIterator(iters, rep_->table_options.splitter,
                             true, rep_->internal_comparator,
@@ -1230,9 +1237,12 @@ Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
 
       std::vector<InternalIterator*> iters;
       for (const auto& it : ro.columns) {
+        if (it < 1) { // only process the value columns
+          continue;
+        }
         iters.push_back(NewTwoLevelIterator(
-            new BlockEntryIteratorState(rep_->tables[it].get(), ro),
-            rep_->tables[it]->NewIndexIterator(ro)));
+            new BlockEntryIteratorState(rep_->tables[it-1].get(), ro),
+            rep_->tables[it-1]->NewIndexIterator(ro)));
       }
 
       ColumnIterator citers(iters, rep_->table_options.splitter,
@@ -1326,9 +1336,12 @@ Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end,
 
     std::vector<InternalIterator*> iters;
     for (const auto& it : ro.columns) {
+      if (it < 1) { // only process the value columns
+        continue;
+      }
       iters.push_back(NewTwoLevelIterator(
-          new BlockEntryIteratorState(rep_->tables[it].get(), ro),
-          rep_->tables[it]->NewIndexIterator(ro)));
+          new BlockEntryIteratorState(rep_->tables[it-1].get(), ro),
+          rep_->tables[it-1]->NewIndexIterator(ro)));
     }
 
     ColumnIterator citers(iters, rep_->table_options.splitter,
