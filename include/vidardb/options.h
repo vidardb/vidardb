@@ -1351,7 +1351,9 @@ struct ReadOptions {
   /***************************** Quanzhao *********************************/
   // If empty, RangeQuery will return all columns, else return the specified
   // index column.
-  // Note: Column index must be from 1 to MAX_COLUMN_INDEX.
+  // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
+  //       Index 0 means only querying the user keys, and
+  //       the value column index is from 1 to MAX_COLUMN_INDEX.
   std::vector<uint32_t> columns;
 
   // Specify the splitter for column storage when only querying the specified
