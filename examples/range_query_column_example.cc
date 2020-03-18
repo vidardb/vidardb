@@ -79,8 +79,8 @@ int main(int argc, char* argv[]) {
   ReadOptions read_options;
   // read_options.batch_capacity = 0; // full search
   read_options.batch_capacity = 2; // in batch
-  // read_options.columns = {0}; // only query keys
-  read_options.columns = {1, 3};
+   read_options.columns = {0}; // only query keys
+//  read_options.columns = {1, 3};
   read_options.splitter = splitter;
 
 //  Range range; // full search

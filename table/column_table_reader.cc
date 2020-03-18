@@ -276,7 +276,7 @@ struct ColumnTable::Rep {
   std::unique_ptr<const BlockContents> compression_dict_block;
 
   bool main_column;
-  std::vector<unique_ptr<ColumnTable>> tables; // sub colum tables
+  std::vector<unique_ptr<ColumnTable>> tables;  // sub colum tables
 };
 
 // Load the meta-block from the file. On success, return the loaded meta block
@@ -1159,19 +1159,18 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 //       Index 0 means only querying the user keys, and 
 //       the value column index is from 1 to MAX_COLUMN_INDEX.
 inline static ReadOptions SanitizeColumnReadOptions(
-        uint32_t column_count, const ReadOptions& read_options) {
+    uint32_t column_count, const ReadOptions& read_options) {
   ReadOptions ro = read_options;
-  if (ro.columns.empty()) { // all value columns
-    ro.columns.resize(column_count);
-    for (uint32_t i = 0; i < column_count; i++) {
-      ro.columns[i] = i + 1; // from 1 to MAX_COLUMN_INDEX
+  if (ro.columns.empty()) {  // all value columns
+    // Let's add index=0 to columns, since it gets filtered by current callers.
+    // Keep 0 here to be consistent within semantics in case of future callers.
+    ro.columns.resize(column_count + 1);
+    for (uint32_t i = 0; i <= column_count; i++) {
+      ro.columns[i] = i;  // from 0 to MAX_COLUMN_INDEX
     }
     return ro;
   }
 
-  for (auto& i : ro.columns) {
-    assert(i <= column_count);
-  }
   return ro;
 }
 
@@ -1180,11 +1179,11 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
   ReadOptions ro = SanitizeColumnReadOptions(
       rep_->table_options.column_count, read_options);
 
-  std::vector<InternalIterator*> iters; // main column
+  std::vector<InternalIterator*> iters;  // main column
   iters.push_back(NewTwoLevelIterator(new BlockEntryIteratorState(this, ro),
                                       NewIndexIterator(ro), arena));
-  for (const auto& column_index : ro.columns) { // sub column
-    if (column_index < 1) { // only process the value columns
+  for (const auto& column_index : ro.columns) {  // sub column
+    if (column_index < 1) {  // only process the value columns
       continue;
     }
     iters.push_back(NewTwoLevelIterator(
@@ -1237,7 +1236,7 @@ Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
 
       std::vector<InternalIterator*> iters;
       for (const auto& it : ro.columns) {
-        if (it < 1) { // only process the value columns
+        if (it < 1) {  // only process the value columns
           continue;
         }
         iters.push_back(NewTwoLevelIterator(
@@ -1336,7 +1335,7 @@ Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end,
 
     std::vector<InternalIterator*> iters;
     for (const auto& it : ro.columns) {
-      if (it < 1) { // only process the value columns
+      if (it < 1) {  // only process the value columns
         continue;
       }
       iters.push_back(NewTwoLevelIterator(

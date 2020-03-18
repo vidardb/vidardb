@@ -313,7 +313,7 @@ class MemTable {
     }
 
     if (columns.size() == 1 && columns[0] == 0) {
-      return ""; // only query the user keys
+      return "";  // only query the user keys
     }
 
     std::vector<std::string> result;
@@ -322,7 +322,7 @@ class MemTable {
     std::vector<std::string> user_vals = splitter->Split(user_value);
     for (auto index : columns) {  // from 0 to MAX_COLUMN_INDEX
       assert(index <= user_vals.size());
-      if (index > 0) { // only process the value columns
+      if (index > 0) {  // only process the value columns
         result.emplace_back(std::move(user_vals[index-1]));
       }
     }
