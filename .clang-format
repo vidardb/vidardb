@@ -1,0 +1,9 @@
+# Complete list of style options can be found at:
+# http://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
+# Remember to be consistent with the code style of rocksdb:
+# https://github.com/facebook/rocksdb/blob/master/.clang-format
+
+---
+BasedOnStyle: Google
+...
