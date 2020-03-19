@@ -1371,9 +1371,10 @@ struct ReadOptions {
   // Note: Caller should not set the value.
   void* range_query_meta = nullptr;
 
-  // Store the result size in one batch for RangeQuery.
+  // Store the result key and value size in one batch for RangeQuery.
   // Note: Caller should not set the value.
-  size_t result_size;
+  size_t result_key_size;
+  size_t result_val_size;
   /***************************** Quanzhao *********************************/
 
   ReadOptions();

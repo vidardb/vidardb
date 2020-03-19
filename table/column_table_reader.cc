@@ -1054,9 +1054,9 @@ class ColumnTable::ColumnIterator : public InternalIterator {
               if (it->second.type_ == kTypeDeletion) {
                 meta->del_keys.erase(it->second.seq_);
               }
-              assert(read_options.result_size >=
-                     it->second.iter_->user_val.size());
-              read_options.result_size -= it->second.iter_->user_val.size();
+              assert(read_options.result_val_size >=
+                  it->second.iter_->user_val.size());
+              read_options.result_val_size -= it->second.iter_->user_val.size();
               it->second.seq_ = parsed_key.sequence;
               it->second.type_ = parsed_key.type;
               it->second.iter_->user_val = "";
@@ -1067,7 +1067,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
             } else {
               // inserted
               res.emplace_back(user_key, "");
-              read_options.result_size += user_key.size();
+              read_options.result_key_size += user_key.size();
               it->second.iter_ = --res.end();
               user_vals.push_back(std::move(it));
               if (parsed_key.type == kTypeDeletion) {
@@ -1103,11 +1103,11 @@ class ColumnTable::ColumnIterator : public InternalIterator {
           }
 
           auto& it = user_vals[user_val_idx++]->second.iter_;
-          size_t prev_size = it->user_val.size();
+          size_t prev_val_size = it->user_val.size();
           splitter_->Append(it->user_val, iter->value(),
                             i + 1 >= columns_.size());
-          size_t delta_size = it->user_val.size() - prev_size;
-          read_options.result_size += delta_size;
+          size_t delta_val_size = it->user_val.size() - prev_val_size;
+          read_options.result_val_size += delta_val_size;
         }
       }
     }

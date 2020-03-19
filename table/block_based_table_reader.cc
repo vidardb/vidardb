@@ -925,20 +925,23 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
           if (it->second.type_ == kTypeDeletion) {
             meta->del_keys.erase(it->second.seq_);
           }
-          assert(read_options.result_size >= it->second.iter_->user_val.size());
-          read_options.result_size -= it->second.iter_->user_val.size();
+          assert(read_options.result_val_size >= 
+              it->second.iter_->user_val.size());
+          read_options.result_val_size -= it->second.iter_->user_val.size();
           it->second.seq_ = parsed_key.sequence;
           it->second.type_ = parsed_key.type;
           it->second.iter_->user_val = std::move(user_val);
-          read_options.result_size += it->second.iter_->user_val.size();
+          read_options.result_val_size += it->second.iter_->user_val.size();
           if (parsed_key.type == kTypeDeletion) {
             meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
           }
         } else {
           // inserted
-          size_t delta_size = user_key.size() + user_val.size();
+          size_t delta_key_size = user_key.size();
+          size_t delta_val_size = user_val.size();
           res.emplace_back(user_key, std::move(user_val));
-          read_options.result_size += delta_size;
+          read_options.result_key_size += delta_key_size;
+          read_options.result_val_size += delta_val_size;
           it->second.iter_ = --res.end();
           if (parsed_key.type == kTypeDeletion) {
             meta->del_keys.insert({parsed_key.sequence, it->second.iter_});

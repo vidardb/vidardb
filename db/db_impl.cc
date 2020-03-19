@@ -3674,7 +3674,8 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
                         ColumnFamilyHandle* column_family, const Range& range,
                         std::list<RangeQueryKeyVal>& res, Status* s) {
   res.clear();
-  read_options.result_size = 0;
+  read_options.result_key_size = 0;
+  read_options.result_val_size = 0;
 
   // Create range query metadata at first
   if (read_options.range_query_meta == nullptr) {
@@ -3738,11 +3739,13 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
     auto it = --(meta->map_res.end());
     meta->next_start_key = std::move(it->first);
     // Not include the next start key
-    size_t delta_size = it->second.iter_->user_key.size() + 
-        it->second.iter_->user_val.size();
+    size_t delta_key_size = it->second.iter_->user_key.size();
+    size_t delta_val_size = it->second.iter_->user_val.size();
     res.erase(it->second.iter_);
-    assert(read_options.result_size >= delta_size);
-    read_options.result_size -= delta_size;
+    assert(read_options.result_key_size >= delta_key_size);
+    assert(read_options.result_val_size >= delta_val_size);
+    read_options.result_key_size -= delta_key_size;
+    read_options.result_val_size -= delta_val_size;
     if (it->second.type_ == kTypeDeletion) {
       meta->del_keys.erase(it->second.seq_);
     }
@@ -3752,10 +3755,13 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
 
   // Hide deleted keys from users, erase them in list
   for (const auto& it : meta->del_keys) {
-    size_t delta_size = it.second->user_key.size() + it.second->user_val.size();
+    size_t delta_key_size = it.second->user_key.size();
+    size_t delta_val_size = it.second->user_val.size();
     res.erase(it.second);
-    assert(read_options.result_size >= delta_size);
-    read_options.result_size -= delta_size;
+    assert(read_options.result_key_size >= delta_key_size);
+    assert(read_options.result_val_size >= delta_val_size);
+    read_options.result_key_size -= delta_key_size;
+    read_options.result_val_size -= delta_val_size;
   }
   meta->del_keys.clear();
 

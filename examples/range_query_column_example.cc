@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
   ReadOptions read_options;
   // read_options.batch_capacity = 0; // full search
   read_options.batch_capacity = 2; // in batch
-   read_options.columns = {0}; // only query keys
+  read_options.columns = {0}; // only query keys
 //  read_options.columns = {1, 3};
   read_options.splitter = splitter;
 
@@ -91,12 +91,13 @@ int main(int argc, char* argv[]) {
   list<RangeQueryKeyVal> res;
   bool next = true;
   while (next) { // range query loop
-    size_t total_size = 0;
+    size_t total_key_size = 0, total_val_size = 0;
     next = db->RangeQuery(read_options, range, res, &s);
     assert(s.ok());
     cout << "{ ";
     for (auto it : res) {
-      total_size += it.user_key.size() + it.user_val.size();
+      total_key_size += it.user_key.size();
+      total_val_size += it.user_val.size();
       cout << it.user_key << "=[";
       vector<string> vals(splitter->Split(it.user_val));
       for (auto i = 0u; i < vals.size(); i++) {
@@ -107,8 +108,10 @@ int main(int argc, char* argv[]) {
       }
       cout << "] ";
     }
-    cout << "} size=" << read_options.result_size << endl;
-    assert(total_size == read_options.result_size);
+    cout << "} key_size=" << read_options.result_key_size;
+    cout << ", val_size=" << read_options.result_val_size << endl;
+    assert(total_key_size == read_options.result_key_size);
+    assert(total_val_size == read_options.result_val_size);
   }
 
   delete db;

@@ -498,21 +498,25 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
             if (it->second.type_ == kTypeDeletion) {
               meta->del_keys.erase(it->second.seq_);
             }
-            assert(s->read_options->result_size >=
+            assert(s->read_options->result_val_size >=
                 it->second.iter_->user_val.size());
-            s->read_options->result_size -= it->second.iter_->user_val.size();
+            s->read_options->result_val_size -= 
+                it->second.iter_->user_val.size();
             it->second.seq_ = s->seq;
             it->second.type_ = type;
             it->second.iter_->user_val = std::move(user_val);
-            s->read_options->result_size += it->second.iter_->user_val.size();
+            s->read_options->result_val_size += 
+                it->second.iter_->user_val.size();
             if (type == kTypeDeletion) {
               meta->del_keys.insert({s->seq, it->second.iter_});
             }
           } else {
             // inserted
-            size_t delta_size = user_key.size() + user_val.size();
+            size_t delta_key_size = user_key.size();
+            size_t delta_val_size = user_val.size();
             s->res->emplace_back(user_key, std::move(user_val));
-            s->read_options->result_size += delta_size;
+            s->read_options->result_key_size += delta_key_size;
+            s->read_options->result_val_size += delta_val_size;
             it->second.iter_ = --(s->res->end());
             if (type == kTypeDeletion) {
               meta->del_keys.insert({s->seq, it->second.iter_});

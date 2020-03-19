@@ -402,12 +402,13 @@ inline bool CompressResultList(std::list<RangeQueryKeyVal>* res,
   size_t diff_size = meta->map_res.size() - ok_size;
   for (size_t i = 0u; i < diff_size; i++) {
     auto it = --(meta->map_res.end());
-    size_t delta_size = it->second.iter_->user_key.size() + 
-        it->second.iter_->user_val.size();
+    size_t delta_key_size = it->second.iter_->user_key.size();
+    size_t delta_val_size = it->second.iter_->user_val.size();
     res->erase(it->second.iter_);  // remove from list
-    assert(read_options.result_size >= delta_size);
-    read_options.result_size -= delta_size;
-
+    assert(read_options.result_key_size >= delta_key_size);
+    assert(read_options.result_val_size >= delta_val_size);
+    read_options.result_key_size -= delta_key_size;
+    read_options.result_val_size -= delta_val_size;
     if (it->second.type_ == kTypeDeletion) {
       // remove from unordered_map
       meta->del_keys.erase(it->second.seq_);
