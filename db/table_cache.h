@@ -52,11 +52,11 @@ class TableCache {
   // @param skip_filters Disables loading/accessing the filter block
   // @param level The level this table is at, -1 for "not set / don't know"
   InternalIterator* NewIterator(
-      const ReadOptions& options, const EnvOptions& toptions,
-      const InternalKeyComparator& internal_comparator,
-      const FileDescriptor& file_fd, TableReader** table_reader_ptr = nullptr,
-      HistogramImpl* file_read_hist = nullptr, bool for_compaction = false,
-      Arena* arena = nullptr, int level = -1, bool os_cache = true);  // Shichao
+    const ReadOptions& options, const EnvOptions& toptions,
+    const InternalKeyComparator& internal_comparator,
+    const FileDescriptor& file_fd, TableReader** table_reader_ptr = nullptr,
+    HistogramImpl* file_read_hist = nullptr, bool for_compaction = false,
+    Arena* arena = nullptr, int level = -1, bool os_cache = true);  // Shichao
 
   // If a seek to internal key "k" in specified file finds an entry,
   // call (*handle_result)(arg, found_key, found_value) repeatedly until
@@ -103,9 +103,9 @@ class TableCache {
   // Return total memory usage of the table reader of the file.
   // 0 if table reader of the file is not loaded.
   size_t GetMemoryUsageByTableReader(
-      const EnvOptions& toptions,
-      const InternalKeyComparator& internal_comparator,
-      const FileDescriptor& fd);
+    const EnvOptions& toptions,
+    const InternalKeyComparator& internal_comparator,
+    const FileDescriptor& fd);
 
   // Release the handle from a cache
   void ReleaseHandle(Cache::Handle* handle);

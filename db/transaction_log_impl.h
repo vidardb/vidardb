@@ -35,13 +35,21 @@ class LogFileImpl : public LogFile {
     return LogFileName("", logNumber_);
   }
 
-  uint64_t LogNumber() const override { return logNumber_; }
+  uint64_t LogNumber() const override {
+    return logNumber_;
+  }
 
-  WalFileType Type() const override { return type_; }
+  WalFileType Type() const override {
+    return type_;
+  }
 
-  SequenceNumber StartSequence() const override { return startSequence_; }
+  SequenceNumber StartSequence() const override {
+    return startSequence_;
+  }
 
-  uint64_t SizeFileBytes() const override { return sizeFileBytes_; }
+  uint64_t SizeFileBytes() const override {
+    return sizeFileBytes_;
+  }
 
   bool operator < (const LogFile& that) const {
     return LogNumber() < that.LogNumber();
@@ -58,10 +66,10 @@ class LogFileImpl : public LogFile {
 class TransactionLogIteratorImpl : public TransactionLogIterator {
  public:
   TransactionLogIteratorImpl(
-      const std::string& dir, const DBOptions* options,
-      const TransactionLogIterator::ReadOptions& read_options,
-      const EnvOptions& soptions, const SequenceNumber seqNum,
-      std::unique_ptr<VectorLogPtr> files, VersionSet const* const versions);
+    const std::string& dir, const DBOptions* options,
+    const TransactionLogIterator::ReadOptions& read_options,
+    const EnvOptions& soptions, const SequenceNumber seqNum,
+    std::unique_ptr<VectorLogPtr> files, VersionSet const* const versions);
 
   virtual bool Valid() override;
 

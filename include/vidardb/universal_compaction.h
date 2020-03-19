@@ -76,13 +76,13 @@ class CompactionOptionsUniversal {
 
   // Default set of parameters
   CompactionOptionsUniversal()
-      : size_ratio(1),
-        min_merge_width(2),
-        max_merge_width(UINT_MAX),
-        max_size_amplification_percent(200),
-        compression_size_percent(-1),
-        stop_style(kCompactionStopStyleTotalSize),
-        allow_trivial_move(false) {}
+    : size_ratio(1),
+      min_merge_width(2),
+      max_merge_width(UINT_MAX),
+      max_size_amplification_percent(200),
+      compression_size_percent(-1),
+      stop_style(kCompactionStopStyleTotalSize),
+      allow_trivial_move(false) {}
 };
 
 }  // namespace vidardb

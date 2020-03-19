@@ -43,14 +43,14 @@ class PosixLogger : public Logger {
  public:
   PosixLogger(FILE* f, uint64_t (*gettid)(), Env* env,
               const InfoLogLevel log_level = InfoLogLevel::ERROR_LEVEL)
-      : Logger(log_level),
-        file_(f),
-        gettid_(gettid),
-        log_size_(0),
-        fd_(fileno(f)),
-        last_flush_micros_(0),
-        env_(env),
-        flush_pending_(false) {}
+    : Logger(log_level),
+      file_(f),
+      gettid_(gettid),
+      log_size_(0),
+      fd_(fileno(f)),
+      last_flush_micros_(0),
+      env_(env),
+      flush_pending_(false) {}
   virtual ~PosixLogger() {
     fclose(file_);
   }
@@ -137,11 +137,11 @@ class PosixLogger : public Logger {
         ((kDebugLogChunkSize - 1 + log_size) / kDebugLogChunkSize);
       const size_t desired_allocation_chunk =
         ((kDebugLogChunkSize - 1 + log_size + write_size) /
-           kDebugLogChunkSize);
+         kDebugLogChunkSize);
       if (last_allocation_chunk != desired_allocation_chunk) {
         fallocate(
-            fd_, FALLOC_FL_KEEP_SIZE, 0,
-            static_cast<off_t>(desired_allocation_chunk * kDebugLogChunkSize));
+          fd_, FALLOC_FL_KEEP_SIZE, 0,
+          static_cast<off_t>(desired_allocation_chunk * kDebugLogChunkSize));
       }
 #endif
 
@@ -152,7 +152,7 @@ class PosixLogger : public Logger {
         log_size_ += write_size;
       }
       uint64_t now_micros = static_cast<uint64_t>(now_tv.tv_sec) * 1000000 +
-        now_tv.tv_usec;
+                            now_tv.tv_usec;
       if (now_micros - last_flush_micros_ >= flush_every_seconds_ * 1000000) {
         Flush();
       }
@@ -162,7 +162,9 @@ class PosixLogger : public Logger {
       break;
     }
   }
-  size_t GetLogFileSize() const override { return log_size_; }
+  size_t GetLogFileSize() const override {
+    return log_size_;
+  }
 };
 
 }  // namespace vidardb

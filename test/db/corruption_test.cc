@@ -57,8 +57,8 @@ class CorruptionTest : public testing::Test {
   }
 
   ~CorruptionTest() {
-     delete db_;
-     DestroyDB(dbname_, Options());
+    delete db_;
+    DestroyDB(dbname_, Options());
   }
 
   void CloseDb() {
@@ -138,7 +138,7 @@ class CorruptionTest : public testing::Test {
     delete iter;
 
     fprintf(stderr,
-      "expected=%d..%d; got=%d; bad_keys=%d; bad_values=%d; missed=%llu\n",
+            "expected=%d..%d; got=%d; bad_keys=%d; bad_values=%d; missed=%llu\n",
             min_expected, max_expected, correct, bad_keys, bad_values,
             static_cast<unsigned long long>(missed));
     ASSERT_LE(min_expected, correct);
@@ -281,7 +281,7 @@ TEST_F(CorruptionTest, NewFileErrorDuringWrite) {
   // Do enough writing to force minor compaction
   env_.writable_file_error_ = true;
   const int num =
-      static_cast<int>(3 + (Options().write_buffer_size / kValueSize));
+    static_cast<int>(3 + (Options().write_buffer_size / kValueSize));
   std::string value_storage;
   Status s;
   bool failed = false;

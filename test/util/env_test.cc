@@ -87,14 +87,16 @@ class EnvPosixTest : public testing::Test {
 };
 
 class EnvPosixTestWithParam : public EnvPosixTest,
-                              public ::testing::WithParamInterface<Env*> {
+  public ::testing::WithParamInterface<Env*> {
  public:
-  EnvPosixTestWithParam() { env_ = GetParam(); }
+  EnvPosixTestWithParam() {
+    env_ = GetParam();
+  }
 };
 
 static void SetBool(void* ptr) {
   reinterpret_cast<std::atomic<bool>*>(ptr)
-      ->store(true, std::memory_order_relaxed);
+  ->store(true, std::memory_order_relaxed);
 }
 
 TEST_P(EnvPosixTestWithParam, RunImmediately) {
@@ -208,11 +210,11 @@ TEST_P(EnvPosixTestWithParam, TwoPools) {
   class CB {
    public:
     CB(const std::string& pool_name, int pool_size)
-        : mu_(),
-          num_running_(0),
-          num_finished_(0),
-          pool_size_(pool_size),
-          pool_name_(pool_name) { }
+      : mu_(),
+        num_running_(0),
+        num_finished_(0),
+        pool_size_(pool_size),
+        pool_name_(pool_name) { }
 
     static void Run(void* v) {
       CB* cb = reinterpret_cast<CB*>(v);
@@ -586,7 +588,9 @@ class IoctlFriendlyTmpdir {
 
 // Only works in linux platforms
 TEST_F(EnvPosixTest, RandomAccessUniqueID) {
-  for (bool directio : {true, false}) {
+  for (bool directio : {
+         true, false
+       }) {
     // Create file.
     EnvOptions soptions;
     soptions.use_direct_reads = soptions.use_direct_writes = directio;
@@ -631,7 +635,9 @@ TEST_F(EnvPosixTest, RandomAccessUniqueID) {
 // only works in linux platforms
 #ifdef VIDARDB_FALLOCATE_PRESENT
 TEST_F(EnvPosixTest, AllocateTest) {
-  for (bool directio : {true, false}) {
+  for (bool directio : {
+         true, false
+       }) {
     IoctlFriendlyTmpdir ift;
     std::string fname = ift.name() + "/preallocate_testfile";
 
@@ -719,7 +725,9 @@ bool HasPrefix(const std::unordered_set<std::string>& ss) {
 
 // Only works in linux platforms
 TEST_F(EnvPosixTest, RandomAccessUniqueIDConcurrent) {
-  for (bool directio : {true, false}) {
+  for (bool directio : {
+         true, false
+       }) {
     // Check whether a bunch of concurrently existing files have unique IDs.
     EnvOptions soptions;
     soptions.use_direct_reads = soptions.use_direct_writes = directio;
@@ -761,7 +769,9 @@ TEST_F(EnvPosixTest, RandomAccessUniqueIDConcurrent) {
 
 // Only works in linux platforms
 TEST_F(EnvPosixTest, RandomAccessUniqueIDDeletes) {
-  for (bool directio : {true, false}) {
+  for (bool directio : {
+         true, false
+       }) {
     EnvOptions soptions;
     soptions.use_direct_reads = soptions.use_direct_writes = directio;
 
@@ -803,7 +813,9 @@ TEST_F(EnvPosixTest, RandomAccessUniqueIDDeletes) {
 // Only works in linux platforms
 TEST_P(EnvPosixTestWithParam, InvalidateCache) {
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
-  for (bool directio : {true, false}) {
+  for (bool directio : {
+         true, false
+       }) {
     EnvOptions soptions;
     soptions.use_direct_reads = soptions.use_direct_writes = directio;
     std::string fname = test::TmpDir(env_) + "/" + "testfile";
@@ -818,10 +830,10 @@ TEST_P(EnvPosixTestWithParam, InvalidateCache) {
 #if !defined(OS_MACOSX) && !defined(OS_WIN)
       if (soptions.use_direct_writes) {
         vidardb::SyncPoint::GetInstance()->SetCallBack(
-            "NewWritableFile:O_DIRECT", [&](void* arg) {
-              int* val = static_cast<int*>(arg);
-              *val &= ~O_DIRECT;
-            });
+        "NewWritableFile:O_DIRECT", [&](void* arg) {
+          int* val = static_cast<int*>(arg);
+          *val &= ~O_DIRECT;
+        });
       }
 #endif
       ASSERT_OK(env_->NewWritableFile(fname, &wfile, soptions));
@@ -838,10 +850,10 @@ TEST_P(EnvPosixTestWithParam, InvalidateCache) {
 #if !defined(OS_MACOSX) && !defined(OS_WIN)
       if (soptions.use_direct_reads) {
         vidardb::SyncPoint::GetInstance()->SetCallBack(
-            "NewRandomAccessFile:O_DIRECT", [&](void* arg) {
-              int* val = static_cast<int*>(arg);
-              *val &= ~O_DIRECT;
-            });
+        "NewRandomAccessFile:O_DIRECT", [&](void* arg) {
+          int* val = static_cast<int*>(arg);
+          *val &= ~O_DIRECT;
+        });
       }
 #endif
       ASSERT_OK(env_->NewRandomAccessFile(fname, &file, soptions));
@@ -859,10 +871,10 @@ TEST_P(EnvPosixTestWithParam, InvalidateCache) {
 #if !defined(OS_MACOSX) && !defined(OS_WIN)
       if (soptions.use_direct_reads) {
         vidardb::SyncPoint::GetInstance()->SetCallBack(
-            "NewSequentialFile:O_DIRECT", [&](void* arg) {
-              int* val = static_cast<int*>(arg);
-              *val &= ~O_DIRECT;
-            });
+        "NewSequentialFile:O_DIRECT", [&](void* arg) {
+          int* val = static_cast<int*>(arg);
+          *val &= ~O_DIRECT;
+        });
       }
 #endif
       ASSERT_OK(env_->NewSequentialFile(fname, &file, soptions));
@@ -972,7 +984,7 @@ class TestLogger2 : public Logger {
       int n = vsnprintf(new_format, sizeof(new_format) - 1, format, backup_ap);
       // 48 bytes for extra information + bytes allocated
       ASSERT_TRUE(
-          n <= 48 + static_cast<int>(max_log_size_ - sizeof(struct timeval)));
+        n <= 48 + static_cast<int>(max_log_size_ - sizeof(struct timeval)));
       ASSERT_TRUE(n > static_cast<int>(max_log_size_ - sizeof(struct timeval)));
       va_end(backup_ap);
     }
@@ -997,7 +1009,9 @@ TEST_P(EnvPosixTestWithParam, LogBufferMaxSizeTest) {
 
 TEST_P(EnvPosixTestWithParam, Preallocation) {
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
-  for (bool directio : {true, false}) {
+  for (bool directio : {
+         true, false
+       }) {
     const std::string src = test::TmpDir(env_) + "/" + "testfile";
     unique_ptr<WritableFile> srcfile;
     EnvOptions soptions;
@@ -1005,10 +1019,10 @@ TEST_P(EnvPosixTestWithParam, Preallocation) {
 #if !defined(OS_MACOSX) && !defined(OS_WIN)
     if (soptions.use_direct_writes) {
       vidardb::SyncPoint::GetInstance()->SetCallBack(
-          "NewWritableFile:O_DIRECT", [&](void* arg) {
-            int* val = static_cast<int*>(arg);
-            *val &= ~O_DIRECT;
-          });
+      "NewWritableFile:O_DIRECT", [&](void* arg) {
+        int* val = static_cast<int*>(arg);
+        *val &= ~O_DIRECT;
+      });
     }
 #endif
     ASSERT_OK(env_->NewWritableFile(src, &srcfile, soptions));
@@ -1055,7 +1069,9 @@ TEST_P(EnvPosixTestWithParam, Preallocation) {
 // individually) behave consistently.
 TEST_P(EnvPosixTestWithParam, ConsistentChildrenAttributes) {
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
-  for (bool directio : {true, false}) {
+  for (bool directio : {
+         true, false
+       }) {
     EnvOptions soptions;
     soptions.use_direct_reads = soptions.use_direct_writes = directio;
     const int kNumChildren = 10;
@@ -1069,10 +1085,10 @@ TEST_P(EnvPosixTestWithParam, ConsistentChildrenAttributes) {
 #if !defined(OS_MACOSX) && !defined(OS_WIN)
       if (soptions.use_direct_writes) {
         vidardb::SyncPoint::GetInstance()->SetCallBack(
-            "NewWritableFile:O_DIRECT", [&](void* arg) {
-              int* val = static_cast<int*>(arg);
-              *val &= ~O_DIRECT;
-            });
+        "NewWritableFile:O_DIRECT", [&](void* arg) {
+          int* val = static_cast<int*>(arg);
+          *val &= ~O_DIRECT;
+        });
       }
 #endif
       ASSERT_OK(env_->NewWritableFile(path, &file, soptions));
@@ -1091,8 +1107,10 @@ TEST_P(EnvPosixTestWithParam, ConsistentChildrenAttributes) {
       const std::string path = test::TmpDir(env_) + "/" + name;
 
       auto file_attrs_iter = std::find_if(
-          file_attrs.begin(), file_attrs.end(),
-          [&name](const Env::FileAttributes& fm) { return fm.name == name; });
+                               file_attrs.begin(), file_attrs.end(),
+      [&name](const Env::FileAttributes& fm) {
+        return fm.name == name;
+      });
       ASSERT_TRUE(file_attrs_iter != file_attrs.end());
       uint64_t size;
       ASSERT_OK(env_->GetFileSize(path, &size));
@@ -1117,14 +1135,36 @@ TEST_P(EnvPosixTestWithParam, WritableFileWrapper) {
       inc(0);
     }
 
-    Status Append(const Slice& data) override { inc(1); return Status::OK(); }
-    Status Truncate(uint64_t size) override { return Status::OK(); }
-    Status Close() override { inc(2); return Status::OK(); }
-    Status Flush() override { inc(3); return Status::OK(); }
-    Status Sync() override { inc(4); return Status::OK(); }
-    Status Fsync() override { inc(5); return Status::OK(); }
-    void SetIOPriority(Env::IOPriority pri) override { inc(6); }
-    uint64_t GetFileSize() override { inc(7); return 0; }
+    Status Append(const Slice& data) override {
+      inc(1);
+      return Status::OK();
+    }
+    Status Truncate(uint64_t size) override {
+      return Status::OK();
+    }
+    Status Close() override {
+      inc(2);
+      return Status::OK();
+    }
+    Status Flush() override {
+      inc(3);
+      return Status::OK();
+    }
+    Status Sync() override {
+      inc(4);
+      return Status::OK();
+    }
+    Status Fsync() override {
+      inc(5);
+      return Status::OK();
+    }
+    void SetIOPriority(Env::IOPriority pri) override {
+      inc(6);
+    }
+    uint64_t GetFileSize() override {
+      inc(7);
+      return 0;
+    }
     void GetPreallocationStatus(size_t* block_size,
                                 size_t* last_allocated_block) override {
       inc(8);

@@ -39,15 +39,21 @@ class GetContext {
   //         False if the complete value has been found.
   bool SaveValue(const ParsedInternalKey& parsed_key, const Slice& value);
 
-  GetState State() const { return state_; }
+  GetState State() const {
+    return state_;
+  }
 
   // If a non-null string is passed, all the SaveValue calls will be
   // logged into the string. The operations can then be replayed on
   // another GetContext with replayGetContextLog.
-  void SetReplayLog(std::string* replay_log) { replay_log_ = replay_log; }
+  void SetReplayLog(std::string* replay_log) {
+    replay_log_ = replay_log;
+  }
 
   // Do we need to fetch the SequenceNumber for this key?
-  bool NeedToReadSequence() const { return (seq_ != nullptr); }
+  bool NeedToReadSequence() const {
+    return (seq_ != nullptr);
+  }
 
   /************************** Shichao *******************************/
   // For column store only

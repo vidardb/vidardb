@@ -25,9 +25,13 @@ static const Comparator* comparator;
 class KVIter : public Iterator {
  public:
   explicit KVIter(const stl_wrappers::KVMap* map)
-      : map_(map), iter_(map_->end()) {}
-  virtual bool Valid() const override { return iter_ != map_->end(); }
-  virtual void SeekToFirst() override { iter_ = map_->begin(); }
+    : map_(map), iter_(map_->end()) {}
+  virtual bool Valid() const override {
+    return iter_ != map_->end();
+  }
+  virtual void SeekToFirst() override {
+    iter_ = map_->begin();
+  }
   virtual void SeekToLast() override {
     if (map_->empty()) {
       iter_ = map_->end();
@@ -38,7 +42,9 @@ class KVIter : public Iterator {
   virtual void Seek(const Slice& k) override {
     iter_ = map_->lower_bound(k.ToString());
   }
-  virtual void Next() override { ++iter_; }
+  virtual void Next() override {
+    ++iter_;
+  }
   virtual void Prev() override {
     if (iter_ == map_->begin()) {
       iter_ = map_->end();
@@ -47,9 +53,15 @@ class KVIter : public Iterator {
     --iter_;
   }
 
-  virtual Slice key() const override { return iter_->first; }
-  virtual Slice value() const override { return iter_->second; }
-  virtual Status status() const override { return Status::OK(); }
+  virtual Slice key() const override {
+    return iter_->first;
+  }
+  virtual Slice value() const override {
+    return iter_->second;
+  }
+  virtual Status status() const override {
+    return Status::OK();
+  }
 
  private:
   const stl_wrappers::KVMap* const map_;
@@ -80,20 +92,20 @@ void DoRandomIteraratorTest(DB* db, std::vector<std::string> source_strings,
     int index = rnd->Uniform(static_cast<int>(source_strings.size()));
     auto& key = source_strings[index];
     switch (type) {
-      case 0:
-        // put
-        map[key] = key;
-        ASSERT_OK(db->Put(WriteOptions(), key, key));
-        break;
-      case 1:
-        // delete
-        if (map.find(key) != map.end()) {
-          map.erase(key);
-        }
-        ASSERT_OK(db->Delete(WriteOptions(), key));
-        break;
-      default:
-        assert(false);
+    case 0:
+      // put
+      map[key] = key;
+      ASSERT_OK(db->Put(WriteOptions(), key, key));
+      break;
+    case 1:
+      // delete
+      if (map.find(key) != map.end()) {
+        map.erase(key);
+      }
+      ASSERT_OK(db->Delete(WriteOptions(), key));
+      break;
+    default:
+      assert(false);
     }
   }
 
@@ -107,55 +119,55 @@ void DoRandomIteraratorTest(DB* db, std::vector<std::string> source_strings,
     int type = rnd->Uniform(6);
     ASSERT_OK(iter->status());
     switch (type) {
-      case 0:
-        // Seek to First
-        iter->SeekToFirst();
-        result_iter->SeekToFirst();
-        break;
-      case 1:
-        // Seek to last
-        iter->SeekToLast();
-        result_iter->SeekToLast();
-        break;
-      case 2: {
-        // Seek to random key
-        auto key_idx = rnd->Uniform(static_cast<int>(source_strings.size()));
-        auto key = source_strings[key_idx];
-        iter->Seek(key);
-        result_iter->Seek(key);
-        break;
+    case 0:
+      // Seek to First
+      iter->SeekToFirst();
+      result_iter->SeekToFirst();
+      break;
+    case 1:
+      // Seek to last
+      iter->SeekToLast();
+      result_iter->SeekToLast();
+      break;
+    case 2: {
+      // Seek to random key
+      auto key_idx = rnd->Uniform(static_cast<int>(source_strings.size()));
+      auto key = source_strings[key_idx];
+      iter->Seek(key);
+      result_iter->Seek(key);
+      break;
+    }
+    case 3:
+      // Next
+      if (is_valid) {
+        iter->Next();
+        result_iter->Next();
+      } else {
+        continue;
       }
-      case 3:
-        // Next
-        if (is_valid) {
-          iter->Next();
-          result_iter->Next();
-        } else {
-          continue;
-        }
-        break;
-      case 4:
-        // Prev
-        if (is_valid) {
-          iter->Prev();
-          result_iter->Prev();
-        } else {
-          continue;
-        }
-        break;
-      default: {
-        assert(type == 5);
-        auto key_idx = rnd->Uniform(static_cast<int>(source_strings.size()));
-        auto key = source_strings[key_idx];
-        std::string result;
-        auto status = db->Get(ReadOptions(), key, &result);
-        if (map.find(key) == map.end()) {
-          ASSERT_TRUE(status.IsNotFound());
-        } else {
-          ASSERT_EQ(map[key], result);
-        }
-        break;
+      break;
+    case 4:
+      // Prev
+      if (is_valid) {
+        iter->Prev();
+        result_iter->Prev();
+      } else {
+        continue;
       }
+      break;
+    default: {
+      assert(type == 5);
+      auto key_idx = rnd->Uniform(static_cast<int>(source_strings.size()));
+      auto key = source_strings[key_idx];
+      std::string result;
+      auto status = db->Get(ReadOptions(), key, &result);
+      if (map.find(key) == map.end()) {
+        ASSERT_TRUE(status.IsNotFound());
+      } else {
+        ASSERT_EQ(map[key], result);
+      }
+      break;
+    }
     }
     AssertItersEqual(iter.get(), result_iter.get());
     is_valid = iter->Valid();
@@ -166,7 +178,9 @@ class DoubleComparator : public Comparator {
  public:
   DoubleComparator() {}
 
-  virtual const char* Name() const override { return "DoubleComparator"; }
+  virtual const char* Name() const override {
+    return "DoubleComparator";
+  }
 
   virtual int Compare(const Slice& a, const Slice& b) const override {
 #ifndef CYGWIN
@@ -194,7 +208,9 @@ class HashComparator : public Comparator {
  public:
   HashComparator() {}
 
-  virtual const char* Name() const override { return "HashComparator"; }
+  virtual const char* Name() const override {
+    return "HashComparator";
+  }
 
   virtual int Compare(const Slice& a, const Slice& b) const override {
     uint32_t ha = Hash(a.data(), a.size(), 66);
@@ -217,7 +233,9 @@ class TwoStrComparator : public Comparator {
  public:
   TwoStrComparator() {}
 
-  virtual const char* Name() const override { return "TwoStrComparator"; }
+  virtual const char* Name() const override {
+    return "TwoStrComparator";
+  }
 
   virtual int Compare(const Slice& a, const Slice& b) const override {
     assert(a.size() >= 2);
@@ -267,7 +285,9 @@ class ComparatorDBTest : public testing::Test {
     comparator = BytewiseComparator();
   }
 
-  DB* GetDB() { return db_; }
+  DB* GetDB() {
+    return db_;
+  }
 
   void SetOwnedComparator(const Comparator* cmp) {
     comparator_guard.reset(cmp);
@@ -276,7 +296,9 @@ class ComparatorDBTest : public testing::Test {
   }
 
   // Return the current option configuration.
-  Options* GetOptions() { return &last_options_; }
+  Options* GetOptions() {
+    return &last_options_;
+  }
 
   void DestroyAndReopen() {
     // Destroy using last options
@@ -304,8 +326,8 @@ TEST_F(ComparatorDBTest, Bytewise) {
     DestroyAndReopen();
     Random rnd(rand_seed);
     DoRandomIteraratorTest(GetDB(),
-                           {"a", "b", "c", "d", "e", "f", "g", "h", "i"}, &rnd,
-                           8, 100, 3);
+    {"a", "b", "c", "d", "e", "f", "g", "h", "i"}, &rnd,
+    8, 100, 3);
   }
 }
 

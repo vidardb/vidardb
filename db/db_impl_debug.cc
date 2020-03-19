@@ -20,7 +20,7 @@ uint64_t DBImpl::TEST_GetLevel0TotalSize() {
 }
 
 int64_t DBImpl::TEST_MaxNextLevelOverlappingBytes(
-    ColumnFamilyHandle* column_family) {
+  ColumnFamilyHandle* column_family) {
   ColumnFamilyData* cfd;
   if (column_family == nullptr) {
     cfd = default_cf_handle_->cfd();
@@ -33,15 +33,15 @@ int64_t DBImpl::TEST_MaxNextLevelOverlappingBytes(
 }
 
 void DBImpl::TEST_GetFilesMetaData(
-    ColumnFamilyHandle* column_family,
-    std::vector<std::vector<FileMetaData>>* metadata) {
+  ColumnFamilyHandle* column_family,
+  std::vector<std::vector<FileMetaData>>* metadata) {
   auto cfh = reinterpret_cast<ColumnFamilyHandleImpl*>(column_family);
   auto cfd = cfh->cfd();
   InstrumentedMutexLock l(&mutex_);
   metadata->resize(NumberLevels());
   for (int level = 0; level < NumberLevels(); level++) {
     const std::vector<FileMetaData*>& files =
-        cfd->current()->storage_info()->LevelFiles(level);
+      cfd->current()->storage_info()->LevelFiles(level);
 
     (*metadata)[level].clear();
     for (const auto& f : files) {
@@ -66,10 +66,10 @@ Status DBImpl::TEST_CompactRange(int level, const Slice* begin,
     cfd = cfh->cfd();
   }
   int output_level =
-      (cfd->ioptions()->compaction_style == kCompactionStyleUniversal ||
-       cfd->ioptions()->compaction_style == kCompactionStyleFIFO)
-          ? level
-          : level + 1;
+    (cfd->ioptions()->compaction_style == kCompactionStyleUniversal ||
+     cfd->ioptions()->compaction_style == kCompactionStyleFIFO)
+    ? level
+    : level + 1;
   return RunManualCompaction(cfd, level, output_level, 0, begin, end, true,
                              disallow_trivial_move);
 }
@@ -143,7 +143,7 @@ uint64_t DBImpl::TEST_LogfileNumber() {
 }
 
 Status DBImpl::TEST_GetAllImmutableCFOptions(
-    std::unordered_map<std::string, const ImmutableCFOptions*>* iopts_map) {
+  std::unordered_map<std::string, const ImmutableCFOptions*>* iopts_map) {
   std::vector<std::string> cf_names;
   std::vector<const ImmutableCFOptions*> iopts;
   {
@@ -170,7 +170,7 @@ uint64_t DBImpl::TEST_FindMinPrepLogReferencedByMemTable() {
 }
 
 Status DBImpl::TEST_GetLatestMutableCFOptions(
-    ColumnFamilyHandle* column_family, MutableCFOptions* mutable_cf_options) {
+  ColumnFamilyHandle* column_family, MutableCFOptions* mutable_cf_options) {
   InstrumentedMutexLock l(&mutex_);
 
   auto cfh = reinterpret_cast<ColumnFamilyHandleImpl*>(column_family);

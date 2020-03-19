@@ -53,7 +53,9 @@ Mutex::Mutex(bool adaptive) {
 #endif // VIDARDB_PTHREAD_ADAPTIVE_MUTEX
 }
 
-Mutex::~Mutex() { PthreadCall("destroy mutex", pthread_mutex_destroy(&mu_)); }
+Mutex::~Mutex() {
+  PthreadCall("destroy mutex", pthread_mutex_destroy(&mu_));
+}
 
 void Mutex::Lock() {
   PthreadCall("lock", pthread_mutex_lock(&mu_));
@@ -76,11 +78,13 @@ void Mutex::AssertHeld() {
 }
 
 CondVar::CondVar(Mutex* mu)
-    : mu_(mu) {
-    PthreadCall("init cv", pthread_cond_init(&cv_, nullptr));
+  : mu_(mu) {
+  PthreadCall("init cv", pthread_cond_init(&cv_, nullptr));
 }
 
-CondVar::~CondVar() { PthreadCall("destroy cv", pthread_cond_destroy(&cv_)); }
+CondVar::~CondVar() {
+  PthreadCall("destroy cv", pthread_cond_destroy(&cv_));
+}
 
 void CondVar::Wait() {
 #ifndef NDEBUG
@@ -125,15 +129,25 @@ RWMutex::RWMutex() {
   PthreadCall("init mutex", pthread_rwlock_init(&mu_, nullptr));
 }
 
-RWMutex::~RWMutex() { PthreadCall("destroy mutex", pthread_rwlock_destroy(&mu_)); }
+RWMutex::~RWMutex() {
+  PthreadCall("destroy mutex", pthread_rwlock_destroy(&mu_));
+}
 
-void RWMutex::ReadLock() { PthreadCall("read lock", pthread_rwlock_rdlock(&mu_)); }
+void RWMutex::ReadLock() {
+  PthreadCall("read lock", pthread_rwlock_rdlock(&mu_));
+}
 
-void RWMutex::WriteLock() { PthreadCall("write lock", pthread_rwlock_wrlock(&mu_)); }
+void RWMutex::WriteLock() {
+  PthreadCall("write lock", pthread_rwlock_wrlock(&mu_));
+}
 
-void RWMutex::ReadUnlock() { PthreadCall("read unlock", pthread_rwlock_unlock(&mu_)); }
+void RWMutex::ReadUnlock() {
+  PthreadCall("read unlock", pthread_rwlock_unlock(&mu_));
+}
 
-void RWMutex::WriteUnlock() { PthreadCall("write unlock", pthread_rwlock_unlock(&mu_)); }
+void RWMutex::WriteUnlock() {
+  PthreadCall("write unlock", pthread_rwlock_unlock(&mu_));
+}
 
 int PhysicalCoreID() {
 #if defined(__i386__) || defined(__x86_64__)

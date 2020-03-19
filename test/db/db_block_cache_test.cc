@@ -58,13 +58,13 @@ class DBBlockCacheTest : public DBTestBase {
     insert_count_ = TestGetTickerCount(options, BLOCK_CACHE_ADD);
     failure_count_ = TestGetTickerCount(options, BLOCK_CACHE_ADD_FAILURES);
     compressed_miss_count_ =
-        TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_MISS);
+      TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_MISS);
     compressed_hit_count_ =
-        TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_HIT);
+      TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_HIT);
     compressed_insert_count_ =
-        TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_ADD);
+      TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_ADD);
     compressed_failure_count_ =
-        TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_ADD_FAILURES);
+      TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_ADD_FAILURES);
   }
 
   void CheckCacheCounters(const Options& options, size_t expected_misses,
@@ -74,7 +74,7 @@ class DBBlockCacheTest : public DBTestBase {
     size_t new_hit_count = TestGetTickerCount(options, BLOCK_CACHE_HIT);
     size_t new_insert_count = TestGetTickerCount(options, BLOCK_CACHE_ADD);
     size_t new_failure_count =
-        TestGetTickerCount(options, BLOCK_CACHE_ADD_FAILURES);
+      TestGetTickerCount(options, BLOCK_CACHE_ADD_FAILURES);
     ASSERT_EQ(miss_count_ + expected_misses, new_miss_count);
     ASSERT_EQ(hit_count_ + expected_hits, new_hit_count);
     ASSERT_EQ(insert_count_ + expected_inserts, new_insert_count);
@@ -91,13 +91,13 @@ class DBBlockCacheTest : public DBTestBase {
                                     size_t expected_inserts,
                                     size_t expected_failures) {
     size_t new_miss_count =
-        TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_MISS);
+      TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_MISS);
     size_t new_hit_count =
-        TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_HIT);
+      TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_HIT);
     size_t new_insert_count =
-        TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_ADD);
+      TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_ADD);
     size_t new_failure_count =
-        TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_ADD_FAILURES);
+      TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_ADD_FAILURES);
     ASSERT_EQ(compressed_miss_count_ + expected_misses, new_miss_count);
     ASSERT_EQ(compressed_hit_count_ + expected_hits, new_hit_count);
     ASSERT_EQ(compressed_insert_count_ + expected_inserts, new_insert_count);
@@ -249,7 +249,7 @@ TEST_F(DBBlockCacheTest, IndexAndFilterBlocksOfNewTableAddedToCache) {
   ASSERT_EQ(0, TestGetTickerCount(options, BLOCK_CACHE_DATA_MISS));
   uint64_t int_num;
   ASSERT_TRUE(
-      dbfull()->GetIntProperty("vidardb.estimate-table-readers-mem", &int_num));
+    dbfull()->GetIntProperty("vidardb.estimate-table-readers-mem", &int_num));
   ASSERT_EQ(int_num, 0U);
 
   // Make sure filter block is in cache.
@@ -291,9 +291,9 @@ TEST_F(DBBlockCacheTest, IndexAndFilterBlocksStats) {
   // Create a new table
   ASSERT_OK(Flush(1));
   size_t index_bytes_insert =
-      TestGetTickerCount(options, BLOCK_CACHE_INDEX_BYTES_INSERT);
+    TestGetTickerCount(options, BLOCK_CACHE_INDEX_BYTES_INSERT);
   size_t filter_bytes_insert =
-      TestGetTickerCount(options, BLOCK_CACHE_FILTER_BYTES_INSERT);
+    TestGetTickerCount(options, BLOCK_CACHE_FILTER_BYTES_INSERT);
   ASSERT_GT(index_bytes_insert, 0);
   ASSERT_GT(filter_bytes_insert, 0);
   ASSERT_EQ(cache->GetUsage(), index_bytes_insert + filter_bytes_insert);
@@ -344,7 +344,7 @@ TEST_F(DBBlockCacheTest, ParanoidFileChecks) {
   // After disabling options.paranoid_file_checks. NO further block
   // is added after generating a new file.
   ASSERT_OK(
-      dbfull()->SetOptions(handles_[1], {{"paranoid_file_checks", "false"}}));
+  dbfull()->SetOptions(handles_[1], {{"paranoid_file_checks", "false"}}));
 
   ASSERT_OK(Put(1, "1_key3", "val3"));
   ASSERT_OK(Put(1, "9_key3", "val3"));
@@ -376,31 +376,31 @@ TEST_F(DBBlockCacheTest, CompressedCache) {
 
     BlockBasedTableOptions table_options;
     switch (iter) {
-      case 0:
-        // only uncompressed block cache
-        table_options.block_cache = NewLRUCache(8 * 1024);
-        options.table_factory.reset(NewBlockBasedTableFactory(table_options));
-        break;
-      case 1:
-        // no block cache, only compressed cache
-        table_options.no_block_cache = true;
-        table_options.block_cache = nullptr;
-        options.table_factory.reset(NewBlockBasedTableFactory(table_options));
-        break;
-      case 2:
-        // both compressed and uncompressed block cache
-        table_options.block_cache = NewLRUCache(1024);
-        options.table_factory.reset(NewBlockBasedTableFactory(table_options));
-        break;
-      case 3:
-        // both block cache and compressed cache, but DB is not compressed
-        // also, make block cache sizes bigger, to trigger block cache hits
-        table_options.block_cache = NewLRUCache(1024 * 1024);
-        options.table_factory.reset(NewBlockBasedTableFactory(table_options));
-        options.compression = kNoCompression;
-        break;
-      default:
-        ASSERT_TRUE(false);
+    case 0:
+      // only uncompressed block cache
+      table_options.block_cache = NewLRUCache(8 * 1024);
+      options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+      break;
+    case 1:
+      // no block cache, only compressed cache
+      table_options.no_block_cache = true;
+      table_options.block_cache = nullptr;
+      options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+      break;
+    case 2:
+      // both compressed and uncompressed block cache
+      table_options.block_cache = NewLRUCache(1024);
+      options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+      break;
+    case 3:
+      // both block cache and compressed cache, but DB is not compressed
+      // also, make block cache sizes bigger, to trigger block cache hits
+      table_options.block_cache = NewLRUCache(1024 * 1024);
+      options.table_factory.reset(NewBlockBasedTableFactory(table_options));
+      options.compression = kNoCompression;
+      break;
+    default:
+      ASSERT_TRUE(false);
     }
     CreateAndReopenWithCF({"pikachu"}, options);
     // default column family doesn't have block cache
@@ -410,10 +410,10 @@ TEST_F(DBBlockCacheTest, CompressedCache) {
     BlockBasedTableOptions table_options_no_bc;
     table_options_no_bc.no_block_cache = true;
     no_block_cache_opts.table_factory.reset(
-        NewBlockBasedTableFactory(table_options_no_bc));
+      NewBlockBasedTableFactory(table_options_no_bc));
     ReopenWithColumnFamilies(
-        {"default", "pikachu"},
-        std::vector<Options>({no_block_cache_opts, options}));
+    {"default", "pikachu"},
+    std::vector<Options>({no_block_cache_opts, options}));
 
     Random rnd(301);
 
@@ -438,32 +438,32 @@ TEST_F(DBBlockCacheTest, CompressedCache) {
 
     // check that we triggered the appropriate code paths in the cache
     switch (iter) {
-      case 0:
-        // only uncompressed block cache
-        ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_MISS), 0);
-        ASSERT_EQ(TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_MISS), 0);
-        break;
-      case 1:
-        // no block cache, only compressed cache
-        ASSERT_EQ(TestGetTickerCount(options, BLOCK_CACHE_MISS), 0);
-        ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_MISS), 0);
-        break;
-      case 2:
-        // both compressed and uncompressed block cache
-        ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_MISS), 0);
-        ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_MISS), 0);
-        break;
-      case 3:
-        // both compressed and uncompressed block cache
-        ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_MISS), 0);
-        ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_HIT), 0);
-        ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_MISS), 0);
-        // compressed doesn't have any hits since blocks are not compressed on
-        // storage
-        ASSERT_EQ(TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_HIT), 0);
-        break;
-      default:
-        ASSERT_TRUE(false);
+    case 0:
+      // only uncompressed block cache
+      ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_MISS), 0);
+      ASSERT_EQ(TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_MISS), 0);
+      break;
+    case 1:
+      // no block cache, only compressed cache
+      ASSERT_EQ(TestGetTickerCount(options, BLOCK_CACHE_MISS), 0);
+      ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_MISS), 0);
+      break;
+    case 2:
+      // both compressed and uncompressed block cache
+      ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_MISS), 0);
+      ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_MISS), 0);
+      break;
+    case 3:
+      // both compressed and uncompressed block cache
+      ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_MISS), 0);
+      ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_HIT), 0);
+      ASSERT_GT(TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_MISS), 0);
+      // compressed doesn't have any hits since blocks are not compressed on
+      // storage
+      ASSERT_EQ(TestGetTickerCount(options, BLOCK_CACHE_COMPRESSED_HIT), 0);
+      break;
+    default:
+      ASSERT_TRUE(false);
     }
 
     options.create_if_missing = true;

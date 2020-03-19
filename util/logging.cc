@@ -41,14 +41,14 @@ int AppendHumanMicros(uint64_t micros, char* output, int len,
                     static_cast<double>(micros) / 1000000);
   } else if (micros < 1000000ll * 60 * 60 && !fixed_format) {
     return snprintf(output, len, "%02" PRIu64 ":%05.3f M:S",
-        micros / 1000000 / 60,
-        static_cast<double>(micros % 60000000) / 1000000);
+                    micros / 1000000 / 60,
+                    static_cast<double>(micros % 60000000) / 1000000);
   } else {
     return snprintf(output, len,
-        "%02" PRIu64 ":%02" PRIu64 ":%05.3f H:M:S",
-        micros / 1000000 / 3600,
-        (micros / 1000000 / 60) % 60,
-        static_cast<double>(micros % 60000000) / 1000000);
+                    "%02" PRIu64 ":%02" PRIu64 ":%05.3f H:M:S",
+                    micros / 1000000 / 3600,
+                    (micros / 1000000 / 60) % 60,
+                    static_cast<double>(micros % 60000000) / 1000000);
   }
 }
 

@@ -42,40 +42,40 @@ namespace vidardb {
 class TableFactory;
 
 TableBuilder* NewTableBuilder(
-    const ImmutableCFOptions& ioptions,
-    const InternalKeyComparator& internal_comparator,
-    const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
-        int_tbl_prop_collector_factories,
-    uint32_t column_family_id, const std::string& column_family_name,
-    WritableFileWriter* file, const CompressionType compression_type,
-    const CompressionOptions& compression_opts, const EnvOptions& env_options,  // Shichao
-    const std::string* compression_dict) {
+  const ImmutableCFOptions& ioptions,
+  const InternalKeyComparator& internal_comparator,
+  const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
+  int_tbl_prop_collector_factories,
+  uint32_t column_family_id, const std::string& column_family_name,
+  WritableFileWriter* file, const CompressionType compression_type,
+  const CompressionOptions& compression_opts, const EnvOptions& env_options,  // Shichao
+  const std::string* compression_dict) {
   assert((column_family_id ==
           TablePropertiesCollectorFactory::Context::kUnknownColumnFamily) ==
          column_family_name.empty());
   return ioptions.table_factory->NewTableBuilder(
-      TableBuilderOptions(ioptions, internal_comparator,
-                          int_tbl_prop_collector_factories, compression_type,
-                          compression_opts, compression_dict,
-                          column_family_name, env_options),  // Shichao
-      column_family_id, file);
+           TableBuilderOptions(ioptions, internal_comparator,
+                               int_tbl_prop_collector_factories, compression_type,
+                               compression_opts, compression_dict,
+                               column_family_name, env_options),  // Shichao
+           column_family_id, file);
 }
 
 Status BuildTable(
-    const std::string& dbname, Env* env, const ImmutableCFOptions& ioptions,
-    const MutableCFOptions& mutable_cf_options, const EnvOptions& env_options,
-    TableCache* table_cache, InternalIterator* iter, FileMetaData* meta,
-    const InternalKeyComparator& internal_comparator,
-    const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
-        int_tbl_prop_collector_factories,
-    uint32_t column_family_id, const std::string& column_family_name,
-    std::vector<SequenceNumber> snapshots,
-    SequenceNumber earliest_write_conflict_snapshot,
-    const CompressionType compression,
-    const CompressionOptions& compression_opts, bool paranoid_file_checks,
-    InternalStats* internal_stats, TableFileCreationReason reason,
-    EventLogger* event_logger, int job_id, const Env::IOPriority io_priority,
-    TableProperties* table_properties, int level) {
+  const std::string& dbname, Env* env, const ImmutableCFOptions& ioptions,
+  const MutableCFOptions& mutable_cf_options, const EnvOptions& env_options,
+  TableCache* table_cache, InternalIterator* iter, FileMetaData* meta,
+  const InternalKeyComparator& internal_comparator,
+  const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
+  int_tbl_prop_collector_factories,
+  uint32_t column_family_id, const std::string& column_family_name,
+  std::vector<SequenceNumber> snapshots,
+  SequenceNumber earliest_write_conflict_snapshot,
+  const CompressionType compression,
+  const CompressionOptions& compression_opts, bool paranoid_file_checks,
+  InternalStats* internal_stats, TableFileCreationReason reason,
+  EventLogger* event_logger, int job_id, const Env::IOPriority io_priority,
+  TableProperties* table_properties, int level) {
   assert((column_family_id ==
           TablePropertiesCollectorFactory::Context::kUnknownColumnFamily) ==
          column_family_name.empty());
@@ -89,7 +89,7 @@ Status BuildTable(
                                     meta->fd.GetPathId());
 #ifndef VIDARDB_LITE
   EventHelpers::NotifyTableFileCreationStarted(
-      ioptions.listeners, dbname, column_family_name, fname, job_id, reason);
+    ioptions.listeners, dbname, column_family_name, fname, job_id, reason);
 #endif  // !VIDARDB_LITE
   TableProperties tp;
 
@@ -101,8 +101,8 @@ Status BuildTable(
       s = NewWritableFile(env, fname, &file, env_options);
       if (!s.ok()) {
         EventHelpers::LogAndNotifyTableFileCreationFinished(
-            event_logger, ioptions.listeners, dbname, column_family_name, fname,
-            job_id, meta->fd, tp, reason, s);
+          event_logger, ioptions.listeners, dbname, column_family_name, fname,
+          job_id, meta->fd, tp, reason, s);
         return s;
       }
       file->SetIOPriority(io_priority);
@@ -110,9 +110,9 @@ Status BuildTable(
       file_writer.reset(new WritableFileWriter(std::move(file), env_options));
 
       builder = NewTableBuilder(
-          ioptions, internal_comparator, int_tbl_prop_collector_factories,
-          column_family_id, column_family_name, file_writer.get(), compression,
-          compression_opts, env_options);  // Shichao
+                  ioptions, internal_comparator, int_tbl_prop_collector_factories,
+                  column_family_id, column_family_name, file_writer.get(), compression,
+                  compression_opts, env_options);  // Shichao
     }
 
     CompactionIterator c_iter(iter, internal_comparator.user_comparator(),
@@ -130,7 +130,7 @@ Status BuildTable(
       if (io_priority == Env::IO_HIGH &&
           IOSTATS(bytes_written) >= kReportFlushIOStatsEvery) {
         ThreadStatusUtil::SetThreadOperationProperty(
-            ThreadStatus::FLUSH_BYTES_WRITTEN, IOSTATS(bytes_written));
+          ThreadStatus::FLUSH_BYTES_WRITTEN, IOSTATS(bytes_written));
       }
     }
 
@@ -168,11 +168,11 @@ Status BuildTable(
     if (s.ok() && !empty) {
       // Verify that the table is usable
       std::unique_ptr<InternalIterator> it(table_cache->NewIterator(
-          ReadOptions(), env_options, internal_comparator, meta->fd, nullptr,
-          (internal_stats == nullptr) ? nullptr
-                                      : internal_stats->GetFileReadHist(0),
-          false /* for_compaction */, nullptr /* arena */,
-          false /* skip_filter */, level));
+                                             ReadOptions(), env_options, internal_comparator, meta->fd, nullptr,
+                                             (internal_stats == nullptr) ? nullptr
+                                             : internal_stats->GetFileReadHist(0),
+                                             false /* for_compaction */, nullptr /* arena */,
+                                             false /* skip_filter */, level));
       s = it->status();
       if (s.ok() && paranoid_file_checks) {
         for (it->SeekToFirst(); it->Valid(); it->Next()) {
@@ -193,8 +193,8 @@ Status BuildTable(
 
   // Output to event logger and fire events.
   EventHelpers::LogAndNotifyTableFileCreationFinished(
-      event_logger, ioptions.listeners, dbname, column_family_name, fname,
-      job_id, meta->fd, tp, reason, s);
+    event_logger, ioptions.listeners, dbname, column_family_name, fname,
+    job_id, meta->fd, tp, reason, s);
 
   return s;
 }

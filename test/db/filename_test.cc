@@ -35,24 +35,29 @@ TEST_F(FileNameTest, Parse) {
     FileType type;
     char mode;
   } cases[] = {
-        {"100.log", 100, kLogFile, kAllMode},
-        {"0.log", 0, kLogFile, kAllMode},
-        {"0.sst", 0, kTableFile, kAllMode},
-        {"CURRENT", 0, kCurrentFile, kAllMode},
-        {"LOCK", 0, kDBLockFile, kAllMode},
-        {"MANIFEST-2", 2, kDescriptorFile, kAllMode},
-        {"MANIFEST-7", 7, kDescriptorFile, kAllMode},
-        {"METADB-2", 2, kMetaDatabase, kAllMode},
-        {"METADB-7", 7, kMetaDatabase, kAllMode},
-        {"LOG", 0, kInfoLogFile, kDefautInfoLogDir},
-        {"LOG.old", 0, kInfoLogFile, kDefautInfoLogDir},
-        {"LOG.old.6688", 6688, kInfoLogFile, kDefautInfoLogDir},
-        {"vidardb_dir_LOG", 0, kInfoLogFile, kDifferentInfoLogDir},
-        {"vidardb_dir_LOG.old", 0, kInfoLogFile, kDifferentInfoLogDir},
-        {"vidardb_dir_LOG.old.6688", 6688, kInfoLogFile, kDifferentInfoLogDir},
-        {"18446744073709551615.log", 18446744073709551615ull, kLogFile,
-         kAllMode}, };
-  for (char mode : {kDifferentInfoLogDir, kDefautInfoLogDir, kNoCheckLogDir}) {
+    {"100.log", 100, kLogFile, kAllMode},
+    {"0.log", 0, kLogFile, kAllMode},
+    {"0.sst", 0, kTableFile, kAllMode},
+    {"CURRENT", 0, kCurrentFile, kAllMode},
+    {"LOCK", 0, kDBLockFile, kAllMode},
+    {"MANIFEST-2", 2, kDescriptorFile, kAllMode},
+    {"MANIFEST-7", 7, kDescriptorFile, kAllMode},
+    {"METADB-2", 2, kMetaDatabase, kAllMode},
+    {"METADB-7", 7, kMetaDatabase, kAllMode},
+    {"LOG", 0, kInfoLogFile, kDefautInfoLogDir},
+    {"LOG.old", 0, kInfoLogFile, kDefautInfoLogDir},
+    {"LOG.old.6688", 6688, kInfoLogFile, kDefautInfoLogDir},
+    {"vidardb_dir_LOG", 0, kInfoLogFile, kDifferentInfoLogDir},
+    {"vidardb_dir_LOG.old", 0, kInfoLogFile, kDifferentInfoLogDir},
+    {"vidardb_dir_LOG.old.6688", 6688, kInfoLogFile, kDifferentInfoLogDir},
+    {
+      "18446744073709551615.log", 18446744073709551615ull, kLogFile,
+      kAllMode
+    },
+  };
+  for (char mode : {
+         kDifferentInfoLogDir, kDefautInfoLogDir, kNoCheckLogDir
+       }) {
     for (unsigned int i = 0; i < sizeof(cases) / sizeof(cases[0]); i++) {
       InfoLogPrefix info_log_prefix(mode != kDefautInfoLogDir, "/vidardb/dir");
       if (cases[i].mode & mode) {
@@ -117,8 +122,8 @@ TEST_F(FileNameTest, InfoLogFileName) {
   ASSERT_EQ("/data/vidardb_log/data_vidardb_LOG",
             InfoLogFileName(dbname, db_absolute_path, "/data/vidardb_log"));
   ASSERT_EQ(
-      "/data/vidardb_log/data_vidardb_LOG.old.666",
-      OldInfoLogFileName(dbname, 666u, db_absolute_path, "/data/vidardb_log"));
+    "/data/vidardb_log/data_vidardb_LOG.old.666",
+    OldInfoLogFileName(dbname, 666u, db_absolute_path, "/data/vidardb_log"));
 }
 
 TEST_F(FileNameTest, Construction) {
@@ -146,7 +151,7 @@ TEST_F(FileNameTest, Construction) {
 
   fname = TableFileName({DbPath("bar", 0)}, 200, 0);
   std::string fname1 =
-      TableFileName({DbPath("foo", 0), DbPath("bar", 0)}, 200, 1);
+    TableFileName({DbPath("foo", 0), DbPath("bar", 0)}, 200, 1);
   ASSERT_EQ(fname, fname1);
   ASSERT_EQ("bar/", std::string(fname.data(), 4));
   ASSERT_TRUE(ParseFileName(fname.c_str() + 4, &number, &type));

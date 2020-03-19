@@ -26,13 +26,13 @@ class VersionBuilderTest : public testing::Test {
   std::vector<uint64_t> size_being_compacted_;
 
   VersionBuilderTest()
-      : ucmp_(BytewiseComparator()),
-        icmp_(ucmp_),
-        ioptions_(options_),
-        mutable_cf_options_(options_, ioptions_),
-        vstorage_(&icmp_, ucmp_, options_.num_levels, kCompactionStyleLevel,
-                 nullptr),
-        file_num_(1) {
+    : ucmp_(BytewiseComparator()),
+      icmp_(ucmp_),
+      ioptions_(options_),
+      mutable_cf_options_(options_, ioptions_),
+      vstorage_(&icmp_, ucmp_, options_.num_levels, kCompactionStyleLevel,
+                nullptr),
+      file_num_(1) {
     mutable_cf_options_.RefreshDerivedOptions(ioptions_);
     size_being_compacted_.resize(options_.num_levels);
   }

@@ -12,8 +12,8 @@
 namespace vidardb {
 
 Status InternalKeyPropertiesCollector::InternalAdd(const Slice& key,
-                                                   const Slice& value,
-                                                   uint64_t file_size) {
+    const Slice& value,
+    uint64_t file_size) {
   ParsedInternalKey ikey;
   if (!ParseInternalKey(key, &ikey)) {
     return Status::InvalidArgument("Invalid internal key");
@@ -28,22 +28,22 @@ Status InternalKeyPropertiesCollector::InternalAdd(const Slice& key,
 }
 
 Status InternalKeyPropertiesCollector::Finish(
-    UserCollectedProperties* properties) {
+  UserCollectedProperties* properties) {
   assert(properties);
   assert(properties->find(
-        InternalKeyTablePropertiesNames::kDeletedKeys) == properties->end());
+           InternalKeyTablePropertiesNames::kDeletedKeys) == properties->end());
   assert(properties->find(InternalKeyTablePropertiesNames::kMergeOperands) ==
          properties->end());
 
   std::string val_deleted_keys;
   PutVarint64(&val_deleted_keys, deleted_keys_);
   properties->insert(
-      {InternalKeyTablePropertiesNames::kDeletedKeys, val_deleted_keys});
+  {InternalKeyTablePropertiesNames::kDeletedKeys, val_deleted_keys});
 
   std::string val_merge_operands;
   PutVarint64(&val_merge_operands, merge_operands_);
   properties->insert(
-      {InternalKeyTablePropertiesNames::kMergeOperands, val_merge_operands});
+  {InternalKeyTablePropertiesNames::kMergeOperands, val_merge_operands});
 
   return Status::OK();
 }
@@ -51,19 +51,19 @@ Status InternalKeyPropertiesCollector::Finish(
 UserCollectedProperties
 InternalKeyPropertiesCollector::GetReadableProperties() const {
   return {{"kDeletedKeys", ToString(deleted_keys_)},
-          {"kMergeOperands", ToString(merge_operands_)}};
+    {"kMergeOperands", ToString(merge_operands_)}};
 }
 
 namespace {
 
 EntryType GetEntryType(ValueType value_type) {
   switch (value_type) {
-    case kTypeValue:
-      return kEntryPut;
-    case kTypeDeletion:
-      return kEntryDelete;
-    default:
-      return kEntryOther;
+  case kTypeValue:
+    return kEntryPut;
+  case kTypeDeletion:
+    return kEntryDelete;
+  default:
+    return kEntryOther;
   }
 }
 
@@ -84,8 +84,8 @@ uint64_t GetUint64Property(const UserCollectedProperties& props,
 }  // namespace
 
 Status UserKeyTablePropertiesCollector::InternalAdd(const Slice& key,
-                                                    const Slice& value,
-                                                    uint64_t file_size) {
+    const Slice& value,
+    uint64_t file_size) {
   ParsedInternalKey ikey;
   if (!ParseInternalKey(key, &ikey)) {
     return Status::InvalidArgument("Invalid internal key");
@@ -96,7 +96,7 @@ Status UserKeyTablePropertiesCollector::InternalAdd(const Slice& key,
 }
 
 Status UserKeyTablePropertiesCollector::Finish(
-    UserCollectedProperties* properties) {
+  UserCollectedProperties* properties) {
   return collector_->Finish(properties);
 }
 
@@ -109,10 +109,10 @@ UserKeyTablePropertiesCollector::GetReadableProperties() const {
 const std::string InternalKeyTablePropertiesNames::kDeletedKeys
   = "vidardb.deleted.keys";
 const std::string InternalKeyTablePropertiesNames::kMergeOperands =
-    "vidardb.merge.operands";
+  "vidardb.merge.operands";
 
 uint64_t GetDeletedKeys(
-    const UserCollectedProperties& props) {
+  const UserCollectedProperties& props) {
   bool property_present_ignored;
   return GetUint64Property(props, InternalKeyTablePropertiesNames::kDeletedKeys,
                            &property_present_ignored);
@@ -121,7 +121,7 @@ uint64_t GetDeletedKeys(
 uint64_t GetMergeOperands(const UserCollectedProperties& props,
                           bool* property_present) {
   return GetUint64Property(
-      props, InternalKeyTablePropertiesNames::kMergeOperands, property_present);
+           props, InternalKeyTablePropertiesNames::kMergeOperands, property_present);
 }
 
 }  // namespace vidardb

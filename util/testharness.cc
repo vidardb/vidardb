@@ -18,7 +18,7 @@ namespace test {
     return ::testing::AssertionSuccess();
   } else {
     return ::testing::AssertionFailure() << s_expr << std::endl
-                                         << s.ToString();
+           << s.ToString();
   }
 }
 

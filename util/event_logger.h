@@ -100,7 +100,9 @@ class JSONWriter {
     state_ = kInArray;
   }
 
-  std::string Get() const { return stream_.str(); }
+  std::string Get() const {
+    return stream_.str();
+  }
 
   JSONWriter& operator<<(const char* val) {
     if (state_ == kExpectKey) {
@@ -144,10 +146,18 @@ class EventLoggerStream {
     return *this;
   }
 
-  void StartArray() { json_writer_->StartArray(); }
-  void EndArray() { json_writer_->EndArray(); }
-  void StartObject() { json_writer_->StartObject(); }
-  void EndObject() { json_writer_->EndObject(); }
+  void StartArray() {
+    json_writer_->StartArray();
+  }
+  void EndArray() {
+    json_writer_->EndArray();
+  }
+  void StartObject() {
+    json_writer_->StartObject();
+  }
+  void EndObject() {
+    json_writer_->EndObject();
+  }
 
   ~EventLoggerStream();
 
@@ -157,7 +167,7 @@ class EventLoggerStream {
       json_writer_ = new JSONWriter();
       *this << "time_micros"
             << std::chrono::duration_cast<std::chrono::microseconds>(
-                   std::chrono::system_clock::now().time_since_epoch()).count();
+              std::chrono::system_clock::now().time_since_epoch()).count();
     }
   }
   friend class EventLogger;
@@ -181,7 +191,9 @@ class EventLogger {
   }
 
   explicit EventLogger(Logger* logger) : logger_(logger) {}
-  EventLoggerStream Log() { return EventLoggerStream(logger_); }
+  EventLoggerStream Log() {
+    return EventLoggerStream(logger_);
+  }
   EventLoggerStream LogToBuffer(LogBuffer* log_buffer) {
     return EventLoggerStream(log_buffer);
   }

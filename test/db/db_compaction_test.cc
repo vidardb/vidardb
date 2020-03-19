@@ -21,8 +21,8 @@ class DBCompactionTest : public DBTestBase {
 };
 
 class DBCompactionTestWithParam
-    : public DBTestBase,
-      public testing::WithParamInterface<std::tuple<uint32_t, bool>> {
+  : public DBTestBase,
+    public testing::WithParamInterface<std::tuple<uint32_t, bool>> {
  public:
   DBCompactionTestWithParam() : DBTestBase("/db_compaction_test") {
     max_subcompactions_ = std::get<0>(GetParam());
@@ -58,7 +58,9 @@ class FlushedFileCollector : public EventListener {
     return result;
   }
 
-  void ClearFlushedFiles() { flushed_files_.clear(); }
+  void ClearFlushedFiles() {
+    flushed_files_.clear();
+  }
 
  private:
   std::vector<std::string> flushed_files_;
@@ -78,15 +80,15 @@ Options DeletionTriggerOptions(Options options) {
   options.target_file_size_base = options.write_buffer_size * 2;
   options.target_file_size_multiplier = 2;
   options.max_bytes_for_level_base =
-      options.target_file_size_base * options.target_file_size_multiplier;
+    options.target_file_size_base * options.target_file_size_multiplier;
   options.max_bytes_for_level_multiplier = 2;
   options.disable_auto_compactions = false;
   return options;
 }
 
 bool HaveOverlappingKeyRanges(
-    const Comparator* c,
-    const SstFileMetaData& a, const SstFileMetaData& b) {
+  const Comparator* c,
+  const SstFileMetaData& a, const SstFileMetaData& b) {
   if (c->Compare(a.smallestkey, b.smallestkey) >= 0) {
     if (c->Compare(a.smallestkey, b.largestkey) <= 0) {
       // b.smallestkey <= a.smallestkey <= b.largestkey
@@ -111,18 +113,18 @@ bool HaveOverlappingKeyRanges(
 // Identifies all files between level "min_level" and "max_level"
 // which has overlapping key range with "input_file_meta".
 void GetOverlappingFileNumbersForLevelCompaction(
-    const ColumnFamilyMetaData& cf_meta,
-    const Comparator* comparator,
-    int min_level, int max_level,
-    const SstFileMetaData* input_file_meta,
-    std::set<std::string>* overlapping_file_names) {
+  const ColumnFamilyMetaData& cf_meta,
+  const Comparator* comparator,
+  int min_level, int max_level,
+  const SstFileMetaData* input_file_meta,
+  std::set<std::string>* overlapping_file_names) {
   std::set<const SstFileMetaData*> overlapping_files;
   overlapping_files.insert(input_file_meta);
   for (int m = min_level; m <= max_level; ++m) {
     for (auto& file : cf_meta.levels[m].files) {
       for (auto* included_file : overlapping_files) {
         if (HaveOverlappingKeyRanges(
-                comparator, *included_file, file)) {
+              comparator, *included_file, file)) {
           overlapping_files.insert(&file);
           overlapping_file_names->insert(file.name);
           break;
@@ -133,8 +135,8 @@ void GetOverlappingFileNumbersForLevelCompaction(
 }
 
 void VerifyCompactionResult(
-    const ColumnFamilyMetaData& cf_meta,
-    const std::set<std::string>& overlapping_file_numbers) {
+  const ColumnFamilyMetaData& cf_meta,
+  const std::set<std::string>& overlapping_file_numbers) {
 #ifndef NDEBUG
   for (auto& level : cf_meta.levels) {
     for (auto& file : level.files) {
@@ -146,11 +148,11 @@ void VerifyCompactionResult(
 }
 
 const SstFileMetaData* PickFileRandomly(
-    const ColumnFamilyMetaData& cf_meta,
-    Random* rand,
-    int* level = nullptr) {
+  const ColumnFamilyMetaData& cf_meta,
+  Random* rand,
+  int* level = nullptr) {
   auto file_id = rand->Uniform(static_cast<int>(
-      cf_meta.file_count)) + 1;
+                                 cf_meta.file_count)) + 1;
   for (auto& level_meta : cf_meta.levels) {
     if (file_id <= level_meta.files.size()) {
       if (level != nullptr) {
@@ -267,17 +269,19 @@ TEST_F(DBCompactionTest, TestTableReaderForCompaction) {
   int num_table_cache_lookup = 0;
   int num_new_table_reader = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "TableCache::FindTable:0", [&](void* arg) {
-        assert(arg != nullptr);
-        bool no_io = *(reinterpret_cast<bool*>(arg));
-        if (!no_io) {
-          // filter out cases for table properties queries.
-          num_table_cache_lookup++;
-        }
-      });
+  "TableCache::FindTable:0", [&](void* arg) {
+    assert(arg != nullptr);
+    bool no_io = *(reinterpret_cast<bool*>(arg));
+    if (!no_io) {
+      // filter out cases for table properties queries.
+      num_table_cache_lookup++;
+    }
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "TableCache::GetTableReader:0",
-      [&](void* arg) { num_new_table_reader++; });
+    "TableCache::GetTableReader:0",
+  [&](void* arg) {
+    num_new_table_reader++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   for (int k = 0; k < options.level0_file_num_compaction_trigger; ++k) {
@@ -671,7 +675,9 @@ TEST_F(DBCompactionTest, ZeroSeqIdCompaction) {
   std::vector<const Snapshot*> snaps;
 
   // create first file and flush to l0
-  for (auto& key : {"1", "2", "3", "3", "3", "3"}) {
+  for (auto& key : {
+         "1", "2", "3", "3", "3", "3"
+       }) {
     Put(key, std::string(key_len, 'A'));
     snaps.push_back(dbfull()->GetSnapshot());
   }
@@ -679,7 +685,9 @@ TEST_F(DBCompactionTest, ZeroSeqIdCompaction) {
   dbfull()->TEST_WaitForFlushMemTable();
 
   // create second file and flush to l0
-  for (auto& key : {"3", "4", "5", "6", "7", "8"}) {
+  for (auto& key : {
+         "3", "4", "5", "6", "7", "8"
+       }) {
     Put(key, std::string(key_len, 'A'));
     snaps.push_back(dbfull()->GetSnapshot());
   }
@@ -730,8 +738,10 @@ TEST_F(DBCompactionTest, RecoverDuringMemtableCompaction) {
 TEST_P(DBCompactionTestWithParam, TrivialMoveOneFile) {
   int32_t trivial_move = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:TrivialMove",
-      [&](void* arg) { trivial_move++; });
+    "DBImpl::BackgroundCompaction:TrivialMove",
+  [&](void* arg) {
+    trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Options options = CurrentOptions();
@@ -787,11 +797,15 @@ TEST_P(DBCompactionTestWithParam, TrivialMoveNonOverlappingFiles) {
   int32_t trivial_move = 0;
   int32_t non_trivial_move = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:TrivialMove",
-      [&](void* arg) { trivial_move++; });
+    "DBImpl::BackgroundCompaction:TrivialMove",
+  [&](void* arg) {
+    trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial",
-      [&](void* arg) { non_trivial_move++; });
+    "DBImpl::BackgroundCompaction:NonTrivial",
+  [&](void* arg) {
+    non_trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Options options = CurrentOptions();
@@ -886,11 +900,15 @@ TEST_P(DBCompactionTestWithParam, TrivialMoveTargetLevel) {
   int32_t trivial_move = 0;
   int32_t non_trivial_move = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:TrivialMove",
-      [&](void* arg) { trivial_move++; });
+    "DBImpl::BackgroundCompaction:TrivialMove",
+  [&](void* arg) {
+    trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial",
-      [&](void* arg) { non_trivial_move++; });
+    "DBImpl::BackgroundCompaction:NonTrivial",
+  [&](void* arg) {
+    non_trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Options options = CurrentOptions();
@@ -945,28 +963,35 @@ TEST_P(DBCompactionTestWithParam, ManualCompactionPartial) {
   int32_t trivial_move = 0;
   int32_t non_trivial_move = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:TrivialMove",
-      [&](void* arg) { trivial_move++; });
+    "DBImpl::BackgroundCompaction:TrivialMove",
+  [&](void* arg) {
+    trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial",
-      [&](void* arg) { non_trivial_move++; });
+    "DBImpl::BackgroundCompaction:NonTrivial",
+  [&](void* arg) {
+    non_trivial_move++;
+  });
   bool first = true;
   bool second = true;
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"DBCompaction::ManualPartial:4", "DBCompaction::ManualPartial:1"},
-       {"DBCompaction::ManualPartial:2", "DBCompaction::ManualPartial:3"},
-       {"DBCompaction::ManualPartial:5",
-        "DBImpl::BackgroundCompaction:NonTrivial:AfterRun"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {"DBCompaction::ManualPartial:4", "DBCompaction::ManualPartial:1"},
+    {"DBCompaction::ManualPartial:2", "DBCompaction::ManualPartial:3"},
+    {
+      "DBCompaction::ManualPartial:5",
+      "DBImpl::BackgroundCompaction:NonTrivial:AfterRun"
+    }
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
-        if (first) {
-          TEST_SYNC_POINT("DBCompaction::ManualPartial:4");
-          first = false;
-          TEST_SYNC_POINT("DBCompaction::ManualPartial:3");
-        } else if (second) {
-          TEST_SYNC_POINT("DBCompaction::ManualPartial:2");
-        }
-      });
+  "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
+    if (first) {
+      TEST_SYNC_POINT("DBCompaction::ManualPartial:4");
+      first = false;
+      TEST_SYNC_POINT("DBCompaction::ManualPartial:3");
+    } else if (second) {
+      TEST_SYNC_POINT("DBCompaction::ManualPartial:2");
+    }
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -1084,25 +1109,30 @@ TEST_F(DBCompactionTest, ManualPartialFill) {
   int32_t trivial_move = 0;
   int32_t non_trivial_move = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:TrivialMove",
-      [&](void* arg) { trivial_move++; });
+    "DBImpl::BackgroundCompaction:TrivialMove",
+  [&](void* arg) {
+    trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial",
-      [&](void* arg) { non_trivial_move++; });
+    "DBImpl::BackgroundCompaction:NonTrivial",
+  [&](void* arg) {
+    non_trivial_move++;
+  });
   bool first = true;
   bool second = true;
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"DBCompaction::PartialFill:4", "DBCompaction::PartialFill:1"},
-       {"DBCompaction::PartialFill:2", "DBCompaction::PartialFill:3"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {"DBCompaction::PartialFill:4", "DBCompaction::PartialFill:1"},
+    {"DBCompaction::PartialFill:2", "DBCompaction::PartialFill:3"}
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
-        if (first) {
-          TEST_SYNC_POINT("DBCompaction::PartialFill:4");
-          first = false;
-          TEST_SYNC_POINT("DBCompaction::PartialFill:3");
-        } else if (second) {
-        }
-      });
+  "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
+    if (first) {
+      TEST_SYNC_POINT("DBCompaction::PartialFill:4");
+      first = false;
+      TEST_SYNC_POINT("DBCompaction::PartialFill:3");
+    } else if (second) {
+    }
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -1297,7 +1327,7 @@ TEST_F(DBCompactionTest, DeleteFileRange) {
   Slice end1(end_string);
   // Try deleting files in range which contain no keys
   ASSERT_OK(
-      DeleteFilesInRange(db_, db_->DefaultColumnFamily(), &begin1, &end1));
+    DeleteFilesInRange(db_, db_->DefaultColumnFamily(), &begin1, &end1));
 
   // Push data from level 0 to level 1 to force all data to be deleted
   // Note that we don't delete level 0 files
@@ -1306,7 +1336,7 @@ TEST_F(DBCompactionTest, DeleteFileRange) {
   ASSERT_OK(dbfull()->TEST_CompactRange(0, nullptr, nullptr));
 
   ASSERT_OK(
-      DeleteFilesInRange(db_, db_->DefaultColumnFamily(), nullptr, nullptr));
+    DeleteFilesInRange(db_, db_->DefaultColumnFamily(), nullptr, nullptr));
 
   int32_t deleted_count2 = 0;
   for (int32_t i = 0; i < 4300; i++) {
@@ -1325,11 +1355,15 @@ TEST_P(DBCompactionTestWithParam, TrivialMoveToLastLevelWithFiles) {
   int32_t trivial_move = 0;
   int32_t non_trivial_move = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:TrivialMove",
-      [&](void* arg) { trivial_move++; });
+    "DBImpl::BackgroundCompaction:TrivialMove",
+  [&](void* arg) {
+    trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial",
-      [&](void* arg) { non_trivial_move++; });
+    "DBImpl::BackgroundCompaction:NonTrivial",
+  [&](void* arg) {
+    non_trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Options options = CurrentOptions();
@@ -1388,7 +1422,7 @@ TEST_P(DBCompactionTestWithParam, LevelCompactionThirdPath) {
   options.db_paths.emplace_back(dbname_ + "_2", 4 * 1024 * 1024);
   options.db_paths.emplace_back(dbname_ + "_3", 1024 * 1024 * 1024);
   options.memtable_factory.reset(
-      new SpecialSkipListFactory(KNumKeysByGenerateNewFile - 1));
+    new SpecialSkipListFactory(KNumKeysByGenerateNewFile - 1));
   options.compaction_style = kCompactionStyleLevel;
   options.write_buffer_size = 110 << 10;  // 110KB
   options.arena_block_size = 4 << 10;
@@ -1505,7 +1539,7 @@ TEST_P(DBCompactionTestWithParam, LevelCompactionPathUse) {
   options.db_paths.emplace_back(dbname_ + "_2", 4 * 1024 * 1024);
   options.db_paths.emplace_back(dbname_ + "_3", 1024 * 1024 * 1024);
   options.memtable_factory.reset(
-      new SpecialSkipListFactory(KNumKeysByGenerateNewFile - 1));
+    new SpecialSkipListFactory(KNumKeysByGenerateNewFile - 1));
   options.compaction_style = kCompactionStyleLevel;
   options.write_buffer_size = 110 << 10;  // 110KB
   options.arena_block_size = 4 << 10;
@@ -1672,7 +1706,7 @@ TEST_P(DBCompactionTestWithParam, ConvertCompactionStyle) {
   compact_options.change_level = true;
   compact_options.target_level = 0;
   compact_options.bottommost_level_compaction =
-      BottommostLevelCompaction::kForce;
+    BottommostLevelCompaction::kForce;
   compact_options.exclusive_manual_compaction = exclusive_manual_compaction_;
   dbfull()->CompactRange(compact_options, handles_[1], nullptr, nullptr);
 
@@ -1806,7 +1840,7 @@ TEST_P(DBCompactionTestWithParam, ManualCompaction) {
     ASSERT_EQ("1,0,2", FilesPerLevel(1));
 
     uint64_t prev_block_cache_add =
-        options.statistics->getTickerCount(BLOCK_CACHE_ADD);
+      options.statistics->getTickerCount(BLOCK_CACHE_ADD);
     CompactRangeOptions cro;
     cro.exclusive_manual_compaction = exclusive_manual_compaction_;
     db_->CompactRange(cro, handles_[1], nullptr, nullptr);
@@ -1961,14 +1995,14 @@ TEST_P(DBCompactionTestWithParam, DISABLED_CompactFilesOnLevelCompaction) {
       auto file_meta = PickFileRandomly(cf_meta, &rnd, &level);
       compaction_input_file_names.push_back(file_meta->name);
       GetOverlappingFileNumbersForLevelCompaction(
-          cf_meta, options.comparator, level, output_level,
-          file_meta, &overlapping_file_names);
+        cf_meta, options.comparator, level, output_level,
+        file_meta, &overlapping_file_names);
     }
 
     ASSERT_OK(dbfull()->CompactFiles(
-        CompactionOptions(), handles_[1],
-        compaction_input_file_names,
-        output_level));
+                CompactionOptions(), handles_[1],
+                compaction_input_file_names,
+                output_level));
 
     // Make sure all overlapping files do not exist after compaction
     dbfull()->GetColumnFamilyMetaData(handles_[1], &cf_meta);
@@ -1991,12 +2025,12 @@ TEST_P(DBCompactionTestWithParam, PartialCompactionFailure) {
   options.write_buffer_size = kKeysPerBuffer * kKvSize;
   options.max_write_buffer_number = 2;
   options.target_file_size_base =
-      options.write_buffer_size *
-      (options.max_write_buffer_number - 1);
+    options.write_buffer_size *
+    (options.max_write_buffer_number - 1);
   options.level0_file_num_compaction_trigger = kNumL1Files;
   options.max_bytes_for_level_base =
-      options.level0_file_num_compaction_trigger *
-      options.target_file_size_base;
+    options.level0_file_num_compaction_trigger *
+    options.target_file_size_base;
   options.max_bytes_for_level_multiplier = 2;
   options.compression = kNoCompression;
   options.max_subcompactions = max_subcompactions_;
@@ -2013,9 +2047,9 @@ TEST_P(DBCompactionTestWithParam, PartialCompactionFailure) {
   DestroyAndReopen(options);
 
   const int kNumInsertedKeys =
-      options.level0_file_num_compaction_trigger *
-      (options.max_write_buffer_number - 1) *
-      kKeysPerBuffer;
+    options.level0_file_num_compaction_trigger *
+    (options.max_write_buffer_number - 1) *
+    kKeysPerBuffer;
 
   Random rnd(301);
   std::vector<std::string> keys;
@@ -2077,7 +2111,7 @@ TEST_P(DBCompactionTestWithParam, DeleteMovedFileAfterCompaction) {
     }
     options.create_if_missing = true;
     options.level0_file_num_compaction_trigger =
-        2;  // trigger compaction when we have 2 files
+      2;  // trigger compaction when we have 2 files
     OnFileDeletionListener* listener = new OnFileDeletionListener();
     options.listeners.emplace_back(listener);
     options.max_subcompactions = max_subcompactions_;
@@ -2150,7 +2184,7 @@ TEST_P(DBCompactionTestWithParam, CompressLevelCompaction) {
   }
   Options options = CurrentOptions();
   options.memtable_factory.reset(
-      new SpecialSkipListFactory(KNumKeysByGenerateNewFile - 1));
+    new SpecialSkipListFactory(KNumKeysByGenerateNewFile - 1));
   options.compaction_style = kCompactionStyleLevel;
   options.write_buffer_size = 110 << 10;  // 110KB
   options.arena_block_size = 4 << 10;
@@ -2162,21 +2196,30 @@ TEST_P(DBCompactionTestWithParam, CompressLevelCompaction) {
   // them will be allowed. Level 2 has Zlib compression so that a trivial
   // move to level 3 will not be allowed
   options.compression_per_level = {kNoCompression, kNoCompression,
-                                   kZlibCompression};
+                                   kZlibCompression
+                                  };
   int matches = 0, didnt_match = 0, trivial_move = 0, non_trivial = 0;
 
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "Compaction::InputCompressionMatchesOutput:Matches",
-      [&](void* arg) { matches++; });
+    "Compaction::InputCompressionMatchesOutput:Matches",
+  [&](void* arg) {
+    matches++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "Compaction::InputCompressionMatchesOutput:DidntMatch",
-      [&](void* arg) { didnt_match++; });
+    "Compaction::InputCompressionMatchesOutput:DidntMatch",
+  [&](void* arg) {
+    didnt_match++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial",
-      [&](void* arg) { non_trivial++; });
+    "DBImpl::BackgroundCompaction:NonTrivial",
+  [&](void* arg) {
+    non_trivial++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:TrivialMove",
-      [&](void* arg) { trivial_move++; });
+    "DBImpl::BackgroundCompaction:TrivialMove",
+  [&](void* arg) {
+    trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Reopen(options);
@@ -2280,11 +2323,15 @@ TEST_P(DBCompactionTestWithParam, ForceBottommostLevelCompaction) {
   int32_t trivial_move = 0;
   int32_t non_trivial_move = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:TrivialMove",
-      [&](void* arg) { trivial_move++; });
+    "DBImpl::BackgroundCompaction:TrivialMove",
+  [&](void* arg) {
+    trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial",
-      [&](void* arg) { non_trivial_move++; });
+    "DBImpl::BackgroundCompaction:NonTrivial",
+  [&](void* arg) {
+    non_trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Options options = CurrentOptions();
@@ -2325,7 +2372,7 @@ TEST_P(DBCompactionTestWithParam, ForceBottommostLevelCompaction) {
   // then compacte the bottommost level L3=>L3 (non trivial move)
   compact_options = CompactRangeOptions();
   compact_options.bottommost_level_compaction =
-      BottommostLevelCompaction::kForce;
+    BottommostLevelCompaction::kForce;
   ASSERT_OK(db_->CompactRange(compact_options, nullptr, nullptr));
   ASSERT_EQ("0,0,0,1", FilesPerLevel(0));
   ASSERT_EQ(trivial_move, 4);
@@ -2343,7 +2390,7 @@ TEST_P(DBCompactionTestWithParam, ForceBottommostLevelCompaction) {
   non_trivial_move = 0;
   compact_options = CompactRangeOptions();
   compact_options.bottommost_level_compaction =
-      BottommostLevelCompaction::kSkip;
+    BottommostLevelCompaction::kSkip;
   // Compaction will do L0=>L1 L1=>L2 L2=>L3 (3 trivial moves)
   // and will skip bottommost level compaction
   ASSERT_OK(db_->CompactRange(compact_options, nullptr, nullptr));
@@ -2360,12 +2407,12 @@ TEST_P(DBCompactionTestWithParam, ForceBottommostLevelCompaction) {
 
 INSTANTIATE_TEST_CASE_P(DBCompactionTestWithParam, DBCompactionTestWithParam,
                         ::testing::Values(std::make_tuple(1, true),
-                                          std::make_tuple(1, false),
-                                          std::make_tuple(4, true),
-                                          std::make_tuple(4, false)));
+                            std::make_tuple(1, false),
+                            std::make_tuple(4, true),
+                            std::make_tuple(4, false)));
 
 class CompactionPriTest : public DBTestBase,
-                          public testing::WithParamInterface<uint32_t> {
+  public testing::WithParamInterface<uint32_t> {
  public:
   CompactionPriTest() : DBTestBase("/compaction_pri_test") {
     compaction_pri_ = GetParam();
@@ -2408,11 +2455,11 @@ TEST_P(CompactionPriTest, Test) {
 }
 
 INSTANTIATE_TEST_CASE_P(
-    CompactionPriTest, CompactionPriTest,
-    ::testing::Values(CompactionPri::kByCompensatedSize,
-                      CompactionPri::kOldestLargestSeqFirst,
-                      CompactionPri::kOldestSmallestSeqFirst,
-                      CompactionPri::kMinOverlappingRatio));
+  CompactionPriTest, CompactionPriTest,
+  ::testing::Values(CompactionPri::kByCompensatedSize,
+                    CompactionPri::kOldestLargestSeqFirst,
+                    CompactionPri::kOldestSmallestSeqFirst,
+                    CompactionPri::kMinOverlappingRatio));
 
 #endif // !defined(VIDARDB_LITE)
 }  // namespace vidardb

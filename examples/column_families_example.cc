@@ -35,10 +35,10 @@ int main() {
   std::vector<ColumnFamilyDescriptor> column_families;
   // have to open default column family
   column_families.push_back(ColumnFamilyDescriptor(
-      kDefaultColumnFamilyName, ColumnFamilyOptions()));
+                              kDefaultColumnFamilyName, ColumnFamilyOptions()));
   // open the new one, too
   column_families.push_back(ColumnFamilyDescriptor(
-      "new_cf", ColumnFamilyOptions()));
+                              "new_cf", ColumnFamilyOptions()));
   std::vector<ColumnFamilyHandle*> handles;
   s = DB::Open(DBOptions(), kDBPath, column_families, &handles, &db);
   assert(s.ok());

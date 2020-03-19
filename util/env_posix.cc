@@ -170,7 +170,7 @@ class PosixEnv : public Env {
       }
 #endif
       std::unique_ptr<PosixDirectIOSequentialFile> file(
-          new PosixDirectIOSequentialFile(fname, fd));
+        new PosixDirectIOSequentialFile(fname, fd));
       *result = std::move(file);
       return Status::OK();
     } else {
@@ -222,7 +222,7 @@ class PosixEnv : public Env {
         s = IOError(fname, errno);
       } else {
         std::unique_ptr<PosixDirectIORandomAccessFile> file(
-            new PosixDirectIORandomAccessFile(fname, fd));
+          new PosixDirectIORandomAccessFile(fname, fd));
         *result = std::move(file);
         s = Status::OK();
 #ifdef OS_MACOSX
@@ -276,7 +276,7 @@ class PosixEnv : public Env {
           s = IOError(fname, errno);
         } else {
           std::unique_ptr<PosixDirectIOWritableFile> file(
-              new PosixDirectIOWritableFile(fname, fd));
+            new PosixDirectIOWritableFile(fname, fd));
           *result = std::move(file);
           s = Status::OK();
 #ifdef OS_MACOSX
@@ -365,16 +365,16 @@ class PosixEnv : public Env {
     }
 
     switch (errno) {
-      case EACCES:
-      case ELOOP:
-      case ENAMETOOLONG:
-      case ENOENT:
-      case ENOTDIR:
-        return Status::NotFound();
-      default:
-        assert(result == EIO || result == ENOMEM);
-        return Status::IOError("Unexpected error(" + ToString(result) +
-                               ") accessing file `" + fname + "' ");
+    case EACCES:
+    case ELOOP:
+    case ENAMETOOLONG:
+    case ENOENT:
+    case ENOTDIR:
+      return Status::NotFound();
+    default:
+      assert(result == EIO || result == ENOMEM);
+      return Status::IOError("Unexpected error(" + ToString(result) +
+                             ") accessing file `" + fname + "' ");
     }
   }
 
@@ -415,7 +415,7 @@ class PosixEnv : public Env {
       if (errno != EEXIST) {
         result = IOError(name, errno);
       } else if (!DirExists(name)) { // Check that name is actually a
-                                     // directory.
+        // directory.
         // Message is taken from mkdir
         result = Status::IOError("`"+name+"' exists but is not a directory");
       }
@@ -535,7 +535,7 @@ class PosixEnv : public Env {
   }
 
   virtual Status GetThreadList(
-      std::vector<ThreadStatus>* thread_list) override {
+    std::vector<ThreadStatus>* thread_list) override {
     assert(thread_status_updater_);
     return thread_status_updater_->GetThreadList(thread_list);
   }
@@ -596,11 +596,13 @@ class PosixEnv : public Env {
     return static_cast<uint64_t>(ts.tv_sec) * 1000000000 + ts.tv_nsec;
 #else
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
-       std::chrono::steady_clock::now().time_since_epoch()).count();
+             std::chrono::steady_clock::now().time_since_epoch()).count();
 #endif
   }
 
-  virtual void SleepForMicroseconds(int micros) override { usleep(micros); }
+  virtual void SleepForMicroseconds(int micros) override {
+    usleep(micros);
+  }
 
   virtual Status GetHostName(char* name, uint64_t len) override {
     int ret = gethostname(name, static_cast<size_t>(len));
@@ -691,7 +693,7 @@ class PosixEnv : public Env {
   }
 
   EnvOptions OptimizeForManifestWrite(
-      const EnvOptions& env_options) const override {
+    const EnvOptions& env_options) const override {
     EnvOptions optimized = env_options;
     optimized.use_mmap_writes = false;
     optimized.fallocate_with_keep_size = true;
@@ -715,18 +717,18 @@ class PosixEnv : public Env {
   bool SupportsFastAllocate(const std::string& path) {
 #ifdef VIDARDB_FALLOCATE_PRESENT
     struct statfs s;
-    if (statfs(path.c_str(), &s)){
+    if (statfs(path.c_str(), &s)) {
       return false;
     }
     switch (s.f_type) {
-      case EXT4_SUPER_MAGIC:
-        return true;
-      case XFS_SUPER_MAGIC:
-        return true;
-      case TMPFS_MAGIC:
-        return true;
-      default:
-        return false;
+    case EXT4_SUPER_MAGIC:
+      return true;
+    case XFS_SUPER_MAGIC:
+      return true;
+    case TMPFS_MAGIC:
+      return true;
+    default:
+      return false;
     }
 #else
     return false;
@@ -741,14 +743,14 @@ class PosixEnv : public Env {
 };
 
 PosixEnv::PosixEnv()
-    : checkedDiskForMmap_(false),
-      forceMmapOff(false),
-      page_size_(getpagesize()),
-      thread_pools_(Priority::TOTAL) {
+  : checkedDiskForMmap_(false),
+    forceMmapOff(false),
+    page_size_(getpagesize()),
+    thread_pools_(Priority::TOTAL) {
   ThreadPool::PthreadCall("mutex_init", pthread_mutex_init(&mu_, nullptr));
   for (int pool_id = 0; pool_id < Env::Priority::TOTAL; ++pool_id) {
     thread_pools_[pool_id].SetThreadPriority(
-        static_cast<Env::Priority>(pool_id));
+      static_cast<Env::Priority>(pool_id));
     // This allows later initializing the thread-local-env of each thread.
     thread_pools_[pool_id].SetHostEnv(this);
   }
@@ -788,7 +790,7 @@ void PosixEnv::StartThread(void (*function)(void* arg), void* arg) {
   state->user_function = function;
   state->arg = arg;
   ThreadPool::PthreadCall(
-      "start thread", pthread_create(&t, nullptr, &StartThreadWrapper, state));
+    "start thread", pthread_create(&t, nullptr, &StartThreadWrapper, state));
   ThreadPool::PthreadCall("lock", pthread_mutex_lock(&mu_));
   threads_to_join_.push_back(t);
   ThreadPool::PthreadCall("unlock", pthread_mutex_unlock(&mu_));

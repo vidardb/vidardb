@@ -27,7 +27,9 @@ class Random {
 
   uint32_t seed_;
 
-  static uint32_t GoodSeed(uint32_t s) { return (s & M) != 0 ? (s & M) : 1; }
+  static uint32_t GoodSeed(uint32_t s) {
+    return (s & M) != 0 ? (s & M) : 1;
+  }
 
  public:
   // This is the largest value that can be returned from Next()
@@ -35,7 +37,9 @@ class Random {
 
   explicit Random(uint32_t s) : seed_(GoodSeed(s)) {}
 
-  void Reset(uint32_t s) { seed_ = GoodSeed(s); }
+  void Reset(uint32_t s) {
+    seed_ = GoodSeed(s);
+  }
 
   uint32_t Next() {
     // We are computing
@@ -59,11 +63,15 @@ class Random {
 
   // Returns a uniformly distributed value in the range [0..n-1]
   // REQUIRES: n > 0
-  uint32_t Uniform(int n) { return Next() % n; }
+  uint32_t Uniform(int n) {
+    return Next() % n;
+  }
 
   // Randomly returns true ~"1/n" of the time, and false otherwise.
   // REQUIRES: n > 0
-  bool OneIn(int n) { return (Next() % n) == 0; }
+  bool OneIn(int n) {
+    return (Next() % n) == 0;
+  }
 
   // Skewed: pick "base" uniformly from range [0,max_log] and then
   // return "base" random bits.  The effect is to pick a number in the
@@ -86,7 +94,9 @@ class Random64 {
   explicit Random64(uint64_t s) : generator_(s) { }
 
   // Generates the next random number
-  uint64_t Next() { return generator_(); }
+  uint64_t Next() {
+    return generator_();
+  }
 
   // Returns a uniformly distributed value in the range [0..n-1]
   // REQUIRES: n > 0
@@ -96,7 +106,9 @@ class Random64 {
 
   // Randomly returns true ~"1/n" of the time, and false otherwise.
   // REQUIRES: n > 0
-  bool OneIn(uint64_t n) { return Uniform(n) == 0; }
+  bool OneIn(uint64_t n) {
+    return Uniform(n) == 0;
+  }
 
   // Skewed: pick "base" uniformly from range [0,max_log] and then
   // return "base" random bits.  The effect is to pick a number in the

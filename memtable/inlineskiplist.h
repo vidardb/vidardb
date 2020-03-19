@@ -223,7 +223,9 @@ struct InlineSkipList<Comparator>::Node {
     return rv;
   }
 
-  const char* Key() const { return reinterpret_cast<const char*>(&next_[1]); }
+  const char* Key() const {
+    return reinterpret_cast<const char*>(&next_[1]);
+  }
 
   // Accessors/mutators for links.  Wrapped in methods so we can add
   // the appropriate barriers as necessary, and perform the necessary
@@ -266,13 +268,13 @@ struct InlineSkipList<Comparator>::Node {
 
 template <class Comparator>
 inline InlineSkipList<Comparator>::Iterator::Iterator(
-    const InlineSkipList* list) {
+  const InlineSkipList* list) {
   SetList(list);
 }
 
 template <class Comparator>
 inline void InlineSkipList<Comparator>::Iterator::SetList(
-    const InlineSkipList* list) {
+  const InlineSkipList* list) {
   list_ = list;
   node_ = nullptr;
 }
@@ -341,7 +343,7 @@ int InlineSkipList<Comparator>::RandomHeight() {
 
 template <class Comparator>
 bool InlineSkipList<Comparator>::KeyIsAfterNode(const char* key,
-                                                Node* n) const {
+    Node* n) const {
   // nullptr n is considered infinite
   return (n != nullptr) && (compare_(n->Key(), key) < 0);
 }
@@ -364,8 +366,8 @@ InlineSkipList<Comparator>::FindGreaterOrEqual(const char* key) const {
     // Make sure we haven't overshot during our search
     assert(x == head_ || KeyIsAfterNode(key, x));
     int cmp = (next == nullptr || next == last_bigger)
-                  ? 1
-                  : compare_(next->Key(), key);
+              ? 1
+              : compare_(next->Key(), key);
     if (cmp == 0 || (cmp > 0 && level == 0)) {
       return next;
     } else if (cmp < 0) {
@@ -454,17 +456,17 @@ uint64_t InlineSkipList<Comparator>::EstimateCount(const char* key) const {
 
 template <class Comparator>
 InlineSkipList<Comparator>::InlineSkipList(const Comparator cmp,
-                                           Allocator* allocator,
-                                           int32_t max_height,
-                                           int32_t branching_factor)
-    : kMaxHeight_(max_height),
-      kBranching_(branching_factor),
-      kScaledInverseBranching_((Random::kMaxNext + 1) / kBranching_),
-      compare_(cmp),
-      allocator_(allocator),
-      head_(AllocateNode(0, max_height)),
-      max_height_(1),
-      prev_height_(1) {
+    Allocator* allocator,
+    int32_t max_height,
+    int32_t branching_factor)
+  : kMaxHeight_(max_height),
+    kBranching_(branching_factor),
+    kScaledInverseBranching_((Random::kMaxNext + 1) / kBranching_),
+    compare_(cmp),
+    allocator_(allocator),
+    head_(AllocateNode(0, max_height)),
+    max_height_(1),
+    prev_height_(1) {
   assert(max_height > 0 && kMaxHeight_ == static_cast<uint32_t>(max_height));
   assert(branching_factor > 1 &&
          kBranching_ == static_cast<uint32_t>(branching_factor));
@@ -473,7 +475,7 @@ InlineSkipList<Comparator>::InlineSkipList(const Comparator cmp,
   // prev_ does not need to be freed, as its life cycle is tied up with
   // the allocator as a whole.
   prev_ = reinterpret_cast<Node**>(
-      allocator_->AllocateAligned(sizeof(Node*) * kMaxHeight_));
+            allocator_->AllocateAligned(sizeof(Node*) * kMaxHeight_));
   for (int i = 0; i < kMaxHeight_; i++) {
     head_->SetNext(i, nullptr);
     prev_[i] = head_;
@@ -571,9 +573,9 @@ void InlineSkipList<Comparator>::Insert(const char* key) {
 
 template <class Comparator>
 void InlineSkipList<Comparator>::FindLevelSplice(const char* key, Node* before,
-                                                 Node* after, int level,
-                                                 Node** out_prev,
-                                                 Node** out_next) {
+    Node* after, int level,
+    Node** out_prev,
+    Node** out_next) {
   while (true) {
     Node* next = before->Next(level);
     assert(before == head_ || next == nullptr ||

@@ -34,8 +34,8 @@
 namespace vidardb {
 
 ColumnFamilyHandleImpl::ColumnFamilyHandleImpl(
-    ColumnFamilyData* column_family_data, DBImpl* db, InstrumentedMutex* mutex)
-    : cfd_(column_family_data), db_(db), mutex_(mutex) {
+  ColumnFamilyData* column_family_data, DBImpl* db, InstrumentedMutex* mutex)
+  : cfd_(column_family_data), db_(db), mutex_(mutex) {
   if (cfd_ != nullptr) {
     cfd_->Ref();
   }
@@ -59,7 +59,9 @@ ColumnFamilyHandleImpl::~ColumnFamilyHandleImpl() {
   }
 }
 
-uint32_t ColumnFamilyHandleImpl::GetID() const { return cfd()->GetID(); }
+uint32_t ColumnFamilyHandleImpl::GetID() const {
+  return cfd()->GetID();
+}
 
 const std::string& ColumnFamilyHandleImpl::GetName() const {
   return cfd()->GetName();
@@ -70,9 +72,9 @@ Status ColumnFamilyHandleImpl::GetDescriptor(ColumnFamilyDescriptor* desc) {
   // accessing mutable cf-options requires db mutex.
   InstrumentedMutexLock l(mutex_);
   *desc = ColumnFamilyDescriptor(
-      cfd()->GetName(),
-      BuildColumnFamilyOptions(*cfd()->options(),
-                               *cfd()->GetLatestMutableCFOptions()));
+            cfd()->GetName(),
+            BuildColumnFamilyOptions(*cfd()->options(),
+                                     *cfd()->GetLatestMutableCFOptions()));
   return Status::OK();
 #else
   return Status::NotSupported();
@@ -84,19 +86,19 @@ const Comparator* ColumnFamilyHandleImpl::user_comparator() const {
 }
 
 void GetIntTblPropCollectorFactory(
-    const ColumnFamilyOptions& cf_options,
-    std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
-        int_tbl_prop_collector_factories) {
+  const ColumnFamilyOptions& cf_options,
+  std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
+  int_tbl_prop_collector_factories) {
   auto& collector_factories = cf_options.table_properties_collector_factories;
   for (size_t i = 0; i < cf_options.table_properties_collector_factories.size();
        ++i) {
     assert(collector_factories[i]);
     int_tbl_prop_collector_factories->emplace_back(
-        new UserKeyTablePropertiesCollectorFactory(collector_factories[i]));
+      new UserKeyTablePropertiesCollectorFactory(collector_factories[i]));
   }
   // Add collector to collect internal key statistics
   int_tbl_prop_collector_factories->emplace_back(
-      new InternalKeyPropertiesCollectorFactory);
+    new InternalKeyPropertiesCollectorFactory);
 }
 
 Status CheckCompressionSupported(const ColumnFamilyOptions& cf_options) {
@@ -105,17 +107,17 @@ Status CheckCompressionSupported(const ColumnFamilyOptions& cf_options) {
          ++level) {
       if (!CompressionTypeSupported(cf_options.compression_per_level[level])) {
         return Status::InvalidArgument(
-            "Compression type " +
-            CompressionTypeToString(cf_options.compression_per_level[level]) +
-            " is not linked with the binary.");
+                 "Compression type " +
+                 CompressionTypeToString(cf_options.compression_per_level[level]) +
+                 " is not linked with the binary.");
       }
     }
   } else {
     if (!CompressionTypeSupported(cf_options.compression)) {
       return Status::InvalidArgument(
-          "Compression type " +
-          CompressionTypeToString(cf_options.compression) +
-          " is not linked with the binary.");
+               "Compression type " +
+               CompressionTypeToString(cf_options.compression) +
+               " is not linked with the binary.");
     }
   }
   return Status::OK();
@@ -124,12 +126,12 @@ Status CheckCompressionSupported(const ColumnFamilyOptions& cf_options) {
 Status CheckConcurrentWritesSupported(const ColumnFamilyOptions& cf_options) {
   if (cf_options.filter_deletes) {
     return Status::InvalidArgument(
-        "Delete filtering (filter_deletes) is not compatible with concurrent "
-        "memtable writes (allow_concurrent_memtable_writes)");
+             "Delete filtering (filter_deletes) is not compatible with concurrent "
+             "memtable writes (allow_concurrent_memtable_writes)");
   }
   if (!cf_options.memtable_factory->IsInsertConcurrentlySupported()) {
     return Status::InvalidArgument(
-        "Memtable doesn't concurrent writes (allow_concurrent_memtable_write)");
+             "Memtable doesn't concurrent writes (allow_concurrent_memtable_write)");
   }
   return Status::OK();
 }
@@ -140,8 +142,8 @@ ColumnFamilyOptions SanitizeOptions(const DBOptions& db_options,
   ColumnFamilyOptions result = src;
   result.comparator = icmp;
   size_t clamp_max = std::conditional<
-      sizeof(size_t) == 4, std::integral_constant<size_t, 0xffffffff>,
-      std::integral_constant<uint64_t, 64ull << 30>>::type::value;
+                     sizeof(size_t) == 4, std::integral_constant<size_t, 0xffffffff>,
+                     std::integral_constant<uint64_t, 64ull << 30>>::type::value;
   ClipToRange(&result.write_buffer_size, ((size_t)64) << 10, clamp_max);
   // if user sets arena_block_size, we trust user to use this value. Otherwise,
   // calculate a proper value from writer_buffer_size;
@@ -151,11 +153,11 @@ ColumnFamilyOptions SanitizeOptions(const DBOptions& db_options,
     // Align up to 4k
     const size_t align = 4 * 1024;
     result.arena_block_size =
-        ((result.arena_block_size + align - 1) / align) * align;
+      ((result.arena_block_size + align - 1) / align) * align;
   }
   result.min_write_buffer_number_to_merge =
-      std::min(result.min_write_buffer_number_to_merge,
-               result.max_write_buffer_number - 1);
+    std::min(result.min_write_buffer_number_to_merge,
+             result.max_write_buffer_number - 1);
   if (result.num_levels < 1) {
     result.num_levels = 1;
   }
@@ -186,9 +188,9 @@ ColumnFamilyOptions SanitizeOptions(const DBOptions& db_options,
   }
 
   if (result.level0_stop_writes_trigger <
-          result.level0_slowdown_writes_trigger ||
+      result.level0_slowdown_writes_trigger ||
       result.level0_slowdown_writes_trigger <
-          result.level0_file_num_compaction_trigger) {
+      result.level0_file_num_compaction_trigger) {
     Warn(db_options.info_log.get(),
          "This condition must be satisfied: "
          "level0_stop_writes_trigger(%d) >= "
@@ -200,7 +202,7 @@ ColumnFamilyOptions SanitizeOptions(const DBOptions& db_options,
     if (result.level0_slowdown_writes_trigger <
         result.level0_file_num_compaction_trigger) {
       result.level0_slowdown_writes_trigger =
-          result.level0_file_num_compaction_trigger;
+        result.level0_file_num_compaction_trigger;
     }
     if (result.level0_stop_writes_trigger <
         result.level0_slowdown_writes_trigger) {
@@ -218,12 +220,12 @@ ColumnFamilyOptions SanitizeOptions(const DBOptions& db_options,
 
   if (result.soft_pending_compaction_bytes_limit == 0) {
     result.soft_pending_compaction_bytes_limit =
-        result.hard_pending_compaction_bytes_limit;
+      result.hard_pending_compaction_bytes_limit;
   } else if (result.hard_pending_compaction_bytes_limit > 0 &&
              result.soft_pending_compaction_bytes_limit >
-                 result.hard_pending_compaction_bytes_limit) {
+             result.hard_pending_compaction_bytes_limit) {
     result.soft_pending_compaction_bytes_limit =
-        result.hard_pending_compaction_bytes_limit;
+      result.hard_pending_compaction_bytes_limit;
   }
 
   if (result.level_compaction_dynamic_level_bytes) {
@@ -303,35 +305,35 @@ void SuperVersionUnrefHandle(void* ptr) {
 }  // anonymous namespace
 
 ColumnFamilyData::ColumnFamilyData(
-    uint32_t id, const std::string& name, Version* _dummy_versions,
-    Cache* _table_cache, WriteBuffer* write_buffer,
-    const ColumnFamilyOptions& cf_options, const DBOptions* db_options,
-    const EnvOptions& env_options, ColumnFamilySet* column_family_set)
-    : id_(id),
-      name_(name),
-      dummy_versions_(_dummy_versions),
-      current_(nullptr),
-      refs_(0),
-      dropped_(false),
-      internal_comparator_(cf_options.comparator),
-      options_(*db_options,
-               SanitizeOptions(*db_options, &internal_comparator_, cf_options)),
-      ioptions_(options_),
-      mutable_cf_options_(options_, ioptions_),
-      write_buffer_(write_buffer),
-      mem_(nullptr),
-      imm_(options_.min_write_buffer_number_to_merge,
-           options_.max_write_buffer_number_to_maintain),
-      super_version_(nullptr),
-      super_version_number_(0),
-      local_sv_(new ThreadLocalPtr(&SuperVersionUnrefHandle)),
-      next_(nullptr),
-      prev_(nullptr),
-      log_number_(0),
-      column_family_set_(column_family_set),
-      pending_flush_(false),
-      pending_compaction_(false),
-      prev_compaction_needed_bytes_(0) {
+  uint32_t id, const std::string& name, Version* _dummy_versions,
+  Cache* _table_cache, WriteBuffer* write_buffer,
+  const ColumnFamilyOptions& cf_options, const DBOptions* db_options,
+  const EnvOptions& env_options, ColumnFamilySet* column_family_set)
+  : id_(id),
+    name_(name),
+    dummy_versions_(_dummy_versions),
+    current_(nullptr),
+    refs_(0),
+    dropped_(false),
+    internal_comparator_(cf_options.comparator),
+    options_(*db_options,
+             SanitizeOptions(*db_options, &internal_comparator_, cf_options)),
+    ioptions_(options_),
+    mutable_cf_options_(options_, ioptions_),
+    write_buffer_(write_buffer),
+    mem_(nullptr),
+    imm_(options_.min_write_buffer_number_to_merge,
+         options_.max_write_buffer_number_to_maintain),
+    super_version_(nullptr),
+    super_version_number_(0),
+    local_sv_(new ThreadLocalPtr(&SuperVersionUnrefHandle)),
+    next_(nullptr),
+    prev_(nullptr),
+    log_number_(0),
+    column_family_set_(column_family_set),
+    pending_flush_(false),
+    pending_compaction_(false),
+    prev_compaction_needed_bytes_(0) {
   Ref();
 
   // Convert user defined table properties collector factories to internal ones.
@@ -340,21 +342,21 @@ ColumnFamilyData::ColumnFamilyData(
   // if _dummy_versions is nullptr, then this is a dummy column family.
   if (_dummy_versions != nullptr) {
     internal_stats_.reset(
-        new InternalStats(ioptions_.num_levels, db_options->env, this));
+      new InternalStats(ioptions_.num_levels, db_options->env, this));
     table_cache_.reset(new TableCache(ioptions_, env_options, _table_cache));
     if (ioptions_.compaction_style == kCompactionStyleLevel) {
       compaction_picker_.reset(
-          new LevelCompactionPicker(ioptions_, &internal_comparator_));
+        new LevelCompactionPicker(ioptions_, &internal_comparator_));
 #ifndef VIDARDB_LITE
     } else if (ioptions_.compaction_style == kCompactionStyleUniversal) {
       compaction_picker_.reset(
-          new UniversalCompactionPicker(ioptions_, &internal_comparator_));
+        new UniversalCompactionPicker(ioptions_, &internal_comparator_));
     } else if (ioptions_.compaction_style == kCompactionStyleFIFO) {
       compaction_picker_.reset(
-          new FIFOCompactionPicker(ioptions_, &internal_comparator_));
+        new FIFOCompactionPicker(ioptions_, &internal_comparator_));
     } else if (ioptions_.compaction_style == kCompactionStyleNone) {
       compaction_picker_.reset(new NullCompactionPicker(
-          ioptions_, &internal_comparator_));
+                                 ioptions_, &internal_comparator_));
       Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
           "Column family %s does not use any background compaction. "
           "Compactions can only be done via CompactFiles\n",
@@ -366,7 +368,7 @@ ColumnFamilyData::ColumnFamilyData(
           "Column family %s will use kCompactionStyleLevel.\n",
           ioptions_.compaction_style, GetName().c_str());
       compaction_picker_.reset(
-          new LevelCompactionPicker(ioptions_, &internal_comparator_));
+        new LevelCompactionPicker(ioptions_, &internal_comparator_));
     }
 
     if (column_family_set_->NumberOfColumnFamilies() < 10) {
@@ -453,9 +455,9 @@ const double kSlowdownRatio = 1.2;
 
 namespace {
 std::unique_ptr<WriteControllerToken> SetupDelay(
-    uint64_t max_write_rate, WriteController* write_controller,
-    uint64_t compaction_needed_bytes, uint64_t prev_compaction_neeed_bytes,
-    bool auto_comapctions_disabled) {
+  uint64_t max_write_rate, WriteController* write_controller,
+  uint64_t compaction_needed_bytes, uint64_t prev_compaction_neeed_bytes,
+  bool auto_comapctions_disabled) {
   const uint64_t kMinWriteRate = 1024u;  // Minimum write rate 1KB/s.
 
   uint64_t write_rate = write_controller->delayed_write_rate();
@@ -511,19 +513,19 @@ int GetL0ThresholdSpeedupCompaction(int level0_file_num_compaction_trigger,
   // Or twice as compaction trigger, if it is smaller.
   return std::min(level0_file_num_compaction_trigger * 2,
                   level0_file_num_compaction_trigger +
-                      (level0_slowdown_writes_trigger -
-                       level0_file_num_compaction_trigger) /
-                          4);
+                  (level0_slowdown_writes_trigger -
+                   level0_file_num_compaction_trigger) /
+                  4);
 }
 }  // namespace
 
 void ColumnFamilyData::RecalculateWriteStallConditions(
-      const MutableCFOptions& mutable_cf_options) {
+  const MutableCFOptions& mutable_cf_options) {
   if (current_ != nullptr) {
     auto* vstorage = current_->storage_info();
     auto write_controller = column_family_set_->write_controller_;
     uint64_t compaction_needed_bytes =
-        vstorage->estimated_compaction_needed_bytes();
+      vstorage->estimated_compaction_needed_bytes();
 
     if (imm()->NumNotFlushed() >= mutable_cf_options.max_write_buffer_number) {
       write_controller_token_ = write_controller->GetStopToken();
@@ -539,28 +541,28 @@ void ColumnFamilyData::RecalculateWriteStallConditions(
       internal_stats_->AddCFStats(InternalStats::LEVEL0_NUM_FILES_TOTAL, 1);
       if (compaction_picker_->IsLevel0CompactionInProgress()) {
         internal_stats_->AddCFStats(
-            InternalStats::LEVEL0_NUM_FILES_WITH_COMPACTION, 1);
+          InternalStats::LEVEL0_NUM_FILES_WITH_COMPACTION, 1);
       }
       Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
           "[%s] Stopping writes because we have %d level-0 files",
           name_.c_str(), vstorage->l0_delay_trigger_count());
     } else if (mutable_cf_options.hard_pending_compaction_bytes_limit > 0 &&
                compaction_needed_bytes >=
-                   mutable_cf_options.hard_pending_compaction_bytes_limit) {
+               mutable_cf_options.hard_pending_compaction_bytes_limit) {
       write_controller_token_ = write_controller->GetStopToken();
       internal_stats_->AddCFStats(
-          InternalStats::HARD_PENDING_COMPACTION_BYTES_LIMIT, 1);
+        InternalStats::HARD_PENDING_COMPACTION_BYTES_LIMIT, 1);
       Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
           "[%s] Stopping writes because of estimated pending compaction "
           "bytes %" PRIu64,
           name_.c_str(), compaction_needed_bytes);
     } else if (mutable_cf_options.max_write_buffer_number > 3 &&
                imm()->NumNotFlushed() >=
-                   mutable_cf_options.max_write_buffer_number - 1) {
+               mutable_cf_options.max_write_buffer_number - 1) {
       write_controller_token_ =
-          SetupDelay(ioptions_.delayed_write_rate, write_controller,
-                     compaction_needed_bytes, prev_compaction_needed_bytes_,
-                     mutable_cf_options.disable_auto_compactions);
+        SetupDelay(ioptions_.delayed_write_rate, write_controller,
+                   compaction_needed_bytes, prev_compaction_needed_bytes_,
+                   mutable_cf_options.disable_auto_compactions);
       internal_stats_->AddCFStats(InternalStats::MEMTABLE_SLOWDOWN, 1);
       Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
           "[%s] Stalling writes because we have %d immutable memtables "
@@ -571,15 +573,15 @@ void ColumnFamilyData::RecalculateWriteStallConditions(
           write_controller->delayed_write_rate());
     } else if (mutable_cf_options.level0_slowdown_writes_trigger >= 0 &&
                vstorage->l0_delay_trigger_count() >=
-                   mutable_cf_options.level0_slowdown_writes_trigger) {
+               mutable_cf_options.level0_slowdown_writes_trigger) {
       write_controller_token_ =
-          SetupDelay(ioptions_.delayed_write_rate, write_controller,
-                     compaction_needed_bytes, prev_compaction_needed_bytes_,
-                     mutable_cf_options.disable_auto_compactions);
+        SetupDelay(ioptions_.delayed_write_rate, write_controller,
+                   compaction_needed_bytes, prev_compaction_needed_bytes_,
+                   mutable_cf_options.disable_auto_compactions);
       internal_stats_->AddCFStats(InternalStats::LEVEL0_SLOWDOWN_TOTAL, 1);
       if (compaction_picker_->IsLevel0CompactionInProgress()) {
         internal_stats_->AddCFStats(
-            InternalStats::LEVEL0_SLOWDOWN_WITH_COMPACTION, 1);
+          InternalStats::LEVEL0_SLOWDOWN_WITH_COMPACTION, 1);
       }
       Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
           "[%s] Stalling writes because we have %d level-0 files "
@@ -588,13 +590,13 @@ void ColumnFamilyData::RecalculateWriteStallConditions(
           write_controller->delayed_write_rate());
     } else if (mutable_cf_options.soft_pending_compaction_bytes_limit > 0 &&
                vstorage->estimated_compaction_needed_bytes() >=
-                   mutable_cf_options.soft_pending_compaction_bytes_limit) {
+               mutable_cf_options.soft_pending_compaction_bytes_limit) {
       write_controller_token_ =
-          SetupDelay(ioptions_.delayed_write_rate, write_controller,
-                     compaction_needed_bytes, prev_compaction_needed_bytes_,
-                     mutable_cf_options.disable_auto_compactions);
+        SetupDelay(ioptions_.delayed_write_rate, write_controller,
+                   compaction_needed_bytes, prev_compaction_needed_bytes_,
+                   mutable_cf_options.disable_auto_compactions);
       internal_stats_->AddCFStats(
-          InternalStats::SOFT_PENDING_COMPACTION_BYTES_LIMIT, 1);
+        InternalStats::SOFT_PENDING_COMPACTION_BYTES_LIMIT, 1);
       Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
           "[%s] Stalling writes because of estimated pending compaction "
           "bytes %" PRIu64 " rate %" PRIu64,
@@ -602,8 +604,8 @@ void ColumnFamilyData::RecalculateWriteStallConditions(
           write_controller->delayed_write_rate());
     } else if (vstorage->l0_delay_trigger_count() >=
                GetL0ThresholdSpeedupCompaction(
-                   mutable_cf_options.level0_file_num_compaction_trigger,
-                   mutable_cf_options.level0_slowdown_writes_trigger)) {
+                 mutable_cf_options.level0_file_num_compaction_trigger,
+                 mutable_cf_options.level0_slowdown_writes_trigger)) {
       write_controller_token_ = write_controller->GetCompactionPressureToken();
       Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
           "[%s] Increasing compaction threads because we have %d level-0 "
@@ -647,14 +649,14 @@ uint64_t ColumnFamilyData::GetTotalSstFilesSize() const {
 }
 
 MemTable* ColumnFamilyData::ConstructNewMemtable(
-    const MutableCFOptions& mutable_cf_options, SequenceNumber earliest_seq) {
+  const MutableCFOptions& mutable_cf_options, SequenceNumber earliest_seq) {
   assert(current_ != nullptr);
   return new MemTable(internal_comparator_, ioptions_, mutable_cf_options,
                       write_buffer_, earliest_seq);
 }
 
 void ColumnFamilyData::CreateNewMemtable(
-    const MutableCFOptions& mutable_cf_options, SequenceNumber earliest_seq) {
+  const MutableCFOptions& mutable_cf_options, SequenceNumber earliest_seq) {
   if (mem_ != nullptr) {
     delete mem_->Unref();
   }
@@ -667,9 +669,9 @@ bool ColumnFamilyData::NeedsCompaction() const {
 }
 
 Compaction* ColumnFamilyData::PickCompaction(
-    const MutableCFOptions& mutable_options, LogBuffer* log_buffer) {
+  const MutableCFOptions& mutable_options, LogBuffer* log_buffer) {
   auto* result = compaction_picker_->PickCompaction(
-      GetName(), mutable_options, current_->storage_info(), log_buffer);
+                   GetName(), mutable_options, current_->storage_info(), log_buffer);
   if (result != nullptr) {
     result->SetInputVersion(current_);
   }
@@ -680,12 +682,12 @@ const int ColumnFamilyData::kCompactAllLevels = -1;
 const int ColumnFamilyData::kCompactToBaseLevel = -2;
 
 Compaction* ColumnFamilyData::CompactRange(
-    const MutableCFOptions& mutable_cf_options, int input_level,
-    int output_level, uint32_t output_path_id, const InternalKey* begin,
-    const InternalKey* end, InternalKey** compaction_end, bool* conflict) {
+  const MutableCFOptions& mutable_cf_options, int input_level,
+  int output_level, uint32_t output_path_id, const InternalKey* begin,
+  const InternalKey* end, InternalKey** compaction_end, bool* conflict) {
   auto* result = compaction_picker_->CompactRange(
-      GetName(), mutable_cf_options, current_->storage_info(), input_level,
-      output_level, output_path_id, begin, end, compaction_end, conflict);
+                   GetName(), mutable_cf_options, current_->storage_info(), input_level,
+                   output_level, output_path_id, begin, end, compaction_end, conflict);
   if (result != nullptr) {
     result->SetInputVersion(current_);
   }
@@ -693,7 +695,7 @@ Compaction* ColumnFamilyData::CompactRange(
 }
 
 SuperVersion* ColumnFamilyData::GetReferencedSuperVersion(
-    InstrumentedMutex* db_mutex) {
+  InstrumentedMutex* db_mutex) {
   SuperVersion* sv = nullptr;
   sv = GetThreadLocalSuperVersion(db_mutex);
   sv->Ref();
@@ -704,7 +706,7 @@ SuperVersion* ColumnFamilyData::GetReferencedSuperVersion(
 }
 
 SuperVersion* ColumnFamilyData::GetThreadLocalSuperVersion(
-    InstrumentedMutex* db_mutex) {
+  InstrumentedMutex* db_mutex) {
   SuperVersion* sv = nullptr;
   // The SuperVersion is cached in thread local storage to avoid acquiring
   // mutex when SuperVersion does not change since the last use. When a new
@@ -768,14 +770,14 @@ bool ColumnFamilyData::ReturnThreadLocalSuperVersion(SuperVersion* sv) {
 }
 
 SuperVersion* ColumnFamilyData::InstallSuperVersion(
-    SuperVersion* new_superversion, InstrumentedMutex* db_mutex) {
+  SuperVersion* new_superversion, InstrumentedMutex* db_mutex) {
   db_mutex->AssertHeld();
   return InstallSuperVersion(new_superversion, db_mutex, mutable_cf_options_);
 }
 
 SuperVersion* ColumnFamilyData::InstallSuperVersion(
-    SuperVersion* new_superversion, InstrumentedMutex* db_mutex,
-    const MutableCFOptions& mutable_cf_options) {
+  SuperVersion* new_superversion, InstrumentedMutex* db_mutex,
+  const MutableCFOptions& mutable_cf_options) {
   new_superversion->db_mutex = db_mutex;
   new_superversion->mutable_cf_options = mutable_cf_options;
   new_superversion->Init(mem_, imm_.current(), current_);
@@ -813,7 +815,7 @@ void ColumnFamilyData::ResetThreadLocalSuperVersions() {
 
 #ifndef VIDARDB_LITE
 Status ColumnFamilyData::SetOptions(
-      const std::unordered_map<std::string, std::string>& options_map) {
+  const std::unordered_map<std::string, std::string>& options_map) {
   MutableCFOptions new_mutable_cf_options;
   Status s = GetMutableOptionsFromStrings(mutable_cf_options_, options_map,
                                           &new_mutable_cf_options);
@@ -831,17 +833,17 @@ ColumnFamilySet::ColumnFamilySet(const std::string& dbname,
                                  Cache* table_cache,
                                  WriteBuffer* write_buffer,
                                  WriteController* write_controller)
-    : max_column_family_(0),
-      dummy_cfd_(new ColumnFamilyData(0, "", nullptr, nullptr, nullptr,
-                                      ColumnFamilyOptions(), db_options,
-                                      env_options, nullptr)),
-      default_cfd_cache_(nullptr),
-      db_name_(dbname),
-      db_options_(db_options),
-      env_options_(env_options),
-      table_cache_(table_cache),
-      write_buffer_(write_buffer),
-      write_controller_(write_controller) {
+  : max_column_family_(0),
+    dummy_cfd_(new ColumnFamilyData(0, "", nullptr, nullptr, nullptr,
+                                    ColumnFamilyOptions(), db_options,
+                                    env_options, nullptr)),
+    default_cfd_cache_(nullptr),
+    db_name_(dbname),
+    db_options_(db_options),
+    env_options_(env_options),
+    table_cache_(table_cache),
+    write_buffer_(write_buffer),
+    write_controller_(write_controller) {
   // initialize linked list
   dummy_cfd_->prev_ = dummy_cfd_;
   dummy_cfd_->next_ = dummy_cfd_;
@@ -873,7 +875,7 @@ ColumnFamilyData* ColumnFamilySet::GetColumnFamily(uint32_t id) const {
 }
 
 ColumnFamilyData* ColumnFamilySet::GetColumnFamily(const std::string& name)
-    const {
+const {
   auto cfd_iter = column_families_.find(name);
   if (cfd_iter != column_families_.end()) {
     auto cfd = GetColumnFamily(cfd_iter->second);
@@ -888,7 +890,9 @@ uint32_t ColumnFamilySet::GetNextColumnFamilyID() {
   return ++max_column_family_;
 }
 
-uint32_t ColumnFamilySet::GetMaxColumnFamily() { return max_column_family_; }
+uint32_t ColumnFamilySet::GetMaxColumnFamily() {
+  return max_column_family_;
+}
 
 void ColumnFamilySet::UpdateMaxColumnFamily(uint32_t new_max_column_family) {
   max_column_family_ = std::max(new_max_column_family, max_column_family_);
@@ -900,13 +904,13 @@ size_t ColumnFamilySet::NumberOfColumnFamilies() const {
 
 // under a DB mutex AND write thread
 ColumnFamilyData* ColumnFamilySet::CreateColumnFamily(
-    const std::string& name, uint32_t id, Version* dummy_versions,
-    const ColumnFamilyOptions& options) {
+  const std::string& name, uint32_t id, Version* dummy_versions,
+  const ColumnFamilyOptions& options) {
   assert(column_families_.find(name) == column_families_.end());
   ColumnFamilyData* new_cfd =
-      new ColumnFamilyData(id, name, dummy_versions, table_cache_,
-                           write_buffer_, options, db_options_,
-                           env_options_, this);
+    new ColumnFamilyData(id, name, dummy_versions, table_cache_,
+                         write_buffer_, options, db_options_,
+                         env_options_, this);
   column_families_.insert({name, id});
   column_family_data_.insert({id, new_cfd});
   max_column_family_ = std::max(max_column_family_, id);
@@ -981,7 +985,7 @@ uint32_t GetColumnFamilyID(ColumnFamilyHandle* column_family) {
 }
 
 const Comparator* GetColumnFamilyUserComparator(
-    ColumnFamilyHandle* column_family) {
+  ColumnFamilyHandle* column_family) {
   if (column_family != nullptr) {
     auto cfh = reinterpret_cast<ColumnFamilyHandleImpl*>(column_family);
     return cfh->user_comparator();

@@ -56,13 +56,27 @@ class CompactionIterator {
   void Next();
 
   // Getters
-  const Slice& key() const { return key_; }
-  const Slice& value() const { return value_; }
-  const Status& status() const { return status_; }
-  const ParsedInternalKey& ikey() const { return ikey_; }
-  bool Valid() const { return valid_; }
-  const Slice& user_key() const { return current_user_key_; }
-  const CompactionIteratorStats& iter_stats() const { return iter_stats_; }
+  const Slice& key() const {
+    return key_;
+  }
+  const Slice& value() const {
+    return value_;
+  }
+  const Status& status() const {
+    return status_;
+  }
+  const ParsedInternalKey& ikey() const {
+    return ikey_;
+  }
+  bool Valid() const {
+    return valid_;
+  }
+  const Slice& user_key() const {
+    return current_user_key_;
+  }
+  const CompactionIteratorStats& iter_stats() const {
+    return iter_stats_;
+  }
 
  private:
   // Processes the input stream to find the next output
@@ -80,7 +94,7 @@ class CompactionIterator {
   // Employ a sequential search because the total number of
   // snapshots are typically small.
   inline SequenceNumber findEarliestVisibleSnapshot(
-      SequenceNumber in, SequenceNumber* prev_snapshot);
+    SequenceNumber in, SequenceNumber* prev_snapshot);
 
   InternalIterator* input_;
   const Comparator* cmp_;

@@ -20,11 +20,11 @@
 namespace vidardb {
 
 ColumnTableFactory::ColumnTableFactory(
-    const ColumnTableOptions& table_options)
-    : table_options_(table_options) {
+  const ColumnTableOptions& table_options)
+  : table_options_(table_options) {
   if (table_options_.flush_block_policy_factory == nullptr) {
     table_options_.flush_block_policy_factory.reset(
-        new FlushBlockBySizePolicyFactory());
+      new FlushBlockBySizePolicyFactory());
   }
   if (table_options_.no_block_cache) {
     table_options_.block_cache.reset();
@@ -47,42 +47,42 @@ ColumnTableFactory::ColumnTableFactory(
 }
 
 Status ColumnTableFactory::NewTableReader(
-    const TableReaderOptions& table_reader_options,
-    unique_ptr<RandomAccessFileReader>&& file, uint64_t file_size,
-    unique_ptr<TableReader>* table_reader) const {
+  const TableReaderOptions& table_reader_options,
+  unique_ptr<RandomAccessFileReader>&& file, uint64_t file_size,
+  unique_ptr<TableReader>* table_reader) const {
   return NewTableReader(table_reader_options, std::move(file), file_size,
                         table_reader, true);
 }
 
 Status ColumnTableFactory::NewTableReader(
-    const TableReaderOptions& table_reader_options,
-    unique_ptr<RandomAccessFileReader>&& file, uint64_t file_size,
-    unique_ptr<TableReader>* table_reader, bool prefetch_enabled) const {
+  const TableReaderOptions& table_reader_options,
+  unique_ptr<RandomAccessFileReader>&& file, uint64_t file_size,
+  unique_ptr<TableReader>* table_reader, bool prefetch_enabled) const {
   return ColumnTable::Open(
-      table_reader_options.ioptions, table_reader_options.env_options,
-      table_options_, table_reader_options.internal_comparator, std::move(file),
-      file_size, table_reader, prefetch_enabled, table_reader_options.level,
-      table_reader_options.cols);
+           table_reader_options.ioptions, table_reader_options.env_options,
+           table_options_, table_reader_options.internal_comparator, std::move(file),
+           file_size, table_reader, prefetch_enabled, table_reader_options.level,
+           table_reader_options.cols);
 }
 
 TableBuilder* ColumnTableFactory::NewTableBuilder(
-    const TableBuilderOptions& table_builder_options, uint32_t column_family_id,
-    WritableFileWriter* file) const {
+  const TableBuilderOptions& table_builder_options, uint32_t column_family_id,
+  WritableFileWriter* file) const {
   auto table_builder = new ColumnTableBuilder(
-      table_builder_options.ioptions, table_options_,
-      table_builder_options.internal_comparator,
-      table_builder_options.int_tbl_prop_collector_factories, column_family_id,
-      file, table_builder_options.compression_type,
-      table_builder_options.compression_opts,
-      table_builder_options.compression_dict,
-      table_builder_options.column_family_name,
-      table_builder_options.env_options);
+    table_builder_options.ioptions, table_options_,
+    table_builder_options.internal_comparator,
+    table_builder_options.int_tbl_prop_collector_factories, column_family_id,
+    file, table_builder_options.compression_type,
+    table_builder_options.compression_opts,
+    table_builder_options.compression_dict,
+    table_builder_options.column_family_name,
+    table_builder_options.env_options);
 
   return table_builder;
 }
 
 Status ColumnTableFactory::SanitizeOptions(
-    const DBOptions& db_opts, const ColumnFamilyOptions& cf_opts) const {
+  const DBOptions& db_opts, const ColumnFamilyOptions& cf_opts) const {
   return Status::OK();
 }
 
@@ -127,7 +127,7 @@ const ColumnTableOptions& ColumnTableFactory::table_options() const {
 }
 
 TableFactory* NewColumnTableFactory(
-    const ColumnTableOptions& table_options) {
+  const ColumnTableOptions& table_options) {
   return new ColumnTableFactory(table_options);
 }
 

@@ -31,7 +31,7 @@ class ThreadStatusUtil {
  public:
   // Register the current thread for tracking.
   static void RegisterThread(
-      const Env* env, ThreadStatus::ThreadType thread_type);
+    const Env* env, ThreadStatus::ThreadType thread_type);
 
   // Unregister the current thread.
   static void UnregisterThread();
@@ -60,13 +60,13 @@ class ThreadStatusUtil {
   static void SetThreadOperation(ThreadStatus::OperationType type);
 
   static ThreadStatus::OperationStage SetThreadOperationStage(
-      ThreadStatus::OperationStage stage);
+    ThreadStatus::OperationStage stage);
 
   static void SetThreadOperationProperty(
-      int code, uint64_t value);
+    int code, uint64_t value);
 
   static void IncreaseThreadOperationProperty(
-      int code, uint64_t delta);
+    int code, uint64_t delta);
 
   static void SetThreadState(ThreadStatus::StateType type);
 
@@ -74,7 +74,7 @@ class ThreadStatusUtil {
 
 #ifndef NDEBUG
   static void TEST_SetStateDelay(
-      const ThreadStatus::StateType state, int micro);
+    const ThreadStatus::StateType state, int micro);
   static void TEST_StateDelay(const ThreadStatus::StateType state);
 #endif
 
@@ -122,7 +122,7 @@ class ThreadStatusUtil {
 class AutoThreadOperationStageUpdater {
  public:
   explicit AutoThreadOperationStageUpdater(
-      ThreadStatus::OperationStage stage);
+    ThreadStatus::OperationStage stage);
   ~AutoThreadOperationStageUpdater();
 
 #ifdef VIDARDB_USING_THREAD_STATUS

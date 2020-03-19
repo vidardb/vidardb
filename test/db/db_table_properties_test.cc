@@ -48,8 +48,8 @@ class DBTablePropertiesTest : public DBTestBase {
  public:
   DBTablePropertiesTest() : DBTestBase("/db_table_properties_test") {}
   TablePropertiesCollection TestGetPropertiesOfTablesInRange(
-      std::vector<Range> ranges, std::size_t* num_properties = nullptr,
-      std::size_t* num_files = nullptr);
+    std::vector<Range> ranges, std::size_t* num_properties = nullptr,
+    std::size_t* num_files = nullptr);
 };
 
 TEST_F(DBTablePropertiesTest, GetPropertiesOfAllTablesTest) {
@@ -90,8 +90,8 @@ TEST_F(DBTablePropertiesTest, GetPropertiesOfAllTablesTest) {
 
 TablePropertiesCollection
 DBTablePropertiesTest::TestGetPropertiesOfTablesInRange(
-    std::vector<Range> ranges, std::size_t* num_properties,
-    std::size_t* num_files) {
+  std::vector<Range> ranges, std::size_t* num_properties,
+  std::size_t* num_files) {
 
   // Since we deref zero element in the vector it can not be empty
   // otherwise we pass an address to some random memory
@@ -99,7 +99,7 @@ DBTablePropertiesTest::TestGetPropertiesOfTablesInRange(
   // run the query
   TablePropertiesCollection props;
   EXPECT_OK(db_->GetPropertiesOfTablesInRange(
-      db_->DefaultColumnFamily(), &ranges[0], ranges.size(), &props));
+              db_->DefaultColumnFamily(), &ranges[0], ranges.size(), &props));
 
   // Make sure that we've received properties for those and for those files
   // only which fall within requested ranges
@@ -164,25 +164,28 @@ TEST_F(DBTablePropertiesTest, GetPropertiesOfTablesInRange) {
 
   // Query the largest range
   std::size_t num_properties, num_files;
-  TestGetPropertiesOfTablesInRange(
-      {Range(test::RandomKey(&rnd, 5, test::RandomKeyType::SMALLEST),
-             test::RandomKey(&rnd, 5, test::RandomKeyType::LARGEST))},
-      &num_properties, &num_files);
+  TestGetPropertiesOfTablesInRange( {
+    Range(test::RandomKey(&rnd, 5, test::RandomKeyType::SMALLEST),
+    test::RandomKey(&rnd, 5, test::RandomKeyType::LARGEST))
+  },
+  &num_properties, &num_files);
   ASSERT_EQ(num_properties, num_files);
 
   // Query the empty range
-  TestGetPropertiesOfTablesInRange(
-      {Range(test::RandomKey(&rnd, 5, test::RandomKeyType::LARGEST),
-             test::RandomKey(&rnd, 5, test::RandomKeyType::SMALLEST))},
-      &num_properties, &num_files);
+  TestGetPropertiesOfTablesInRange( {
+    Range(test::RandomKey(&rnd, 5, test::RandomKeyType::LARGEST),
+    test::RandomKey(&rnd, 5, test::RandomKeyType::SMALLEST))
+  },
+  &num_properties, &num_files);
   ASSERT_GT(num_files, 0);
   ASSERT_EQ(num_properties, 0);
 
   // Query the middle rangee
-  TestGetPropertiesOfTablesInRange(
-      {Range(test::RandomKey(&rnd, 5, test::RandomKeyType::MIDDLE),
-             test::RandomKey(&rnd, 5, test::RandomKeyType::LARGEST))},
-      &num_properties, &num_files);
+  TestGetPropertiesOfTablesInRange( {
+    Range(test::RandomKey(&rnd, 5, test::RandomKeyType::MIDDLE),
+    test::RandomKey(&rnd, 5, test::RandomKeyType::LARGEST))
+  },
+  &num_properties, &num_files);
   ASSERT_GT(num_files, 0);
   ASSERT_GT(num_files, num_properties);
   ASSERT_GT(num_properties, 0);
@@ -239,7 +242,7 @@ TEST_F(DBTablePropertiesTest, GetColumnFamilyNameProperty) {
     ASSERT_EQ(expected_cf_name,
               fname_to_props.begin()->second->column_family_name);
     ASSERT_EQ(cf, static_cast<uint32_t>(
-                      fname_to_props.begin()->second->column_family_id));
+                fname_to_props.begin()->second->column_family_id));
   }
 }
 

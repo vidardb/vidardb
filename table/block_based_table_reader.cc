@@ -135,7 +135,7 @@ Cache::Handle* GetEntryFromCache(Cache* block_cache, const Slice& key,
 class BlockBasedTable::IndexReader {
  public:
   explicit IndexReader(const Comparator* comparator, Statistics* stats)
-      : comparator_(comparator), statistics_(stats) {}
+    : comparator_(comparator), statistics_(stats) {}
 
   virtual ~IndexReader() {}
 
@@ -149,7 +149,9 @@ class BlockBasedTable::IndexReader {
   // Memory usage of the index block
   virtual size_t usable_size() const = 0;
   // return the statistics pointer
-  virtual Statistics* statistics() const { return statistics_; }
+  virtual Statistics* statistics() const {
+    return statistics_;
+  }
   // Report an approximation of how much memory has been used other than memory
   // that was allocated in block cache.
   virtual size_t ApproximateMemoryUsage() const = 0;
@@ -182,7 +184,7 @@ class BinarySearchIndexReader : public IndexReader {
 
     if (s.ok()) {
       *index_reader = new BinarySearchIndexReader(
-          comparator, std::move(index_block), statistics);
+        comparator, std::move(index_block), statistics);
     }
 
     return s;
@@ -192,7 +194,9 @@ class BinarySearchIndexReader : public IndexReader {
     return index_block_->NewIterator(comparator_, iter);
   }
 
-  virtual size_t size() const override { return index_block_->size(); }
+  virtual size_t size() const override {
+    return index_block_->size();
+  }
   virtual size_t usable_size() const override {
     return index_block_->usable_size();
   }
@@ -206,7 +210,7 @@ class BinarySearchIndexReader : public IndexReader {
   BinarySearchIndexReader(const Comparator* comparator,
                           std::unique_ptr<Block>&& index_block,
                           Statistics* stats)
-      : IndexReader(comparator, stats), index_block_(std::move(index_block)) {
+    : IndexReader(comparator, stats), index_block_(std::move(index_block)) {
     assert(index_block_ != nullptr);
   }
   std::unique_ptr<Block> index_block_;
@@ -232,7 +236,7 @@ void DeleteCachedIndexEntry(const Slice& key, void* value) {
 template <class TValue>
 struct BlockBasedTable::CachableEntry {
   CachableEntry(TValue* _value, Cache::Handle* _cache_handle)
-      : value(_value), cache_handle(_cache_handle) {}
+    : value(_value), cache_handle(_cache_handle) {}
   CachableEntry() : CachableEntry(nullptr, nullptr) {}
   void Release(Cache* cache) {
     if (cache_handle) {
@@ -241,7 +245,9 @@ struct BlockBasedTable::CachableEntry {
       cache_handle = nullptr;
     }
   }
-  bool IsSet() const { return cache_handle != nullptr; }
+  bool IsSet() const {
+    return cache_handle != nullptr;
+  }
 
   TValue* value = nullptr;
   // if the entry is from the cache, cache_handle will be populated.
@@ -252,10 +258,10 @@ struct BlockBasedTable::Rep {
   Rep(const ImmutableCFOptions& _ioptions, const EnvOptions& _env_options,
       const BlockBasedTableOptions& _table_opt,
       const InternalKeyComparator& _internal_comparator)
-      : ioptions(_ioptions),
-        env_options(_env_options),
-        table_options(_table_opt),
-        internal_comparator(_internal_comparator) {}
+    : ioptions(_ioptions),
+      env_options(_env_options),
+      table_options(_table_opt),
+      internal_comparator(_internal_comparator) {}
 
   const ImmutableCFOptions& ioptions;
   const EnvOptions& env_options;
@@ -266,7 +272,7 @@ struct BlockBasedTable::Rep {
   char cache_key_prefix[kMaxCacheKeyPrefixSize];
   size_t cache_key_prefix_size = 0;
   uint64_t dummy_index_reader_offset =
-      0;  // ID that is unique for the block cache.
+    0;  // ID that is unique for the block cache.
 
   // Footer contains the fixed table information
   Footer footer;
@@ -289,10 +295,10 @@ Status BlockBasedTable::ReadMetaBlock(Rep* rep,
                                       std::unique_ptr<InternalIterator>* iter) {
   std::unique_ptr<Block> meta;
   Status s = ReadBlockFromFile(
-      rep->file.get(), rep->footer, ReadOptions(),
-      rep->footer.metaindex_handle(), &meta, rep->ioptions.env,
-      true /* decompress */, Slice() /*compression dict*/,
-      rep->ioptions.info_log);
+               rep->file.get(), rep->footer, ReadOptions(),
+               rep->footer.metaindex_handle(), &meta, rep->ioptions.env,
+               true /* decompress */, Slice() /*compression dict*/,
+               rep->ioptions.info_log);
 
   if (!s.ok()) {
     Log(InfoLogLevel::ERROR_LEVEL, rep->ioptions.info_log,
@@ -308,7 +314,7 @@ Status BlockBasedTable::ReadMetaBlock(Rep* rep,
 }
 
 void BlockBasedTable::GenerateCachePrefix(Cache* cc, RandomAccessFile* file,
-                                          char* buffer, size_t* size) {
+    char* buffer, size_t* size) {
 
   // generate an id from the file
   *size = file->GetUniqueId(buffer, kMaxCacheKeyPrefixSize);
@@ -329,7 +335,7 @@ void BlockBasedTable::SetupCacheKeyPrefix(Rep* rep, uint64_t file_size) {
                         &rep->cache_key_prefix[0], &rep->cache_key_prefix_size);
     // Create dummy offset of index reader which is beyond the file size.
     rep->dummy_index_reader_offset =
-        file_size + rep->table_options.block_cache->NewId();
+      file_size + rep->table_options.block_cache->NewId();
   }
 }
 
@@ -341,13 +347,13 @@ Slice BlockBasedTable::GetCacheKey(const char* cache_key_prefix,
   assert(cache_key_prefix_size <= kMaxCacheKeyPrefixSize);
   memcpy(cache_key, cache_key_prefix, cache_key_prefix_size);
   char* end =
-      EncodeVarint64(cache_key + cache_key_prefix_size, handle.offset());
+    EncodeVarint64(cache_key + cache_key_prefix_size, handle.offset());
   return Slice(cache_key, static_cast<size_t>(end - cache_key));
 }
 
 Status BlockBasedTable::PutDataBlockToCache(
-    const Slice& block_cache_key, Cache* block_cache, Statistics* statistics,
-    CachableEntry<Block>* block, Block* raw_block) {
+  const Slice& block_cache_key, Cache* block_cache, Statistics* statistics,
+  CachableEntry<Block>* block, Block* raw_block) {
   assert(raw_block->compression_type() == kNoCompression);
   Status s;
   block->value = raw_block;
@@ -365,7 +371,7 @@ Status BlockBasedTable::PutDataBlockToCache(
       RecordTick(statistics, BLOCK_CACHE_BYTES_WRITE,
                  block->value->usable_size());
       assert(reinterpret_cast<Block*>(
-                 block_cache->Value(block->cache_handle)) == block->value);
+               block_cache->Value(block->cache_handle)) == block->value);
     } else {
       RecordTick(statistics, BLOCK_CACHE_ADD_FAILURES);
       delete block->value;
@@ -377,18 +383,18 @@ Status BlockBasedTable::PutDataBlockToCache(
 }
 
 Status BlockBasedTable::GetDataBlockFromCache(
-    const Slice& block_cache_key, Cache* block_cache, Statistics* statistics,
-    BlockBasedTable::CachableEntry<Block>* block) {
+  const Slice& block_cache_key, Cache* block_cache, Statistics* statistics,
+  BlockBasedTable::CachableEntry<Block>* block) {
   Status s;
 
   // Lookup uncompressed cache first
   if (block_cache != nullptr) {
     block->cache_handle =
-        GetEntryFromCache(block_cache, block_cache_key, BLOCK_CACHE_DATA_MISS,
-                          BLOCK_CACHE_DATA_HIT, statistics);
+      GetEntryFromCache(block_cache, block_cache_key, BLOCK_CACHE_DATA_MISS,
+                        BLOCK_CACHE_DATA_HIT, statistics);
     if (block->cache_handle != nullptr) {
       block->value =
-          reinterpret_cast<Block*>(block_cache->Value(block->cache_handle));
+        reinterpret_cast<Block*>(block_cache->Value(block->cache_handle));
       return s;
     }
   }
@@ -403,8 +409,8 @@ Status BlockBasedTable::GetDataBlockFromCache(
 // If input_iter is null, new a iterator
 // If input_iter is not null, update this iter and return it
 InternalIterator* BlockBasedTable::NewDataBlockIterator(
-    Rep* rep, const ReadOptions& read_options, const Slice& index_value,
-    BlockIter* input_iter) {
+  Rep* rep, const ReadOptions& read_options, const Slice& index_value,
+  BlockIter* input_iter) {
   PERF_TIMER_GUARD(new_table_block_iter_nanos);
 
   BlockHandle handle;
@@ -509,8 +515,8 @@ Status BlockBasedTable::CreateIndexReader(IndexReader** index_reader) {
 }
 
 InternalIterator* BlockBasedTable::NewIndexIterator(
-    const ReadOptions& read_options, BlockIter* input_iter,
-    CachableEntry<IndexReader>* index_entry) {
+  const ReadOptions& read_options, BlockIter* input_iter,
+  CachableEntry<IndexReader>* index_entry) {
   // index reader has already been pre-populated.
   if (rep_->index_reader) {
     return rep_->index_reader->NewIterator(input_iter);
@@ -541,7 +547,7 @@ InternalIterator* BlockBasedTable::NewIndexIterator(
   IndexReader* index_reader = nullptr;
   if (cache_handle != nullptr) {
     index_reader =
-        reinterpret_cast<IndexReader*>(block_cache->Value(cache_handle));
+      reinterpret_cast<IndexReader*>(block_cache->Value(cache_handle));
   } else {
     // Create index reader and put it in the cache.
     Status s = CreateIndexReader(&index_reader);
@@ -583,11 +589,11 @@ InternalIterator* BlockBasedTable::NewIndexIterator(
 
 Status BlockBasedTable::DumpIndexBlock(WritableFile* out_file) {
   out_file->Append(
-      "Index Details:\n"
-      "--------------------------------------\n");
+    "Index Details:\n"
+    "--------------------------------------\n");
 
   std::unique_ptr<InternalIterator> blockhandles_iter(
-      NewIndexIterator(ReadOptions()));
+    NewIndexIterator(ReadOptions()));
   Status s = blockhandles_iter->status();
   if (!s.ok()) {
     out_file->Append("Can not read Index Block \n\n");
@@ -629,7 +635,7 @@ Status BlockBasedTable::DumpIndexBlock(WritableFile* out_file) {
 
 Status BlockBasedTable::DumpDataBlocks(WritableFile* out_file) {
   std::unique_ptr<InternalIterator> blockhandles_iter(
-      NewIndexIterator(ReadOptions()));
+    NewIndexIterator(ReadOptions()));
   Status s = blockhandles_iter->status();
   if (!s.ok()) {
     out_file->Append("Can not read Index Block \n\n");
@@ -653,7 +659,7 @@ Status BlockBasedTable::DumpDataBlocks(WritableFile* out_file) {
 
     std::unique_ptr<InternalIterator> datablock_iter;
     datablock_iter.reset(
-        NewDataBlockIterator(rep_, ReadOptions(), blockhandles_iter->value()));
+      NewDataBlockIterator(rep_, ReadOptions(), blockhandles_iter->value()));
     s = datablock_iter->status();
 
     if (!s.ok()) {
@@ -755,8 +761,8 @@ Status BlockBasedTable::Open(const ImmutableCFOptions& ioptions,
 
     if (!s.ok()) {
       Log(InfoLogLevel::WARN_LEVEL, rep->ioptions.info_log,
-        "Encountered error while reading data from properties "
-        "block %s", s.ToString().c_str());
+          "Encountered error while reading data from properties "
+          "block %s", s.ToString().c_str());
     } else {
       rep->table_properties.reset(table_properties);
     }
@@ -814,9 +820,9 @@ class BlockBasedTable::BlockEntryIteratorState : public TwoLevelIteratorState {
  public:
   BlockEntryIteratorState(BlockBasedTable* table,
                           const ReadOptions& read_options)
-      : TwoLevelIteratorState(),
-        table_(table),
-        read_options_(read_options) {}
+    : TwoLevelIteratorState(),
+      table_(table),
+      read_options_(read_options) {}
 
   InternalIterator* NewSecondaryIterator(const Slice& index_value) override {
     return NewDataBlockIterator(table_->rep_, read_options_, index_value);
@@ -833,7 +839,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
  public:
   BlockBasedIterator(InternalIterator* iter,
                      const InternalKeyComparator& internal_comparator)
-  : iter_(iter), internal_comparator_(internal_comparator) {}
+    : iter_(iter), internal_comparator_(internal_comparator) {}
 
   virtual ~BlockBasedIterator() {
     iter_->~InternalIterator();
@@ -889,7 +895,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 
     SequenceNumber sequence_num = range.SequenceNum();
     RangeQueryMeta* meta =
-        static_cast<RangeQueryMeta*>(read_options.range_query_meta);
+      static_cast<RangeQueryMeta*>(read_options.range_query_meta);
     auto prev_it = meta->map_res.end();  // record previous iterator
     for (; iter_->Valid(); iter_->Next()) {
       if (CompareRangeLimit(internal_comparator_, iter_->key(),
@@ -971,10 +977,10 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 /***************************** Shichao *********************************/
 
 InternalIterator* BlockBasedTable::NewIterator(const ReadOptions& read_options,
-                                               Arena* arena) {
+    Arena* arena) {
   return new BlockBasedIterator(NewTwoLevelIterator(
-      new BlockEntryIteratorState(this, read_options),
-      NewIndexIterator(read_options), arena), rep_->internal_comparator);
+                                  new BlockEntryIteratorState(this, read_options),
+                                  NewIndexIterator(read_options), arena), rep_->internal_comparator);
 }
 
 Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
@@ -1108,25 +1114,25 @@ uint64_t BlockBasedTable::ApproximateOffsetOf(const Slice& key) {
 
 void BlockBasedTable::SetupForCompaction() {
   switch (rep_->ioptions.access_hint_on_compaction_start) {
-    case Options::NONE:
-      break;
-    case Options::NORMAL:
-      rep_->file->file()->Hint(RandomAccessFile::NORMAL);
-      break;
-    case Options::SEQUENTIAL:
-      rep_->file->file()->Hint(RandomAccessFile::SEQUENTIAL);
-      break;
-    case Options::WILLNEED:
-      rep_->file->file()->Hint(RandomAccessFile::WILLNEED);
-      break;
-    default:
-      assert(false);
+  case Options::NONE:
+    break;
+  case Options::NORMAL:
+    rep_->file->file()->Hint(RandomAccessFile::NORMAL);
+    break;
+  case Options::SEQUENTIAL:
+    rep_->file->file()->Hint(RandomAccessFile::SEQUENTIAL);
+    break;
+  case Options::WILLNEED:
+    rep_->file->file()->Hint(RandomAccessFile::WILLNEED);
+    break;
+  default:
+    assert(false);
   }
   compaction_optimized_ = true;
 }
 
 std::shared_ptr<const TableProperties> BlockBasedTable::GetTableProperties()
-    const {
+const {
   return rep_->table_properties;
 }
 
@@ -1141,16 +1147,16 @@ size_t BlockBasedTable::ApproximateMemoryUsage() const {
 Status BlockBasedTable::DumpTable(WritableFile* out_file) {
   // Output Footer
   out_file->Append(
-      "Footer Details:\n"
-      "--------------------------------------\n"
-      "  ");
+    "Footer Details:\n"
+    "--------------------------------------\n"
+    "  ");
   out_file->Append(rep_->footer.ToString().c_str());
   out_file->Append("\n");
 
   // Output MetaIndex
   out_file->Append(
-      "Metaindex Details:\n"
-      "--------------------------------------\n");
+    "Metaindex Details:\n"
+    "--------------------------------------\n");
   std::unique_ptr<Block> meta;
   std::unique_ptr<InternalIterator> meta_iter;
   Status s = ReadMetaBlock(rep_, &meta, &meta_iter);
@@ -1181,9 +1187,9 @@ Status BlockBasedTable::DumpTable(WritableFile* out_file) {
 
   if (table_properties != nullptr) {
     out_file->Append(
-        "Table Properties:\n"
-        "--------------------------------------\n"
-        "  ");
+      "Table Properties:\n"
+      "--------------------------------------\n"
+      "  ");
     out_file->Append(table_properties->ToString("\n  ", ": ").c_str());
     out_file->Append("\n");
   }
@@ -1205,8 +1211,8 @@ void BlockBasedTable::Close() {
     char cache_key[kMaxCacheKeyPrefixSize + kMaxVarint64Length];
     // Get the index block key
     auto key = GetCacheKeyFromOffset(rep_->cache_key_prefix,
-                                rep_->cache_key_prefix_size,
-                                rep_->dummy_index_reader_offset, cache_key);
+                                     rep_->cache_key_prefix_size,
+                                     rep_->dummy_index_reader_offset, cache_key);
     rep_->table_options.block_cache.get()->Erase(key);
   }
 }
@@ -1232,8 +1238,8 @@ bool BlockBasedTable::TEST_KeyInCache(const ReadOptions& options,
 
   char cache_key_storage[kMaxCacheKeyPrefixSize + kMaxVarint64Length];
   Slice cache_key =
-      GetCacheKey(rep_->cache_key_prefix, rep_->cache_key_prefix_size,
-                  handle, cache_key_storage);
+    GetCacheKey(rep_->cache_key_prefix, rep_->cache_key_prefix_size,
+                handle, cache_key_storage);
 
   s = GetDataBlockFromCache(cache_key, block_cache, nullptr, &block);
   assert(s.ok());

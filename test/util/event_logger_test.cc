@@ -18,7 +18,9 @@ class StringLogger : public Logger {
   virtual void Logv(const char* format, va_list ap) override {
     vsnprintf(buffer_, sizeof(buffer_), format, ap);
   }
-  char* buffer() { return buffer_; }
+  char* buffer() {
+    return buffer_;
+  }
 
  private:
   char buffer_[1000];

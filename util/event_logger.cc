@@ -20,10 +20,10 @@ namespace vidardb {
 
 
 EventLoggerStream::EventLoggerStream(Logger* logger)
-    : logger_(logger), log_buffer_(nullptr), json_writer_(nullptr) {}
+  : logger_(logger), log_buffer_(nullptr), json_writer_(nullptr) {}
 
 EventLoggerStream::EventLoggerStream(LogBuffer* log_buffer)
-    : logger_(nullptr), log_buffer_(log_buffer), json_writer_(nullptr) {}
+  : logger_(nullptr), log_buffer_(log_buffer), json_writer_(nullptr) {}
 
 EventLoggerStream::~EventLoggerStream() {
   if (json_writer_) {
@@ -54,7 +54,7 @@ void EventLogger::Log(Logger* logger, const JSONWriter& jwriter) {
 }
 
 void EventLogger::LogToBuffer(
-    LogBuffer* log_buffer, const JSONWriter& jwriter) {
+  LogBuffer* log_buffer, const JSONWriter& jwriter) {
 #ifdef VIDARDB_PRINT_EVENTS_TO_STDOUT
   printf("%s\n", jwriter.Get().c_str());
 #else

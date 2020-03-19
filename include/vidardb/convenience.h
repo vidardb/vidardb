@@ -24,9 +24,9 @@ namespace vidardb {
 // converted back to the raw string before assigning to the associated
 // options.
 Status GetColumnFamilyOptionsFromMap(
-    const ColumnFamilyOptions& base_options,
-    const std::unordered_map<std::string, std::string>& opts_map,
-    ColumnFamilyOptions* new_options, bool input_strings_escaped = false);
+  const ColumnFamilyOptions& base_options,
+  const std::unordered_map<std::string, std::string>& opts_map,
+  ColumnFamilyOptions* new_options, bool input_strings_escaped = false);
 
 // Take a map of option name and option value, apply them into the
 // base_options, and return the new options as a result.
@@ -36,15 +36,15 @@ Status GetColumnFamilyOptionsFromMap(
 // converted back to the raw string before assigning to the associated
 // options.
 Status GetDBOptionsFromMap(
-    const DBOptions& base_options,
-    const std::unordered_map<std::string, std::string>& opts_map,
-    DBOptions* new_options, bool input_strings_escaped = false);
+  const DBOptions& base_options,
+  const std::unordered_map<std::string, std::string>& opts_map,
+  DBOptions* new_options, bool input_strings_escaped = false);
 
 Status GetBlockBasedTableOptionsFromMap(
-    const BlockBasedTableOptions& table_options,
-    const std::unordered_map<std::string, std::string>& opts_map,
-    BlockBasedTableOptions* new_table_options,
-    bool input_strings_escaped = false);
+  const BlockBasedTableOptions& table_options,
+  const std::unordered_map<std::string, std::string>& opts_map,
+  BlockBasedTableOptions* new_table_options,
+  bool input_strings_escaped = false);
 
 // Take a string representation of option names and  values, apply them into the
 // base_options, and return the new options as a result. The string has the
@@ -55,14 +55,14 @@ Status GetBlockBasedTableOptionsFromMap(
 //   "write_buffer_size=1024;block_based_table_factory={block_size=4k};"
 //   "max_write_buffer_num=2"
 Status GetColumnFamilyOptionsFromString(
-    const ColumnFamilyOptions& base_options,
-    const std::string& opts_str,
-    ColumnFamilyOptions* new_options);
+  const ColumnFamilyOptions& base_options,
+  const std::string& opts_str,
+  ColumnFamilyOptions* new_options);
 
 Status GetDBOptionsFromString(
-    const DBOptions& base_options,
-    const std::string& opts_str,
-    DBOptions* new_options);
+  const DBOptions& base_options,
+  const std::string& opts_str,
+  DBOptions* new_options);
 
 Status GetStringFromDBOptions(std::string* opts_str,
                               const DBOptions& db_options,
@@ -76,13 +76,13 @@ Status GetStringFromCompressionType(std::string* compression_str,
                                     CompressionType compression_type);
 
 Status GetBlockBasedTableOptionsFromString(
-    const BlockBasedTableOptions& table_options,
-    const std::string& opts_str,
-    BlockBasedTableOptions* new_table_options);
+  const BlockBasedTableOptions& table_options,
+  const std::string& opts_str,
+  BlockBasedTableOptions* new_table_options);
 
 Status GetMemTableRepFactoryFromString(
-    const std::string& opts_str,
-    std::unique_ptr<MemTableRepFactory>* new_mem_factory);
+  const std::string& opts_str,
+  std::unique_ptr<MemTableRepFactory>* new_mem_factory);
 
 Status GetOptionsFromString(const Options& base_options,
                             const std::string& opts_str, Options* new_options);

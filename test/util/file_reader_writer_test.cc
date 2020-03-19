@@ -34,20 +34,32 @@ TEST_F(WritableFileWriterTest, RangeSync) {
       EXPECT_GT(size_, 10 * kMb);
       return Status::OK();
     }
-    Status Flush() override { return Status::OK(); }
-    Status Sync() override { return Status::OK(); }
-    Status Fsync() override { return Status::OK(); }
+    Status Flush() override {
+      return Status::OK();
+    }
+    Status Sync() override {
+      return Status::OK();
+    }
+    Status Fsync() override {
+      return Status::OK();
+    }
     void SetIOPriority(Env::IOPriority pri) override {}
-    uint64_t GetFileSize() override { return size_; }
+    uint64_t GetFileSize() override {
+      return size_;
+    }
     void GetPreallocationStatus(size_t* block_size,
                                 size_t* last_allocated_block) override {}
-    size_t GetUniqueId(char* id, size_t max_size) const override { return 0; }
+    size_t GetUniqueId(char* id, size_t max_size) const override {
+      return 0;
+    }
     Status InvalidateCache(size_t offset, size_t length) override {
       return Status::OK();
     }
 
    protected:
-    Status Allocate(uint64_t offset, uint64_t len) override { return Status::OK(); }
+    Status Allocate(uint64_t offset, uint64_t len) override {
+      return Status::OK();
+    }
     Status RangeSync(uint64_t offset, uint64_t nbytes) override {
       EXPECT_EQ(offset % 4096, 0u);
       EXPECT_EQ(nbytes % 4096, 0u);
@@ -69,7 +81,7 @@ TEST_F(WritableFileWriterTest, RangeSync) {
   env_options.bytes_per_sync = kMb;
   unique_ptr<FakeWF> wf(new FakeWF);
   unique_ptr<WritableFileWriter> writer(
-      new WritableFileWriter(std::move(wf), env_options));
+    new WritableFileWriter(std::move(wf), env_options));
   Random r(301);
   std::unique_ptr<char[]> large_buf(new char[10 * kMb]);
   for (int i = 0; i < 1000; i++) {
@@ -90,7 +102,9 @@ TEST_F(WritableFileWriterTest, AppendStatusReturn) {
    public:
     explicit FakeWF() : use_os_buffer_(true), io_error_(false) {}
 
-    virtual bool UseOSBuffer() const override { return use_os_buffer_; }
+    virtual bool UseOSBuffer() const override {
+      return use_os_buffer_;
+    }
     Status Append(const Slice& data) override {
       if (io_error_) {
         return Status::IOError("Fake IO error");
@@ -103,11 +117,21 @@ TEST_F(WritableFileWriterTest, AppendStatusReturn) {
       }
       return Status::OK();
     }
-    Status Close() override { return Status::OK(); }
-    Status Flush() override { return Status::OK(); }
-    Status Sync() override { return Status::OK(); }
-    void SetUseOSBuffer(bool val) { use_os_buffer_ = val; }
-    void SetIOError(bool val) { io_error_ = val; }
+    Status Close() override {
+      return Status::OK();
+    }
+    Status Flush() override {
+      return Status::OK();
+    }
+    Status Sync() override {
+      return Status::OK();
+    }
+    void SetUseOSBuffer(bool val) {
+      use_os_buffer_ = val;
+    }
+    void SetIOError(bool val) {
+      io_error_ = val;
+    }
 
    protected:
     bool use_os_buffer_;
@@ -116,7 +140,7 @@ TEST_F(WritableFileWriterTest, AppendStatusReturn) {
   unique_ptr<FakeWF> wf(new FakeWF());
   wf->SetUseOSBuffer(false);
   unique_ptr<WritableFileWriter> writer(
-      new WritableFileWriter(std::move(wf), EnvOptions()));
+    new WritableFileWriter(std::move(wf), EnvOptions()));
 
   ASSERT_OK(writer->Append(std::string(2 * kMb, 'a')));
 

@@ -59,7 +59,7 @@ namespace anon {
 class AtomicCounter {
  public:
   explicit AtomicCounter(Env* env = NULL)
-      : env_(env), cond_count_(&mu_), count_(0) {}
+    : env_(env), cond_count_(&mu_), count_(0) {}
 
   void Increment() {
     MutexLock l(&mu_);
@@ -117,10 +117,10 @@ class SpecialMemTableRep : public MemTableRep {
  public:
   explicit SpecialMemTableRep(MemTableAllocator* allocator,
                               MemTableRep* memtable, int num_entries_flush)
-      : MemTableRep(allocator),
-        memtable_(memtable),
-        num_entries_flush_(num_entries_flush),
-        num_entries_(0) {}
+    : MemTableRep(allocator),
+      memtable_(memtable),
+      num_entries_flush_(num_entries_flush),
+      num_entries_(0) {}
 
   virtual KeyHandle Allocate(const size_t len, char** buf) override {
     return memtable_->Allocate(len, buf);
@@ -174,16 +174,18 @@ class SpecialSkipListFactory : public MemTableRepFactory {
   // After number of inserts exceeds `num_entries_flush` in a mem table, trigger
   // flush.
   explicit SpecialSkipListFactory(int num_entries_flush)
-      : num_entries_flush_(num_entries_flush) {}
+    : num_entries_flush_(num_entries_flush) {}
 
   virtual MemTableRep* CreateMemTableRep(
-      const MemTableRep::KeyComparator& compare, MemTableAllocator* allocator,
-      Logger* logger) override {
+    const MemTableRep::KeyComparator& compare, MemTableAllocator* allocator,
+    Logger* logger) override {
     return new SpecialMemTableRep(
-        allocator, factory_.CreateMemTableRep(compare, allocator, 0),
-        num_entries_flush_);
+             allocator, factory_.CreateMemTableRep(compare, allocator, 0),
+             num_entries_flush_);
   }
-  virtual const char* Name() const override { return "SkipListFactory"; }
+  virtual const char* Name() const override {
+    return "SkipListFactory";
+  }
 
  private:
   SkipListFactory factory_;
@@ -204,7 +206,7 @@ class SpecialEnv : public EnvWrapper {
 
      public:
       SSTableFile(SpecialEnv* env, unique_ptr<WritableFile>&& base)
-          : env_(env), base_(std::move(base)) {}
+        : env_(env), base_(std::move(base)) {}
       Status Append(const Slice& data) override {
         if (env_->table_write_callback_) {
           (*env_->table_write_callback_)();
@@ -219,7 +221,9 @@ class SpecialEnv : public EnvWrapper {
           return base_->Append(data);
         }
       }
-      Status Truncate(uint64_t size) override { return base_->Truncate(size); }
+      Status Truncate(uint64_t size) override {
+        return base_->Truncate(size);
+      }
       Status Close() override {
 // SyncPoint is not supported in Released Windows Mode.
 #if !(defined NDEBUG) || !defined(OS_WIN)
@@ -231,7 +235,9 @@ class SpecialEnv : public EnvWrapper {
 #endif  // !(defined NDEBUG) || !defined(OS_WIN)
         return base_->Close();
       }
-      Status Flush() override { return base_->Flush(); }
+      Status Flush() override {
+        return base_->Flush();
+      }
       Status Sync() override {
         ++env_->sync_counter_;
         while (env_->delay_sstable_sync_.load(std::memory_order_acquire)) {
@@ -249,7 +255,7 @@ class SpecialEnv : public EnvWrapper {
     class ManifestFile : public WritableFile {
      public:
       ManifestFile(SpecialEnv* env, unique_ptr<WritableFile>&& b)
-          : env_(env), base_(std::move(b)) {}
+        : env_(env), base_(std::move(b)) {}
       Status Append(const Slice& data) override {
         if (env_->manifest_write_error_.load(std::memory_order_acquire)) {
           return Status::IOError("simulated writer error");
@@ -257,9 +263,15 @@ class SpecialEnv : public EnvWrapper {
           return base_->Append(data);
         }
       }
-      Status Truncate(uint64_t size) override { return base_->Truncate(size); }
-      Status Close() override { return base_->Close(); }
-      Status Flush() override { return base_->Flush(); }
+      Status Truncate(uint64_t size) override {
+        return base_->Truncate(size);
+      }
+      Status Close() override {
+        return base_->Close();
+      }
+      Status Flush() override {
+        return base_->Flush();
+      }
       Status Sync() override {
         ++env_->sync_counter_;
         if (env_->manifest_sync_error_.load(std::memory_order_acquire)) {
@@ -268,7 +280,9 @@ class SpecialEnv : public EnvWrapper {
           return base_->Sync();
         }
       }
-      uint64_t GetFileSize() override { return base_->GetFileSize(); }
+      uint64_t GetFileSize() override {
+        return base_->GetFileSize();
+      }
 
      private:
       SpecialEnv* env_;
@@ -277,7 +291,7 @@ class SpecialEnv : public EnvWrapper {
     class WalFile : public WritableFile {
      public:
       WalFile(SpecialEnv* env, unique_ptr<WritableFile>&& b)
-          : env_(env), base_(std::move(b)) {}
+        : env_(env), base_(std::move(b)) {}
       Status Append(const Slice& data) override {
 #if !(defined NDEBUG) || !defined(OS_WIN)
         TEST_SYNC_POINT("SpecialEnv::WalFile::Append:1");
@@ -287,7 +301,7 @@ class SpecialEnv : public EnvWrapper {
           s = Status::IOError("simulated writer error");
         } else {
           int slowdown =
-              env_->log_write_slowdown_.load(std::memory_order_acquire);
+            env_->log_write_slowdown_.load(std::memory_order_acquire);
           if (slowdown > 0) {
             env_->SleepForMicroseconds(slowdown);
           }
@@ -298,9 +312,15 @@ class SpecialEnv : public EnvWrapper {
 #endif
         return s;
       }
-      Status Truncate(uint64_t size) override { return base_->Truncate(size); }
-      Status Close() override { return base_->Close(); }
-      Status Flush() override { return base_->Flush(); }
+      Status Truncate(uint64_t size) override {
+        return base_->Truncate(size);
+      }
+      Status Close() override {
+        return base_->Close();
+      }
+      Status Flush() override {
+        return base_->Flush();
+      }
       Status Sync() override {
         ++env_->sync_counter_;
         return base_->Sync();
@@ -353,9 +373,9 @@ class SpecialEnv : public EnvWrapper {
       CountingFile(unique_ptr<RandomAccessFile>&& target,
                    anon::AtomicCounter* counter,
                    std::atomic<size_t>* bytes_read)
-          : target_(std::move(target)),
-            counter_(counter),
-            bytes_read_(bytes_read) {}
+        : target_(std::move(target)),
+          counter_(counter),
+          bytes_read_(bytes_read) {}
       virtual Status Read(uint64_t offset, size_t n, Slice* result,
                           char* scratch) const override {
         counter_->Increment();
@@ -385,12 +405,14 @@ class SpecialEnv : public EnvWrapper {
      public:
       CountingFile(unique_ptr<SequentialFile>&& target,
                    anon::AtomicCounter* counter)
-          : target_(std::move(target)), counter_(counter) {}
+        : target_(std::move(target)), counter_(counter) {}
       virtual Status Read(size_t n, Slice* result, char* scratch) override {
         counter_->Increment();
         return target_->Read(n, result, scratch);
       }
-      virtual Status Skip(uint64_t n) override { return target_->Skip(n); }
+      virtual Status Skip(uint64_t n) override {
+        return target_->Skip(n);
+      }
 
      private:
       unique_ptr<SequentialFile> target_;
@@ -604,13 +626,15 @@ class DBTestBase : public testing::Test {
 
   // Return the current option configuration.
   Options CurrentOptions(
-      const anon::OptionsOverride& options_override = anon::OptionsOverride());
+    const anon::OptionsOverride& options_override = anon::OptionsOverride());
 
   Options CurrentOptions(
-      const Options& defaultOptions,
-      const anon::OptionsOverride& options_override = anon::OptionsOverride());
+    const Options& defaultOptions,
+    const anon::OptionsOverride& options_override = anon::OptionsOverride());
 
-  DBImpl* dbfull() { return reinterpret_cast<DBImpl*>(db_); }
+  DBImpl* dbfull() {
+    return reinterpret_cast<DBImpl*>(db_);
+  }
 
   void CreateColumnFamilies(const std::vector<std::string>& cfs,
                             const Options& options);
@@ -745,20 +769,20 @@ class DBTestBase : public testing::Test {
   // If previous value is not empty,
   //   updates previous value with 'b' string of previous value size - 1.
   static UpdateStatus updateInPlaceSmallerSize(char* prevValue,
-                                               uint32_t* prevSize, Slice delta,
-                                               std::string* newValue);
+      uint32_t* prevSize, Slice delta,
+      std::string* newValue);
 
   static UpdateStatus updateInPlaceSmallerVarintSize(char* prevValue,
-                                                     uint32_t* prevSize,
-                                                     Slice delta,
-                                                     std::string* newValue);
+      uint32_t* prevSize,
+      Slice delta,
+      std::string* newValue);
 
   static UpdateStatus updateInPlaceLargerSize(char* prevValue,
-                                              uint32_t* prevSize, Slice delta,
-                                              std::string* newValue);
+      uint32_t* prevSize, Slice delta,
+      std::string* newValue);
 
   static UpdateStatus updateInPlaceNoAction(char* prevValue, uint32_t* prevSize,
-                                            Slice delta, std::string* newValue);
+      Slice delta, std::string* newValue);
 
   // Utility method to test InplaceUpdate
   void validateNumberOfEntries(int numValues, int cf = 0);
@@ -767,13 +791,13 @@ class DBTestBase : public testing::Test {
                 uint64_t size = 0);
 
   std::unordered_map<std::string, uint64_t> GetAllSSTFiles(
-      uint64_t* total_size = nullptr);
+    uint64_t* total_size = nullptr);
 
   std::vector<std::uint64_t> ListTableFiles(Env* env, const std::string& path);
 
 #ifndef VIDARDB_LITE
   uint64_t GetNumberOfSstFilesForColumnFamily(DB* db,
-                                              std::string column_family_name);
+      std::string column_family_name);
 #endif  // VIDARDB_LITE
 
   uint64_t TestGetTickerCount(const Options& options, Tickers ticker_type) {

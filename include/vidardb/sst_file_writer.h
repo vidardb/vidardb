@@ -34,14 +34,14 @@ struct ExternalSstFileInfo {
                       SequenceNumber _sequence_number, uint64_t _file_size,
                       uint64_t _file_size_total,  // Shichao
                       int32_t _num_entries, int32_t _version)
-      : file_path(_file_path),
-        smallest_key(_smallest_key),
-        largest_key(_largest_key),
-        sequence_number(_sequence_number),
-        file_size(_file_size),
-        file_size_total(_file_size_total),  // Shichao
-        num_entries(_num_entries),
-        version(_version) {}
+    : file_path(_file_path),
+      smallest_key(_smallest_key),
+      largest_key(_largest_key),
+      sequence_number(_sequence_number),
+      file_size(_file_size),
+      file_size_total(_file_size_total),  // Shichao
+      num_entries(_num_entries),
+      version(_version) {}
 
   std::string file_path;           // external sst file path
   std::string smallest_key;        // smallest user key in file

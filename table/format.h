@@ -34,12 +34,20 @@ class BlockHandle {
   BlockHandle(uint64_t offset, uint64_t size);
 
   // The offset of the block in the file.
-  uint64_t offset() const { return offset_; }
-  void set_offset(uint64_t _offset) { offset_ = _offset; }
+  uint64_t offset() const {
+    return offset_;
+  }
+  void set_offset(uint64_t _offset) {
+    offset_ = _offset;
+  }
 
   // The size of the stored block
-  uint64_t size() const { return size_; }
-  void set_size(uint64_t _size) { size_ = _size; }
+  uint64_t size() const {
+    return size_;
+  }
+  void set_size(uint64_t _size) {
+    size_ = _size;
+  }
 
   void EncodeTo(std::string* dst) const;
   Status DecodeFrom(Slice* input);
@@ -94,15 +102,25 @@ class Footer {
   Footer(uint64_t table_magic_number);
 
   // The block handle for the metaindex block of the table
-  const BlockHandle& metaindex_handle() const { return metaindex_handle_; }
-  void set_metaindex_handle(const BlockHandle& h) { metaindex_handle_ = h; }
+  const BlockHandle& metaindex_handle() const {
+    return metaindex_handle_;
+  }
+  void set_metaindex_handle(const BlockHandle& h) {
+    metaindex_handle_ = h;
+  }
 
   // The block handle for the index block of the table
-  const BlockHandle& index_handle() const { return index_handle_; }
+  const BlockHandle& index_handle() const {
+    return index_handle_;
+  }
 
-  void set_index_handle(const BlockHandle& h) { index_handle_ = h; }
+  void set_index_handle(const BlockHandle& h) {
+    index_handle_ = h;
+  }
 
-  uint64_t table_magic_number() const { return table_magic_number_; }
+  uint64_t table_magic_number() const {
+    return table_magic_number_;
+  }
 
   void EncodeTo(std::string* dst) const;
 
@@ -120,7 +138,7 @@ class Footer {
   enum {
     // Footer will always occupy exactly this many bytes.
     // It consists of two block handles, padding, and a magic number.
-      kEncodedLength = 2 * BlockHandle::kMaxEncodedLength + 8,
+    kEncodedLength = 2 * BlockHandle::kMaxEncodedLength + 8,
   };
 
   static const uint64_t kInvalidTableMagicNumber = 0;
@@ -166,14 +184,14 @@ struct BlockContents {
 
   BlockContents(const Slice& _data, bool _cachable,
                 CompressionType _compression_type)
-      : data(_data), cachable(_cachable), compression_type(_compression_type) {}
+    : data(_data), cachable(_cachable), compression_type(_compression_type) {}
 
   BlockContents(std::unique_ptr<char[]>&& _data, size_t _size, bool _cachable,
                 CompressionType _compression_type)
-      : data(_data.get(), _size),
-        cachable(_cachable),
-        compression_type(_compression_type),
-        allocation(std::move(_data)) {}
+    : data(_data.get(), _size),
+      cachable(_cachable),
+      compression_type(_compression_type),
+      allocation(std::move(_data)) {}
 
   BlockContents(BlockContents&& other) VIDARDB_NOEXCEPT { *this = std::move(other); }
 
@@ -189,11 +207,11 @@ struct BlockContents {
 // Read the block identified by "handle" from "file".  On failure
 // return non-OK.  On success fill *result and return OK.
 extern Status ReadBlockContents(
-    RandomAccessFileReader* file, const Footer& footer,
-    const ReadOptions& options, const BlockHandle& handle,
-    BlockContents* contents, Env* env, bool do_uncompress = true,
-    const Slice& compression_dict = Slice(),
-    Logger* info_log = nullptr);
+  RandomAccessFileReader* file, const Footer& footer,
+  const ReadOptions& options, const BlockHandle& handle,
+  BlockContents* contents, Env* env, bool do_uncompress = true,
+  const Slice& compression_dict = Slice(),
+  Logger* info_log = nullptr);
 
 // The 'data' points to the raw block contents read in from file.
 // This method allocates a new heap buffer and the raw block
@@ -209,11 +227,11 @@ extern Status UncompressBlockContents(const char* data, size_t n,
 // Implementation details follow.  Clients should ignore,
 
 inline BlockHandle::BlockHandle()
-    : BlockHandle(~static_cast<uint64_t>(0),
-                  ~static_cast<uint64_t>(0)) {
+  : BlockHandle(~static_cast<uint64_t>(0),
+                ~static_cast<uint64_t>(0)) {
 }
 
 inline BlockHandle::BlockHandle(uint64_t _offset, uint64_t _size)
-    : offset_(_offset), size_(_size) {}
+  : offset_(_offset), size_(_size) {}
 
 }  // namespace vidardb

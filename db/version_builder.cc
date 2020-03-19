@@ -65,10 +65,10 @@ class VersionBuilder::Rep {
 
     bool operator()(FileMetaData* f1, FileMetaData* f2) const {
       switch (sort_method) {
-        case kLevel0:
-          return NewestFirstBySeqNo(f1, f2);
-        case kLevelNon0:
-          return BySmallestKey(f1, f2, internal_comparator);
+      case kLevel0:
+        return NewestFirstBySeqNo(f1, f2);
+      case kLevelNon0:
+        return BySmallestKey(f1, f2, internal_comparator);
       }
       assert(false);
       return false;
@@ -92,15 +92,15 @@ class VersionBuilder::Rep {
  public:
   Rep(const EnvOptions& env_options, Logger* info_log, TableCache* table_cache,
       VersionStorageInfo* base_vstorage)
-      : env_options_(env_options),
-        info_log_(info_log),
-        table_cache_(table_cache),
-        base_vstorage_(base_vstorage) {
+    : env_options_(env_options),
+      info_log_(info_log),
+      table_cache_(table_cache),
+      base_vstorage_(base_vstorage) {
     levels_ = new LevelState[base_vstorage_->num_levels()];
     level_zero_cmp_.sort_method = FileComparator::kLevel0;
     level_nonzero_cmp_.sort_method = FileComparator::kLevelNon0;
     level_nonzero_cmp_.internal_comparator =
-        base_vstorage_->InternalComparator();
+      base_vstorage_->InternalComparator();
   }
 
   ~Rep() {
@@ -145,7 +145,7 @@ class VersionBuilder::Rep {
 
           // Make sure there is no overlap in levels > 0
           if (vstorage->InternalComparator()->Compare(f1->largest,
-                                                      f2->smallest) >= 0) {
+              f2->smallest) >= 0) {
             fprintf(stderr, "overlapping ranges in same level %s vs. %s\n",
                     (f1->largest).DebugString().c_str(),
                     (f2->smallest).DebugString().c_str());
@@ -164,7 +164,7 @@ class VersionBuilder::Rep {
     bool found = false;
     for (int l = 0; !found && l < base_vstorage_->num_levels(); l++) {
       const std::vector<FileMetaData*>& base_files =
-          base_vstorage_->LevelFiles(l);
+        base_vstorage_->LevelFiles(l);
       for (size_t i = 0; i < base_files.size(); i++) {
         FileMetaData* f = base_files[i];
         if (f->fd.GetNumber() == number) {
@@ -264,7 +264,7 @@ class VersionBuilder::Rep {
 #ifndef NDEBUG
         if (level > 0 && prev_file != nullptr) {
           assert(base_vstorage_->InternalComparator()->Compare(
-                     prev_file->smallest, added->smallest) <= 0);
+                   prev_file->smallest, added->smallest) <= 0);
         }
         prev_file = added;
 #endif
@@ -310,14 +310,14 @@ class VersionBuilder::Rep {
         auto* file_meta = files_meta[file_idx].first;
         int level = files_meta[file_idx].second;
         table_cache_->FindTable(
-            env_options_, *(base_vstorage_->InternalComparator()),
-            file_meta->fd, &file_meta->table_reader_handle, false /*no_io */,
-            true /* record_read_stats */,
-            internal_stats->GetFileReadHist(level), level);
+          env_options_, *(base_vstorage_->InternalComparator()),
+          file_meta->fd, &file_meta->table_reader_handle, false /*no_io */,
+          true /* record_read_stats */,
+          internal_stats->GetFileReadHist(level), level);
         if (file_meta->table_reader_handle != nullptr) {
           // Load table_reader
           file_meta->fd.table_reader = table_cache_->GetTableReaderFromHandle(
-              file_meta->table_reader_handle);
+                                         file_meta->table_reader_handle);
         }
       }
     };
@@ -350,16 +350,20 @@ VersionBuilder::VersionBuilder(const EnvOptions& env_options,
                                TableCache* table_cache,
                                VersionStorageInfo* base_vstorage,
                                Logger* info_log)
-    : rep_(new Rep(env_options, info_log, table_cache, base_vstorage)) {}
-VersionBuilder::~VersionBuilder() { delete rep_; }
+  : rep_(new Rep(env_options, info_log, table_cache, base_vstorage)) {}
+VersionBuilder::~VersionBuilder() {
+  delete rep_;
+}
 void VersionBuilder::CheckConsistency(VersionStorageInfo* vstorage) {
   rep_->CheckConsistency(vstorage);
 }
 void VersionBuilder::CheckConsistencyForDeletes(VersionEdit* edit,
-                                                uint64_t number, int level) {
+    uint64_t number, int level) {
   rep_->CheckConsistencyForDeletes(edit, number, level);
 }
-void VersionBuilder::Apply(VersionEdit* edit) { rep_->Apply(edit); }
+void VersionBuilder::Apply(VersionEdit* edit) {
+  rep_->Apply(edit);
+}
 void VersionBuilder::SaveTo(VersionStorageInfo* vstorage) {
   rep_->SaveTo(vstorage);
 }

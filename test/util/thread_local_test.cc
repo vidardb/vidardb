@@ -28,15 +28,15 @@ namespace {
 struct Params {
   Params(port::Mutex* m, port::CondVar* c, int* u, int n,
          UnrefHandler handler = nullptr)
-      : mu(m),
-        cv(c),
-        unref(u),
-        total(n),
-        started(0),
-        completed(0),
-        doWrite(false),
-        tls1(handler),
-        tls2(nullptr) {}
+    : mu(m),
+      cv(c),
+      unref(u),
+      total(n),
+      started(0),
+      completed(0),
+      doWrite(false),
+      tls1(handler),
+      tls2(nullptr) {}
 
   port::Mutex* mu;
   port::CondVar* cv;
@@ -51,7 +51,9 @@ struct Params {
 
 class IDChecker : public ThreadLocalPtr {
  public:
-  static uint32_t PeekId() { return Instance()->PeekId(); }
+  static uint32_t PeekId() {
+    return Instance()->PeekId();
+  }
 };
 
 }  // anonymous namespace
@@ -489,9 +491,10 @@ void* AccessThreadLocal(void* arg) {
 // this test and only see an ASAN error on SyncPoint, it means you pass the
 // test.
 TEST_F(ThreadLocalTest, DISABLED_MainThreadDiesFirst) {
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"AccessThreadLocal:Start", "MainThreadDiesFirst:End"},
-       {"PosixEnv::~PosixEnv():End", "AccessThreadLocal:End"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {"AccessThreadLocal:Start", "MainThreadDiesFirst:End"},
+    {"PosixEnv::~PosixEnv():End", "AccessThreadLocal:End"}
+  });
 
   // Triggers the initialization of singletons.
   Env::Default();

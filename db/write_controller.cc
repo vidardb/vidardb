@@ -17,7 +17,7 @@ std::unique_ptr<WriteControllerToken> WriteController::GetStopToken() {
 }
 
 std::unique_ptr<WriteControllerToken> WriteController::GetDelayToken(
-    uint64_t write_rate) {
+  uint64_t write_rate) {
   total_delayed_++;
   // Reset counters.
   last_refill_time_ = 0;
@@ -30,10 +30,12 @@ std::unique_ptr<WriteControllerToken>
 WriteController::GetCompactionPressureToken() {
   ++total_compaction_pressure_;
   return std::unique_ptr<WriteControllerToken>(
-      new CompactionPressureToken(this));
+           new CompactionPressureToken(this));
 }
 
-bool WriteController::IsStopped() const { return total_stopped_ > 0; }
+bool WriteController::IsStopped() const {
+  return total_stopped_ > 0;
+}
 // This is inside DB mutex, so we can't sleep and need to minimize
 // frequency to get time.
 // If it turns out to be a performance issue, we can redesign the thread
@@ -66,8 +68,8 @@ uint64_t WriteController::GetDelay(Env* env, uint64_t num_bytes) {
     } else {
       time_since_last_refill = time_now - last_refill_time_;
       bytes_left_ +=
-          static_cast<uint64_t>(static_cast<double>(time_since_last_refill) /
-                                kMicrosPerSecond * delayed_write_rate_);
+        static_cast<uint64_t>(static_cast<double>(time_since_last_refill) /
+                              kMicrosPerSecond * delayed_write_rate_);
       if (time_since_last_refill >= kRefillInterval &&
           bytes_left_ > num_bytes) {
         // If refill interval already passed and we have enough bytes
@@ -80,7 +82,7 @@ uint64_t WriteController::GetDelay(Env* env, uint64_t num_bytes) {
   }
 
   uint64_t single_refill_amount =
-      delayed_write_rate_ * kRefillInterval / kMicrosPerSecond;
+    delayed_write_rate_ * kRefillInterval / kMicrosPerSecond;
   if (bytes_left_ + single_refill_amount >= num_bytes) {
     // Wait until a refill interval
     // Never trigger expire for less than one refill interval to avoid to get
@@ -95,10 +97,10 @@ uint64_t WriteController::GetDelay(Env* env, uint64_t num_bytes) {
 
   // Sleep just until `num_bytes` is allowed.
   uint64_t sleep_amount =
-      static_cast<uint64_t>(num_bytes /
-                            static_cast<long double>(delayed_write_rate_) *
-                            kMicrosPerSecond) +
-      sleep_debt;
+    static_cast<uint64_t>(num_bytes /
+                          static_cast<long double>(delayed_write_rate_) *
+                          kMicrosPerSecond) +
+    sleep_debt;
   last_refill_time_ = time_now + sleep_amount;
   return sleep_amount;
 }

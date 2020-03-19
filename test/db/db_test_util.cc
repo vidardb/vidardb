@@ -14,12 +14,12 @@ namespace vidardb {
 // Special Env used to delay background operations
 
 SpecialEnv::SpecialEnv(Env* base)
-    : EnvWrapper(base),
-      rnd_(301),
-      sleep_counter_(this),
-      addon_time_(0),
-      time_elapse_only_sleep_(false),
-      no_sleep_(false) {
+  : EnvWrapper(base),
+    rnd_(301),
+    sleep_counter_(this),
+    addon_time_(0),
+    time_elapse_only_sleep_(false),
+    no_sleep_(false) {
   delay_sstable_sync_.store(false, std::memory_order_release);
   drop_writes_.store(false, std::memory_order_release);
   no_space_.store(false, std::memory_order_release);
@@ -40,9 +40,9 @@ SpecialEnv::SpecialEnv(Env* base)
 }
 
 DBTestBase::DBTestBase(const std::string path)
-    : option_config_(kDefault),
-      mem_env_(!getenv("MEM_ENV") ? nullptr : new MockEnv(Env::Default())),
-      env_(new SpecialEnv(mem_env_ ? mem_env_ : Env::Default())) {
+  : option_config_(kDefault),
+    mem_env_(!getenv("MEM_ENV") ? nullptr : new MockEnv(Env::Default())),
+    env_(new SpecialEnv(mem_env_ ? mem_env_ : Env::Default())) {
   env_->SetBackgroundThreads(1, Env::LOW);
   env_->SetBackgroundThreads(1, Env::HIGH);
   dbname_ = test::TmpDir(env_) + path;
@@ -75,7 +75,7 @@ DBTestBase::~DBTestBase() {
 
 bool DBTestBase::ShouldSkipOptions(int option_config, int skip_mask) {
 #ifdef VIDARDB_LITE
-    // These options are not supported in VIDARDB_LITE
+  // These options are not supported in VIDARDB_LITE
   if (option_config == kHashSkipList ||
       option_config == kPlainTableFirstBytePrefix ||
       option_config == kPlainTableCappedPrefix ||
@@ -88,25 +88,25 @@ bool DBTestBase::ShouldSkipOptions(int option_config, int skip_mask) {
       option_config == kFIFOCompaction ||
       option_config == kConcurrentSkipList) {
     return true;
-    }
+  }
 #endif
 
-    if ((skip_mask & kSkipDeletesFilterFirst) &&
-        option_config == kDeletesFilterFirst) {
-      return true;
-    }
-    if ((skip_mask & kSkipUniversalCompaction) &&
-        (option_config == kUniversalCompaction ||
-         option_config == kUniversalCompactionMultiLevel)) {
-      return true;
-    }
-    if ((skip_mask & kSkipFIFOCompaction) && option_config == kFIFOCompaction) {
-      return true;
-    }
-    if ((skip_mask & kSkipMmapReads) && option_config == kWalDirAndMmapReads) {
-      return true;
-    }
-    return false;
+  if ((skip_mask & kSkipDeletesFilterFirst) &&
+      option_config == kDeletesFilterFirst) {
+    return true;
+  }
+  if ((skip_mask & kSkipUniversalCompaction) &&
+      (option_config == kUniversalCompaction ||
+       option_config == kUniversalCompactionMultiLevel)) {
+    return true;
+  }
+  if ((skip_mask & kSkipFIFOCompaction) && option_config == kFIFOCompaction) {
+    return true;
+  }
+  if ((skip_mask & kSkipMmapReads) && option_config == kWalDirAndMmapReads) {
+    return true;
+  }
+  return false;
 }
 
 // Switch to a fresh database with the next option configuration to
@@ -185,7 +185,7 @@ bool DBTestBase::ChangeFilterOptions() {
 
 // Return the current option configuration.
 Options DBTestBase::CurrentOptions(
-    const anon::OptionsOverride& options_override) {
+  const anon::OptionsOverride& options_override) {
   Options options;
   options.write_buffer_size = 4090 * 4096;
   options.target_file_size_base = 2 * 1024 * 1024;
@@ -199,90 +199,90 @@ Options DBTestBase::CurrentOptions(
 }
 
 Options DBTestBase::CurrentOptions(
-    const Options& defaultOptions,
-    const anon::OptionsOverride& options_override) {
+  const Options& defaultOptions,
+  const anon::OptionsOverride& options_override) {
   // this redundant copy is to minimize code change w/o having lint error.
   Options options = defaultOptions;
   BlockBasedTableOptions table_options;
   bool set_block_based_table_factory = true;
   switch (option_config_) {
-    case kUncompressed:
-      options.compression = kNoCompression;
-      break;
-    case kNumLevel_3:
-      options.num_levels = 3;
-      break;
-    case kDBLogDir:
-      options.db_log_dir = alternative_db_log_dir_;
-      break;
-    case kWalDirAndMmapReads:
-      options.wal_dir = alternative_wal_dir_;
-      // mmap reads should be orthogonal to WalDir setting, so we piggyback to
-      // this option config to test mmap reads as well
-      options.allow_mmap_reads = true;
-      break;
-    case kManifestFileSize:
-      options.max_manifest_file_size = 50;  // 50 bytes
-      break;
-    case kPerfOptions:
-      options.soft_rate_limit = 2.0;
-      options.delayed_write_rate = 8 * 1024 * 1024;
-      options.report_bg_io_stats = true;
-      // TODO(3.13) -- test more options
-      break;
-    case kDeletesFilterFirst:
-      options.filter_deletes = true;
-      break;
-    case kUniversalCompaction:
-      options.compaction_style = kCompactionStyleUniversal;
-      options.num_levels = 1;
-      break;
-    case kUniversalCompactionMultiLevel:
-      options.compaction_style = kCompactionStyleUniversal;
-      options.num_levels = 8;
-      break;
-    case kInfiniteMaxOpenFiles:
-      options.max_open_files = -1;
-      break;
-    case kFIFOCompaction: {
-      options.compaction_style = kCompactionStyleFIFO;
-      break;
-    }
-    case kBlockBasedTableWithIndexRestartInterval: {
-      table_options.index_block_restart_interval = 8;
-      break;
-    }
-    case kOptimizeFiltersForHits: {
-      options.optimize_filters_for_hits = true;
-      set_block_based_table_factory = true;
-      break;
-    }
-    case kRowCache: {
-      options.row_cache = NewLRUCache(1024 * 1024);
-      break;
-    }
-    case kRecycleLogFiles: {
-      options.recycle_log_file_num = 2;
-      break;
-    }
-    case kLevelSubcompactions: {
-      options.max_subcompactions = 4;
-      break;
-    }
-    case kUniversalSubcompactions: {
-      options.compaction_style = kCompactionStyleUniversal;
-      options.num_levels = 8;
-      options.max_subcompactions = 4;
-      break;
-    }
-    case kConcurrentSkipList: {
-      options.allow_concurrent_memtable_write = true;
-      options.enable_write_thread_adaptive_yield = true;
-      break;
-    }
+  case kUncompressed:
+    options.compression = kNoCompression;
+    break;
+  case kNumLevel_3:
+    options.num_levels = 3;
+    break;
+  case kDBLogDir:
+    options.db_log_dir = alternative_db_log_dir_;
+    break;
+  case kWalDirAndMmapReads:
+    options.wal_dir = alternative_wal_dir_;
+    // mmap reads should be orthogonal to WalDir setting, so we piggyback to
+    // this option config to test mmap reads as well
+    options.allow_mmap_reads = true;
+    break;
+  case kManifestFileSize:
+    options.max_manifest_file_size = 50;  // 50 bytes
+    break;
+  case kPerfOptions:
+    options.soft_rate_limit = 2.0;
+    options.delayed_write_rate = 8 * 1024 * 1024;
+    options.report_bg_io_stats = true;
+    // TODO(3.13) -- test more options
+    break;
+  case kDeletesFilterFirst:
+    options.filter_deletes = true;
+    break;
+  case kUniversalCompaction:
+    options.compaction_style = kCompactionStyleUniversal;
+    options.num_levels = 1;
+    break;
+  case kUniversalCompactionMultiLevel:
+    options.compaction_style = kCompactionStyleUniversal;
+    options.num_levels = 8;
+    break;
+  case kInfiniteMaxOpenFiles:
+    options.max_open_files = -1;
+    break;
+  case kFIFOCompaction: {
+    options.compaction_style = kCompactionStyleFIFO;
+    break;
+  }
+  case kBlockBasedTableWithIndexRestartInterval: {
+    table_options.index_block_restart_interval = 8;
+    break;
+  }
+  case kOptimizeFiltersForHits: {
+    options.optimize_filters_for_hits = true;
+    set_block_based_table_factory = true;
+    break;
+  }
+  case kRowCache: {
+    options.row_cache = NewLRUCache(1024 * 1024);
+    break;
+  }
+  case kRecycleLogFiles: {
+    options.recycle_log_file_num = 2;
+    break;
+  }
+  case kLevelSubcompactions: {
+    options.max_subcompactions = 4;
+    break;
+  }
+  case kUniversalSubcompactions: {
+    options.compaction_style = kCompactionStyleUniversal;
+    options.num_levels = 8;
+    options.max_subcompactions = 4;
+    break;
+  }
+  case kConcurrentSkipList: {
+    options.allow_concurrent_memtable_write = true;
+    options.enable_write_thread_adaptive_yield = true;
+    break;
+  }
 
-    default:
-      break;
+  default:
+    break;
   }
 
   if (set_block_based_table_factory) {
@@ -313,17 +313,17 @@ void DBTestBase::CreateAndReopenWithCF(const std::vector<std::string>& cfs,
 }
 
 void DBTestBase::ReopenWithColumnFamilies(const std::vector<std::string>& cfs,
-                                          const std::vector<Options>& options) {
+    const std::vector<Options>& options) {
   ASSERT_OK(TryReopenWithColumnFamilies(cfs, options));
 }
 
 void DBTestBase::ReopenWithColumnFamilies(const std::vector<std::string>& cfs,
-                                          const Options& options) {
+    const Options& options) {
   ASSERT_OK(TryReopenWithColumnFamilies(cfs, options));
 }
 
 Status DBTestBase::TryReopenWithColumnFamilies(
-    const std::vector<std::string>& cfs, const std::vector<Options>& options) {
+  const std::vector<std::string>& cfs, const std::vector<Options>& options) {
   Close();
   EXPECT_EQ(cfs.size(), options.size());
   std::vector<ColumnFamilyDescriptor> column_families;
@@ -335,7 +335,7 @@ Status DBTestBase::TryReopenWithColumnFamilies(
 }
 
 Status DBTestBase::TryReopenWithColumnFamilies(
-    const std::vector<std::string>& cfs, const Options& options) {
+  const std::vector<std::string>& cfs, const Options& options) {
   Close();
   std::vector<Options> v_opts(cfs.size(), options);
   return TryReopenWithColumnFamilies(cfs, v_opts);
@@ -384,12 +384,12 @@ Status DBTestBase::Flush(int cf) {
 }
 
 Status DBTestBase::Put(const Slice& k, const Slice& v, WriteOptions wo) {
-    return db_->Put(wo, k, v);
+  return db_->Put(wo, k, v);
 }
 
 Status DBTestBase::Put(int cf, const Slice& k, const Slice& v,
                        WriteOptions wo) {
-    return db_->Put(wo, handles_[cf], k, v);
+  return db_->Put(wo, handles_[cf], k, v);
 }
 
 Status DBTestBase::Delete(const std::string& k) {
@@ -438,7 +438,7 @@ uint64_t DBTestBase::GetNumSnapshots() {
 uint64_t DBTestBase::GetTimeOldestSnapshots() {
   uint64_t int_num;
   EXPECT_TRUE(
-      dbfull()->GetIntProperty("vidardb.oldest-snapshot-time", &int_num));
+    dbfull()->GetIntProperty("vidardb.oldest-snapshot-time", &int_num));
   return int_num;
 }
 
@@ -448,7 +448,7 @@ std::string DBTestBase::Contents(int cf) {
   std::vector<std::string> forward;
   std::string result;
   Iterator* iter = (cf == 0) ? db_->NewIterator(ReadOptions())
-                             : db_->NewIterator(ReadOptions(), handles_[cf]);
+                   : db_->NewIterator(ReadOptions(), handles_[cf]);
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
     std::string s = IterStatus(iter);
     result.push_back('(');
@@ -499,18 +499,18 @@ std::string DBTestBase::AllEntriesFor(const Slice& user_key, int cf) {
         }
         first = false;
         switch (ikey.type) {
-          case kTypeValue:
-            result += iter->value().ToString();
-            break;
-          case kTypeDeletion:
-            result += "DEL";
-            break;
-          case kTypeSingleDeletion:
-            result += "SDEL";
-            break;
-          default:
-            assert(false);
-            break;
+        case kTypeValue:
+          result += iter->value().ToString();
+          break;
+        case kTypeDeletion:
+          result += "DEL";
+          break;
+        case kTypeSingleDeletion:
+          result += "SDEL";
+          break;
+        default:
+          assert(false);
+          break;
         }
       }
       iter->Next();
@@ -588,11 +588,11 @@ int DBTestBase::NumTableFilesAtLevel(int level, int cf) {
   if (cf == 0) {
     // default cfd
     EXPECT_TRUE(db_->GetProperty(
-        "vidardb.num-files-at-level" + NumberToString(level), &property));
+                  "vidardb.num-files-at-level" + NumberToString(level), &property));
   } else {
     EXPECT_TRUE(db_->GetProperty(
-        handles_[cf], "vidardb.num-files-at-level" + NumberToString(level),
-        &property));
+                  handles_[cf], "vidardb.num-files-at-level" + NumberToString(level),
+                  &property));
   }
   return atoi(property.c_str());
 }
@@ -602,13 +602,13 @@ double DBTestBase::CompressionRatioAtLevel(int level, int cf) {
   if (cf == 0) {
     // default cfd
     EXPECT_TRUE(db_->GetProperty(
-        "vidardb.compression-ratio-at-level" + NumberToString(level),
-        &property));
+                  "vidardb.compression-ratio-at-level" + NumberToString(level),
+                  &property));
   } else {
     EXPECT_TRUE(db_->GetProperty(
-        handles_[cf],
-        "vidardb.compression-ratio-at-level" + NumberToString(level),
-        &property));
+                  handles_[cf],
+                  "vidardb.compression-ratio-at-level" + NumberToString(level),
+                  &property));
   }
   return std::stod(property);
 }
@@ -627,7 +627,7 @@ int DBTestBase::TotalTableFiles(int cf, int levels) {
 // Return spread of files per level
 std::string DBTestBase::FilesPerLevel(int cf) {
   int num_levels =
-      (cf == 0) ? db_->NumberLevels() : db_->NumberLevels(handles_[1]);
+    (cf == 0) ? db_->NumberLevels() : db_->NumberLevels(handles_[1]);
   std::string result;
   size_t last_non_zero_offset = 0;
   for (int level = 0; level < num_levels; level++) {
@@ -675,7 +675,7 @@ void DBTestBase::Compact(int cf, const Slice& start, const Slice& limit,
 
 void DBTestBase::Compact(int cf, const Slice& start, const Slice& limit) {
   ASSERT_OK(
-      db_->CompactRange(CompactRangeOptions(), handles_[cf], &start, &limit));
+    db_->CompactRange(CompactRangeOptions(), handles_[cf], &start, &limit));
 }
 
 void DBTestBase::Compact(const Slice& start, const Slice& limit) {
@@ -734,11 +734,11 @@ void DBTestBase::GetSstFiles(std::string path,
   env_->GetChildren(path, files);
 
   files->erase(
-      std::remove_if(files->begin(), files->end(), [](std::string name) {
-        uint64_t number;
-        FileType type;
-        return !(ParseFileName(name, &number, &type) && type == kTableFile);
-      }), files->end());
+  std::remove_if(files->begin(), files->end(), [](std::string name) {
+    uint64_t number;
+    FileType type;
+    return !(ParseFileName(name, &number, &type) && type == kTableFile);
+  }), files->end());
 }
 
 int DBTestBase::GetSstFileCount(std::string path) {
@@ -826,9 +826,9 @@ void DBTestBase::VerifyIterLast(std::string expected_key, int cf) {
 // If previous value is not empty,
 //   updates previous value with 'b' string of previous value size - 1.
 UpdateStatus DBTestBase::updateInPlaceSmallerSize(char* prevValue,
-                                                  uint32_t* prevSize,
-                                                  Slice delta,
-                                                  std::string* newValue) {
+    uint32_t* prevSize,
+    Slice delta,
+    std::string* newValue) {
   if (prevValue == nullptr) {
     *newValue = std::string(delta.size(), 'c');
     return UpdateStatus::UPDATED;
@@ -841,9 +841,9 @@ UpdateStatus DBTestBase::updateInPlaceSmallerSize(char* prevValue,
 }
 
 UpdateStatus DBTestBase::updateInPlaceSmallerVarintSize(char* prevValue,
-                                                        uint32_t* prevSize,
-                                                        Slice delta,
-                                                        std::string* newValue) {
+    uint32_t* prevSize,
+    Slice delta,
+    std::string* newValue) {
   if (prevValue == nullptr) {
     *newValue = std::string(delta.size(), 'c');
     return UpdateStatus::UPDATED;
@@ -856,16 +856,16 @@ UpdateStatus DBTestBase::updateInPlaceSmallerVarintSize(char* prevValue,
 }
 
 UpdateStatus DBTestBase::updateInPlaceLargerSize(char* prevValue,
-                                                 uint32_t* prevSize,
-                                                 Slice delta,
-                                                 std::string* newValue) {
+    uint32_t* prevSize,
+    Slice delta,
+    std::string* newValue) {
   *newValue = std::string(delta.size(), 'c');
   return UpdateStatus::UPDATED;
 }
 
 UpdateStatus DBTestBase::updateInPlaceNoAction(char* prevValue,
-                                               uint32_t* prevSize, Slice delta,
-                                               std::string* newValue) {
+    uint32_t* prevSize, Slice delta,
+    std::string* newValue) {
   return UpdateStatus::UPDATE_FAILED;
 }
 
@@ -918,7 +918,7 @@ void DBTestBase::CopyFile(const std::string& source,
 }
 
 std::unordered_map<std::string, uint64_t> DBTestBase::GetAllSSTFiles(
-    uint64_t* total_size) {
+  uint64_t* total_size) {
   std::unordered_map<std::string, uint64_t> res;
 
   if (total_size) {
@@ -943,7 +943,7 @@ std::unordered_map<std::string, uint64_t> DBTestBase::GetAllSSTFiles(
 }
 
 std::vector<std::uint64_t> DBTestBase::ListTableFiles(Env* env,
-                                                      const std::string& path) {
+    const std::string& path) {
   std::vector<std::string> files;
   std::vector<uint64_t> file_numbers;
   env->GetChildren(path, &files);
@@ -961,7 +961,7 @@ std::vector<std::uint64_t> DBTestBase::ListTableFiles(Env* env,
 
 #ifndef VIDARDB_LITE
 uint64_t DBTestBase::GetNumberOfSstFilesForColumnFamily(
-    DB* db, std::string column_family_name) {
+  DB* db, std::string column_family_name) {
   std::vector<LiveFileMetaData> metadata;
   db->GetLiveFilesMetaData(&metadata);
   uint64_t result = 0;

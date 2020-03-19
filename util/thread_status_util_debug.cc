@@ -16,7 +16,7 @@ namespace vidardb {
 static std::atomic<int> states_delay[ThreadStatus::NUM_STATE_TYPES];
 
 void ThreadStatusUtil::TEST_SetStateDelay(
-    const ThreadStatus::StateType state, int micro) {
+  const ThreadStatus::StateType state, int micro) {
   states_delay[state].store(micro, std::memory_order_relaxed);
 }
 

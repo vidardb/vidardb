@@ -91,10 +91,18 @@ class BinaryHeap {
   }
 
  private:
-  static inline size_t get_root() { return 0; }
-  static inline size_t get_parent(size_t index) { return (index - 1) / 2; }
-  static inline size_t get_left(size_t index) { return 2 * index + 1; }
-  static inline size_t get_right(size_t index) { return 2 * index + 2; }
+  static inline size_t get_root() {
+    return 0;
+  }
+  static inline size_t get_parent(size_t index) {
+    return (index - 1) / 2;
+  }
+  static inline size_t get_left(size_t index) {
+    return 2 * index + 1;
+  }
+  static inline size_t get_right(size_t index) {
+    return 2 * index + 2;
+  }
 
   void upheap(size_t index) {
     T v = std::move(data_[index]);

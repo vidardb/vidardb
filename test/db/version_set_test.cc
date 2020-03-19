@@ -76,7 +76,9 @@ class CountingLogger : public Logger {
  public:
   CountingLogger() : log_count(0) {}
   using Logger::Logv;
-  virtual void Logv(const char* format, va_list ap) override { log_count++; }
+  virtual void Logv(const char* format, va_list ap) override {
+    log_count++;
+  }
   int log_count;
 };
 
@@ -104,13 +106,13 @@ class VersionStorageInfoTest : public testing::Test {
   }
 
   VersionStorageInfoTest()
-      : ucmp_(BytewiseComparator()),
-        icmp_(ucmp_),
-        logger_(new CountingLogger()),
-        options_(GetOptionsWithNumLevels(6, logger_)),
-        ioptions_(options_),
-        mutable_cf_options_(options_, ioptions_),
-        vstorage_(&icmp_, ucmp_, 6, kCompactionStyleLevel, nullptr) {}
+    : ucmp_(BytewiseComparator()),
+      icmp_(ucmp_),
+      logger_(new CountingLogger()),
+      options_(GetOptionsWithNumLevels(6, logger_)),
+      ioptions_(options_),
+      mutable_cf_options_(options_, ioptions_),
+      vstorage_(&icmp_, ucmp_, 6, kCompactionStyleLevel, nullptr) {}
 
   ~VersionStorageInfoTest() {
     for (int i = 0; i < vstorage_.num_levels(); i++) {
@@ -284,10 +286,10 @@ class FindLevelFileTest : public testing::Test {
     Slice largest_slice = largest_key.Encode();
 
     char* mem = arena_.AllocateAligned(
-        smallest_slice.size() + largest_slice.size());
+                  smallest_slice.size() + largest_slice.size());
     memcpy(mem, smallest_slice.data(), smallest_slice.size());
     memcpy(mem + smallest_slice.size(), largest_slice.data(),
-        largest_slice.size());
+           largest_slice.size());
 
     // add to file_level_
     size_t num = file_level_.num_files;
@@ -295,7 +297,7 @@ class FindLevelFileTest : public testing::Test {
     file.fd = FileDescriptor(num + 1, 0, 0, 0);
     file.smallest_key = Slice(mem, smallest_slice.size());
     file.largest_key = Slice(mem + smallest_slice.size(),
-        largest_slice.size());
+                             largest_slice.size());
     file_level_.num_files++;
   }
 

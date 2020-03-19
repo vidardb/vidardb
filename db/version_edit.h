@@ -46,12 +46,14 @@ struct FileDescriptor {
 
   FileDescriptor(uint64_t number, uint32_t path_id, uint64_t _file_size,
                  uint64_t _file_size_total)  // Shichao
-      : table_reader(nullptr),
-        packed_number_and_path_id(PackFileNumberAndPathId(number, path_id)),
-        file_size(_file_size),
-        file_size_total(_file_size_total) {}  // Shichao
+    : table_reader(nullptr),
+      packed_number_and_path_id(PackFileNumberAndPathId(number, path_id)),
+      file_size(_file_size),
+      file_size_total(_file_size_total) {}  // Shichao
 
-  FileDescriptor(const FileDescriptor& fd) { *this = fd; }
+  FileDescriptor(const FileDescriptor& fd) {
+    *this = fd;
+  }
 
   FileDescriptor& operator=(const FileDescriptor& fd) {
     table_reader = fd.table_reader;
@@ -66,10 +68,14 @@ struct FileDescriptor {
   }
   uint32_t GetPathId() const {
     return static_cast<uint32_t>(
-        packed_number_and_path_id / (kFileNumberMask + 1));
+             packed_number_and_path_id / (kFileNumberMask + 1));
   }
-  uint64_t GetFileSize() const { return file_size; }
-  uint64_t GetFileSizeTotal() const { return file_size_total; }  // Shichao
+  uint64_t GetFileSize() const {
+    return file_size;
+  }
+  uint64_t GetFileSizeTotal() const {
+    return file_size_total;  // Shichao
+  }
 };
 
 struct FileMetaData {
@@ -97,24 +103,24 @@ struct FileMetaData {
   uint64_t raw_key_size;           // total uncompressed key size.
   uint64_t raw_value_size;         // total uncompressed value size.
   bool init_stats_from_file;   // true if the data-entry stats of this file
-                               // has initialized from file.
+  // has initialized from file.
 
   bool marked_for_compaction;  // True if client asked us nicely to compact this
-                               // file.
+  // file.
 
   FileMetaData()
-      : refs(0),
-        being_compacted(false),
-        smallest_seqno(kMaxSequenceNumber),
-        largest_seqno(0),
-        table_reader_handle(nullptr),
-        compensated_file_size(0),
-        num_entries(0),
-        num_deletions(0),
-        raw_key_size(0),
-        raw_value_size(0),
-        init_stats_from_file(false),
-        marked_for_compaction(false) {}
+    : refs(0),
+      being_compacted(false),
+      smallest_seqno(kMaxSequenceNumber),
+      largest_seqno(0),
+      table_reader_handle(nullptr),
+      compensated_file_size(0),
+      num_entries(0),
+      num_deletions(0),
+      raw_key_size(0),
+      raw_value_size(0),
+      init_stats_from_file(false),
+      marked_for_compaction(false) {}
 
   // REQUIRED: Keys must be given to the function in sorted order (it expects
   // the last key to be the largest).
@@ -136,13 +142,13 @@ struct FdWithKeyRange {
   Slice largest_key;     // slice that contain largest key
 
   FdWithKeyRange()
-      : fd(),
-        smallest_key(),
-        largest_key() {
+    : fd(),
+      smallest_key(),
+      largest_key() {
   }
 
   FdWithKeyRange(FileDescriptor _fd, Slice _smallest_key, Slice _largest_key)
-      : fd(_fd), smallest_key(_smallest_key), largest_key(_largest_key) {}
+    : fd(_fd), smallest_key(_smallest_key), largest_key(_largest_key) {}
 };
 
 // Data structure to store an array of FdWithKeyRange in one level
@@ -158,7 +164,9 @@ struct LevelFilesBrief {
 
 class VersionEdit {
  public:
-  VersionEdit() { Clear(); }
+  VersionEdit() {
+    Clear();
+  }
   ~VersionEdit() { }
 
   void Clear();
@@ -218,7 +226,9 @@ class VersionEdit {
   }
 
   // Number of edits
-  size_t NumEntries() { return new_files_.size() + deleted_files_.size(); }
+  size_t NumEntries() {
+    return new_files_.size() + deleted_files_.size();
+  }
 
   bool IsColumnFamilyManipulation() {
     return is_column_family_add_ || is_column_family_drop_;
@@ -253,7 +263,9 @@ class VersionEdit {
 
   typedef std::set<std::pair<int, uint64_t>> DeletedFileSet;
 
-  const DeletedFileSet& GetDeletedFiles() { return deleted_files_; }
+  const DeletedFileSet& GetDeletedFiles() {
+    return deleted_files_;
+  }
   const std::vector<std::pair<int, FileMetaData>>& GetNewFiles() {
     return new_files_;
   }

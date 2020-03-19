@@ -21,11 +21,11 @@ class WriteControllerToken;
 class WriteController {
  public:
   explicit WriteController(uint64_t _delayed_write_rate = 1024u * 1024u * 32u)
-      : total_stopped_(0),
-        total_delayed_(0),
-        total_compaction_pressure_(0),
-        bytes_left_(0),
-        last_refill_time_(0) {
+    : total_stopped_(0),
+      total_delayed_(0),
+      total_compaction_pressure_(0),
+      bytes_left_(0),
+      last_refill_time_(0) {
     set_delayed_write_rate(_delayed_write_rate);
   }
   ~WriteController() = default;
@@ -38,14 +38,16 @@ class WriteController {
   // write needs to call GetDelay() with number of bytes writing to the DB,
   // which returns number of microseconds to sleep.
   std::unique_ptr<WriteControllerToken> GetDelayToken(
-      uint64_t delayed_write_rate);
+    uint64_t delayed_write_rate);
   // When an actor (column family) requests a moderate token, compaction
   // threads will be increased
   std::unique_ptr<WriteControllerToken> GetCompactionPressureToken();
 
   // these three metods are querying the state of the WriteController
   bool IsStopped() const;
-  bool NeedsDelay() const { return total_delayed_ > 0; }
+  bool NeedsDelay() const {
+    return total_delayed_ > 0;
+  }
   bool NeedSpeedupCompaction() const {
     return IsStopped() || NeedsDelay() || total_compaction_pressure_ > 0;
   }
@@ -60,7 +62,9 @@ class WriteController {
     }
     delayed_write_rate_ = write_rate;
   }
-  uint64_t delayed_write_rate() const { return delayed_write_rate_; }
+  uint64_t delayed_write_rate() const {
+    return delayed_write_rate_;
+  }
 
  private:
   friend class WriteControllerToken;
@@ -79,7 +83,7 @@ class WriteController {
 class WriteControllerToken {
  public:
   explicit WriteControllerToken(WriteController* controller)
-      : controller_(controller) {}
+    : controller_(controller) {}
   virtual ~WriteControllerToken() {}
 
  protected:
@@ -94,21 +98,21 @@ class WriteControllerToken {
 class StopWriteToken : public WriteControllerToken {
  public:
   explicit StopWriteToken(WriteController* controller)
-      : WriteControllerToken(controller) {}
+    : WriteControllerToken(controller) {}
   virtual ~StopWriteToken();
 };
 
 class DelayWriteToken : public WriteControllerToken {
  public:
   explicit DelayWriteToken(WriteController* controller)
-      : WriteControllerToken(controller) {}
+    : WriteControllerToken(controller) {}
   virtual ~DelayWriteToken();
 };
 
 class CompactionPressureToken : public WriteControllerToken {
  public:
   explicit CompactionPressureToken(WriteController* controller)
-      : WriteControllerToken(controller) {}
+    : WriteControllerToken(controller) {}
   virtual ~CompactionPressureToken();
 };
 

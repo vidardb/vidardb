@@ -173,8 +173,8 @@ bool BlockIter::BinarySeek(const Slice& target, uint32_t left, uint32_t right,
     uint32_t region_offset = GetRestartPoint(mid);
     uint32_t shared, non_shared, value_length;
     const char* key_ptr =
-        DecodeEntry(data_ + region_offset, data_ + restarts_, &shared,
-                    &non_shared, &value_length);
+      DecodeEntry(data_ + region_offset, data_ + restarts_, &shared,
+                  &non_shared, &value_length);
     if (key_ptr == nullptr || (shared != 0)) {
       CorruptionError();
       return false;
@@ -204,14 +204,14 @@ uint32_t Block::NumRestarts() const {
 }
 
 Block::Block(BlockContents&& contents)
-    : contents_(std::move(contents)),
-      data_(contents_.data.data()),
-      size_(contents_.data.size()) {
+  : contents_(std::move(contents)),
+    data_(contents_.data.data()),
+    size_(contents_.data.size()) {
   if (size_ < sizeof(uint32_t)) {
     size_ = 0;  // Error marker
   } else {
     restart_offset_ =
-        static_cast<uint32_t>(size_) - (1 + NumRestarts()) * sizeof(uint32_t);
+      static_cast<uint32_t>(size_) - (1 + NumRestarts()) * sizeof(uint32_t);
     if (restart_offset_ > size_ - sizeof(uint32_t)) {
       // The size is too small for NumRestarts() and therefore
       // restart_offset_ wrapped around.
@@ -227,7 +227,7 @@ Block::Block(BlockContents&& contents)
 // If any errors are detected, returns nullptr. Otherwise, returns a
 // pointer to the key delta (just past the decoded values).
 static inline const char* DecodeKeyOrValue(const char* p, const char* limit,
-                                           uint32_t* length) {
+    uint32_t* length) {
   if (limit - p < 1) return nullptr;
   *length = reinterpret_cast<const unsigned char*>(p)[0];
   if (*length < 128) {
@@ -321,7 +321,7 @@ bool ColumnBlockIter::ParseNextKey() {
 // Binary search in restart array to find the first restart point
 // with a key >= target (TODO: this comment is inaccurate)
 bool ColumnBlockIter::BinarySeek(const Slice& target, uint32_t left,
-                                    uint32_t right, uint32_t* index) {
+                                 uint32_t right, uint32_t* index) {
   assert(left <= right);
 
   while (left < right) {
@@ -329,7 +329,7 @@ bool ColumnBlockIter::BinarySeek(const Slice& target, uint32_t left,
     uint32_t region_offset = GetRestartPoint(mid);
     uint32_t key_length;
     const char* key_ptr =
-        DecodeKeyOrValue(data_ + region_offset, data_ + restarts_, &key_length);
+      DecodeKeyOrValue(data_ + region_offset, data_ + restarts_, &key_length);
     if (key_ptr == nullptr) {
       CorruptionError();
       return false;
@@ -376,8 +376,8 @@ InternalIterator* Block::NewIterator(const Comparator* cmp, BlockIter* iter,
       iter->Initialize(cmp, data_, restart_offset_, num_restarts);
     } else {
       iter = column ?
-              new ColumnBlockIter(cmp, data_, restart_offset_, num_restarts):
-              new BlockIter(cmp, data_, restart_offset_, num_restarts);
+             new ColumnBlockIter(cmp, data_, restart_offset_, num_restarts):
+             new BlockIter(cmp, data_, restart_offset_, num_restarts);
     }
   }
 

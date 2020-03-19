@@ -63,10 +63,18 @@ struct HistogramStat {
   void Add(uint64_t value);
   void Merge(const HistogramStat& other);
 
-  inline uint64_t min() const { return min_.load(std::memory_order_relaxed); }
-  inline uint64_t max() const { return max_.load(std::memory_order_relaxed); }
-  inline uint64_t num() const { return num_.load(std::memory_order_relaxed); }
-  inline uint64_t sum() const { return sum_.load(std::memory_order_relaxed); }
+  inline uint64_t min() const {
+    return min_.load(std::memory_order_relaxed);
+  }
+  inline uint64_t max() const {
+    return max_.load(std::memory_order_relaxed);
+  }
+  inline uint64_t num() const {
+    return num_.load(std::memory_order_relaxed);
+  }
+  inline uint64_t sum() const {
+    return sum_.load(std::memory_order_relaxed);
+  }
   inline uint64_t sum_squares() const {
     return sum_squares_.load(std::memory_order_relaxed);
   }
@@ -94,7 +102,7 @@ struct HistogramStat {
 };
 
 class Histogram {
-public:
+ public:
   Histogram() {}
   virtual ~Histogram() {};
 
@@ -117,7 +125,9 @@ public:
 
 class HistogramImpl : public Histogram {
  public:
-  HistogramImpl() { Clear(); }
+  HistogramImpl() {
+    Clear();
+  }
 
   HistogramImpl(const HistogramImpl&) = delete;
   HistogramImpl& operator=(const HistogramImpl&) = delete;
@@ -129,10 +139,18 @@ class HistogramImpl : public Histogram {
   void Merge(const HistogramImpl& other);
 
   virtual std::string ToString() const override;
-  virtual const char* Name() const override { return "HistogramImpl"; }
-  virtual uint64_t min() const override { return stats_.min(); }
-  virtual uint64_t max() const override { return stats_.max(); }
-  virtual uint64_t num() const override { return stats_.num(); }
+  virtual const char* Name() const override {
+    return "HistogramImpl";
+  }
+  virtual uint64_t min() const override {
+    return stats_.min();
+  }
+  virtual uint64_t max() const override {
+    return stats_.max();
+  }
+  virtual uint64_t num() const override {
+    return stats_.num();
+  }
   virtual double Median() const override;
   virtual double Percentile(double p) const override;
   virtual double Average() const override;

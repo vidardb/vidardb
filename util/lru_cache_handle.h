@@ -46,7 +46,7 @@ struct LRUHandle {
   size_t charge;  // TODO(opt): Only allow uint32_t?
   size_t key_length;
   uint32_t refs;     // a number of refs to this entry
-                     // cache itself is counted as 1
+  // cache itself is counted as 1
   bool in_cache;     // true, if this entry is referenced by the hash table
   uint32_t hash;     // Hash of key(); used for fast sharding and comparisons
   char key_data[1];  // Beginning of key

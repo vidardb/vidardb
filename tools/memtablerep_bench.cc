@@ -70,16 +70,16 @@ DEFINE_int64(bucket_count, 1000000,
              "NewHashLinkListRepFactory");
 
 DEFINE_int32(
-    hashskiplist_height, 4,
-    "skiplist_height parameter to pass into NewHashSkiplistRepFactory");
+  hashskiplist_height, 4,
+  "skiplist_height parameter to pass into NewHashSkiplistRepFactory");
 
 DEFINE_int32(
-    hashskiplist_branching_factor, 4,
-    "branching_factor parameter to pass into NewHashSkiplistRepFactory");
+  hashskiplist_branching_factor, 4,
+  "branching_factor parameter to pass into NewHashSkiplistRepFactory");
 
 DEFINE_int32(
-    huge_page_tlb_size, 0,
-    "huge_page_tlb_size parameter to pass into NewHashLinkListRepFactory");
+  huge_page_tlb_size, 0,
+  "huge_page_tlb_size parameter to pass into NewHashLinkListRepFactory");
 
 DEFINE_int32(bucket_entries_logging_threshold, 4096,
              "bucket_entries_logging_threshold parameter to pass into "
@@ -90,25 +90,25 @@ DEFINE_bool(if_log_bucket_dist_when_flash, true,
             "NewHashLinkListRepFactory");
 
 DEFINE_int32(
-    threshold_use_skiplist, 256,
-    "threshold_use_skiplist parameter to pass into NewHashLinkListRepFactory");
+  threshold_use_skiplist, 256,
+  "threshold_use_skiplist parameter to pass into NewHashLinkListRepFactory");
 
 DEFINE_int64(
-    write_buffer_size, 256,
-    "write_buffer_size parameter to pass into NewHashCuckooRepFactory");
+  write_buffer_size, 256,
+  "write_buffer_size parameter to pass into NewHashCuckooRepFactory");
 
 DEFINE_int64(
-    average_data_size, 64,
-    "average_data_size parameter to pass into NewHashCuckooRepFactory");
+  average_data_size, 64,
+  "average_data_size parameter to pass into NewHashCuckooRepFactory");
 
 DEFINE_int64(
-    hash_function_count, 4,
-    "hash_function_count parameter to pass into NewHashCuckooRepFactory");
+  hash_function_count, 4,
+  "hash_function_count parameter to pass into NewHashCuckooRepFactory");
 
 DEFINE_int32(
-    num_threads, 1,
-    "Number of concurrent threads to run. If the benchmark includes writes,\n"
-    "then at most one thread will be a writer");
+  num_threads, 1,
+  "Number of concurrent threads to run. If the benchmark includes writes,\n"
+  "then at most one thread will be a writer");
 
 DEFINE_int32(num_operations, 1000000,
              "Number of operations to do for write and random read benchmarks");
@@ -171,7 +171,7 @@ enum WriteMode { SEQUENTIAL, RANDOM, UNIQUE_RANDOM };
 class KeyGenerator {
  public:
   KeyGenerator(Random64* rand, WriteMode mode, uint64_t num)
-      : rand_(rand), mode_(mode), num_(num), next_(0) {
+    : rand_(rand), mode_(mode), num_(num), next_(0) {
     if (mode_ == UNIQUE_RANDOM) {
       // NOTE: if memory consumption of this approach becomes a concern,
       // we can either break it into pieces and only random shuffle a section
@@ -182,19 +182,19 @@ class KeyGenerator {
         values_[i] = i;
       }
       std::shuffle(
-          values_.begin(), values_.end(),
-          std::default_random_engine(static_cast<unsigned int>(FLAGS_seed)));
+        values_.begin(), values_.end(),
+        std::default_random_engine(static_cast<unsigned int>(FLAGS_seed)));
     }
   }
 
   uint64_t Next() {
     switch (mode_) {
-      case SEQUENTIAL:
-        return next_++;
-      case RANDOM:
-        return rand_->Next() % num_;
-      case UNIQUE_RANDOM:
-        return values_[next_++];
+    case SEQUENTIAL:
+      return next_++;
+    case RANDOM:
+      return rand_->Next() % num_;
+    case UNIQUE_RANDOM:
+      return values_[next_++];
     }
     assert(false);
     return std::numeric_limits<uint64_t>::max();
@@ -214,13 +214,13 @@ class BenchmarkThread {
                            uint64_t* bytes_written, uint64_t* bytes_read,
                            uint64_t* sequence, uint64_t num_ops,
                            uint64_t* read_hits)
-      : table_(table),
-        key_gen_(key_gen),
-        bytes_written_(bytes_written),
-        bytes_read_(bytes_read),
-        sequence_(sequence),
-        num_ops_(num_ops),
-        read_hits_(read_hits) {}
+    : table_(table),
+      key_gen_(key_gen),
+      bytes_written_(bytes_written),
+      bytes_read_(bytes_read),
+      sequence_(sequence),
+      num_ops_(num_ops),
+      read_hits_(read_hits) {}
 
   virtual void operator()() = 0;
   virtual ~BenchmarkThread() {}
@@ -241,14 +241,14 @@ class FillBenchmarkThread : public BenchmarkThread {
   FillBenchmarkThread(MemTableRep* table, KeyGenerator* key_gen,
                       uint64_t* bytes_written, uint64_t* bytes_read,
                       uint64_t* sequence, uint64_t num_ops, uint64_t* read_hits)
-      : BenchmarkThread(table, key_gen, bytes_written, bytes_read, sequence,
-                        num_ops, read_hits) {}
+    : BenchmarkThread(table, key_gen, bytes_written, bytes_read, sequence,
+                      num_ops, read_hits) {}
 
   void FillOne() {
     char* buf = nullptr;
     auto internal_key_size = 16;
     auto encoded_len =
-        FLAGS_item_size + VarintLength(internal_key_size) + internal_key_size;
+      FLAGS_item_size + VarintLength(internal_key_size) + internal_key_size;
     KeyHandle handle = table_->Allocate(encoded_len, &buf);
     assert(buf != nullptr);
     char* p = EncodeVarint32(buf, internal_key_size);
@@ -279,8 +279,8 @@ class ConcurrentFillBenchmarkThread : public FillBenchmarkThread {
                                 uint64_t* sequence, uint64_t num_ops,
                                 uint64_t* read_hits,
                                 std::atomic_int* threads_done)
-      : FillBenchmarkThread(table, key_gen, bytes_written, bytes_read, sequence,
-                            num_ops, read_hits) {
+    : FillBenchmarkThread(table, key_gen, bytes_written, bytes_read, sequence,
+                          num_ops, read_hits) {
     threads_done_ = threads_done;
   }
 
@@ -301,8 +301,8 @@ class ReadBenchmarkThread : public BenchmarkThread {
   ReadBenchmarkThread(MemTableRep* table, KeyGenerator* key_gen,
                       uint64_t* bytes_written, uint64_t* bytes_read,
                       uint64_t* sequence, uint64_t num_ops, uint64_t* read_hits)
-      : BenchmarkThread(table, key_gen, bytes_written, bytes_read, sequence,
-                        num_ops, read_hits) {}
+    : BenchmarkThread(table, key_gen, bytes_written, bytes_read, sequence,
+                      num_ops, read_hits) {}
 
   static bool callback(void* arg, const char* entry) {
     CallbackVerifyArgs* callback_args = static_cast<CallbackVerifyArgs*>(arg);
@@ -310,9 +310,9 @@ class ReadBenchmarkThread : public BenchmarkThread {
     uint32_t key_length;
     const char* key_ptr = GetVarint32Ptr(entry, entry + 5, &key_length);
     if ((callback_args->comparator)
-            ->user_comparator()
-            ->Equal(Slice(key_ptr, key_length - 8),
-                    callback_args->key->user_key())) {
+        ->user_comparator()
+        ->Equal(Slice(key_ptr, key_length - 8),
+                callback_args->key->user_key())) {
       callback_args->found = true;
     }
     return false;
@@ -348,8 +348,8 @@ class SeqReadBenchmarkThread : public BenchmarkThread {
                          uint64_t* bytes_written, uint64_t* bytes_read,
                          uint64_t* sequence, uint64_t num_ops,
                          uint64_t* read_hits)
-      : BenchmarkThread(table, key_gen, bytes_written, bytes_read, sequence,
-                        num_ops, read_hits) {}
+    : BenchmarkThread(table, key_gen, bytes_written, bytes_read, sequence,
+                      num_ops, read_hits) {}
 
   void ReadOneSeq() {
     std::unique_ptr<MemTableRep::Iterator> iter(table_->GetIterator());
@@ -362,7 +362,9 @@ class SeqReadBenchmarkThread : public BenchmarkThread {
 
   void operator()() override {
     for (unsigned int i = 0; i < num_ops_; ++i) {
-      { ReadOneSeq(); }
+      {
+        ReadOneSeq();
+      }
     }
   }
 };
@@ -374,8 +376,8 @@ class ConcurrentReadBenchmarkThread : public ReadBenchmarkThread {
                                 uint64_t* sequence, uint64_t num_ops,
                                 uint64_t* read_hits,
                                 std::atomic_int* threads_done)
-      : ReadBenchmarkThread(table, key_gen, bytes_written, bytes_read, sequence,
-                            num_ops, read_hits) {
+    : ReadBenchmarkThread(table, key_gen, bytes_written, bytes_read, sequence,
+                          num_ops, read_hits) {
     threads_done_ = threads_done;
   }
 
@@ -397,8 +399,8 @@ class SeqConcurrentReadBenchmarkThread : public SeqReadBenchmarkThread {
                                    uint64_t* bytes_read, uint64_t* sequence,
                                    uint64_t num_ops, uint64_t* read_hits,
                                    std::atomic_int* threads_done)
-      : SeqReadBenchmarkThread(table, key_gen, bytes_written, bytes_read,
-                               sequence, num_ops, read_hits) {
+    : SeqReadBenchmarkThread(table, key_gen, bytes_written, bytes_read,
+                             sequence, num_ops, read_hits) {
     threads_done_ = threads_done;
   }
 
@@ -417,10 +419,10 @@ class Benchmark {
  public:
   explicit Benchmark(MemTableRep* table, KeyGenerator* key_gen,
                      uint64_t* sequence, uint32_t num_threads)
-      : table_(table),
-        key_gen_(key_gen),
-        sequence_(sequence),
-        num_threads_(num_threads) {}
+    : table_(table),
+      key_gen_(key_gen),
+      sequence_(sequence),
+      num_threads_(num_threads) {}
 
   virtual ~Benchmark() {}
   virtual void Run() {
@@ -473,7 +475,7 @@ class FillBenchmark : public Benchmark {
  public:
   explicit FillBenchmark(MemTableRep* table, KeyGenerator* key_gen,
                          uint64_t* sequence)
-      : Benchmark(table, key_gen, sequence, 1) {
+    : Benchmark(table, key_gen, sequence, 1) {
     num_write_ops_per_thread_ = FLAGS_num_operations;
   }
 
@@ -489,7 +491,7 @@ class ReadBenchmark : public Benchmark {
  public:
   explicit ReadBenchmark(MemTableRep* table, KeyGenerator* key_gen,
                          uint64_t* sequence)
-      : Benchmark(table, key_gen, sequence, FLAGS_num_threads) {
+    : Benchmark(table, key_gen, sequence, FLAGS_num_threads) {
     num_read_ops_per_thread_ = FLAGS_num_operations / FLAGS_num_threads;
   }
 
@@ -498,8 +500,8 @@ class ReadBenchmark : public Benchmark {
                   uint64_t* read_hits) override {
     for (int i = 0; i < FLAGS_num_threads; ++i) {
       threads->emplace_back(
-          ReadBenchmarkThread(table_, key_gen_, bytes_written, bytes_read,
-                              sequence_, num_read_ops_per_thread_, read_hits));
+        ReadBenchmarkThread(table_, key_gen_, bytes_written, bytes_read,
+                            sequence_, num_read_ops_per_thread_, read_hits));
     }
     for (auto& thread : *threads) {
       thread.join();
@@ -513,7 +515,7 @@ class ReadBenchmark : public Benchmark {
 class SeqReadBenchmark : public Benchmark {
  public:
   explicit SeqReadBenchmark(MemTableRep* table, uint64_t* sequence)
-      : Benchmark(table, nullptr, sequence, FLAGS_num_threads) {
+    : Benchmark(table, nullptr, sequence, FLAGS_num_threads) {
     num_read_ops_per_thread_ = FLAGS_num_scans;
   }
 
@@ -522,8 +524,8 @@ class SeqReadBenchmark : public Benchmark {
                   uint64_t* read_hits) override {
     for (int i = 0; i < FLAGS_num_threads; ++i) {
       threads->emplace_back(SeqReadBenchmarkThread(
-          table_, key_gen_, bytes_written, bytes_read, sequence_,
-          num_read_ops_per_thread_, read_hits));
+                              table_, key_gen_, bytes_written, bytes_read, sequence_,
+                              num_read_ops_per_thread_, read_hits));
     }
     for (auto& thread : *threads) {
       thread.join();
@@ -536,11 +538,11 @@ class ReadWriteBenchmark : public Benchmark {
  public:
   explicit ReadWriteBenchmark(MemTableRep* table, KeyGenerator* key_gen,
                               uint64_t* sequence)
-      : Benchmark(table, key_gen, sequence, FLAGS_num_threads) {
+    : Benchmark(table, key_gen, sequence, FLAGS_num_threads) {
     num_read_ops_per_thread_ =
-        FLAGS_num_threads <= 1
-            ? 0
-            : (FLAGS_num_operations / (FLAGS_num_threads - 1));
+      FLAGS_num_threads <= 1
+      ? 0
+      : (FLAGS_num_operations / (FLAGS_num_threads - 1));
     num_write_ops_per_thread_ = FLAGS_num_operations;
   }
 
@@ -550,12 +552,12 @@ class ReadWriteBenchmark : public Benchmark {
     std::atomic_int threads_done;
     threads_done.store(0);
     threads->emplace_back(ConcurrentFillBenchmarkThread(
-        table_, key_gen_, bytes_written, bytes_read, sequence_,
-        num_write_ops_per_thread_, read_hits, &threads_done));
+                            table_, key_gen_, bytes_written, bytes_read, sequence_,
+                            num_write_ops_per_thread_, read_hits, &threads_done));
     for (int i = 1; i < FLAGS_num_threads; ++i) {
       threads->emplace_back(
-          ReadThreadType(table_, key_gen_, bytes_written, bytes_read, sequence_,
-                         num_read_ops_per_thread_, read_hits, &threads_done));
+        ReadThreadType(table_, key_gen_, bytes_written, bytes_read, sequence_,
+                       num_read_ops_per_thread_, read_hits, &threads_done));
     }
     for (auto& thread : *threads) {
       thread.join();
@@ -595,7 +597,7 @@ int main(int argc, char** argv) {
   }
 
   vidardb::InternalKeyComparator internal_key_comp(
-      vidardb::BytewiseComparator());
+    vidardb::BytewiseComparator());
   vidardb::MemTable::KeyComparator key_comp(internal_key_comp);
   vidardb::Arena arena;
   vidardb::WriteBuffer wb(FLAGS_write_buffer_size);
@@ -604,7 +606,7 @@ int main(int argc, char** argv) {
   auto createMemtableRep = [&] {
     sequence = 0;
     return factory->CreateMemTableRep(key_comp, &memtable_allocator,
-                                      options.info_log.get());
+    options.info_log.get());
   };
   std::unique_ptr<vidardb::MemTableRep> memtablerep;
   vidardb::Random64 rng(FLAGS_seed);
@@ -626,37 +628,37 @@ int main(int argc, char** argv) {
       key_gen.reset(new vidardb::KeyGenerator(&rng, vidardb::SEQUENTIAL,
                                               FLAGS_num_operations));
       benchmark.reset(new vidardb::FillBenchmark(memtablerep.get(),
-                                                 key_gen.get(), &sequence));
+                      key_gen.get(), &sequence));
     } else if (name == vidardb::Slice("fillrandom")) {
       memtablerep.reset(createMemtableRep());
       key_gen.reset(new vidardb::KeyGenerator(&rng, vidardb::UNIQUE_RANDOM,
                                               FLAGS_num_operations));
       benchmark.reset(new vidardb::FillBenchmark(memtablerep.get(),
-                                                 key_gen.get(), &sequence));
+                      key_gen.get(), &sequence));
     } else if (name == vidardb::Slice("readrandom")) {
       key_gen.reset(new vidardb::KeyGenerator(&rng, vidardb::RANDOM,
                                               FLAGS_num_operations));
       benchmark.reset(new vidardb::ReadBenchmark(memtablerep.get(),
-                                                 key_gen.get(), &sequence));
+                      key_gen.get(), &sequence));
     } else if (name == vidardb::Slice("readseq")) {
       key_gen.reset(new vidardb::KeyGenerator(&rng, vidardb::SEQUENTIAL,
                                               FLAGS_num_operations));
       benchmark.reset(
-          new vidardb::SeqReadBenchmark(memtablerep.get(), &sequence));
+        new vidardb::SeqReadBenchmark(memtablerep.get(), &sequence));
     } else if (name == vidardb::Slice("readwrite")) {
       memtablerep.reset(createMemtableRep());
       key_gen.reset(new vidardb::KeyGenerator(&rng, vidardb::RANDOM,
                                               FLAGS_num_operations));
       benchmark.reset(new vidardb::ReadWriteBenchmark<
-          vidardb::ConcurrentReadBenchmarkThread>(memtablerep.get(),
-                                                  key_gen.get(), &sequence));
+                      vidardb::ConcurrentReadBenchmarkThread>(memtablerep.get(),
+                          key_gen.get(), &sequence));
     } else if (name == vidardb::Slice("seqreadwrite")) {
       memtablerep.reset(createMemtableRep());
       key_gen.reset(new vidardb::KeyGenerator(&rng, vidardb::RANDOM,
                                               FLAGS_num_operations));
       benchmark.reset(new vidardb::ReadWriteBenchmark<
-          vidardb::SeqConcurrentReadBenchmarkThread>(memtablerep.get(),
-                                                     key_gen.get(), &sequence));
+                      vidardb::SeqConcurrentReadBenchmarkThread>(memtablerep.get(),
+                          key_gen.get(), &sequence));
     } else {
       std::cout << "WARNING: skipping unknown benchmark '" << name.ToString()
                 << std::endl;

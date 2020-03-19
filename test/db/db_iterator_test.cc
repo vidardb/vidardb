@@ -508,7 +508,7 @@ TEST_F(DBIteratorTest, IterReseek) {
   // At this point, we have three versions of "a" and one version of "b".
   // The reseek statistics is already at 1.
   int num_reseeks = static_cast<int>(
-      TestGetTickerCount(options, NUMBER_OF_RESEEKS_IN_ITERATION));
+                      TestGetTickerCount(options, NUMBER_OF_RESEEKS_IN_ITERATION));
 
   // Insert another version of b and assert that reseek is not invoked
   ASSERT_OK(Put(1, "b", "btwo"));
@@ -865,7 +865,7 @@ TEST_F(DBIteratorTest, IterPrevKeyCrossingBlocksRandomized) {
   const int kNumMergeOperands = 3;
   // Use value size that will make sure that every block contain 1 key
   const int kValSize =
-      static_cast<int>(BlockBasedTableOptions().block_size) * 4;
+    static_cast<int>(BlockBasedTableOptions().block_size) * 4;
   // Percentage of keys that wont get merge operations
   const int kNoMergeOpPercentage = 20;
   // Percentage of keys that will be deleted
@@ -958,7 +958,7 @@ TEST_F(DBIteratorTest, IterPrevKeyCrossingBlocksRandomized) {
 
       // Do some Next() operations the restore the iterator to orignal position
       int next_count =
-          entries_right > 0 ? rnd.Uniform(std::min(entries_right, 10)) : 0;
+        entries_right > 0 ? rnd.Uniform(std::min(entries_right, 10)) : 0;
       for (int i = 0; i < next_count; i++) {
         iter->Next();
         data_iter--;

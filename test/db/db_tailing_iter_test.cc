@@ -143,23 +143,27 @@ TEST_F(DBTestTailingIterator, TailingIteratorTrimSeekToNext) {
   bool file_iters_renewed_null = false;
   bool file_iters_renewed_copy = false;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "ForwardIterator::SeekInternal:Return", [&](void* arg) {
-        ForwardIterator* fiter = reinterpret_cast<ForwardIterator*>(arg);
-        ASSERT_TRUE(!file_iters_deleted ||
-                    fiter->TEST_CheckDeletedIters(&deleted_iters, &num_iters));
-      });
+  "ForwardIterator::SeekInternal:Return", [&](void* arg) {
+    ForwardIterator* fiter = reinterpret_cast<ForwardIterator*>(arg);
+    ASSERT_TRUE(!file_iters_deleted ||
+                fiter->TEST_CheckDeletedIters(&deleted_iters, &num_iters));
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "ForwardIterator::Next:Return", [&](void* arg) {
-        ForwardIterator* fiter = reinterpret_cast<ForwardIterator*>(arg);
-        ASSERT_TRUE(!file_iters_deleted ||
-                    fiter->TEST_CheckDeletedIters(&deleted_iters, &num_iters));
-      });
+  "ForwardIterator::Next:Return", [&](void* arg) {
+    ForwardIterator* fiter = reinterpret_cast<ForwardIterator*>(arg);
+    ASSERT_TRUE(!file_iters_deleted ||
+                fiter->TEST_CheckDeletedIters(&deleted_iters, &num_iters));
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "ForwardIterator::RenewIterators:Null",
-      [&](void* arg) { file_iters_renewed_null = true; });
+    "ForwardIterator::RenewIterators:Null",
+  [&](void* arg) {
+    file_iters_renewed_null = true;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "ForwardIterator::RenewIterators:Copy",
-      [&](void* arg) { file_iters_renewed_copy = true; });
+    "ForwardIterator::RenewIterators:Copy",
+  [&](void* arg) {
+    file_iters_renewed_copy = true;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   const int num_records = 1000;
   for (int i = 1; i < num_records; ++i) {
@@ -380,8 +384,10 @@ TEST_F(DBTestTailingIterator, TailingIteratorUpperBound) {
   // This keeps track of the number of times NeedToSeekImmutable() was true.
   int immutable_seeks = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "ForwardIterator::SeekInternal:Immutable",
-      [&](void* arg) { ++immutable_seeks; });
+    "ForwardIterator::SeekInternal:Immutable",
+  [&](void* arg) {
+    ++immutable_seeks;
+  });
 
   // Seek to 13. This should not require any immutable seeks.
   vidardb::SyncPoint::GetInstance()->EnableProcessing();

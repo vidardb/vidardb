@@ -54,7 +54,7 @@ class Reader {
   // The Reader will start reading at the first record located at physical
   // position >= initial_offset within the file.
   Reader(std::shared_ptr<Logger> info_log,
-	 unique_ptr<SequentialFileReader>&& file,
+         unique_ptr<SequentialFileReader>&& file,
          Reporter* reporter, bool checksum, uint64_t initial_offset,
          uint64_t log_num);
 
@@ -67,7 +67,7 @@ class Reader {
   // reader or the next mutation to *scratch.
   bool ReadRecord(Slice* record, std::string* scratch,
                   WALRecoveryMode wal_recovery_mode =
-                      WALRecoveryMode::kTolerateCorruptedTailRecords);
+                    WALRecoveryMode::kTolerateCorruptedTailRecords);
 
   // Returns the physical offset of the last record returned by ReadRecord.
   //
@@ -86,7 +86,9 @@ class Reader {
   // block that was partially read.
   void UnmarkEOF();
 
-  SequentialFileReader* file() { return file_.get(); }
+  SequentialFileReader* file() {
+    return file_.get();
+  }
 
  private:
   std::shared_ptr<Logger> info_log_;

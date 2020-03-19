@@ -16,7 +16,7 @@ namespace vidardb {
 class StderrLogger : public Logger {
  public:
   explicit StderrLogger(const InfoLogLevel log_level = InfoLogLevel::INFO_LEVEL)
-      : Logger(log_level) {}
+    : Logger(log_level) {}
 
   // Brings overloaded Logv()s into scope so they're not hidden when we override
   // a subset of them.

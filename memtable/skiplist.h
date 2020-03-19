@@ -134,7 +134,9 @@ class SkipList {
 
   Node* NewNode(const Key& key, int height);
   int RandomHeight();
-  bool Equal(const Key& a, const Key& b) const { return (compare_(a, b) == 0); }
+  bool Equal(const Key& a, const Key& b) const {
+    return (compare_(a, b) == 0);
+  }
 
   // Return true if key is greater than the data stored in "n"
   bool KeyIsAfterNode(const Key& key, Node* n) const;
@@ -199,7 +201,7 @@ template<typename Key, class Comparator>
 typename SkipList<Key, Comparator>::Node*
 SkipList<Key, Comparator>::NewNode(const Key& key, int height) {
   char* mem = allocator_->AllocateAligned(
-      sizeof(Node) + sizeof(std::atomic<Node*>) * (height - 1));
+                sizeof(Node) + sizeof(std::atomic<Node*>) * (height - 1));
   return new (mem) Node(key);
 }
 
@@ -282,7 +284,7 @@ bool SkipList<Key, Comparator>::KeyIsAfterNode(const Key& key, Node* n) const {
 
 template<typename Key, class Comparator>
 typename SkipList<Key, Comparator>::Node* SkipList<Key, Comparator>::
-  FindGreaterOrEqual(const Key& key) const {
+FindGreaterOrEqual(const Key& key) const {
   // Note: It looks like we could reduce duplication by implementing
   // this function as FindLessThan(key)->Next(0), but we wouldn't be able
   // to exit early on equality and the result wouldn't even be correct.
@@ -298,7 +300,7 @@ typename SkipList<Key, Comparator>::Node* SkipList<Key, Comparator>::
     // Make sure we haven't overshot during our search
     assert(x == head_ || KeyIsAfterNode(key, x));
     int cmp = (next == nullptr || next == last_bigger)
-        ? 1 : compare_(next->key, key);
+              ? 1 : compare_(next->key, key);
     if (cmp == 0 || (cmp > 0 && level == 0)) {
       return next;
     } else if (cmp < 0) {
@@ -343,7 +345,7 @@ SkipList<Key, Comparator>::FindLessThan(const Key& key, Node** prev) const {
 
 template<typename Key, class Comparator>
 typename SkipList<Key, Comparator>::Node* SkipList<Key, Comparator>::FindLast()
-    const {
+const {
   Node* x = head_;
   int level = GetMaxHeight() - 1;
   while (true) {
@@ -389,14 +391,14 @@ template <typename Key, class Comparator>
 SkipList<Key, Comparator>::SkipList(const Comparator cmp, Allocator* allocator,
                                     int32_t max_height,
                                     int32_t branching_factor)
-    : kMaxHeight_(max_height),
-      kBranching_(branching_factor),
-      kScaledInverseBranching_((Random::kMaxNext + 1) / kBranching_),
-      compare_(cmp),
-      allocator_(allocator),
-      head_(NewNode(0 /* any key will do */, max_height)),
-      max_height_(1),
-      prev_height_(1) {
+  : kMaxHeight_(max_height),
+    kBranching_(branching_factor),
+    kScaledInverseBranching_((Random::kMaxNext + 1) / kBranching_),
+    compare_(cmp),
+    allocator_(allocator),
+    head_(NewNode(0 /* any key will do */, max_height)),
+    max_height_(1),
+    prev_height_(1) {
   assert(max_height > 0 && kMaxHeight_ == static_cast<uint32_t>(max_height));
   assert(branching_factor > 0 &&
          kBranching_ == static_cast<uint32_t>(branching_factor));

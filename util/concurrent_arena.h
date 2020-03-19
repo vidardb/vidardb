@@ -47,7 +47,9 @@ class ConcurrentArena : public Allocator {
 
   char* Allocate(size_t bytes) override {
     return AllocateImpl(bytes, false /*force_arena*/,
-                        [=]() { return arena_.Allocate(bytes); });
+    [=]() {
+      return arena_.Allocate(bytes);
+    });
   }
 
   char* AllocateAligned(size_t bytes, size_t huge_page_size = 0,
@@ -82,7 +84,9 @@ class ConcurrentArena : public Allocator {
     return irregular_block_num_.load(std::memory_order_relaxed);
   }
 
-  size_t BlockSize() const override { return arena_.BlockSize(); }
+  size_t BlockSize() const override {
+    return arena_.BlockSize();
+  }
 
  private:
   struct Shard {
@@ -165,8 +169,8 @@ class ConcurrentArena : public Allocator {
       auto exact = arena_allocated_and_unused_.load(std::memory_order_relaxed);
       assert(exact == arena_.AllocatedAndUnused());
       avail = exact >= shard_block_size_ / 2 && exact < shard_block_size_ * 2
-                  ? exact
-                  : shard_block_size_;
+              ? exact
+              : shard_block_size_;
       s->free_begin_ = arena_.AllocateAligned(avail);
       Fixup();
     }

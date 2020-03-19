@@ -47,31 +47,31 @@ void DumpDBFileSummary(const DBOptions& options, const std::string& dbname) {
       continue;
     }
     switch (type) {
-      case kCurrentFile:
-        Header(options.info_log, "CURRENT file:  %s\n", file.c_str());
-        break;
-      case kIdentityFile:
-        Header(options.info_log, "IDENTITY file:  %s\n", file.c_str());
-        break;
-      case kDescriptorFile:
-        env->GetFileSize(dbname + "/" + file, &file_size);
-        Header(options.info_log, "MANIFEST file:  %s size: %" PRIu64 " Bytes\n",
-               file.c_str(), file_size);
-        break;
-      case kLogFile:
-        env->GetFileSize(dbname + "/" + file, &file_size);
-        char str[16];
-        snprintf(str, sizeof(str), "%" PRIu64, file_size);
-        wal_info.append(file).append(" size: ").
-            append(str).append(" ; ");
-        break;
-      case kTableFile:
-        if (++file_num < 10) {
-          file_info.append(file).append(" ");
-        }
-        break;
-      default:
-        break;
+    case kCurrentFile:
+      Header(options.info_log, "CURRENT file:  %s\n", file.c_str());
+      break;
+    case kIdentityFile:
+      Header(options.info_log, "IDENTITY file:  %s\n", file.c_str());
+      break;
+    case kDescriptorFile:
+      env->GetFileSize(dbname + "/" + file, &file_size);
+      Header(options.info_log, "MANIFEST file:  %s size: %" PRIu64 " Bytes\n",
+             file.c_str(), file_size);
+      break;
+    case kLogFile:
+      env->GetFileSize(dbname + "/" + file, &file_size);
+      char str[16];
+      snprintf(str, sizeof(str), "%" PRIu64, file_size);
+      wal_info.append(file).append(" size: ").
+      append(str).append(" ; ");
+      break;
+    case kTableFile:
+      if (++file_num < 10) {
+        file_info.append(file).append(" ");
+      }
+      break;
+    default:
+      break;
     }
   }
 
@@ -80,8 +80,8 @@ void DumpDBFileSummary(const DBOptions& options, const std::string& dbname) {
     if (dbname.compare(db_path.path) != 0) {
       if (!env->GetChildren(db_path.path, &files).ok()) {
         Error(options.info_log,
-            "Error when reading %s dir\n",
-            db_path.path.c_str());
+              "Error when reading %s dir\n",
+              db_path.path.c_str());
         continue;
       }
       std::sort(files.begin(), files.end());
@@ -104,8 +104,8 @@ void DumpDBFileSummary(const DBOptions& options, const std::string& dbname) {
   if (dbname.compare(options.wal_dir) != 0) {
     if (!env->GetChildren(options.wal_dir, &files).ok()) {
       Error(options.info_log,
-          "Error when reading %s dir\n",
-          options.wal_dir.c_str());
+            "Error when reading %s dir\n",
+            options.wal_dir.c_str());
       return;
     }
     wal_info.clear();
@@ -116,7 +116,7 @@ void DumpDBFileSummary(const DBOptions& options, const std::string& dbname) {
           char str[16];
           snprintf(str, sizeof(str), "%" PRIu64, file_size);
           wal_info.append(file).append(" size: ").
-              append(str).append(" ; ");
+          append(str).append(" ; ");
         }
       }
     }

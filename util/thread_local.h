@@ -97,10 +97,10 @@ class ThreadLocalPtr {
   //     ---------------------------------------------------
   struct ThreadData {
     explicit ThreadData(StaticMeta* _inst)
-    : entries(),
-      next(nullptr),
-      prev(nullptr),
-      inst(_inst) {}
+      : entries(),
+        next(nullptr),
+        prev(nullptr),
+        inst(_inst) {}
     std::vector<Entry> entries;
     ThreadData* next;
     ThreadData* prev;
@@ -168,7 +168,9 @@ class ThreadLocalPtr {
     // Mutex() should be used instead of this one.  However, in case where
     // the static variable inside Instance() goes out of scope, MemberMutex()
     // should be used.  One example is OnThreadExit() function.
-    port::Mutex* MemberMutex() { return &mutex_; }
+    port::Mutex* MemberMutex() {
+      return &mutex_;
+    }
 
    private:
     // Get UnrefHandler for id with acquiring mutex

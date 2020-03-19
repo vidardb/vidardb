@@ -57,8 +57,8 @@ class Comparator {
   // Simple comparator implementations may return with *start unchanged,
   // i.e., an implementation of this method that does nothing is correct.
   virtual void FindShortestSeparator(
-      std::string* start,
-      const Slice& limit) const = 0;
+    std::string* start,
+    const Slice& limit) const = 0;
 
   // Changes *key to a short string >= *key.
   // Simple comparator implementations may return with *key unchanged,

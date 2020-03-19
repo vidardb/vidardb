@@ -18,7 +18,9 @@ const size_t kHugePageSize = 2 * 1024 * 1024;
 }  // namespace
 class ArenaTest : public testing::Test {};
 
-TEST_F(ArenaTest, Empty) { Arena arena0; }
+TEST_F(ArenaTest, Empty) {
+  Arena arena0;
+}
 
 namespace {
 bool CheckMemoryAllocated(size_t allocated, size_t expected) {
@@ -59,10 +61,10 @@ void MemoryAllocatedBytesTest(size_t huge_page_size) {
   }
   if (huge_page_size) {
     ASSERT_TRUE(
-        CheckMemoryAllocated(arena.MemoryAllocatedBytes(),
-                             expected_memory_allocated + bsz) ||
-        CheckMemoryAllocated(arena.MemoryAllocatedBytes(),
-                             expected_memory_allocated + huge_page_size));
+      CheckMemoryAllocated(arena.MemoryAllocatedBytes(),
+                           expected_memory_allocated + bsz) ||
+      CheckMemoryAllocated(arena.MemoryAllocatedBytes(),
+                           expected_memory_allocated + huge_page_size));
   } else {
     expected_memory_allocated += bsz;
     ASSERT_PRED2(CheckMemoryAllocated, arena.MemoryAllocatedBytes(),
@@ -105,8 +107,8 @@ static void ApproximateMemoryUsageTest(size_t huge_page_size) {
   auto mem_usage = arena.MemoryAllocatedBytes();
   if (huge_page_size) {
     ASSERT_TRUE(
-        CheckMemoryAllocated(mem_usage, kBlockSize + Arena::kInlineSize) ||
-        CheckMemoryAllocated(mem_usage, huge_page_size + Arena::kInlineSize));
+      CheckMemoryAllocated(mem_usage, kBlockSize + Arena::kInlineSize) ||
+      CheckMemoryAllocated(mem_usage, huge_page_size + Arena::kInlineSize));
   } else {
     ASSERT_PRED2(CheckMemoryAllocated, mem_usage,
                  kBlockSize + Arena::kInlineSize);
@@ -139,8 +141,8 @@ static void SimpleTest(size_t huge_page_size) {
       s = i;
     } else {
       s = rnd.OneIn(4000)
-              ? rnd.Uniform(6000)
-              : (rnd.OneIn(10) ? rnd.Uniform(100) : rnd.Uniform(20));
+          ? rnd.Uniform(6000)
+          : (rnd.OneIn(10) ? rnd.Uniform(100) : rnd.Uniform(20));
     }
     if (s == 0) {
       // Our arena disallows size 0 allocations.

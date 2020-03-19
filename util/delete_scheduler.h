@@ -36,7 +36,9 @@ class DeleteScheduler {
   ~DeleteScheduler();
 
   // Return delete rate limit in bytes per second
-  int64_t GetRateBytesPerSecond() { return rate_bytes_per_sec_; }
+  int64_t GetRateBytesPerSecond() {
+    return rate_bytes_per_sec_;
+  }
 
   // Move file to trash directory and schedule it's deletion
   Status DeleteFile(const std::string& fname);

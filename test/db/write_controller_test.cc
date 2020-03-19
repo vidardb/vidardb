@@ -16,14 +16,16 @@ class TimeSetEnv : public EnvWrapper {
  public:
   explicit TimeSetEnv() : EnvWrapper(nullptr) {}
   uint64_t now_micros_ = 6666;
-  virtual uint64_t NowMicros() override { return now_micros_; }
+  virtual uint64_t NowMicros() override {
+    return now_micros_;
+  }
 };
 
 TEST_F(WriteControllerTest, ChangeDelayRateTest) {
   TimeSetEnv env;
   WriteController controller(10000000u);
   auto delay_token_0 =
-      controller.GetDelayToken(controller.delayed_write_rate());
+    controller.GetDelayToken(controller.delayed_write_rate());
   ASSERT_EQ(static_cast<uint64_t>(2000000),
             controller.GetDelay(&env, 20000000u));
   auto delay_token_1 = controller.GetDelayToken(2000000u);
@@ -36,7 +38,7 @@ TEST_F(WriteControllerTest, ChangeDelayRateTest) {
   ASSERT_EQ(static_cast<uint64_t>(1000000),
             controller.GetDelay(&env, 20000000u));
   auto delay_token_4 =
-      controller.GetDelayToken(controller.delayed_write_rate() * 2);
+    controller.GetDelayToken(controller.delayed_write_rate() * 2);
   ASSERT_EQ(static_cast<uint64_t>(500000),
             controller.GetDelay(&env, 20000000u));
 }

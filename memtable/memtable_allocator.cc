@@ -17,9 +17,11 @@ namespace vidardb {
 
 MemTableAllocator::MemTableAllocator(Allocator* allocator,
                                      WriteBuffer* write_buffer)
-    : allocator_(allocator), write_buffer_(write_buffer), bytes_allocated_(0) {}
+  : allocator_(allocator), write_buffer_(write_buffer), bytes_allocated_(0) {}
 
-MemTableAllocator::~MemTableAllocator() { DoneAllocating(); }
+MemTableAllocator::~MemTableAllocator() {
+  DoneAllocating();
+}
 
 char* MemTableAllocator::Allocate(size_t bytes) {
   assert(write_buffer_ != nullptr);
@@ -29,7 +31,7 @@ char* MemTableAllocator::Allocate(size_t bytes) {
 }
 
 char* MemTableAllocator::AllocateAligned(size_t bytes, size_t huge_page_size,
-                                         Logger* logger) {
+    Logger* logger) {
   assert(write_buffer_ != nullptr);
   bytes_allocated_.fetch_add(bytes, std::memory_order_relaxed);
   write_buffer_->ReserveMem(bytes);
@@ -43,6 +45,8 @@ void MemTableAllocator::DoneAllocating() {
   }
 }
 
-size_t MemTableAllocator::BlockSize() const { return allocator_->BlockSize(); }
+size_t MemTableAllocator::BlockSize() const {
+  return allocator_->BlockSize();
+}
 
 }  // namespace vidardb

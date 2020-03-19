@@ -24,12 +24,12 @@ const InternalKeyComparator icmp_(BytewiseComparator());
 }  // namespace
 
 stl_wrappers::KVMap MakeMockFile(
-    std::initializer_list<std::pair<const std::string, std::string>> l) {
+  std::initializer_list<std::pair<const std::string, std::string>> l) {
   return stl_wrappers::KVMap(l, stl_wrappers::LessOfComparator(&icmp_));
 }
 
 InternalIterator* MockTableReader::NewIterator(const ReadOptions&,
-                                               Arena* arena) {
+    Arena* arena) {
   return new MockTableIterator(table_);
 }
 
@@ -50,16 +50,16 @@ Status MockTableReader::Get(const ReadOptions&, const Slice& key,
 }
 
 std::shared_ptr<const TableProperties> MockTableReader::GetTableProperties()
-    const {
+const {
   return std::shared_ptr<const TableProperties>(new TableProperties());
 }
 
 MockTableFactory::MockTableFactory() : next_id_(1) {}
 
 Status MockTableFactory::NewTableReader(
-    const TableReaderOptions& table_reader_options,
-    unique_ptr<RandomAccessFileReader>&& file, uint64_t file_size,
-    unique_ptr<TableReader>* table_reader) const {
+  const TableReaderOptions& table_reader_options,
+  unique_ptr<RandomAccessFileReader>&& file, uint64_t file_size,
+  unique_ptr<TableReader>* table_reader) const {
   uint32_t id = GetIDFromFile(file.get());
 
   MutexLock lock_guard(&file_system_.mutex);
@@ -75,15 +75,15 @@ Status MockTableFactory::NewTableReader(
 }
 
 TableBuilder* MockTableFactory::NewTableBuilder(
-    const TableBuilderOptions& table_builder_options, uint32_t column_family_id,
-    WritableFileWriter* file) const {
+  const TableBuilderOptions& table_builder_options, uint32_t column_family_id,
+  WritableFileWriter* file) const {
   uint32_t id = GetAndWriteNextID(file);
 
   return new MockTableBuilder(id, &file_system_);
 }
 
 Status MockTableFactory::CreateMockTable(Env* env, const std::string& fname,
-                                         stl_wrappers::KVMap file_contents) {
+    stl_wrappers::KVMap file_contents) {
   std::unique_ptr<WritableFile> file;
   auto s = env->NewWritableFile(fname, &file, EnvOptions());
   if (!s.ok()) {
@@ -114,13 +114,13 @@ uint32_t MockTableFactory::GetIDFromFile(RandomAccessFileReader* file) const {
 }
 
 void MockTableFactory::AssertSingleFile(
-    const stl_wrappers::KVMap& file_contents) {
+  const stl_wrappers::KVMap& file_contents) {
   ASSERT_EQ(file_system_.files.size(), 1U);
   ASSERT_TRUE(file_contents == file_system_.files.begin()->second);
 }
 
 void MockTableFactory::AssertLatestFile(
-    const stl_wrappers::KVMap& file_contents) {
+  const stl_wrappers::KVMap& file_contents) {
   ASSERT_GE(file_system_.files.size(), 1U);
   auto latest = file_system_.files.end();
   --latest;

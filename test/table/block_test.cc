@@ -95,7 +95,7 @@ TEST_F(BlockTest, SimpleTest) {
   // read contents of block sequentially
   int count = 0;
   InternalIterator *iter = reader.NewIterator(options.comparator);
-  for (iter->SeekToFirst();iter->Valid(); count++, iter->Next()) {
+  for (iter->SeekToFirst(); iter->Valid(); count++, iter->Next()) {
 
     // read kv from block
     Slice k = iter->key();
@@ -154,7 +154,7 @@ void CheckBlockContents(BlockContents contents, const int max_key,
   Block reader2(std::move(contents_ref));
 
   std::unique_ptr<InternalIterator> regular_iter(
-      reader2.NewIterator(BytewiseComparator()));
+    reader2.NewIterator(BytewiseComparator()));
 
   // Seek existent keys
   for (size_t i = 0; i < keys.size(); i++) {

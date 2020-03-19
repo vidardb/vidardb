@@ -37,12 +37,12 @@ class MergingIterator : public InternalIterator {
  public:
   MergingIterator(const Comparator* comparator, InternalIterator** children,
                   int n, bool is_arena_mode)
-      : is_arena_mode_(is_arena_mode),
-        comparator_(comparator),
-        current_(nullptr),
-        direction_(kForward),
-        minHeap_(comparator_),
-        pinned_iters_mgr_(nullptr) {
+    : is_arena_mode_(is_arena_mode),
+      comparator_(comparator),
+      current_(nullptr),
+      direction_(kForward),
+      minHeap_(comparator_),
+      pinned_iters_mgr_(nullptr) {
     children_.resize(n);
     for (int i = 0; i < n; i++) {
       children_[i].Set(children[i]);
@@ -74,7 +74,9 @@ class MergingIterator : public InternalIterator {
     }
   }
 
-  virtual bool Valid() const override { return (current_ != nullptr); }
+  virtual bool Valid() const override {
+    return (current_ != nullptr);
+  }
 
   virtual void SeekToFirst() override {
     ClearHeaps();
@@ -243,7 +245,7 @@ class MergingIterator : public InternalIterator {
   }
 
   virtual void SetPinnedItersMgr(
-      PinnedIteratorsManager* pinned_iters_mgr) override {
+    PinnedIteratorsManager* pinned_iters_mgr) override {
     pinned_iters_mgr_ = pinned_iters_mgr;
     for (auto& child : children_) {
       child.SetPinnedItersMgr(pinned_iters_mgr);
@@ -327,8 +329,8 @@ InternalIterator* NewMergingIterator(const Comparator* cmp,
 }
 
 MergeIteratorBuilder::MergeIteratorBuilder(const Comparator* comparator,
-                                           Arena* a)
-    : first_iter(nullptr), use_merging_iter(false), arena(a) {
+    Arena* a)
+  : first_iter(nullptr), use_merging_iter(false), arena(a) {
 
   auto mem = arena->AllocateAligned(sizeof(MergingIterator));
   merge_iter = new (mem) MergingIterator(comparator, nullptr, 0, true);

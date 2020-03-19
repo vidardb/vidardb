@@ -32,7 +32,7 @@ struct JobContext {
     std::string file_name;
     uint32_t path_id;
     CandidateFileInfo(std::string name, uint32_t path)
-        : file_name(std::move(name)), path_id(path) {}
+      : file_name(std::move(name)), path_id(path) {}
     bool operator==(const CandidateFileInfo& other) const {
       return file_name == other.file_name && path_id == other.path_id;
     }

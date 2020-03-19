@@ -131,9 +131,9 @@ class DeleteFileTest : public testing::Test {
   }
 
   void CheckFileTypeCounts(std::string& dir,
-                            int required_log,
-                            int required_sst,
-                            int required_manifest) {
+                           int required_log,
+                           int required_sst,
+                           int required_manifest) {
     std::vector<std::string> filenames;
     env_->GetChildren(dir, &filenames);
 
@@ -290,12 +290,12 @@ TEST_F(DeleteFileTest, DeleteLogFiles) {
   std::unique_ptr<LogFile> archived_log = std::move(logfiles.front());
   ASSERT_EQ(archived_log->Type(), kArchivedLogFile);
   ASSERT_OK(
-      env_->FileExists(options_.wal_dir + "/" + archived_log->PathName()));
+    env_->FileExists(options_.wal_dir + "/" + archived_log->PathName()));
   fprintf(stdout, "Deleting archived log file %s\n",
           archived_log->PathName().c_str());
   ASSERT_OK(db_->DeleteFile(archived_log->PathName()));
   ASSERT_EQ(Status::NotFound(), env_->FileExists(options_.wal_dir + "/" +
-                                                 archived_log->PathName()));
+            archived_log->PathName()));
   CloseDB();
 }
 
@@ -330,11 +330,11 @@ TEST_F(DeleteFileTest, DeleteNonDefaultColumnFamily) {
   ASSERT_EQ("new_cf", metadata[0].column_family_name);
   ASSERT_EQ("new_cf", metadata[1].column_family_name);
   auto old_file = metadata[0].smallest_seqno < metadata[1].smallest_seqno
-                      ? metadata[0].name
-                      : metadata[1].name;
+                  ? metadata[0].name
+                  : metadata[1].name;
   auto new_file = metadata[0].smallest_seqno > metadata[1].smallest_seqno
-                      ? metadata[0].name
-                      : metadata[1].name;
+                  ? metadata[0].name
+                  : metadata[1].name;
   ASSERT_TRUE(db->DeleteFile(new_file).IsInvalidArgument());
   ASSERT_OK(db->DeleteFile(old_file));
 

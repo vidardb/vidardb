@@ -101,7 +101,9 @@ class VersionStorageInfo {
                      VersionStorageInfo* src_vstorage);
   ~VersionStorageInfo();
 
-  void Reserve(int level, size_t size) { files_[level].reserve(size); }
+  void Reserve(int level, size_t size) {
+    files_[level].reserve(size);
+  }
 
   void AddFile(int level, FileMetaData* f, Logger* info_log = nullptr);
 
@@ -130,7 +132,7 @@ class VersionStorageInfo {
 
   // Estimate est_comp_needed_bytes_
   void EstimateCompactionBytesNeeded(
-      const MutableCFOptions& mutable_cf_options);
+    const MutableCFOptions& mutable_cf_options);
 
   // This computes files_marked_for_compaction_ and is called by
   // ComputeCompactionScore()
@@ -151,35 +153,39 @@ class VersionStorageInfo {
   int MaxInputLevel() const;
 
   // Return level number that has idx'th highest score
-  int CompactionScoreLevel(int idx) const { return compaction_level_[idx]; }
+  int CompactionScoreLevel(int idx) const {
+    return compaction_level_[idx];
+  }
 
   // Return idx'th highest score
-  double CompactionScore(int idx) const { return compaction_score_[idx]; }
+  double CompactionScore(int idx) const {
+    return compaction_score_[idx];
+  }
 
   void GetOverlappingInputs(
-      int level, const InternalKey* begin,  // nullptr means before all keys
-      const InternalKey* end,               // nullptr means after all keys
-      std::vector<FileMetaData*>* inputs,
-      int hint_index = -1,        // index of overlap file
-      int* file_index = nullptr,  // return index of overlap file
-      bool expand_range = true)   // if set, returns files which overlap the
-      const;                      // range and overlap each other. If false,
-                                  // then just files intersecting the range
+    int level, const InternalKey* begin,  // nullptr means before all keys
+    const InternalKey* end,               // nullptr means after all keys
+    std::vector<FileMetaData*>* inputs,
+    int hint_index = -1,        // index of overlap file
+    int* file_index = nullptr,  // return index of overlap file
+    bool expand_range = true)   // if set, returns files which overlap the
+  const;                      // range and overlap each other. If false,
+  // then just files intersecting the range
 
   void GetOverlappingInputsBinarySearch(
-      int level,
-      const Slice& begin,  // nullptr means before all keys
-      const Slice& end,    // nullptr means after all keys
-      std::vector<FileMetaData*>* inputs,
-      int hint_index,          // index of overlap file
-      int* file_index) const;  // return index of overlap file
+    int level,
+    const Slice& begin,  // nullptr means before all keys
+    const Slice& end,    // nullptr means after all keys
+    std::vector<FileMetaData*>* inputs,
+    int hint_index,          // index of overlap file
+    int* file_index) const;  // return index of overlap file
 
   void ExtendOverlappingInputs(
-      int level,
-      const Slice& begin,  // nullptr means before all keys
-      const Slice& end,    // nullptr means after all keys
-      std::vector<FileMetaData*>* inputs,
-      unsigned int index) const;  // start extending from this index
+    int level,
+    const Slice& begin,  // nullptr means before all keys
+    const Slice& end,    // nullptr means after all keys
+    std::vector<FileMetaData*>* inputs,
+    unsigned int index) const;  // start extending from this index
 
   // Returns true iff some file in the specified level overlaps
   // some part of [*smallest_user_key,*largest_user_key].
@@ -195,7 +201,9 @@ class VersionStorageInfo {
   bool HasOverlappingUserKey(const std::vector<FileMetaData*>* inputs,
                              int level);
 
-  int num_levels() const { return num_levels_; }
+  int num_levels() const {
+    return num_levels_;
+  }
 
   // REQUIRES: This version has been saved (see VersionSet::SaveTo)
   int num_non_empty_levels() const {
@@ -207,9 +215,13 @@ class VersionStorageInfo {
   // (CalculateBaseBytes() is called)
   // This may or may not return number of level files. It is to keep backward
   // compatible behavior in universal compaction.
-  int l0_delay_trigger_count() const { return l0_delay_trigger_count_; }
+  int l0_delay_trigger_count() const {
+    return l0_delay_trigger_count_;
+  }
 
-  void set_l0_delay_trigger_count(int v) { l0_delay_trigger_count_ = v; }
+  void set_l0_delay_trigger_count(int v) {
+    l0_delay_trigger_count_ = v;
+  }
 
   // REQUIRES: This version has been saved (see VersionSet::SaveTo)
   int NumLevelFiles(int level) const {
@@ -239,12 +251,14 @@ class VersionStorageInfo {
   // REQUIRES: This version has been saved (see VersionSet::SaveTo)
   // REQUIRES: DB mutex held during access
   const std::vector<std::pair<int, FileMetaData*>>& FilesMarkedForCompaction()
-      const {
+  const {
     assert(finalized_);
     return files_marked_for_compaction_;
   }
 
-  int base_level() const { return base_level_; }
+  int base_level() const {
+    return base_level_;
+  }
 
   // REQUIRES: lock is held
   // Set the index that is used to offset into files_by_compaction_pri_ to find
@@ -340,7 +354,7 @@ class VersionStorageInfo {
   const Comparator* user_comparator_;
   int num_levels_;            // Number of levels
   int num_non_empty_levels_;  // Number of levels. Any level larger than it
-                              // is guaranteed to be empty.
+  // is guaranteed to be empty.
   // Per-level max bytes
   std::vector<uint64_t> level_max_bytes_;
 
@@ -392,7 +406,7 @@ class VersionStorageInfo {
   std::vector<double> compaction_score_;
   std::vector<int> compaction_level_;
   int l0_delay_trigger_count_ = 0;  // Count used to trigger slow down and stop
-                                    // for number of L0 files.
+  // for number of L0 files.
 
   // the following are the sampled temporary stats.
   // the current accumulated size of sampled files.
@@ -476,7 +490,9 @@ class Version {
   std::string DebugString(bool hex = false) const;
 
   // Returns the version nuber of this version
-  uint64_t GetVersionNumber() const { return version_number_; }
+  uint64_t GetVersionNumber() const {
+    return version_number_;
+  }
 
   // REQUIRES: lock is held
   // On success, "tp" will contains the table properties of the file
@@ -500,7 +516,7 @@ class Version {
   // On success, "tp" will contains the aggregated table property amoug
   // the table properties of all sst files in this version.
   Status GetAggregatedTableProperties(
-      std::shared_ptr<const TableProperties>* tp, int level = -1);
+    std::shared_ptr<const TableProperties>* tp, int level = -1);
 
   uint64_t GetEstimatedActiveKeys() {
     return storage_info_.GetEstimatedActiveKeys();
@@ -508,16 +524,22 @@ class Version {
 
   size_t GetMemoryUsageByTableReaders();
 
-  ColumnFamilyData* cfd() const { return cfd_; }
+  ColumnFamilyData* cfd() const {
+    return cfd_;
+  }
 
   // Return the next Version in the linked list. Used for debug only
   Version* TEST_Next() const {
     return next_;
   }
 
-  VersionStorageInfo* storage_info() { return &storage_info_; }
+  VersionStorageInfo* storage_info() {
+    return &storage_info_;
+  }
 
-  VersionSet* version_set() { return vset_; }
+  VersionSet* version_set() {
+    return vset_;
+  }
 
   void GetColumnFamilyMetaData(ColumnFamilyMetaData* cf_meta);
 
@@ -594,11 +616,11 @@ class VersionSet {
   // REQUIRES: *mu is held on entry.
   // REQUIRES: no other thread concurrently calls LogAndApply()
   Status LogAndApply(
-      ColumnFamilyData* column_family_data,
-      const MutableCFOptions& mutable_cf_options, VersionEdit* edit,
-      InstrumentedMutex* mu, Directory* db_directory = nullptr,
-      bool new_descriptor_log = false,
-      const ColumnFamilyOptions* column_family_options = nullptr);
+    ColumnFamilyData* column_family_data,
+    const MutableCFOptions& mutable_cf_options, VersionEdit* edit,
+    InstrumentedMutex* mu, Directory* db_directory = nullptr,
+    bool new_descriptor_log = false,
+    const ColumnFamilyOptions* column_family_options = nullptr);
 
   // Recover the last saved descriptor from persistent storage.
   // If read_only == true, Recover() will not complain if some column families
@@ -633,16 +655,22 @@ class VersionSet {
 #endif  // VIDARDB_LITE
 
   // Return the current manifest file number
-  uint64_t manifest_file_number() const { return manifest_file_number_; }
+  uint64_t manifest_file_number() const {
+    return manifest_file_number_;
+  }
 
   uint64_t pending_manifest_file_number() const {
     return pending_manifest_file_number_;
   }
 
-  uint64_t current_next_file_number() const { return next_file_number_.load(); }
+  uint64_t current_next_file_number() const {
+    return next_file_number_.load();
+  }
 
   // Allocate and return a new file number
-  uint64_t NewFileNumber() { return next_file_number_.fetch_add(1); }
+  uint64_t NewFileNumber() {
+    return next_file_number_.fetch_add(1);
+  }
 
   // Return the last sequence number.
   uint64_t LastSequence() const {
@@ -661,7 +689,9 @@ class VersionSet {
 
   // Return the log file number for the log file that is currently
   // being compacted, or zero if there is no such log file.
-  uint64_t prev_log_number() const { return prev_log_number_; }
+  uint64_t prev_log_number() const {
+    return prev_log_number_;
+  }
 
   // Returns the minimum log number such that all
   // log numbers less than or equal to it can be deleted
@@ -691,7 +721,9 @@ class VersionSet {
                            int start_level = 0, int end_level = -1);
 
   // Return the size of the current manifest file
-  uint64_t manifest_file_size() const { return manifest_file_size_; }
+  uint64_t manifest_file_size() const {
+    return manifest_file_size_;
+  }
 
   // verify that the files that we started with for a compaction
   // still exist in the current version and in the same original level.
@@ -709,8 +741,12 @@ class VersionSet {
                         std::vector<std::string>* manifest_filenames,
                         uint64_t min_pending_output);
 
-  ColumnFamilySet* GetColumnFamilySet() { return column_family_set_.get(); }
-  const EnvOptions& env_options() { return env_options_; }
+  ColumnFamilySet* GetColumnFamilySet() {
+    return column_family_set_.get();
+  }
+  const EnvOptions& env_options() {
+    return env_options_;
+  }
 
   static uint64_t GetNumLiveVersions(Version* dummy_versions);
 

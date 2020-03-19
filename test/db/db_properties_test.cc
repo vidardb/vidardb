@@ -39,25 +39,25 @@ TEST_F(DBPropertiesTest, Empty) {
 
     std::string num;
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], "vidardb.num-entries-active-mem-table", &num));
+                  handles_[1], "vidardb.num-entries-active-mem-table", &num));
     ASSERT_EQ("0", num);
 
     ASSERT_OK(Put(1, "foo", "v1"));
     ASSERT_EQ("v1", Get(1, "foo"));
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], "vidardb.num-entries-active-mem-table", &num));
+                  handles_[1], "vidardb.num-entries-active-mem-table", &num));
     ASSERT_EQ("1", num);
 
     // Block sync calls
     env_->delay_sstable_sync_.store(true, std::memory_order_release);
     Put(1, "k1", std::string(100000, 'x'));  // Fill memtable
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], "vidardb.num-entries-active-mem-table", &num));
+                  handles_[1], "vidardb.num-entries-active-mem-table", &num));
     ASSERT_EQ("2", num);
 
     Put(1, "k2", std::string(100000, 'y'));  // Trigger compaction
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], "vidardb.num-entries-active-mem-table", &num));
+                  handles_[1], "vidardb.num-entries-active-mem-table", &num));
     ASSERT_EQ("1", num);
 
     ASSERT_EQ("v1", Get(1, "foo"));
@@ -66,27 +66,27 @@ TEST_F(DBPropertiesTest, Empty) {
 
     ASSERT_OK(db_->DisableFileDeletions());
     ASSERT_TRUE(
-        dbfull()->GetProperty("vidardb.is-file-deletions-enabled", &num));
+      dbfull()->GetProperty("vidardb.is-file-deletions-enabled", &num));
     ASSERT_EQ("1", num);
 
     ASSERT_OK(db_->DisableFileDeletions());
     ASSERT_TRUE(
-        dbfull()->GetProperty("vidardb.is-file-deletions-enabled", &num));
+      dbfull()->GetProperty("vidardb.is-file-deletions-enabled", &num));
     ASSERT_EQ("2", num);
 
     ASSERT_OK(db_->DisableFileDeletions());
     ASSERT_TRUE(
-        dbfull()->GetProperty("vidardb.is-file-deletions-enabled", &num));
+      dbfull()->GetProperty("vidardb.is-file-deletions-enabled", &num));
     ASSERT_EQ("3", num);
 
     ASSERT_OK(db_->EnableFileDeletions(false));
     ASSERT_TRUE(
-        dbfull()->GetProperty("vidardb.is-file-deletions-enabled", &num));
+      dbfull()->GetProperty("vidardb.is-file-deletions-enabled", &num));
     ASSERT_EQ("2", num);
 
     ASSERT_OK(db_->EnableFileDeletions());
     ASSERT_TRUE(
-        dbfull()->GetProperty("vidardb.is-file-deletions-enabled", &num));
+      dbfull()->GetProperty("vidardb.is-file-deletions-enabled", &num));
     ASSERT_EQ("0", num);
   } while (ChangeOptions());
 }
@@ -94,13 +94,13 @@ TEST_F(DBPropertiesTest, Empty) {
 TEST_F(DBPropertiesTest, CurrentVersionNumber) {
   uint64_t v1, v2, v3;
   ASSERT_TRUE(
-      dbfull()->GetIntProperty("vidardb.current-super-version-number", &v1));
+    dbfull()->GetIntProperty("vidardb.current-super-version-number", &v1));
   Put("12345678", "");
   ASSERT_TRUE(
-      dbfull()->GetIntProperty("vidardb.current-super-version-number", &v2));
+    dbfull()->GetIntProperty("vidardb.current-super-version-number", &v2));
   Flush();
   ASSERT_TRUE(
-      dbfull()->GetIntProperty("vidardb.current-super-version-number", &v3));
+    dbfull()->GetIntProperty("vidardb.current-super-version-number", &v3));
 
   ASSERT_EQ(v1, v2);
   ASSERT_GT(v3, v2);
@@ -134,11 +134,11 @@ TEST_F(DBPropertiesTest, GetAggregatedIntPropertyTest) {
   uint64_t value = 0;
   for (auto* handle : handles_) {
     ASSERT_TRUE(
-        db_->GetIntProperty(handle, DB::Properties::kSizeAllMemTables, &value));
+      db_->GetIntProperty(handle, DB::Properties::kSizeAllMemTables, &value));
     manual_sum += value;
   }
   ASSERT_TRUE(db_->GetAggregatedIntProperty(DB::Properties::kSizeAllMemTables,
-                                            &api_sum));
+              &api_sum));
   ASSERT_GT(manual_sum, 0);
   ASSERT_EQ(manual_sum, api_sum);
 
@@ -148,13 +148,13 @@ TEST_F(DBPropertiesTest, GetAggregatedIntPropertyTest) {
   uint64_t after_flush_trm;
   for (auto* handle : handles_) {
     ASSERT_TRUE(db_->GetAggregatedIntProperty(
-        DB::Properties::kEstimateTableReadersMem, &before_flush_trm));
+                  DB::Properties::kEstimateTableReadersMem, &before_flush_trm));
 
     // Issue flush and expect larger memory usage of table readers.
     db_->Flush(FlushOptions(), handle);
 
     ASSERT_TRUE(db_->GetAggregatedIntProperty(
-        DB::Properties::kEstimateTableReadersMem, &after_flush_trm));
+                  DB::Properties::kEstimateTableReadersMem, &after_flush_trm));
     ASSERT_GT(after_flush_trm, before_flush_trm);
   }
 }
@@ -230,15 +230,15 @@ void GetExpectedTableProperties(TableProperties* expected_tp,
   expected_tp->raw_value_size = kKeyCount * kValueSize;
   expected_tp->num_entries = kKeyCount;
   expected_tp->num_data_blocks =
-      kTableCount *
-      (kKeysPerTable * (kKeySize - kEncodingSavePerKey + kValueSize)) /
-      kBlockSize;
+    kTableCount *
+    (kKeysPerTable * (kKeySize - kEncodingSavePerKey + kValueSize)) /
+    kBlockSize;
   expected_tp->data_size =
-      kTableCount * (kKeysPerTable * (kKeySize + 8 + kValueSize));
+    kTableCount * (kKeysPerTable * (kKeySize + 8 + kValueSize));
   expected_tp->index_size =
-      expected_tp->num_data_blocks * (kAvgSuccessorSize + 12);
+    expected_tp->num_data_blocks * (kAvgSuccessorSize + 12);
   expected_tp->filter_size =
-      kTableCount * (kKeysPerTable * kBloomBitsPerKey / 8);
+    kTableCount * (kKeysPerTable * kBloomBitsPerKey / 8);
 }
 }  // anonymous namespace
 
@@ -443,8 +443,8 @@ TEST_F(DBPropertiesTest, AggregatedTablePropertiesAtLevel) {
     ResetTableProperties(&sum_tp);
     for (int level = 0; level < kMaxLevel; ++level) {
       db_->GetProperty(
-          DB::Properties::kAggregatedTablePropertiesAtLevel + ToString(level),
-          &level_tp_strings[level]);
+        DB::Properties::kAggregatedTablePropertiesAtLevel + ToString(level),
+        &level_tp_strings[level]);
       ParseTablePropertiesString(level_tp_strings[level], &level_tps[level]);
       sum_tp.data_size += level_tps[level].data_size;
       sum_tp.index_size += level_tps[level].index_size;
@@ -495,10 +495,10 @@ TEST_F(DBPropertiesTest, NumImmutableMemTable) {
                                       "vidardb.num-immutable-mem-table", &num));
     ASSERT_EQ(num, "0");
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], DB::Properties::kNumImmutableMemTableFlushed, &num));
+                  handles_[1], DB::Properties::kNumImmutableMemTableFlushed, &num));
     ASSERT_EQ(num, "0");
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], "vidardb.num-entries-active-mem-table", &num));
+                  handles_[1], "vidardb.num-entries-active-mem-table", &num));
     ASSERT_EQ(num, "1");
     perf_context.Reset();
     Get(1, "k1");
@@ -509,10 +509,10 @@ TEST_F(DBPropertiesTest, NumImmutableMemTable) {
                                       "vidardb.num-immutable-mem-table", &num));
     ASSERT_EQ(num, "1");
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], "vidardb.num-entries-active-mem-table", &num));
+                  handles_[1], "vidardb.num-entries-active-mem-table", &num));
     ASSERT_EQ(num, "1");
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], "vidardb.num-entries-imm-mem-tables", &num));
+                  handles_[1], "vidardb.num-entries-imm-mem-tables", &num));
     ASSERT_EQ(num, "1");
 
     perf_context.Reset();
@@ -524,15 +524,15 @@ TEST_F(DBPropertiesTest, NumImmutableMemTable) {
 
     ASSERT_OK(dbfull()->Put(writeOpt, handles_[1], "k3", big_value));
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], "vidardb.cur-size-active-mem-table", &num));
+                  handles_[1], "vidardb.cur-size-active-mem-table", &num));
     ASSERT_TRUE(dbfull()->GetProperty(handles_[1],
                                       "vidardb.num-immutable-mem-table", &num));
     ASSERT_EQ(num, "2");
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], "vidardb.num-entries-active-mem-table", &num));
+                  handles_[1], "vidardb.num-entries-active-mem-table", &num));
     ASSERT_EQ(num, "1");
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], "vidardb.num-entries-imm-mem-tables", &num));
+                  handles_[1], "vidardb.num-entries-imm-mem-tables", &num));
     ASSERT_EQ(num, "2");
     perf_context.Reset();
     Get(1, "k2");
@@ -549,10 +549,10 @@ TEST_F(DBPropertiesTest, NumImmutableMemTable) {
                                       "vidardb.num-immutable-mem-table", &num));
     ASSERT_EQ(num, "0");
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], DB::Properties::kNumImmutableMemTableFlushed, &num));
+                  handles_[1], DB::Properties::kNumImmutableMemTableFlushed, &num));
     ASSERT_EQ(num, "3");
     ASSERT_TRUE(dbfull()->GetProperty(
-        handles_[1], "vidardb.cur-size-active-mem-table", &num));
+                  handles_[1], "vidardb.cur-size-active-mem-table", &num));
     // "192" is the size of the metadata of an empty skiplist, this would
     // break if we change the default skiplist implementation
     ASSERT_EQ(num, "192");
@@ -560,29 +560,29 @@ TEST_F(DBPropertiesTest, NumImmutableMemTable) {
     uint64_t int_num;
     uint64_t base_total_size;
     ASSERT_TRUE(dbfull()->GetIntProperty(
-        handles_[1], "vidardb.estimate-num-keys", &base_total_size));
+                  handles_[1], "vidardb.estimate-num-keys", &base_total_size));
 
     ASSERT_OK(dbfull()->Delete(writeOpt, handles_[1], "k2"));
     ASSERT_OK(dbfull()->Put(writeOpt, handles_[1], "k3", ""));
     ASSERT_OK(dbfull()->Delete(writeOpt, handles_[1], "k3"));
     ASSERT_TRUE(dbfull()->GetIntProperty(
-        handles_[1], "vidardb.num-deletes-active-mem-table", &int_num));
+                  handles_[1], "vidardb.num-deletes-active-mem-table", &int_num));
     ASSERT_EQ(int_num, 2U);
     ASSERT_TRUE(dbfull()->GetIntProperty(
-        handles_[1], "vidardb.num-entries-active-mem-table", &int_num));
+                  handles_[1], "vidardb.num-entries-active-mem-table", &int_num));
     ASSERT_EQ(int_num, 3U);
 
     ASSERT_OK(dbfull()->Put(writeOpt, handles_[1], "k2", big_value));
     ASSERT_OK(dbfull()->Put(writeOpt, handles_[1], "k2", big_value));
     ASSERT_TRUE(dbfull()->GetIntProperty(
-        handles_[1], "vidardb.num-entries-imm-mem-tables", &int_num));
+                  handles_[1], "vidardb.num-entries-imm-mem-tables", &int_num));
     ASSERT_EQ(int_num, 4U);
     ASSERT_TRUE(dbfull()->GetIntProperty(
-        handles_[1], "vidardb.num-deletes-imm-mem-tables", &int_num));
+                  handles_[1], "vidardb.num-deletes-imm-mem-tables", &int_num));
     ASSERT_EQ(int_num, 2U);
 
     ASSERT_TRUE(dbfull()->GetIntProperty(
-        handles_[1], "vidardb.estimate-num-keys", &int_num));
+                  handles_[1], "vidardb.estimate-num-keys", &int_num));
     ASSERT_EQ(int_num, base_total_size + 1);
 
     SetPerfLevel(kDisable);
@@ -621,10 +621,10 @@ TEST_F(DBPropertiesTest, GetProperty) {
   SetPerfLevel(kEnableTime);
 
   ASSERT_TRUE(
-      dbfull()->GetIntProperty("vidardb.estimate-table-readers-mem", &int_num));
+    dbfull()->GetIntProperty("vidardb.estimate-table-readers-mem", &int_num));
   ASSERT_EQ(int_num, 0U);
   ASSERT_TRUE(
-      dbfull()->GetIntProperty("vidardb.estimate-live-data-size", &int_num));
+    dbfull()->GetIntProperty("vidardb.estimate-live-data-size", &int_num));
   ASSERT_EQ(int_num, 0U);
 
   ASSERT_OK(dbfull()->Put(writeOpt, "k1", big_value));
@@ -653,10 +653,10 @@ TEST_F(DBPropertiesTest, GetProperty) {
   ASSERT_EQ(num, "2");
   // Verify the same set of properties through GetIntProperty
   ASSERT_TRUE(
-      dbfull()->GetIntProperty("vidardb.num-immutable-mem-table", &int_num));
+    dbfull()->GetIntProperty("vidardb.num-immutable-mem-table", &int_num));
   ASSERT_EQ(int_num, 2U);
   ASSERT_TRUE(
-      dbfull()->GetIntProperty("vidardb.mem-table-flush-pending", &int_num));
+    dbfull()->GetIntProperty("vidardb.mem-table-flush-pending", &int_num));
   ASSERT_EQ(int_num, 1U);
   ASSERT_TRUE(dbfull()->GetIntProperty("vidardb.compaction-pending", &int_num));
   ASSERT_EQ(int_num, 0U);
@@ -664,7 +664,7 @@ TEST_F(DBPropertiesTest, GetProperty) {
   ASSERT_EQ(int_num, 2U);
 
   ASSERT_TRUE(
-      dbfull()->GetIntProperty("vidardb.estimate-table-readers-mem", &int_num));
+    dbfull()->GetIntProperty("vidardb.estimate-table-readers-mem", &int_num));
   ASSERT_EQ(int_num, 0U);
 
   sleeping_task_high.WakeUp();
@@ -682,7 +682,7 @@ TEST_F(DBPropertiesTest, GetProperty) {
   ASSERT_EQ(num, "4");
 
   ASSERT_TRUE(
-      dbfull()->GetIntProperty("vidardb.estimate-table-readers-mem", &int_num));
+    dbfull()->GetIntProperty("vidardb.estimate-table-readers-mem", &int_num));
   ASSERT_GT(int_num, 0U);
 
   sleeping_task_low.WakeUp();
@@ -696,7 +696,7 @@ TEST_F(DBPropertiesTest, GetProperty) {
   Reopen(options);
   // After reopening, no table reader is loaded, so no memory for table readers
   ASSERT_TRUE(
-      dbfull()->GetIntProperty("vidardb.estimate-table-readers-mem", &int_num));
+    dbfull()->GetIntProperty("vidardb.estimate-table-readers-mem", &int_num));
   ASSERT_EQ(int_num, 0U);  // (A)
   ASSERT_TRUE(dbfull()->GetIntProperty("vidardb.estimate-num-keys", &int_num));
   ASSERT_GT(int_num, 0U);
@@ -704,7 +704,7 @@ TEST_F(DBPropertiesTest, GetProperty) {
   // After reading a key, at least one table reader is loaded.
   Get("k5");
   ASSERT_TRUE(
-      dbfull()->GetIntProperty("vidardb.estimate-table-readers-mem", &int_num));
+    dbfull()->GetIntProperty("vidardb.estimate-table-readers-mem", &int_num));
   ASSERT_GT(int_num, 0U);
 
   // Test vidardb.num-live-versions
@@ -712,7 +712,7 @@ TEST_F(DBPropertiesTest, GetProperty) {
     options.level0_file_num_compaction_trigger = 20;
     Reopen(options);
     ASSERT_TRUE(
-        dbfull()->GetIntProperty("vidardb.num-live-versions", &int_num));
+      dbfull()->GetIntProperty("vidardb.num-live-versions", &int_num));
     ASSERT_EQ(int_num, 1U);
 
     // Use an iterator to hold current version
@@ -721,7 +721,7 @@ TEST_F(DBPropertiesTest, GetProperty) {
     ASSERT_OK(dbfull()->Put(writeOpt, "k6", big_value));
     Flush();
     ASSERT_TRUE(
-        dbfull()->GetIntProperty("vidardb.num-live-versions", &int_num));
+      dbfull()->GetIntProperty("vidardb.num-live-versions", &int_num));
     ASSERT_EQ(int_num, 2U);
 
     // Use an iterator to hold current version
@@ -730,17 +730,17 @@ TEST_F(DBPropertiesTest, GetProperty) {
     ASSERT_OK(dbfull()->Put(writeOpt, "k7", big_value));
     Flush();
     ASSERT_TRUE(
-        dbfull()->GetIntProperty("vidardb.num-live-versions", &int_num));
+      dbfull()->GetIntProperty("vidardb.num-live-versions", &int_num));
     ASSERT_EQ(int_num, 3U);
 
     iter2.reset();
     ASSERT_TRUE(
-        dbfull()->GetIntProperty("vidardb.num-live-versions", &int_num));
+      dbfull()->GetIntProperty("vidardb.num-live-versions", &int_num));
     ASSERT_EQ(int_num, 2U);
 
     iter1.reset();
     ASSERT_TRUE(
-        dbfull()->GetIntProperty("vidardb.num-live-versions", &int_num));
+      dbfull()->GetIntProperty("vidardb.num-live-versions", &int_num));
     ASSERT_EQ(int_num, 1U);
   }
 }
@@ -872,19 +872,19 @@ TEST_F(DBPropertiesTest, EstimatePendingCompBytes) {
   ASSERT_OK(dbfull()->Put(writeOpt, "k1", big_value));
   Flush();
   ASSERT_TRUE(dbfull()->GetIntProperty(
-      "vidardb.estimate-pending-compaction-bytes", &int_num));
+                "vidardb.estimate-pending-compaction-bytes", &int_num));
   ASSERT_EQ(int_num, 0U);
 
   ASSERT_OK(dbfull()->Put(writeOpt, "k2", big_value));
   Flush();
   ASSERT_TRUE(dbfull()->GetIntProperty(
-      "vidardb.estimate-pending-compaction-bytes", &int_num));
+                "vidardb.estimate-pending-compaction-bytes", &int_num));
   ASSERT_EQ(int_num, 0U);
 
   ASSERT_OK(dbfull()->Put(writeOpt, "k3", big_value));
   Flush();
   ASSERT_TRUE(dbfull()->GetIntProperty(
-      "vidardb.estimate-pending-compaction-bytes", &int_num));
+                "vidardb.estimate-pending-compaction-bytes", &int_num));
   ASSERT_GT(int_num, 0U);
 
   sleeping_task_low.WakeUp();
@@ -892,7 +892,7 @@ TEST_F(DBPropertiesTest, EstimatePendingCompBytes) {
 
   dbfull()->TEST_WaitForCompact();
   ASSERT_TRUE(dbfull()->GetIntProperty(
-      "vidardb.estimate-pending-compaction-bytes", &int_num));
+                "vidardb.estimate-pending-compaction-bytes", &int_num));
   ASSERT_EQ(int_num, 0U);
 }
 
@@ -941,13 +941,15 @@ TEST_F(DBPropertiesTest, EstimateCompressionRatio) {
 
 class CountingUserTblPropCollector : public TablePropertiesCollector {
  public:
-  const char* Name() const override { return "CountingUserTblPropCollector"; }
+  const char* Name() const override {
+    return "CountingUserTblPropCollector";
+  }
 
   Status Finish(UserCollectedProperties* properties) override {
     std::string encoded;
     PutVarint32(&encoded, count_);
     *properties = UserCollectedProperties{
-        {"CountingUserTblPropCollector", message_}, {"Count", encoded},
+      {"CountingUserTblPropCollector", message_}, {"Count", encoded},
     };
     return Status::OK();
   }
@@ -968,14 +970,14 @@ class CountingUserTblPropCollector : public TablePropertiesCollector {
 };
 
 class CountingUserTblPropCollectorFactory
-    : public TablePropertiesCollectorFactory {
+  : public TablePropertiesCollectorFactory {
  public:
   explicit CountingUserTblPropCollectorFactory(
-      uint32_t expected_column_family_id)
-      : expected_column_family_id_(expected_column_family_id),
-        num_created_(0) {}
+    uint32_t expected_column_family_id)
+    : expected_column_family_id_(expected_column_family_id),
+      num_created_(0) {}
   virtual TablePropertiesCollector* CreateTablePropertiesCollector(
-      TablePropertiesCollectorFactory::Context context) override {
+    TablePropertiesCollectorFactory::Context context) override {
     EXPECT_EQ(expected_column_family_id_, context.column_family_id);
     num_created_++;
     return new CountingUserTblPropCollector();
@@ -992,7 +994,9 @@ class CountingUserTblPropCollectorFactory
 
 class CountingDeleteTabPropCollector : public TablePropertiesCollector {
  public:
-  const char* Name() const override { return "CountingDeleteTabPropCollector"; }
+  const char* Name() const override {
+    return "CountingDeleteTabPropCollector";
+  }
 
   Status AddUserKey(const Slice& user_key, const Slice& value, EntryType type,
                     SequenceNumber seq, uint64_t file_size) override {
@@ -1002,7 +1006,9 @@ class CountingDeleteTabPropCollector : public TablePropertiesCollector {
     return Status::OK();
   }
 
-  bool NeedCompact() const override { return num_deletes_ > 10; }
+  bool NeedCompact() const override {
+    return num_deletes_ > 10;
+  }
 
   UserCollectedProperties GetReadableProperties() const override {
     return UserCollectedProperties{};
@@ -1010,7 +1016,7 @@ class CountingDeleteTabPropCollector : public TablePropertiesCollector {
 
   Status Finish(UserCollectedProperties* properties) override {
     *properties =
-        UserCollectedProperties{{"num_delete", ToString(num_deletes_)}};
+    UserCollectedProperties{{"num_delete", ToString(num_deletes_)}};
     return Status::OK();
   }
 
@@ -1019,10 +1025,10 @@ class CountingDeleteTabPropCollector : public TablePropertiesCollector {
 };
 
 class CountingDeleteTabPropCollectorFactory
-    : public TablePropertiesCollectorFactory {
+  : public TablePropertiesCollectorFactory {
  public:
   virtual TablePropertiesCollector* CreateTablePropertiesCollector(
-      TablePropertiesCollectorFactory::Context context) override {
+    TablePropertiesCollectorFactory::Context context) override {
     return new CountingDeleteTabPropCollector();
   }
   const char* Name() const override {
@@ -1037,7 +1043,7 @@ TEST_F(DBPropertiesTest, GetUserDefinedTableProperties) {
   options.max_background_flushes = 0;
   options.table_properties_collector_factories.resize(1);
   std::shared_ptr<CountingUserTblPropCollectorFactory> collector_factory =
-      std::make_shared<CountingUserTblPropCollectorFactory>(0);
+    std::make_shared<CountingUserTblPropCollectorFactory>(0);
   options.table_properties_collector_factories[0] = collector_factory;
   Reopen(options);
   // Create 4 tables
@@ -1078,9 +1084,9 @@ TEST_F(DBPropertiesTest, UserDefinedTablePropertiesContext) {
   options.max_background_flushes = 0;
   options.table_properties_collector_factories.resize(1);
   std::shared_ptr<CountingUserTblPropCollectorFactory> collector_factory =
-      std::make_shared<CountingUserTblPropCollectorFactory>(1);
+    std::make_shared<CountingUserTblPropCollectorFactory>(1);
   options.table_properties_collector_factories[0] = collector_factory,
-  CreateAndReopenWithCF({"pikachu"}, options);
+      CreateAndReopenWithCF({"pikachu"}, options);
   // Create 2 files
   for (int table = 0; table < 2; ++table) {
     for (int i = 0; i < 10 + table; ++i) {
@@ -1151,7 +1157,7 @@ TEST_F(DBPropertiesTest, TablePropertiesNeedCompactTest) {
   options.num_levels = 8;
 
   std::shared_ptr<TablePropertiesCollectorFactory> collector_factory =
-      std::make_shared<CountingDeleteTabPropCollectorFactory>();
+    std::make_shared<CountingDeleteTabPropCollectorFactory>();
   options.table_properties_collector_factories.resize(1);
   options.table_properties_collector_factories[0] = collector_factory;
 
@@ -1222,7 +1228,7 @@ TEST_F(DBPropertiesTest, NeedCompactHintPersistentTest) {
   options.disable_auto_compactions = true;
 
   std::shared_ptr<TablePropertiesCollectorFactory> collector_factory =
-      std::make_shared<CountingDeleteTabPropCollectorFactory>();
+    std::make_shared<CountingDeleteTabPropCollectorFactory>();
   options.table_properties_collector_factories.resize(1);
   options.table_properties_collector_factories[0] = collector_factory;
 

@@ -36,14 +36,14 @@ uint64_t MultiplyCheckOverflow(uint64_t op1, int op2) {
 }
 
 void MutableCFOptions::RefreshDerivedOptions(
-    const ImmutableCFOptions& ioptions) {
+  const ImmutableCFOptions& ioptions) {
   max_file_size.resize(ioptions.num_levels);
   for (int i = 0; i < ioptions.num_levels; ++i) {
     if (i == 0 && ioptions.compaction_style == kCompactionStyleUniversal) {
       max_file_size[i] = ULLONG_MAX;
     } else if (i > 1) {
       max_file_size[i] = MultiplyCheckOverflow(max_file_size[i - 1],
-                                               target_file_size_multiplier);
+                         target_file_size_multiplier);
     } else {
       max_file_size[i] = target_file_size_base;
     }

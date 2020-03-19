@@ -20,10 +20,10 @@ namespace log {
 
 Writer::Writer(unique_ptr<WritableFileWriter>&& dest,
                uint64_t log_number, bool recycle_log_files)
-    : dest_(std::move(dest)),
-      block_offset_(0),
-      log_number_(log_number),
-      recycle_log_files_(recycle_log_files) {
+  : dest_(std::move(dest)),
+    block_offset_(0),
+    log_number_(log_number),
+    recycle_log_files_(recycle_log_files) {
   for (int i = 0; i <= kMaxRecordType; i++) {
     char t = static_cast<char>(i);
     type_crc_[i] = crc32c::Value(&t, 1);
@@ -39,7 +39,7 @@ Status Writer::AddRecord(const Slice& slice) {
 
   // Header size varies depending on whether we are recycling or not.
   const int header_size =
-      recycle_log_files_ ? kRecyclableHeaderSize : kHeaderSize;
+    recycle_log_files_ ? kRecyclableHeaderSize : kHeaderSize;
 
   // Fragment the record if necessary and emit it.  Note that if slice
   // is empty, we still want to iterate once to emit a single
@@ -56,7 +56,7 @@ Status Writer::AddRecord(const Slice& slice) {
         // kRecyclableHeaderSize being <= 11)
         assert(header_size <= 11);
         dest_->Append(
-            Slice("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", leftover));
+          Slice("\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00", leftover));
       }
       block_offset_ = 0;
     }

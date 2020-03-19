@@ -61,7 +61,7 @@ TEST_F(DBSSTTest, DontDeleteMovedFile) {
   options.create_if_missing = true;
   options.max_bytes_for_level_base = 1024 * 1024;  // 1 MB
   options.level0_file_num_compaction_trigger =
-      2;  // trigger compaction when we have 2 files
+    2;  // trigger compaction when we have 2 files
   DestroyAndReopen(options);
 
   Random rnd(301);
@@ -103,7 +103,7 @@ TEST_F(DBSSTTest, DeleteObsoleteFilesPendingOutputs) {
   options.write_buffer_size = 2 * 1024 * 1024;     // 2 MB
   options.max_bytes_for_level_base = 1024 * 1024;  // 1 MB
   options.level0_file_num_compaction_trigger =
-      2;  // trigger compaction when we have 2 files
+    2;  // trigger compaction when we have 2 files
   options.max_background_flushes = 2;
   options.max_background_compactions = 2;
 
@@ -189,11 +189,17 @@ TEST_F(DBSSTTest, DBWithSstFileManager) {
   int files_deleted = 0;
   int files_moved = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "SstFileManagerImpl::OnAddFile", [&](void* arg) { files_added++; });
+  "SstFileManagerImpl::OnAddFile", [&](void* arg) {
+    files_added++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "SstFileManagerImpl::OnDeleteFile", [&](void* arg) { files_deleted++; });
+  "SstFileManagerImpl::OnDeleteFile", [&](void* arg) {
+    files_deleted++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "SstFileManagerImpl::OnMoveFile", [&](void* arg) { files_moved++; });
+  "SstFileManagerImpl::OnMoveFile", [&](void* arg) {
+    files_moved++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Options options = CurrentOptions();
@@ -249,14 +255,18 @@ TEST_F(DBSSTTest, DBWithSstFileManager) {
 TEST_F(DBSSTTest, RateLimitedDelete) {
   Destroy(last_options_);
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      {"DBSSTTest::RateLimitedDelete:1",
-       "DeleteScheduler::BackgroundEmptyTrash"},
+    {
+      "DBSSTTest::RateLimitedDelete:1",
+      "DeleteScheduler::BackgroundEmptyTrash"
+    },
   });
 
   std::vector<uint64_t> penalties;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DeleteScheduler::BackgroundEmptyTrash:Wait",
-      [&](void* arg) { penalties.push_back(*(static_cast<int*>(arg))); });
+    "DeleteScheduler::BackgroundEmptyTrash:Wait",
+  [&](void* arg) {
+    penalties.push_back(*(static_cast<int*>(arg)));
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Options options = CurrentOptions();
@@ -267,7 +277,7 @@ TEST_F(DBSSTTest, RateLimitedDelete) {
   int64_t rate_bytes_per_sec = 1024 * 10;  // 10 Kbs / Sec
   Status s;
   options.sst_file_manager.reset(NewSstFileManager(
-      env_, nullptr, trash_dir, rate_bytes_per_sec, false, &s));
+                                   env_, nullptr, trash_dir, rate_bytes_per_sec, false, &s));
   ASSERT_OK(s);
   auto sfm = static_cast<SstFileManagerImpl*>(options.sst_file_manager.get());
 
@@ -317,8 +327,10 @@ TEST_F(DBSSTTest, RateLimitedDelete) {
 TEST_F(DBSSTTest, DeleteSchedulerMultipleDBPaths) {
   int bg_delete_file = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DeleteScheduler::DeleteTrashFile:DeleteFile",
-      [&](void* arg) { bg_delete_file++; });
+    "DeleteScheduler::DeleteTrashFile:DeleteFile",
+  [&](void* arg) {
+    bg_delete_file++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Options options = CurrentOptions();
@@ -331,7 +343,7 @@ TEST_F(DBSSTTest, DeleteSchedulerMultipleDBPaths) {
   int64_t rate_bytes_per_sec = 1024 * 1024;  // 1 Mb / Sec
   Status s;
   options.sst_file_manager.reset(NewSstFileManager(
-      env_, nullptr, trash_dir, rate_bytes_per_sec, false, &s));
+                                   env_, nullptr, trash_dir, rate_bytes_per_sec, false, &s));
   ASSERT_OK(s);
   auto sfm = static_cast<SstFileManagerImpl*>(options.sst_file_manager.get());
 
@@ -371,7 +383,7 @@ TEST_F(DBSSTTest, DeleteSchedulerMultipleDBPaths) {
   ASSERT_EQ(bg_delete_file, 8);
 
   compact_options.bottommost_level_compaction =
-      BottommostLevelCompaction::kForce;
+    BottommostLevelCompaction::kForce;
   ASSERT_OK(db_->CompactRange(compact_options, nullptr, nullptr));
   ASSERT_EQ("0,1", FilesPerLevel(0));
 
@@ -384,8 +396,10 @@ TEST_F(DBSSTTest, DeleteSchedulerMultipleDBPaths) {
 TEST_F(DBSSTTest, DestroyDBWithRateLimitedDelete) {
   int bg_delete_file = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DeleteScheduler::DeleteTrashFile:DeleteFile",
-      [&](void* arg) { bg_delete_file++; });
+    "DeleteScheduler::DeleteTrashFile:DeleteFile",
+  [&](void* arg) {
+    bg_delete_file++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Options options = CurrentOptions();
@@ -407,7 +421,7 @@ TEST_F(DBSSTTest, DestroyDBWithRateLimitedDelete) {
   int64_t rate_bytes_per_sec = 1024 * 1024;  // 1 Mb / Sec
   Status s;
   options.sst_file_manager.reset(NewSstFileManager(
-      env_, nullptr, trash_dir, rate_bytes_per_sec, false, &s));
+                                   env_, nullptr, trash_dir, rate_bytes_per_sec, false, &s));
   ASSERT_OK(s);
   ASSERT_OK(DestroyDB(dbname_, options));
 
@@ -461,20 +475,20 @@ TEST_F(DBSSTTest, DBWithMaxSpaceAllowedRandomized) {
   int reached_max_space_on_flush = 0;
   int reached_max_space_on_compaction = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::FlushMemTableToOutputFile:MaxAllowedSpaceReached",
-      [&](void* arg) {
-        bg_error_set = true;
-        GetAllSSTFiles(&total_sst_files_size);
-        reached_max_space_on_flush++;
-      });
+    "DBImpl::FlushMemTableToOutputFile:MaxAllowedSpaceReached",
+  [&](void* arg) {
+    bg_error_set = true;
+    GetAllSSTFiles(&total_sst_files_size);
+    reached_max_space_on_flush++;
+  });
 
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "CompactionJob::FinishCompactionOutputFile:MaxAllowedSpaceReached",
-      [&](void* arg) {
-        bg_error_set = true;
-        GetAllSSTFiles(&total_sst_files_size);
-        reached_max_space_on_compaction++;
-      });
+    "CompactionJob::FinishCompactionOutputFile:MaxAllowedSpaceReached",
+  [&](void* arg) {
+    bg_error_set = true;
+    GetAllSSTFiles(&total_sst_files_size);
+    reached_max_space_on_compaction++;
+  });
 
   for (auto limit_mb : max_space_limits_mbs) {
     bg_error_set = false;
@@ -953,13 +967,13 @@ TEST_F(DBSSTTest, AddExternalSstFilePurgeObsoleteFilesBug) {
   DestroyAndReopen(options);
 
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::AddFile:FileCopied", [&](void* arg) {
-        ASSERT_OK(Put("aaa", "bbb"));
-        ASSERT_OK(Flush());
-        ASSERT_OK(Put("aaa", "xxx"));
-        ASSERT_OK(Flush());
-        db_->CompactRange(CompactRangeOptions(), nullptr, nullptr);
-      });
+  "DBImpl::AddFile:FileCopied", [&](void* arg) {
+    ASSERT_OK(Put("aaa", "bbb"));
+    ASSERT_OK(Flush());
+    ASSERT_OK(Put("aaa", "xxx"));
+    ASSERT_OK(Flush());
+    db_->CompactRange(CompactRangeOptions(), nullptr, nullptr);
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   s = db_->AddFile(sst_file_path);
@@ -1226,11 +1240,11 @@ TEST_F(DBSSTTest, AddExternalSstFileOverlappingRanges) {
     }
 
     printf(
-        "Total: %zu ranges\n"
-        "AddFile()|Success: %d ranges\n"
-        "AddFile()|RangeConflict: %d ranges\n"
-        "Put(): %d ranges\n",
-        key_ranges.size(), success_add_file, failed_add_file, memtable_add);
+      "Total: %zu ranges\n"
+      "AddFile()|Success: %d ranges\n"
+      "AddFile()|RangeConflict: %d ranges\n"
+      "Put(): %d ranges\n",
+      key_ranges.size(), success_add_file, failed_add_file, memtable_add);
 
     // Verify the correctness of the data
     for (const auto& kv : true_data) {

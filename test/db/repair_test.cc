@@ -24,12 +24,12 @@ class RepairTest : public DBTestBase {
     std::vector<std::string> files;
     db_->GetLiveFiles(files, &manifest_size);
     auto sst_iter =
-        std::find_if(files.begin(), files.end(), [](const std::string& file) {
-          uint64_t number;
-          FileType type;
-          bool ok = ParseFileName(file, &number, &type);
-          return ok && type == kTableFile;
-        });
+    std::find_if(files.begin(), files.end(), [](const std::string& file) {
+      uint64_t number;
+      FileType type;
+      bool ok = ParseFileName(file, &number, &type);
+      return ok && type == kTableFile;
+    });
     return sst_iter == files.end() ? "" : dbname_ + *sst_iter;
   }
 };
@@ -44,7 +44,7 @@ TEST_F(RepairTest, LostManifest) {
   // Need to get path before Close() deletes db_, but delete it after Close() to
   // ensure Close() didn't change the manifest.
   std::string manifest_path =
-      DescriptorFileName(dbname_, dbfull()->TEST_Current_Manifest_FileNo());
+    DescriptorFileName(dbname_, dbfull()->TEST_Current_Manifest_FileNo());
 
   Close();
   ASSERT_OK(env_->FileExists(manifest_path));
@@ -65,7 +65,7 @@ TEST_F(RepairTest, CorruptManifest) {
   // Need to get path before Close() deletes db_, but overwrite it after Close()
   // to ensure Close() didn't change the manifest.
   std::string manifest_path =
-      DescriptorFileName(dbname_, dbfull()->TEST_Current_Manifest_FileNo());
+    DescriptorFileName(dbname_, dbfull()->TEST_Current_Manifest_FileNo());
 
   Close();
   ASSERT_OK(env_->FileExists(manifest_path));
@@ -83,14 +83,14 @@ TEST_F(RepairTest, IncompleteManifest) {
   Put("key", "val");
   Flush();
   std::string orig_manifest_path =
-      DescriptorFileName(dbname_, dbfull()->TEST_Current_Manifest_FileNo());
+    DescriptorFileName(dbname_, dbfull()->TEST_Current_Manifest_FileNo());
   CopyFile(orig_manifest_path, orig_manifest_path + ".tmp");
   Put("key2", "val2");
   Flush();
   // Need to get path before Close() deletes db_, but overwrite it after Close()
   // to ensure Close() didn't change the manifest.
   std::string new_manifest_path =
-      DescriptorFileName(dbname_, dbfull()->TEST_Current_Manifest_FileNo());
+    DescriptorFileName(dbname_, dbfull()->TEST_Current_Manifest_FileNo());
 
   Close();
   ASSERT_OK(env_->FileExists(new_manifest_path));
@@ -154,7 +154,7 @@ TEST_F(RepairTest, UnflushedSst) {
   // Need to get path before Close() deletes db_, but delete it after Close() to
   // ensure Close() didn't change the manifest.
   std::string manifest_path =
-      DescriptorFileName(dbname_, dbfull()->TEST_Current_Manifest_FileNo());
+    DescriptorFileName(dbname_, dbfull()->TEST_Current_Manifest_FileNo());
 
   Close();
   ASSERT_OK(env_->FileExists(manifest_path));

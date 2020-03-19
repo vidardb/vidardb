@@ -20,7 +20,7 @@ Status AutoRollLogger::ResetLogger() {
 
   if (logger_->GetLogFileSize() == Logger::kDoNotSupportGetLogFileSize) {
     status_ = Status::NotSupported(
-        "The underlying logger doesn't support GetLogFileSize()");
+                "The underlying logger doesn't support GetLogFileSize()");
   }
   if (status_.ok()) {
     cached_now = static_cast<uint64_t>(env_->NowMicros() * 1e-6);
@@ -39,14 +39,14 @@ void AutoRollLogger::RollLogFile() {
   std::string old_fname;
   do {
     old_fname = OldInfoLogFileName(
-      dbname_, now, db_absolute_path_, db_log_dir_);
+                  dbname_, now, db_absolute_path_, db_log_dir_);
     now++;
   } while (env_->FileExists(old_fname).ok());
   env_->RenameFile(log_fname_, old_fname);
 }
 
 std::string AutoRollLogger::ValistToString(const char* format,
-                                           va_list args) const {
+    va_list args) const {
   // Any log messages longer than 1024 will get truncated.
   // The user is responsible for chopping longer messages into multi line log
   static const int MAXBUFFERSIZE = 1024;
@@ -143,14 +143,14 @@ Status CreateLoggerFromOptions(const std::string& dbname,
   std::string db_absolute_path;
   env->GetAbsolutePath(dbname, &db_absolute_path);
   std::string fname =
-      InfoLogFileName(dbname, db_absolute_path, options.db_log_dir);
+    InfoLogFileName(dbname, db_absolute_path, options.db_log_dir);
 
   env->CreateDirIfMissing(dbname);  // In case it does not exist
   // Currently we only support roll by time-to-roll and log size
   if (options.log_file_time_to_roll > 0 || options.max_log_file_size > 0) {
     AutoRollLogger* result = new AutoRollLogger(
-        env, dbname, options.db_log_dir, options.max_log_file_size,
-        options.log_file_time_to_roll, options.info_log_level);
+      env, dbname, options.db_log_dir, options.max_log_file_size,
+      options.log_file_time_to_roll, options.info_log_level);
     Status s = result->GetStatus();
     if (!s.ok()) {
       delete result;
@@ -161,8 +161,8 @@ Status CreateLoggerFromOptions(const std::string& dbname,
   } else {
     // Open a log file in the same directory as the db
     env->RenameFile(
-        fname, OldInfoLogFileName(dbname, env->NowMicros(), db_absolute_path,
-                                  options.db_log_dir));
+      fname, OldInfoLogFileName(dbname, env->NowMicros(), db_absolute_path,
+                                options.db_log_dir));
     auto s = env->NewLogger(fname, logger);
     if (logger->get() != nullptr) {
       (*logger)->SetInfoLogLevel(options.info_log_level);

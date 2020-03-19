@@ -31,7 +31,9 @@ class MutexLock {
   explicit MutexLock(port::Mutex *mu) : mu_(mu) {
     this->mu_->Lock();
   }
-  ~MutexLock() { this->mu_->Unlock(); }
+  ~MutexLock() {
+    this->mu_->Unlock();
+  }
 
  private:
   port::Mutex *const mu_;
@@ -50,7 +52,9 @@ class ReadLock {
   explicit ReadLock(port::RWMutex *mu) : mu_(mu) {
     this->mu_->ReadLock();
   }
-  ~ReadLock() { this->mu_->ReadUnlock(); }
+  ~ReadLock() {
+    this->mu_->ReadUnlock();
+  }
 
  private:
   port::RWMutex *const mu_;
@@ -70,7 +74,9 @@ class WriteLock {
   explicit WriteLock(port::RWMutex *mu) : mu_(mu) {
     this->mu_->WriteLock();
   }
-  ~WriteLock() { this->mu_->WriteUnlock(); }
+  ~WriteLock() {
+    this->mu_->WriteUnlock();
+  }
 
  private:
   port::RWMutex *const mu_;
@@ -108,7 +114,9 @@ class SpinMutex {
     }
   }
 
-  void unlock() { locked_.store(false, std::memory_order_release); }
+  void unlock() {
+    locked_.store(false, std::memory_order_release);
+  }
 
  private:
   std::atomic<bool> locked_;

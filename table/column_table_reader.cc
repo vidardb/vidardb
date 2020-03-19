@@ -129,7 +129,7 @@ Cache::Handle* GetEntryFromCache(Cache* block_cache, const Slice& key,
 class ColumnTable::IndexReader {
  public:
   explicit IndexReader(const Comparator* comparator, Statistics* stats)
-      : comparator_(comparator), statistics_(stats) {}
+    : comparator_(comparator), statistics_(stats) {}
 
   virtual ~IndexReader() {}
 
@@ -143,7 +143,9 @@ class ColumnTable::IndexReader {
   // Memory usage of the index block
   virtual size_t usable_size() const = 0;
   // return the statistics pointer
-  virtual Statistics* statistics() const { return statistics_; }
+  virtual Statistics* statistics() const {
+    return statistics_;
+  }
   // Report an approximation of how much memory has been used other than memory
   // that was allocated in block cache.
   virtual size_t ApproximateMemoryUsage() const = 0;
@@ -176,7 +178,7 @@ class BinarySearchIndexReader : public IndexReader {
 
     if (s.ok()) {
       *index_reader = new BinarySearchIndexReader(
-          comparator, std::move(index_block), statistics);
+        comparator, std::move(index_block), statistics);
     }
 
     return s;
@@ -186,7 +188,9 @@ class BinarySearchIndexReader : public IndexReader {
     return index_block_->NewIterator(comparator_, iter);
   }
 
-  virtual size_t size() const override { return index_block_->size(); }
+  virtual size_t size() const override {
+    return index_block_->size();
+  }
   virtual size_t usable_size() const override {
     return index_block_->usable_size();
   }
@@ -200,7 +204,7 @@ class BinarySearchIndexReader : public IndexReader {
   BinarySearchIndexReader(const Comparator* comparator,
                           std::unique_ptr<Block>&& index_block,
                           Statistics* stats)
-      : IndexReader(comparator, stats), index_block_(std::move(index_block)) {
+    : IndexReader(comparator, stats), index_block_(std::move(index_block)) {
     assert(index_block_ != nullptr);
   }
   std::unique_ptr<Block> index_block_;
@@ -226,7 +230,7 @@ void DeleteCachedIndexEntry(const Slice& key, void* value) {
 template <class TValue>
 struct ColumnTable::CachableEntry {
   CachableEntry(TValue* _value, Cache::Handle* _cache_handle)
-      : value(_value), cache_handle(_cache_handle) {}
+    : value(_value), cache_handle(_cache_handle) {}
   CachableEntry() : CachableEntry(nullptr, nullptr) {}
   void Release(Cache* cache) {
     if (cache_handle) {
@@ -235,7 +239,9 @@ struct ColumnTable::CachableEntry {
       cache_handle = nullptr;
     }
   }
-  bool IsSet() const { return cache_handle != nullptr; }
+  bool IsSet() const {
+    return cache_handle != nullptr;
+  }
 
   TValue* value = nullptr;
   // if the entry is from the cache, cache_handle will be populated.
@@ -246,10 +252,10 @@ struct ColumnTable::Rep {
   Rep(const ImmutableCFOptions& _ioptions, const EnvOptions& _env_options,
       const ColumnTableOptions& _table_opt,
       const InternalKeyComparator& _internal_comparator)
-      : ioptions(_ioptions),
-        env_options(_env_options),
-        table_options(_table_opt),
-        internal_comparator(_internal_comparator) {}
+    : ioptions(_ioptions),
+      env_options(_env_options),
+      table_options(_table_opt),
+      internal_comparator(_internal_comparator) {}
 
   const ImmutableCFOptions& ioptions;
   const EnvOptions& env_options;
@@ -286,10 +292,10 @@ Status ColumnTable::ReadMetaBlock(Rep* rep,
                                   std::unique_ptr<InternalIterator>* iter) {
   std::unique_ptr<Block> meta;
   Status s = ReadBlockFromFile(
-      rep->file.get(), rep->footer, ReadOptions(),
-      rep->footer.metaindex_handle(), &meta, rep->ioptions.env,
-      true /* decompress */, Slice() /*compression dict*/,
-      rep->ioptions.info_log);
+               rep->file.get(), rep->footer, ReadOptions(),
+               rep->footer.metaindex_handle(), &meta, rep->ioptions.env,
+               true /* decompress */, Slice() /*compression dict*/,
+               rep->ioptions.info_log);
 
   if (!s.ok()) {
     Log(InfoLogLevel::ERROR_LEVEL, rep->ioptions.info_log,
@@ -325,7 +331,7 @@ void ColumnTable::SetupCacheKeyPrefix(Rep* rep, uint64_t file_size) {
                         &rep->cache_key_prefix[0], &rep->cache_key_prefix_size);
     // Create dummy offset of index reader which is beyond the file size.
     rep->dummy_index_reader_offset =
-        file_size + rep->table_options.block_cache->NewId();
+      file_size + rep->table_options.block_cache->NewId();
   }
 }
 
@@ -337,13 +343,13 @@ Slice ColumnTable::GetCacheKey(const char* cache_key_prefix,
   assert(cache_key_prefix_size <= kMaxCacheKeyPrefixSize);
   memcpy(cache_key, cache_key_prefix, cache_key_prefix_size);
   char* end =
-      EncodeVarint64(cache_key + cache_key_prefix_size, handle.offset());
+    EncodeVarint64(cache_key + cache_key_prefix_size, handle.offset());
   return Slice(cache_key, static_cast<size_t>(end - cache_key));
 }
 
 Status ColumnTable::PutDataBlockToCache(
-    const Slice& block_cache_key, Cache* block_cache, Statistics* statistics,
-    CachableEntry<Block>* block, Block* raw_block) {
+  const Slice& block_cache_key, Cache* block_cache, Statistics* statistics,
+  CachableEntry<Block>* block, Block* raw_block) {
   assert(raw_block->compression_type() == kNoCompression);
   Status s;
   block->value = raw_block;
@@ -361,7 +367,7 @@ Status ColumnTable::PutDataBlockToCache(
       RecordTick(statistics, BLOCK_CACHE_BYTES_WRITE,
                  block->value->usable_size());
       assert(reinterpret_cast<Block*>(
-                 block_cache->Value(block->cache_handle)) == block->value);
+               block_cache->Value(block->cache_handle)) == block->value);
     } else {
       RecordTick(statistics, BLOCK_CACHE_ADD_FAILURES);
       delete block->value;
@@ -373,18 +379,18 @@ Status ColumnTable::PutDataBlockToCache(
 }
 
 Status ColumnTable::GetDataBlockFromCache(
-    const Slice& block_cache_key, Cache* block_cache, Statistics* statistics,
-    ColumnTable::CachableEntry<Block>* block) {
+  const Slice& block_cache_key, Cache* block_cache, Statistics* statistics,
+  ColumnTable::CachableEntry<Block>* block) {
   Status s;
 
   // Lookup uncompressed cache first
   if (block_cache != nullptr) {
     block->cache_handle =
-        GetEntryFromCache(block_cache, block_cache_key, BLOCK_CACHE_DATA_MISS,
-                          BLOCK_CACHE_DATA_HIT, statistics);
+      GetEntryFromCache(block_cache, block_cache_key, BLOCK_CACHE_DATA_MISS,
+                        BLOCK_CACHE_DATA_HIT, statistics);
     if (block->cache_handle != nullptr) {
       block->value =
-          reinterpret_cast<Block*>(block_cache->Value(block->cache_handle));
+        reinterpret_cast<Block*>(block_cache->Value(block->cache_handle));
       return s;
     }
   }
@@ -399,8 +405,8 @@ Status ColumnTable::GetDataBlockFromCache(
 // If input_iter is null, new a iterator
 // If input_iter is not null, update this iter and return it
 InternalIterator* ColumnTable::NewDataBlockIterator(
-    Rep* rep, const ReadOptions& read_options, const Slice& index_value,
-    BlockIter* input_iter) {
+  Rep* rep, const ReadOptions& read_options, const Slice& index_value,
+  BlockIter* input_iter) {
   PERF_TIMER_GUARD(new_table_block_iter_nanos);
 
   BlockHandle handle;
@@ -505,8 +511,8 @@ Status ColumnTable::CreateIndexReader(IndexReader** index_reader) {
 }
 
 InternalIterator* ColumnTable::NewIndexIterator(
-    const ReadOptions& read_options, BlockIter* input_iter,
-    CachableEntry<IndexReader>* index_entry) {
+  const ReadOptions& read_options, BlockIter* input_iter,
+  CachableEntry<IndexReader>* index_entry) {
   // index reader has already been pre-populated.
   if (rep_->index_reader) {
     return rep_->index_reader->NewIterator(input_iter);
@@ -537,7 +543,7 @@ InternalIterator* ColumnTable::NewIndexIterator(
   IndexReader* index_reader = nullptr;
   if (cache_handle != nullptr) {
     index_reader =
-        reinterpret_cast<IndexReader*>(block_cache->Value(cache_handle));
+      reinterpret_cast<IndexReader*>(block_cache->Value(cache_handle));
   } else {
     // Create index reader and put it in the cache.
     Status s = CreateIndexReader(&index_reader);
@@ -579,11 +585,11 @@ InternalIterator* ColumnTable::NewIndexIterator(
 
 Status ColumnTable::DumpIndexBlock(WritableFile* out_file) {
   out_file->Append(
-      "Index Details:\n"
-      "--------------------------------------\n");
+    "Index Details:\n"
+    "--------------------------------------\n");
 
   std::unique_ptr<InternalIterator> blockhandles_iter(
-      NewIndexIterator(ReadOptions()));
+    NewIndexIterator(ReadOptions()));
   Status s = blockhandles_iter->status();
   if (!s.ok()) {
     out_file->Append("Can not read Index Block \n\n");
@@ -625,7 +631,7 @@ Status ColumnTable::DumpIndexBlock(WritableFile* out_file) {
 
 Status ColumnTable::DumpDataBlocks(WritableFile* out_file) {
   std::unique_ptr<InternalIterator> blockhandles_iter(
-      NewIndexIterator(ReadOptions()));
+    NewIndexIterator(ReadOptions()));
   Status s = blockhandles_iter->status();
   if (!s.ok()) {
     out_file->Append("Can not read Index Block \n\n");
@@ -649,7 +655,7 @@ Status ColumnTable::DumpDataBlocks(WritableFile* out_file) {
 
     std::unique_ptr<InternalIterator> datablock_iter;
     datablock_iter.reset(
-        NewDataBlockIterator(rep_, ReadOptions(), blockhandles_iter->value()));
+      NewDataBlockIterator(rep_, ReadOptions(), blockhandles_iter->value()));
     s = datablock_iter->status();
 
     if (!s.ok()) {
@@ -777,7 +783,7 @@ Status ColumnTable::Open(const ImmutableCFOptions& ioptions,
       std::string col_fname = TableSubFileName(fname, i+1);
       unique_ptr<RandomAccessFile> col_file;
       s = rep->ioptions.env->NewRandomAccessFile(col_fname, &col_file,
-                                                 env_options);
+          env_options);
       if (!s.ok()) {
         return s;
       }
@@ -785,7 +791,7 @@ Status ColumnTable::Open(const ImmutableCFOptions& ioptions,
         col_file = NewReadaheadRandomAccessFile(std::move(col_file), readahead);
       }
       unique_ptr<RandomAccessFileReader> file_reader(
-          new RandomAccessFileReader(std::move(col_file), ioptions.env));
+        new RandomAccessFileReader(std::move(col_file), ioptions.env));
       unique_ptr<TableReader> table;
       s = Open(ioptions, env_options, table_options, *(rep->column_comparator),
                std::move(file_reader), file_sizes[i], &table, prefetch_index,
@@ -814,8 +820,8 @@ Status ColumnTable::Open(const ImmutableCFOptions& ioptions,
 
     if (!s.ok()) {
       Log(InfoLogLevel::WARN_LEVEL, rep->ioptions.info_log,
-        "Encountered error while reading data from properties "
-        "block %s", s.ToString().c_str());
+          "Encountered error while reading data from properties "
+          "block %s", s.ToString().c_str());
     } else {
       rep->table_properties.reset(table_properties);
     }
@@ -874,9 +880,9 @@ class ColumnTable::BlockEntryIteratorState : public TwoLevelIteratorState {
  public:
   BlockEntryIteratorState(ColumnTable* table,
                           const ReadOptions& read_options)
-      : TwoLevelIteratorState(),
-        table_(table),
-        read_options_(read_options) {}
+    : TwoLevelIteratorState(),
+      table_(table),
+      read_options_(read_options) {}
 
   InternalIterator* NewSecondaryIterator(const Slice& index_value) override {
     return NewDataBlockIterator(table_->rep_, read_options_, index_value);
@@ -895,8 +901,8 @@ class ColumnTable::ColumnIterator : public InternalIterator {
                  bool has_main_column,
                  const InternalKeyComparator& internal_comparator,
                  uint64_t num_entries = 0)
-  : columns_(columns), splitter_(splitter), has_main_column_(has_main_column),
-    internal_comparator_(internal_comparator), num_entries_(num_entries) {}
+    : columns_(columns), splitter_(splitter), has_main_column_(has_main_column),
+      internal_comparator_(internal_comparator), num_entries_(num_entries) {}
 
   virtual ~ColumnIterator() {
     for (const auto& it : columns_) {
@@ -1000,7 +1006,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     std::string start_sub_key;  // track start sub key
     SequenceNumber sequence_num = range.SequenceNum();
     RangeQueryMeta* meta =
-        static_cast<RangeQueryMeta*>(read_options.range_query_meta);
+      static_cast<RangeQueryMeta*>(read_options.range_query_meta);
 
     // Range query one by one to improve performance
     for (size_t i = 0u; i < columns_.size(); i++) {
@@ -1156,10 +1162,10 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 };
 
 // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
-//       Index 0 means only querying the user keys, and 
+//       Index 0 means only querying the user keys, and
 //       the value column index is from 1 to MAX_COLUMN_INDEX.
 inline static ReadOptions SanitizeColumnReadOptions(
-    uint32_t column_count, const ReadOptions& read_options) {
+  uint32_t column_count, const ReadOptions& read_options) {
   ReadOptions ro = read_options;
   if (ro.columns.empty()) {  // all value columns
     // Let's add index=0 to columns, since it gets filtered by current callers.
@@ -1175,9 +1181,9 @@ inline static ReadOptions SanitizeColumnReadOptions(
 }
 
 InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
-                                           Arena* arena) {
+    Arena* arena) {
   ReadOptions ro = SanitizeColumnReadOptions(
-      rep_->table_options.column_count, read_options);
+                     rep_->table_options.column_count, read_options);
 
   std::vector<InternalIterator*> iters;  // main column
   iters.push_back(NewTwoLevelIterator(new BlockEntryIteratorState(this, ro),
@@ -1187,8 +1193,8 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
       continue;
     }
     iters.push_back(NewTwoLevelIterator(
-        new BlockEntryIteratorState(rep_->tables[column_index-1].get(), ro),
-        rep_->tables[column_index-1]->NewIndexIterator(ro), arena));
+                      new BlockEntryIteratorState(rep_->tables[column_index-1].get(), ro),
+                      rep_->tables[column_index-1]->NewIndexIterator(ro), arena));
   }
   return new ColumnIterator(iters, rep_->table_options.splitter,
                             true, rep_->internal_comparator,
@@ -1198,7 +1204,7 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
 Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
                         GetContext* get_context) {
   ReadOptions ro = SanitizeColumnReadOptions(
-      rep_->table_options.column_count, read_options);
+                     rep_->table_options.column_count, read_options);
   BlockIter iiter;
   NewIndexIterator(ro, &iiter);
 
@@ -1240,8 +1246,8 @@ Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
           continue;
         }
         iters.push_back(NewTwoLevelIterator(
-            new BlockEntryIteratorState(rep_->tables[it-1].get(), ro),
-            rep_->tables[it-1]->NewIndexIterator(ro)));
+                          new BlockEntryIteratorState(rep_->tables[it-1].get(), ro),
+                          rep_->tables[it-1]->NewIndexIterator(ro)));
       }
 
       ColumnIterator citers(iters, rep_->table_options.splitter,
@@ -1289,7 +1295,7 @@ Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end) {
 Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end,
                              const ReadOptions& read_options) {
   ReadOptions ro = SanitizeColumnReadOptions(
-      rep_->table_options.column_count, read_options);
+                     rep_->table_options.column_count, read_options);
   auto& comparator = rep_->internal_comparator;
   // pre-condition
   if (begin && end && comparator.Compare(*begin, *end) > 0) {
@@ -1339,8 +1345,8 @@ Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end,
         continue;
       }
       iters.push_back(NewTwoLevelIterator(
-          new BlockEntryIteratorState(rep_->tables[it-1].get(), ro),
-          rep_->tables[it-1]->NewIndexIterator(ro)));
+                        new BlockEntryIteratorState(rep_->tables[it-1].get(), ro),
+                        rep_->tables[it-1]->NewIndexIterator(ro)));
     }
 
     ColumnIterator citers(iters, rep_->table_options.splitter,
@@ -1397,7 +1403,7 @@ uint64_t ColumnTable::ApproximateOffsetOf(const Slice& key) {
   if (index_iter->Valid()) {
     std::unique_ptr<InternalIterator> datablock_iter;
     datablock_iter.reset(NewDataBlockIterator(rep_, ReadOptions(),
-                                              index_iter->value()));
+                         index_iter->value()));
     datablock_iter->SeekToFirst();
     Slice sub_column_key = datablock_iter->value();
 
@@ -1427,14 +1433,14 @@ uint64_t ColumnTable::ApproximateOffsetOf(const Slice& key) {
 
 void ColumnTable::SetupForCompaction() {
   switch (rep_->ioptions.access_hint_on_compaction_start) {
-    case Options::NONE:
-    case Options::NORMAL:
-    case Options::WILLNEED:
-    case Options::SEQUENTIAL:
-      rep_->file->file()->Hint(RandomAccessFile::SEQUENTIAL);
-      break;
-    default:
-      assert(false);
+  case Options::NONE:
+  case Options::NORMAL:
+  case Options::WILLNEED:
+  case Options::SEQUENTIAL:
+    rep_->file->file()->Hint(RandomAccessFile::SEQUENTIAL);
+    break;
+  default:
+    assert(false);
   }
   compaction_optimized_ = true;
   for (const auto& it : rep_->tables) {
@@ -1464,16 +1470,16 @@ size_t ColumnTable::ApproximateMemoryUsage() const {
 Status ColumnTable::DumpTable(WritableFile* out_file) {
   // Output Footer
   out_file->Append(
-      "Footer Details:\n"
-      "--------------------------------------\n"
-      "  ");
+    "Footer Details:\n"
+    "--------------------------------------\n"
+    "  ");
   out_file->Append(rep_->footer.ToString().c_str());
   out_file->Append("\n");
 
   // Output MetaIndex
   out_file->Append(
-      "Metaindex Details:\n"
-      "--------------------------------------\n");
+    "Metaindex Details:\n"
+    "--------------------------------------\n");
   std::unique_ptr<Block> meta;
   std::unique_ptr<InternalIterator> meta_iter;
   Status s = ReadMetaBlock(rep_, &meta, &meta_iter);
@@ -1504,9 +1510,9 @@ Status ColumnTable::DumpTable(WritableFile* out_file) {
 
   if (table_properties != nullptr) {
     out_file->Append(
-        "Table Properties:\n"
-        "--------------------------------------\n"
-        "  ");
+      "Table Properties:\n"
+      "--------------------------------------\n"
+      "  ");
     out_file->Append(table_properties->ToString("\n  ", ": ").c_str());
     out_file->Append("\n");
   }
@@ -1528,8 +1534,8 @@ void ColumnTable::Close() {
     char cache_key[kMaxCacheKeyPrefixSize + kMaxVarint64Length];
     // Get the index block key
     auto key = GetCacheKeyFromOffset(rep_->cache_key_prefix,
-                                rep_->cache_key_prefix_size,
-                                rep_->dummy_index_reader_offset, cache_key);
+                                     rep_->cache_key_prefix_size,
+                                     rep_->dummy_index_reader_offset, cache_key);
     rep_->table_options.block_cache.get()->Erase(key);
   }
   for (const auto& it : rep_->tables) {

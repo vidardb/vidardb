@@ -24,12 +24,12 @@
 namespace vidardb {
 
 static const std::string option_file_header =
-    "# This is a VidarDB option file.\n"
-    "#\n"
-    "# For detailed file format spec, please refer to the example file\n"
-    "# in examples/vidardb_option_file_example.ini\n"
-    "#\n"
-    "\n";
+  "# This is a VidarDB option file.\n"
+  "#\n"
+  "# For detailed file format spec, please refer to the example file\n"
+  "# in examples/vidardb_option_file_example.ini\n"
+  "#\n"
+  "\n";
 
 Status PersistVidarDBOptions(const DBOptions& db_opt,
                              const std::vector<std::string>& cf_names,
@@ -38,7 +38,7 @@ Status PersistVidarDBOptions(const DBOptions& db_opt,
   TEST_SYNC_POINT("PersistVidarDBOptions:start");
   if (cf_names.size() != cf_opts.size()) {
     return Status::InvalidArgument(
-        "cf_names.size() and cf_opts.size() must be the same");
+             "cf_names.size() and cf_opts.size() must be the same");
   }
   std::unique_ptr<WritableFile> writable;
 
@@ -96,10 +96,12 @@ Status PersistVidarDBOptions(const DBOptions& db_opt,
   writable->Close();
 
   return VidarDBOptionsParser::VerifyVidarDBOptionsFromFile(
-      db_opt, cf_names, cf_opts, file_name, env);
+           db_opt, cf_names, cf_opts, file_name, env);
 }
 
-VidarDBOptionsParser::VidarDBOptionsParser() { Reset(); }
+VidarDBOptionsParser::VidarDBOptionsParser() {
+  Reset();
+}
 
 void VidarDBOptionsParser::Reset() {
   db_opt_ = DBOptions();
@@ -127,10 +129,10 @@ bool VidarDBOptionsParser::IsSection(const std::string& line) {
 }
 
 Status VidarDBOptionsParser::ParseSection(OptionSection* section,
-                                          std::string* title,
-                                          std::string* argument,
-                                          const std::string& line,
-                                          const int line_num) {
+    std::string* title,
+    std::string* argument,
+    const std::string& line,
+    const int line_num) {
   *section = kOptionSectionUnknown;
   // A section is of the form [<SectionName> "<SectionArg>"], where
   // "<SectionArg>" is optional.
@@ -141,7 +143,7 @@ Status VidarDBOptionsParser::ParseSection(OptionSection* section,
   if (arg_start_pos != std::string::npos && arg_start_pos != arg_end_pos) {
     *title = TrimAndRemoveComment(line.substr(1, arg_start_pos - 1), true);
     *argument = UnescapeOptionString(
-        line.substr(arg_start_pos + 1, arg_end_pos - arg_start_pos - 1));
+                  line.substr(arg_start_pos + 1, arg_end_pos - arg_start_pos - 1));
   } else {
     *title = TrimAndRemoveComment(line.substr(1, line.size() - 2), true);
     *argument = "";
@@ -169,16 +171,16 @@ Status VidarDBOptionsParser::ParseSection(OptionSection* section,
 }
 
 Status VidarDBOptionsParser::InvalidArgument(const int line_num,
-                                             const std::string& message) {
+    const std::string& message) {
   return Status::InvalidArgument(
-      "[VidarDBOptionsParser Error] ",
-      message + " (at line " + ToString(line_num) + ")");
+           "[VidarDBOptionsParser Error] ",
+           message + " (at line " + ToString(line_num) + ")");
 }
 
 Status VidarDBOptionsParser::ParseStatement(std::string* name,
-                                            std::string* value,
-                                            const std::string& line,
-                                            const int line_num) {
+    std::string* value,
+    const std::string& line,
+    const int line_num) {
   size_t eq_pos = line.find("=");
   if (eq_pos == std::string::npos) {
     return InvalidArgument(line_num, "A valid statement must have a '='.");
@@ -186,7 +188,7 @@ Status VidarDBOptionsParser::ParseStatement(std::string* name,
 
   *name = TrimAndRemoveComment(line.substr(0, eq_pos), true);
   *value =
-      TrimAndRemoveComment(line.substr(eq_pos + 1, line.size() - eq_pos - 1));
+    TrimAndRemoveComment(line.substr(eq_pos + 1, line.size() - eq_pos - 1));
   if (name->empty()) {
     return InvalidArgument(line_num,
                            "A valid statement must have a variable name.");
@@ -289,46 +291,46 @@ Status VidarDBOptionsParser::Parse(const std::string& file_name, Env* env) {
 }
 
 Status VidarDBOptionsParser::CheckSection(const OptionSection section,
-                                          const std::string& section_arg,
-                                          const int line_num) {
+    const std::string& section_arg,
+    const int line_num) {
   if (section == kOptionSectionDBOptions) {
     if (has_db_options_) {
       return InvalidArgument(
-          line_num,
-          "More than one DBOption section found in the option config file");
+               line_num,
+               "More than one DBOption section found in the option config file");
     }
     has_db_options_ = true;
   } else if (section == kOptionSectionCFOptions) {
     bool is_default_cf = (section_arg == kDefaultColumnFamilyName);
     if (cf_opts_.size() == 0 && !is_default_cf) {
       return InvalidArgument(
-          line_num,
-          "Default column family must be the first CFOptions section "
-          "in the option config file");
+               line_num,
+               "Default column family must be the first CFOptions section "
+               "in the option config file");
     } else if (cf_opts_.size() != 0 && is_default_cf) {
       return InvalidArgument(
-          line_num,
-          "Default column family must be the first CFOptions section "
-          "in the optio/n config file");
+               line_num,
+               "Default column family must be the first CFOptions section "
+               "in the optio/n config file");
     } else if (GetCFOptions(section_arg) != nullptr) {
       return InvalidArgument(
-          line_num,
-          "Two identical column families found in option config file");
+               line_num,
+               "Two identical column families found in option config file");
     }
     has_default_cf_options_ |= is_default_cf;
   } else if (section == kOptionSectionTableOptions) {
     if (GetCFOptions(section_arg) == nullptr) {
       return InvalidArgument(
-          line_num, std::string(
-                        "Does not find a matched column family name in "
-                        "TableOptions section.  Column Family Name:") +
-                        section_arg);
+               line_num, std::string(
+                 "Does not find a matched column family name in "
+                 "TableOptions section.  Column Family Name:") +
+               section_arg);
     }
   } else if (section == kOptionSectionVersion) {
     if (has_version_section_) {
       return InvalidArgument(
-          line_num,
-          "More than one Version section found in the option config file.");
+               line_num,
+               "More than one Version section found in the option config file.");
     }
     has_version_section_ = true;
   }
@@ -336,9 +338,9 @@ Status VidarDBOptionsParser::CheckSection(const OptionSection section,
 }
 
 Status VidarDBOptionsParser::ParseVersionNumber(const std::string& ver_name,
-                                                const std::string& ver_string,
-                                                const int max_count,
-                                                int* version) {
+    const std::string& ver_string,
+    const int max_count,
+    int* version) {
   int version_index = 0;
   int current_number = 0;
   int current_digit_count = 0;
@@ -387,9 +389,9 @@ Status VidarDBOptionsParser::ParseVersionNumber(const std::string& ver_name,
 }
 
 Status VidarDBOptionsParser::EndSection(
-    const OptionSection section, const std::string& section_title,
-    const std::string& section_arg,
-    const std::unordered_map<std::string, std::string>& opt_map) {
+  const OptionSection section, const std::string& section_title,
+  const std::string& section_arg,
+  const std::unordered_map<std::string, std::string>& opt_map) {
   Status s;
   if (section == kOptionSectionDBOptions) {
     s = GetDBOptionsFromMap(DBOptions(), opt_map, &db_opt_, true);
@@ -415,15 +417,15 @@ Status VidarDBOptionsParser::EndSection(
     auto* cf_opt = GetCFOptionsImpl(section_arg);
     if (cf_opt == nullptr) {
       return Status::InvalidArgument(
-          "The specified column family must be defined before the "
-          "TableOptions section:",
-          section_arg);
+               "The specified column family must be defined before the "
+               "TableOptions section:",
+               section_arg);
     }
     // Ignore error as table factory deserialization is optional
     s = GetTableFactoryFromMap(
-        section_title.substr(
+          section_title.substr(
             opt_section_titles[kOptionSectionTableOptions].size()),
-        opt_map, &(cf_opt->table_factory));
+          opt_map, &(cf_opt->table_factory));
     if (!s.ok()) {
       return s;
     }
@@ -441,7 +443,7 @@ Status VidarDBOptionsParser::EndSection(
         }
         if (opt_file_version[0] < 1) {
           return Status::InvalidArgument(
-              "A valid options_file_version must be at least 1.");
+                   "A valid options_file_version must be at least 1.");
         }
       }
     }
@@ -452,18 +454,18 @@ Status VidarDBOptionsParser::EndSection(
 Status VidarDBOptionsParser::ValidityCheck() {
   if (!has_db_options_) {
     return Status::Corruption(
-        "A VidarDB Option file must have a single DBOptions section");
+             "A VidarDB Option file must have a single DBOptions section");
   }
   if (!has_default_cf_options_) {
     return Status::Corruption(
-        "A VidarDB Option file must have a single CFOptions:default section");
+             "A VidarDB Option file must have a single CFOptions:default section");
   }
 
   return Status::OK();
 }
 
 std::string VidarDBOptionsParser::TrimAndRemoveComment(const std::string& line,
-                                                       bool trim_only) {
+    bool trim_only) {
   size_t start = 0;
   size_t end = line.size();
 
@@ -505,95 +507,95 @@ bool AreEqualDoubles(const double a, const double b) {
 }
 
 bool AreEqualOptions(
-    const char* opt1, const char* opt2, const OptionTypeInfo& type_info,
-    const std::string& opt_name,
-    const std::unordered_map<std::string, std::string>* opt_map) {
+  const char* opt1, const char* opt2, const OptionTypeInfo& type_info,
+  const std::string& opt_name,
+  const std::unordered_map<std::string, std::string>* opt_map) {
   const char* offset1 = opt1 + type_info.offset;
   const char* offset2 = opt2 + type_info.offset;
   static const std::string kNullptrString = "nullptr";
   switch (type_info.type) {
-    case OptionType::kBoolean:
-      return (*reinterpret_cast<const bool*>(offset1) ==
-              *reinterpret_cast<const bool*>(offset2));
-    case OptionType::kInt:
-      return (*reinterpret_cast<const int*>(offset1) ==
-              *reinterpret_cast<const int*>(offset2));
-    case OptionType::kUInt:
-      return (*reinterpret_cast<const unsigned int*>(offset1) ==
-              *reinterpret_cast<const unsigned int*>(offset2));
-    case OptionType::kUInt32T:
-      return (*reinterpret_cast<const uint32_t*>(offset1) ==
-              *reinterpret_cast<const uint32_t*>(offset2));
-    case OptionType::kUInt64T:
-      return (*reinterpret_cast<const uint64_t*>(offset1) ==
-              *reinterpret_cast<const uint64_t*>(offset2));
-    case OptionType::kSizeT:
-      return (*reinterpret_cast<const size_t*>(offset1) ==
-              *reinterpret_cast<const size_t*>(offset2));
-    case OptionType::kString:
-      return (*reinterpret_cast<const std::string*>(offset1) ==
-              *reinterpret_cast<const std::string*>(offset2));
-    case OptionType::kDouble:
-      return AreEqualDoubles(*reinterpret_cast<const double*>(offset1),
-                             *reinterpret_cast<const double*>(offset2));
-    case OptionType::kCompactionStyle:
-      return (*reinterpret_cast<const CompactionStyle*>(offset1) ==
-              *reinterpret_cast<const CompactionStyle*>(offset2));
-    case OptionType::kCompressionType:
-      return (*reinterpret_cast<const CompressionType*>(offset1) ==
-              *reinterpret_cast<const CompressionType*>(offset2));
-    case OptionType::kVectorCompressionType: {
-      const auto* vec1 =
-          reinterpret_cast<const std::vector<CompressionType>*>(offset1);
-      const auto* vec2 =
-          reinterpret_cast<const std::vector<CompressionType>*>(offset2);
-      return (*vec1 == *vec2);
-    }
-    case OptionType::kWALRecoveryMode:
-      return (*reinterpret_cast<const WALRecoveryMode*>(offset1) ==
-              *reinterpret_cast<const WALRecoveryMode*>(offset2));
-    case OptionType::kAccessHint:
-      return (*reinterpret_cast<const DBOptions::AccessHint*>(offset1) ==
-              *reinterpret_cast<const DBOptions::AccessHint*>(offset2));
-    case OptionType::kInfoLogLevel:
-      return (*reinterpret_cast<const InfoLogLevel*>(offset1) ==
-              *reinterpret_cast<const InfoLogLevel*>(offset2));
-    default:
-      if (type_info.verification == OptionVerificationType::kByName ||
-          type_info.verification == OptionVerificationType::kByNameAllowNull) {
-        std::string value1;
-        bool result =
-            SerializeSingleOptionHelper(offset1, type_info.type, &value1);
-        if (result == false) {
-          return false;
-        }
-        if (opt_map == nullptr) {
-          return true;
-        }
-        auto iter = opt_map->find(opt_name);
-        if (iter == opt_map->end()) {
-          return true;
-        } else {
-          if (type_info.verification ==
-              OptionVerificationType::kByNameAllowNull) {
-            if (iter->second == kNullptrString || value1 == kNullptrString) {
-              return true;
-            }
-          }
-          return (value1 == iter->second);
-        }
+  case OptionType::kBoolean:
+    return (*reinterpret_cast<const bool*>(offset1) ==
+            *reinterpret_cast<const bool*>(offset2));
+  case OptionType::kInt:
+    return (*reinterpret_cast<const int*>(offset1) ==
+            *reinterpret_cast<const int*>(offset2));
+  case OptionType::kUInt:
+    return (*reinterpret_cast<const unsigned int*>(offset1) ==
+            *reinterpret_cast<const unsigned int*>(offset2));
+  case OptionType::kUInt32T:
+    return (*reinterpret_cast<const uint32_t*>(offset1) ==
+            *reinterpret_cast<const uint32_t*>(offset2));
+  case OptionType::kUInt64T:
+    return (*reinterpret_cast<const uint64_t*>(offset1) ==
+            *reinterpret_cast<const uint64_t*>(offset2));
+  case OptionType::kSizeT:
+    return (*reinterpret_cast<const size_t*>(offset1) ==
+            *reinterpret_cast<const size_t*>(offset2));
+  case OptionType::kString:
+    return (*reinterpret_cast<const std::string*>(offset1) ==
+            *reinterpret_cast<const std::string*>(offset2));
+  case OptionType::kDouble:
+    return AreEqualDoubles(*reinterpret_cast<const double*>(offset1),
+                           *reinterpret_cast<const double*>(offset2));
+  case OptionType::kCompactionStyle:
+    return (*reinterpret_cast<const CompactionStyle*>(offset1) ==
+            *reinterpret_cast<const CompactionStyle*>(offset2));
+  case OptionType::kCompressionType:
+    return (*reinterpret_cast<const CompressionType*>(offset1) ==
+            *reinterpret_cast<const CompressionType*>(offset2));
+  case OptionType::kVectorCompressionType: {
+    const auto* vec1 =
+      reinterpret_cast<const std::vector<CompressionType>*>(offset1);
+    const auto* vec2 =
+      reinterpret_cast<const std::vector<CompressionType>*>(offset2);
+    return (*vec1 == *vec2);
+  }
+  case OptionType::kWALRecoveryMode:
+    return (*reinterpret_cast<const WALRecoveryMode*>(offset1) ==
+            *reinterpret_cast<const WALRecoveryMode*>(offset2));
+  case OptionType::kAccessHint:
+    return (*reinterpret_cast<const DBOptions::AccessHint*>(offset1) ==
+            *reinterpret_cast<const DBOptions::AccessHint*>(offset2));
+  case OptionType::kInfoLogLevel:
+    return (*reinterpret_cast<const InfoLogLevel*>(offset1) ==
+            *reinterpret_cast<const InfoLogLevel*>(offset2));
+  default:
+    if (type_info.verification == OptionVerificationType::kByName ||
+        type_info.verification == OptionVerificationType::kByNameAllowNull) {
+      std::string value1;
+      bool result =
+        SerializeSingleOptionHelper(offset1, type_info.type, &value1);
+      if (result == false) {
+        return false;
       }
-      return false;
+      if (opt_map == nullptr) {
+        return true;
+      }
+      auto iter = opt_map->find(opt_name);
+      if (iter == opt_map->end()) {
+        return true;
+      } else {
+        if (type_info.verification ==
+            OptionVerificationType::kByNameAllowNull) {
+          if (iter->second == kNullptrString || value1 == kNullptrString) {
+            return true;
+          }
+        }
+        return (value1 == iter->second);
+      }
+    }
+    return false;
   }
 }
 
 }  // namespace
 
 Status VidarDBOptionsParser::VerifyVidarDBOptionsFromFile(
-    const DBOptions& db_opt, const std::vector<std::string>& cf_names,
-    const std::vector<ColumnFamilyOptions>& cf_opts,
-    const std::string& file_name, Env* env,
-    OptionsSanityCheckLevel sanity_check_level) {
+  const DBOptions& db_opt, const std::vector<std::string>& cf_names,
+  const std::vector<ColumnFamilyOptions>& cf_opts,
+  const std::string& file_name, Env* env,
+  OptionsSanityCheckLevel sanity_check_level) {
   VidarDBOptionsParser parser;
   std::unique_ptr<SequentialFile> seq_file;
   Status s = parser.Parse(file_name, env);
@@ -612,21 +614,21 @@ Status VidarDBOptionsParser::VerifyVidarDBOptionsFromFile(
   if (cf_names.size() != parser.cf_names()->size()) {
     if (sanity_check_level >= kSanityLevelLooselyCompatible) {
       return Status::InvalidArgument(
-          "[VidarDBOptionParser Error] The persisted options does not have "
-          "the same number of column family names as the db instance.");
+               "[VidarDBOptionParser Error] The persisted options does not have "
+               "the same number of column family names as the db instance.");
     } else if (cf_opts.size() > parser.cf_opts()->size()) {
       return Status::InvalidArgument(
-          "[VidarDBOptionsParser Error]",
-          "The persisted options file has less number of column family "
-          "names than that of the specified one.");
+               "[VidarDBOptionsParser Error]",
+               "The persisted options file has less number of column family "
+               "names than that of the specified one.");
     }
   }
   for (size_t i = 0; i < cf_names.size(); ++i) {
     if (cf_names[i] != parser.cf_names()->at(i)) {
       return Status::InvalidArgument(
-          "[VidarDBOptionParser Error] The persisted options and the db"
-          "instance does not have the same name for column family ",
-          ToString(i));
+               "[VidarDBOptionParser Error] The persisted options and the db"
+               "instance does not have the same name for column family ",
+               ToString(i));
     }
   }
 
@@ -634,14 +636,14 @@ Status VidarDBOptionsParser::VerifyVidarDBOptionsFromFile(
   if (cf_opts.size() != parser.cf_opts()->size()) {
     if (sanity_check_level >= kSanityLevelLooselyCompatible) {
       return Status::InvalidArgument(
-          "[VidarDBOptionsParser Error]",
-          "The persisted options does not have the same number of "
-          "column families as the db instance.");
+               "[VidarDBOptionsParser Error]",
+               "The persisted options does not have the same number of "
+               "column families as the db instance.");
     } else if (cf_opts.size() > parser.cf_opts()->size()) {
       return Status::InvalidArgument(
-          "[VidarDBOptionsParser Error]",
-          "The persisted options file has less number of column families "
-          "than that of the specified number.");
+               "[VidarDBOptionsParser Error]",
+               "The persisted options file has less number of column families "
+               "than that of the specified number.");
     }
   }
   for (size_t i = 0; i < cf_opts.size(); ++i) {
@@ -662,9 +664,9 @@ Status VidarDBOptionsParser::VerifyVidarDBOptionsFromFile(
 }
 
 Status VidarDBOptionsParser::VerifyDBOptions(
-    const DBOptions& base_opt, const DBOptions& persisted_opt,
-    const std::unordered_map<std::string, std::string>* opt_map,
-    OptionsSanityCheckLevel sanity_check_level) {
+  const DBOptions& base_opt, const DBOptions& persisted_opt,
+  const std::unordered_map<std::string, std::string>* opt_map,
+  OptionsSanityCheckLevel sanity_check_level) {
   for (auto pair : db_options_type_info) {
     if (pair.second.verification == OptionVerificationType::kDeprecated) {
       // We skip checking deprecated variables as they might
@@ -680,11 +682,11 @@ Status VidarDBOptionsParser::VerifyDBOptions(
         std::string base_value;
         std::string persisted_value;
         SerializeSingleOptionHelper(
-            reinterpret_cast<const char*>(&base_opt) + pair.second.offset,
-            pair.second.type, &base_value);
+          reinterpret_cast<const char*>(&base_opt) + pair.second.offset,
+          pair.second.type, &base_value);
         SerializeSingleOptionHelper(
-            reinterpret_cast<const char*>(&persisted_opt) + pair.second.offset,
-            pair.second.type, &persisted_value);
+          reinterpret_cast<const char*>(&persisted_opt) + pair.second.offset,
+          pair.second.type, &persisted_value);
         snprintf(buffer, sizeof(buffer),
                  "[VidarDBOptionsParser]: "
                  "failed the verification on DBOptions::%s --- "
@@ -699,10 +701,10 @@ Status VidarDBOptionsParser::VerifyDBOptions(
 }
 
 Status VidarDBOptionsParser::VerifyCFOptions(
-    const ColumnFamilyOptions& base_opt,
-    const ColumnFamilyOptions& persisted_opt,
-    const std::unordered_map<std::string, std::string>* persisted_opt_map,
-    OptionsSanityCheckLevel sanity_check_level) {
+  const ColumnFamilyOptions& base_opt,
+  const ColumnFamilyOptions& persisted_opt,
+  const std::unordered_map<std::string, std::string>* persisted_opt_map,
+  OptionsSanityCheckLevel sanity_check_level) {
   for (auto& pair : cf_options_type_info) {
     if (pair.second.verification == OptionVerificationType::kDeprecated) {
       // We skip checking deprecated variables as they might
@@ -718,11 +720,11 @@ Status VidarDBOptionsParser::VerifyCFOptions(
         std::string base_value;
         std::string persisted_value;
         SerializeSingleOptionHelper(
-            reinterpret_cast<const char*>(&base_opt) + pair.second.offset,
-            pair.second.type, &base_value);
+          reinterpret_cast<const char*>(&base_opt) + pair.second.offset,
+          pair.second.type, &base_value);
         SerializeSingleOptionHelper(
-            reinterpret_cast<const char*>(&persisted_opt) + pair.second.offset,
-            pair.second.type, &persisted_value);
+          reinterpret_cast<const char*>(&persisted_opt) + pair.second.offset,
+          pair.second.type, &persisted_value);
         snprintf(buffer, sizeof(buffer),
                  "[VidarDBOptionsParser]: "
                  "failed the verification on ColumnFamilyOptions::%s --- "
@@ -737,13 +739,13 @@ Status VidarDBOptionsParser::VerifyCFOptions(
 }
 
 Status VidarDBOptionsParser::VerifyBlockBasedTableFactory(
-    const BlockBasedTableFactory* base_tf,
-    const BlockBasedTableFactory* file_tf,
-    OptionsSanityCheckLevel sanity_check_level) {
+  const BlockBasedTableFactory* base_tf,
+  const BlockBasedTableFactory* file_tf,
+  OptionsSanityCheckLevel sanity_check_level) {
   if ((base_tf != nullptr) != (file_tf != nullptr) &&
       sanity_check_level > kSanityLevelNone) {
     return Status::Corruption(
-        "[VidarDBOptionsParser]: Inconsistent TableFactory class type");
+             "[VidarDBOptionsParser]: Inconsistent TableFactory class type");
   }
   if (base_tf == nullptr) {
     return Status::OK();
@@ -763,9 +765,9 @@ Status VidarDBOptionsParser::VerifyBlockBasedTableFactory(
                            reinterpret_cast<const char*>(&file_opt),
                            pair.second, pair.first, nullptr)) {
         return Status::Corruption(
-            "[VidarDBOptionsParser]: "
-            "failed the verification on BlockBasedTableOptions::",
-            pair.first);
+                 "[VidarDBOptionsParser]: "
+                 "failed the verification on BlockBasedTableOptions::",
+                 pair.first);
       }
     }
   }
@@ -773,19 +775,19 @@ Status VidarDBOptionsParser::VerifyBlockBasedTableFactory(
 }
 
 Status VidarDBOptionsParser::VerifyTableFactory(
-    const TableFactory* base_tf, const TableFactory* file_tf,
-    OptionsSanityCheckLevel sanity_check_level) {
+  const TableFactory* base_tf, const TableFactory* file_tf,
+  OptionsSanityCheckLevel sanity_check_level) {
   if (base_tf && file_tf) {
     if (sanity_check_level > kSanityLevelNone &&
         base_tf->Name() != file_tf->Name()) {
       return Status::Corruption(
-          "[VidarDBOptionsParser]: "
-          "failed the verification on TableFactory->Name()");
+               "[VidarDBOptionsParser]: "
+               "failed the verification on TableFactory->Name()");
     }
     auto s = VerifyBlockBasedTableFactory(
-        dynamic_cast<const BlockBasedTableFactory*>(base_tf),
-        dynamic_cast<const BlockBasedTableFactory*>(file_tf),
-        sanity_check_level);
+               dynamic_cast<const BlockBasedTableFactory*>(base_tf),
+               dynamic_cast<const BlockBasedTableFactory*>(file_tf),
+               sanity_check_level);
     if (!s.ok()) {
       return s;
     }

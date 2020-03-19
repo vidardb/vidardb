@@ -66,15 +66,23 @@ class Arena : public Allocator {
            alloc_bytes_remaining_;
   }
 
-  size_t MemoryAllocatedBytes() const { return blocks_memory_; }
+  size_t MemoryAllocatedBytes() const {
+    return blocks_memory_;
+  }
 
-  size_t AllocatedAndUnused() const { return alloc_bytes_remaining_; }
+  size_t AllocatedAndUnused() const {
+    return alloc_bytes_remaining_;
+  }
 
   // If an allocation is too big, we'll allocate an irregular block with the
   // same size of that allocation.
-  size_t IrregularBlockNum() const { return irregular_block_num; }
+  size_t IrregularBlockNum() const {
+    return irregular_block_num;
+  }
 
-  size_t BlockSize() const override { return kBlockSize; }
+  size_t BlockSize() const override {
+    return kBlockSize;
+  }
 
  private:
   char inline_block_[kInlineSize] __attribute__((__aligned__(sizeof(void*))));

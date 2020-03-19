@@ -26,19 +26,21 @@ class Status {
  public:
   // Create a success status.
   Status() : code_(kOk), subcode_(kNone), state_(nullptr) {}
-  ~Status() { delete[] state_; }
+  ~Status() {
+    delete[] state_;
+  }
 
   // Copy the specified status.
   Status(const Status& s);
   Status& operator=(const Status& s);
   Status(Status&& s)
 #if !(defined _MSC_VER) || ((defined _MSC_VER) && (_MSC_VER >= 1900))
-    noexcept
+  noexcept
 #endif
   ;
   Status& operator=(Status&& s)
 #if !(defined _MSC_VER) || ((defined _MSC_VER) && (_MSC_VER >= 1900))
-    noexcept
+  noexcept
 #endif
   ;
   bool operator==(const Status& rhs) const;
@@ -61,7 +63,9 @@ class Status {
     kTryAgain = 13,
   };
 
-  Code code() const { return code_; }
+  Code code() const {
+    return code_;
+  }
 
   enum SubCode {
     kNone = 0,
@@ -71,17 +75,23 @@ class Status {
     kMaxSubCode
   };
 
-  SubCode subcode() const { return subcode_; }
+  SubCode subcode() const {
+    return subcode_;
+  }
 
   // Return a success status.
-  static Status OK() { return Status(); }
+  static Status OK() {
+    return Status();
+  }
 
   // Return error status of an appropriate type.
   static Status NotFound(const Slice& msg, const Slice& msg2 = Slice()) {
     return Status(kNotFound, msg, msg2);
   }
   // Fast path for not found without malloc;
-  static Status NotFound(SubCode msg = kNone) { return Status(kNotFound, msg); }
+  static Status NotFound(SubCode msg = kNone) {
+    return Status(kNotFound, msg);
+  }
 
   static Status Corruption(const Slice& msg, const Slice& msg2 = Slice()) {
     return Status(kCorruption, msg, msg2);
@@ -107,7 +117,9 @@ class Status {
   static Status IOError(const Slice& msg, const Slice& msg2 = Slice()) {
     return Status(kIOError, msg, msg2);
   }
-  static Status IOError(SubCode msg = kNone) { return Status(kIOError, msg); }
+  static Status IOError(SubCode msg = kNone) {
+    return Status(kIOError, msg);
+  }
 
   static Status MergeInProgress(const Slice& msg, const Slice& msg2 = Slice()) {
     return Status(kMergeInProgress, msg, msg2);
@@ -130,73 +142,111 @@ class Status {
                                    const Slice& msg2 = Slice()) {
     return Status(kShutdownInProgress, msg, msg2);
   }
-  static Status Aborted(SubCode msg = kNone) { return Status(kAborted, msg); }
+  static Status Aborted(SubCode msg = kNone) {
+    return Status(kAborted, msg);
+  }
   static Status Aborted(const Slice& msg, const Slice& msg2 = Slice()) {
     return Status(kAborted, msg, msg2);
   }
 
-  static Status Busy(SubCode msg = kNone) { return Status(kBusy, msg); }
+  static Status Busy(SubCode msg = kNone) {
+    return Status(kBusy, msg);
+  }
   static Status Busy(const Slice& msg, const Slice& msg2 = Slice()) {
     return Status(kBusy, msg, msg2);
   }
 
-  static Status TimedOut(SubCode msg = kNone) { return Status(kTimedOut, msg); }
+  static Status TimedOut(SubCode msg = kNone) {
+    return Status(kTimedOut, msg);
+  }
   static Status TimedOut(const Slice& msg, const Slice& msg2 = Slice()) {
     return Status(kTimedOut, msg, msg2);
   }
 
-  static Status Expired(SubCode msg = kNone) { return Status(kExpired, msg); }
+  static Status Expired(SubCode msg = kNone) {
+    return Status(kExpired, msg);
+  }
   static Status Expired(const Slice& msg, const Slice& msg2 = Slice()) {
     return Status(kExpired, msg, msg2);
   }
 
-  static Status TryAgain(SubCode msg = kNone) { return Status(kTryAgain, msg); }
+  static Status TryAgain(SubCode msg = kNone) {
+    return Status(kTryAgain, msg);
+  }
   static Status TryAgain(const Slice& msg, const Slice& msg2 = Slice()) {
     return Status(kTryAgain, msg, msg2);
   }
 
   // Returns true iff the status indicates success.
-  bool ok() const { return code() == kOk; }
+  bool ok() const {
+    return code() == kOk;
+  }
 
   // Returns true iff the status indicates a NotFound error.
-  bool IsNotFound() const { return code() == kNotFound; }
+  bool IsNotFound() const {
+    return code() == kNotFound;
+  }
 
   // Returns true iff the status indicates a Corruption error.
-  bool IsCorruption() const { return code() == kCorruption; }
+  bool IsCorruption() const {
+    return code() == kCorruption;
+  }
 
   // Returns true iff the status indicates a NotSupported error.
-  bool IsNotSupported() const { return code() == kNotSupported; }
+  bool IsNotSupported() const {
+    return code() == kNotSupported;
+  }
 
   // Returns true iff the status indicates an InvalidArgument error.
-  bool IsInvalidArgument() const { return code() == kInvalidArgument; }
+  bool IsInvalidArgument() const {
+    return code() == kInvalidArgument;
+  }
 
   // Returns true iff the status indicates an IOError.
-  bool IsIOError() const { return code() == kIOError; }
+  bool IsIOError() const {
+    return code() == kIOError;
+  }
 
   // Returns true iff the status indicates an MergeInProgress.
-  bool IsMergeInProgress() const { return code() == kMergeInProgress; }
+  bool IsMergeInProgress() const {
+    return code() == kMergeInProgress;
+  }
 
   // Returns true iff the status indicates Incomplete
-  bool IsIncomplete() const { return code() == kIncomplete; }
+  bool IsIncomplete() const {
+    return code() == kIncomplete;
+  }
 
   // Returns true iff the status indicates Shutdown In progress
-  bool IsShutdownInProgress() const { return code() == kShutdownInProgress; }
+  bool IsShutdownInProgress() const {
+    return code() == kShutdownInProgress;
+  }
 
-  bool IsTimedOut() const { return code() == kTimedOut; }
+  bool IsTimedOut() const {
+    return code() == kTimedOut;
+  }
 
-  bool IsAborted() const { return code() == kAborted; }
+  bool IsAborted() const {
+    return code() == kAborted;
+  }
 
   // Returns true iff the status indicates that a resource is Busy and
   // temporarily could not be acquired.
-  bool IsBusy() const { return code() == kBusy; }
+  bool IsBusy() const {
+    return code() == kBusy;
+  }
 
   // Returns true iff the status indicated that the operation has Expired.
-  bool IsExpired() const { return code() == kExpired; }
+  bool IsExpired() const {
+    return code() == kExpired;
+  }
 
   // Returns true iff the status indicates a TryAgain error.
   // This usually means that the operation failed, but may succeed if
   // re-attempted.
-  bool IsTryAgain() const { return code() == kTryAgain; }
+  bool IsTryAgain() const {
+    return code() == kTryAgain;
+  }
 
   // Return a string representation of this status suitable for printing.
   // Returns the string "OK" for success.
@@ -215,7 +265,7 @@ class Status {
   static const char* msgs[static_cast<int>(kMaxSubCode)];
 
   explicit Status(Code _code, SubCode _subcode = kNone)
-      : code_(_code), subcode_(_subcode), state_(nullptr) {}
+    : code_(_code), subcode_(_subcode), state_(nullptr) {}
 
   Status(Code _code, const Slice& msg, const Slice& msg2);
   static const char* CopyState(const char* s);

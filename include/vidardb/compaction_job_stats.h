@@ -10,7 +10,9 @@
 
 namespace vidardb {
 struct CompactionJobStats {
-  CompactionJobStats() { Reset(); }
+  CompactionJobStats() {
+    Reset();
+  }
   void Reset();
   // Aggregate the CompactionJobStats from another instance with this one
   void Add(const CompactionJobStats& stats);

@@ -50,7 +50,7 @@ static size_t GetInfoLogPrefix(const std::string& path, char* dest, int len) {
         (path[i] >= 'A' && path[i] <= 'Z') ||
         path[i] == '-' ||
         path[i] == '.' ||
-        path[i] == '_'){
+        path[i] == '_') {
       dest[write_idx++] = path[i];
     } else {
       if (i > 0) {
@@ -139,8 +139,8 @@ void FormatFileNumber(uint64_t number, uint32_t path_id, char* out_buf,
     snprintf(out_buf, out_buf_size, "%" PRIu64, number);
   } else {
     snprintf(out_buf, out_buf_size, "%" PRIu64
-                                    "(path "
-                                    "%" PRIu32 ")",
+             "(path "
+             "%" PRIu32 ")",
              number, path_id);
   }
 }
@@ -179,7 +179,7 @@ InfoLogPrefix::InfoLogPrefix(bool has_log_dir,
 }
 
 std::string InfoLogFileName(const std::string& dbname,
-    const std::string& db_path, const std::string& log_dir) {
+                            const std::string& db_path, const std::string& log_dir) {
   if (log_dir.empty()) {
     return dbname + "/LOG";
   }
@@ -190,7 +190,7 @@ std::string InfoLogFileName(const std::string& dbname,
 
 // Return the name of the old info log file for "dbname".
 std::string OldInfoLogFileName(const std::string& dbname, uint64_t ts,
-    const std::string& db_path, const std::string& log_dir) {
+                               const std::string& db_path, const std::string& log_dir) {
   char buf[50];
   snprintf(buf, sizeof(buf), "%llu", static_cast<unsigned long long>(ts));
 
@@ -306,7 +306,7 @@ bool ParseFileName(const std::string& fname, uint64_t* number,
     bool is_temp_file = false;
     rest.remove_prefix(kOptionsFileNamePrefix.size());
     const std::string kTempFileNameSuffixWithDot =
-        std::string(".") + kTempFileNameSuffix;
+      std::string(".") + kTempFileNameSuffix;
     if (rest.ends_with(kTempFileNameSuffixWithDot)) {
       rest.remove_suffix(kTempFileNameSuffixWithDot.size());
       is_temp_file = true;

@@ -207,8 +207,8 @@ class WriteStress {
     std::uniform_int_distribution<int> char_dist('a', 'z');
     while (!stop_.load(std::memory_order_relaxed)) {
       Env::Default()->SleepForMicroseconds(static_cast<int>(
-                                           FLAGS_prefix_mutate_period_sec *
-                                           1000 * 1000LL));
+                                             FLAGS_prefix_mutate_period_sec *
+                                             1000 * 1000LL));
       if (dist(rng) < FLAGS_first_char_mutate_probability) {
         key_prefix_[0].store(char_dist(rng), std::memory_order_relaxed);
       }
@@ -222,9 +222,15 @@ class WriteStress {
   }
 
   int Run() {
-    threads_.emplace_back([&]() { WriteThread(); });
-    threads_.emplace_back([&]() { PrefixMutatorThread(); });
-    threads_.emplace_back([&]() { IteratorHoldThread(); });
+    threads_.emplace_back([&]() {
+      WriteThread();
+    });
+    threads_.emplace_back([&]() {
+      PrefixMutatorThread();
+    });
+    threads_.emplace_back([&]() {
+      IteratorHoldThread();
+    });
 
     if (FLAGS_runtime_sec == -1) {
       // infinite runtime, until we get killed

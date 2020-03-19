@@ -32,8 +32,8 @@ class StopWatch {
     }
     if (stats_enabled_) {
       statistics_->measureTime(hist_type_,
-          (elapsed_ != nullptr) ? *elapsed_ :
-                                  (env_->NowMicros() - start_time_));
+                               (elapsed_ != nullptr) ? *elapsed_ :
+                               (env_->NowMicros() - start_time_));
     }
   }
 
@@ -50,13 +50,15 @@ class StopWatch {
 class StopWatchNano {
  public:
   explicit StopWatchNano(Env* const env, bool auto_start = false)
-      : env_(env), start_(0) {
+    : env_(env), start_(0) {
     if (auto_start) {
       Start();
     }
   }
 
-  void Start() { start_ = env_->NowNanos(); }
+  void Start() {
+    start_ = env_->NowNanos();
+  }
 
   uint64_t ElapsedNanos(bool reset = false) {
     auto now = env_->NowNanos();

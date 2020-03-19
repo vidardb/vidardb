@@ -25,24 +25,24 @@ Status CopyFile(Env* env, const std::string& source,
 
   {
     unique_ptr<SequentialFile> srcfile;
-  s = env->NewSequentialFile(source, &srcfile, soptions);
-  unique_ptr<WritableFile> destfile;
-  if (s.ok()) {
-    s = env->NewWritableFile(destination, &destfile, soptions);
-  } else {
-    return s;
-  }
-
-  if (size == 0) {
-    // default argument means copy everything
+    s = env->NewSequentialFile(source, &srcfile, soptions);
+    unique_ptr<WritableFile> destfile;
     if (s.ok()) {
-      s = env->GetFileSize(source, &size);
+      s = env->NewWritableFile(destination, &destfile, soptions);
     } else {
       return s;
     }
-  }
-  src_reader.reset(new SequentialFileReader(std::move(srcfile)));
-  dest_writer.reset(new WritableFileWriter(std::move(destfile), soptions));
+
+    if (size == 0) {
+      // default argument means copy everything
+      if (s.ok()) {
+        s = env->GetFileSize(source, &size);
+      } else {
+        return s;
+      }
+    }
+    src_reader.reset(new SequentialFileReader(std::move(srcfile)));
+    dest_writer.reset(new WritableFileWriter(std::move(destfile), soptions));
   }
 
   char buffer[4096];
@@ -86,7 +86,7 @@ Status DeleteSSTFile(const DBOptions* db_options, const std::string& fname,
                      uint32_t path_id) {
   // TODO(tec): support sst_file_manager for multiple path_ids
   auto sfm =
-      static_cast<SstFileManagerImpl*>(db_options->sst_file_manager.get());
+    static_cast<SstFileManagerImpl*>(db_options->sst_file_manager.get());
   if (sfm && path_id == 0) {
     return sfm->ScheduleFileDeletion(fname);
   } else {

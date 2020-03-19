@@ -51,26 +51,46 @@ struct OperationStageInfo {
 // associated function name changed.
 static OperationStageInfo global_op_stage_table[] = {
   {ThreadStatus::STAGE_UNKNOWN, ""},
-  {ThreadStatus::STAGE_FLUSH_RUN,
-      "FlushJob::Run"},
-  {ThreadStatus::STAGE_FLUSH_WRITE_L0,
-      "FlushJob::WriteLevel0Table"},
-  {ThreadStatus::STAGE_COMPACTION_PREPARE,
-      "CompactionJob::Prepare"},
-  {ThreadStatus::STAGE_COMPACTION_RUN,
-      "CompactionJob::Run"},
-  {ThreadStatus::STAGE_COMPACTION_PROCESS_KV,
-      "CompactionJob::ProcessKeyValueCompaction"},
-  {ThreadStatus::STAGE_COMPACTION_INSTALL,
-      "CompactionJob::Install"},
-  {ThreadStatus::STAGE_COMPACTION_SYNC_FILE,
-      "CompactionJob::FinishCompactionOutputFile"},
-  {ThreadStatus::STAGE_PICK_MEMTABLES_TO_FLUSH,
-      "MemTableList::PickMemtablesToFlush"},
-  {ThreadStatus::STAGE_MEMTABLE_ROLLBACK,
-      "MemTableList::RollbackMemtableFlush"},
-  {ThreadStatus::STAGE_MEMTABLE_INSTALL_FLUSH_RESULTS,
-      "MemTableList::InstallMemtableFlushResults"},
+  {
+    ThreadStatus::STAGE_FLUSH_RUN,
+    "FlushJob::Run"
+  },
+  {
+    ThreadStatus::STAGE_FLUSH_WRITE_L0,
+    "FlushJob::WriteLevel0Table"
+  },
+  {
+    ThreadStatus::STAGE_COMPACTION_PREPARE,
+    "CompactionJob::Prepare"
+  },
+  {
+    ThreadStatus::STAGE_COMPACTION_RUN,
+    "CompactionJob::Run"
+  },
+  {
+    ThreadStatus::STAGE_COMPACTION_PROCESS_KV,
+    "CompactionJob::ProcessKeyValueCompaction"
+  },
+  {
+    ThreadStatus::STAGE_COMPACTION_INSTALL,
+    "CompactionJob::Install"
+  },
+  {
+    ThreadStatus::STAGE_COMPACTION_SYNC_FILE,
+    "CompactionJob::FinishCompactionOutputFile"
+  },
+  {
+    ThreadStatus::STAGE_PICK_MEMTABLES_TO_FLUSH,
+    "MemTableList::PickMemtablesToFlush"
+  },
+  {
+    ThreadStatus::STAGE_MEMTABLE_ROLLBACK,
+    "MemTableList::RollbackMemtableFlush"
+  },
+  {
+    ThreadStatus::STAGE_MEMTABLE_INSTALL_FLUSH_RESULTS,
+    "MemTableList::InstallMemtableFlushResults"
+  },
 };
 
 // The structure that describes a state.

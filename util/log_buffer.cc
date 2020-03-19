@@ -12,7 +12,7 @@ namespace vidardb {
 
 LogBuffer::LogBuffer(const InfoLogLevel log_level,
                      Logger*info_log)
-    : log_level_(log_level), info_log_(info_log) {}
+  : log_level_(log_level), info_log_(info_log) {}
 
 void LogBuffer::AddLogToBuffer(size_t max_log_size, const char* format,
                                va_list ap) {

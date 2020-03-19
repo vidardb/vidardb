@@ -21,7 +21,7 @@ class SkipListRep : public MemTableRep {
   const size_t lookahead_;
 
   friend class LookaheadIterator;
-public:
+ public:
   explicit SkipListRep(const MemTableRep::KeyComparator& compare,
                        MemTableAllocator* allocator, const size_t lookahead)
     : MemTableRep(allocator), skip_list_(compare, allocator), cmp_(compare),
@@ -69,7 +69,7 @@ public:
                           std::list<RangeQueryKeyVal>& res,
                           void* callback_args,
                           bool (*callback_func)(void* arg, const char* entry))
-                          override {
+  override {
     SkipListRep::Iterator iter(&skip_list_);
     Slice dummy_slice;
 
@@ -89,7 +89,7 @@ public:
                                  const Slice& end_ikey) override {
     std::string tmp;
     uint64_t start_count =
-        skip_list_.EstimateCount(EncodeKey(&tmp, start_ikey));
+      skip_list_.EstimateCount(EncodeKey(&tmp, start_ikey));
     uint64_t end_count = skip_list_.EstimateCount(EncodeKey(&tmp, end_ikey));
     return (end_count >= start_count) ? (end_count - start_count) : 0;
   }
@@ -104,8 +104,8 @@ public:
     // Initialize an iterator over the specified list.
     // The returned iterator is not valid.
     explicit Iterator(
-        const InlineSkipList<const MemTableRep::KeyComparator&>* list)
-        : iter_(list) {}
+      const InlineSkipList<const MemTableRep::KeyComparator&>* list)
+      : iter_(list) {}
 
     virtual ~Iterator() override { }
 
@@ -134,7 +134,7 @@ public:
 
     // Advance to the first entry with a key >= target
     virtual void Seek(const Slice& user_key, const char* memtable_key)
-        override {
+    override {
       if (memtable_key != nullptr) {
         iter_.Seek(memtable_key);
       } else {
@@ -164,7 +164,7 @@ public:
   class LookaheadIterator : public MemTableRep::Iterator {
    public:
     explicit LookaheadIterator(const SkipListRep& rep) :
-        rep_(rep), iter_(&rep_.skip_list_), prev_(iter_) {}
+      rep_(rep), iter_(&rep_.skip_list_), prev_(iter_) {}
 
     virtual ~LookaheadIterator() override {}
 
@@ -204,10 +204,10 @@ public:
     }
 
     virtual void Seek(const Slice& internal_key, const char *memtable_key)
-        override {
+    override {
       const char *encoded_key =
         (memtable_key != nullptr) ?
-            memtable_key : EncodeKey(&tmp_, internal_key);
+        memtable_key : EncodeKey(&tmp_, internal_key);
 
       if (prev_.Valid() && rep_.cmp_(encoded_key, prev_.key()) >= 0) {
         // prev_.key() is smaller or equal to our target key; do a quick
@@ -250,12 +250,12 @@ public:
     if (lookahead_ > 0) {
       void *mem =
         arena ? arena->AllocateAligned(sizeof(SkipListRep::LookaheadIterator))
-              : operator new(sizeof(SkipListRep::LookaheadIterator));
+        : operator new(sizeof(SkipListRep::LookaheadIterator));
       return new (mem) SkipListRep::LookaheadIterator(*this);
     } else {
       void *mem =
         arena ? arena->AllocateAligned(sizeof(SkipListRep::Iterator))
-              : operator new(sizeof(SkipListRep::Iterator));
+        : operator new(sizeof(SkipListRep::Iterator));
       return new (mem) SkipListRep::Iterator(&skip_list_);
     }
   }
@@ -263,8 +263,8 @@ public:
 }
 
 MemTableRep* SkipListFactory::CreateMemTableRep(
-    const MemTableRep::KeyComparator& compare, MemTableAllocator* allocator,
-    Logger* logger) {
+  const MemTableRep::KeyComparator& compare, MemTableAllocator* allocator,
+  Logger* logger) {
   return new SkipListRep(compare, allocator, lookahead_);
 }
 

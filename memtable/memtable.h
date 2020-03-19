@@ -41,8 +41,8 @@ class InternalIterator;
 
 struct MemTableOptions {
   explicit MemTableOptions(
-      const ImmutableCFOptions& ioptions,
-      const MutableCFOptions& mutable_cf_options);
+    const ImmutableCFOptions& ioptions,
+    const MutableCFOptions& mutable_cf_options);
   size_t write_buffer_size;
   size_t arena_block_size;
   size_t max_successive_merges;
@@ -95,7 +95,9 @@ class MemTable {
   // Increase reference count.
   // REQUIRES: external synchronization to prevent simultaneous
   // operations on the same MemTable.
-  void Ref() { ++refs_; }
+  void Ref() {
+    ++refs_;
+  }
 
   // Drop reference count.
   // If the refcount goes to zero return this memtable, otherwise return null.
@@ -128,8 +130,8 @@ class MemTable {
   bool MarkFlushScheduled() {
     auto before = FLUSH_REQUESTED;
     return flush_state_.compare_exchange_strong(before, FLUSH_SCHEDULED,
-                                                std::memory_order_relaxed,
-                                                std::memory_order_relaxed);
+           std::memory_order_relaxed,
+           std::memory_order_relaxed);
   }
 
   // Return an iterator that yields the contents of the memtable.
@@ -227,12 +229,16 @@ class MemTable {
   }
 
   // Returns the edits area that is needed for flushing the memtable
-  VersionEdit* GetEdits() { return &edit_; }
+  VersionEdit* GetEdits() {
+    return &edit_;
+  }
 
   // Returns if there is no entry inserted to the mem table.
   // REQUIRES: external synchronization to prevent simultaneous
   // operations on the same MemTable (unless this Memtable is immutable).
-  bool IsEmpty() const { return first_seqno_ == 0; }
+  bool IsEmpty() const {
+    return first_seqno_ == 0;
+  }
 
   // Returns the sequence number of the first element that was inserted
   // into the memtable.
@@ -257,13 +263,17 @@ class MemTable {
   // be flushed to storage
   // REQUIRES: external synchronization to prevent simultaneous
   // operations on the same MemTable.
-  uint64_t GetNextLogNumber() { return mem_next_logfile_number_; }
+  uint64_t GetNextLogNumber() {
+    return mem_next_logfile_number_;
+  }
 
   // Sets the next active logfile number when this memtable is about to
   // be flushed to storage
   // REQUIRES: external synchronization to prevent simultaneous
   // operations on the same MemTable.
-  void SetNextLogNumber(uint64_t num) { mem_next_logfile_number_ = num; }
+  void SetNextLogNumber(uint64_t num) {
+    mem_next_logfile_number_ = num;
+  }
 
   // if this memtable contains data from a committed
   // two phase transaction we must take note of the
@@ -299,11 +309,13 @@ class MemTable {
     return comparator_.comparator;
   }
 
-  const MemTableOptions* GetMemTableOptions() const { return &moptions_; }
+  const MemTableOptions* GetMemTableOptions() const {
+    return &moptions_;
+  }
 
   // Reformat the user value by specified column index.
   // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
-  //       Index 0 means only querying the user keys, and 
+  //       Index 0 means only querying the user keys, and
   //       the value column index is from 1 to MAX_COLUMN_INDEX.
   const std::string ReformatUserValue(const std::string& user_value,
                                       const std::vector<uint32_t>& columns,

@@ -10,10 +10,10 @@
 namespace vidardb {
 
 ManagedSnapshot::ManagedSnapshot(DB* db) : db_(db),
-                                           snapshot_(db->GetSnapshot()) {}
+  snapshot_(db->GetSnapshot()) {}
 
 ManagedSnapshot::ManagedSnapshot(DB* db, const Snapshot* _snapshot)
-    : db_(db), snapshot_(_snapshot) {}
+  : db_(db), snapshot_(_snapshot) {}
 
 ManagedSnapshot::~ManagedSnapshot() {
   if (snapshot_) {
@@ -21,6 +21,8 @@ ManagedSnapshot::~ManagedSnapshot() {
   }
 }
 
-const Snapshot* ManagedSnapshot::snapshot() { return snapshot_;}
+const Snapshot* ManagedSnapshot::snapshot() {
+  return snapshot_;
+}
 
 }  // namespace vidardb

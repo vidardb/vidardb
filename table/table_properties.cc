@@ -19,50 +19,50 @@
 namespace vidardb {
 
 const uint32_t TablePropertiesCollectorFactory::Context::kUnknownColumnFamily =
-    port::kMaxInt32;
+  port::kMaxInt32;
 
 namespace {
-  void AppendProperty(
-      std::string& props,
-      const std::string& key,
-      const std::string& value,
-      const std::string& prop_delim,
-      const std::string& kv_delim) {
-    props.append(key);
-    props.append(kv_delim);
-    props.append(value);
-    props.append(prop_delim);
-  }
+void AppendProperty(
+  std::string& props,
+  const std::string& key,
+  const std::string& value,
+  const std::string& prop_delim,
+  const std::string& kv_delim) {
+  props.append(key);
+  props.append(kv_delim);
+  props.append(value);
+  props.append(prop_delim);
+}
 
-  template <class TValue>
-  void AppendProperty(
-      std::string& props,
-      const std::string& key,
-      const TValue& value,
-      const std::string& prop_delim,
-      const std::string& kv_delim) {
-    AppendProperty(
-        props, key, ToString(value), prop_delim, kv_delim
-    );
-  }
+template <class TValue>
+void AppendProperty(
+  std::string& props,
+  const std::string& key,
+  const TValue& value,
+  const std::string& prop_delim,
+  const std::string& kv_delim) {
+  AppendProperty(
+    props, key, ToString(value), prop_delim, kv_delim
+  );
+}
 
-  // Seek to the specified meta block.
-  // Return true if it successfully seeks to that block.
-  Status SeekToMetaBlock(InternalIterator* meta_iter,
-                         const std::string& block_name, bool* is_found) {
-    *is_found = true;
-    meta_iter->Seek(block_name);
-    if (meta_iter->status().ok() &&
-        (!meta_iter->Valid() || meta_iter->key() != block_name)) {
-      *is_found = false;
-    }
-    return meta_iter->status();
+// Seek to the specified meta block.
+// Return true if it successfully seeks to that block.
+Status SeekToMetaBlock(InternalIterator* meta_iter,
+                       const std::string& block_name, bool* is_found) {
+  *is_found = true;
+  meta_iter->Seek(block_name);
+  if (meta_iter->status().ok() &&
+      (!meta_iter->Valid() || meta_iter->key() != block_name)) {
+    *is_found = false;
   }
+  return meta_iter->status();
+}
 }
 
 std::string TableProperties::ToString(
-    const std::string& prop_delim,
-    const std::string& kv_delim) const {
+  const std::string& prop_delim,
+  const std::string& kv_delim) const {
   std::string result;
   result.reserve(1024);
 
@@ -89,14 +89,14 @@ std::string TableProperties::ToString(
                  data_size + index_size + filter_size, prop_delim, kv_delim);
   AppendProperty(result, "column family ID",
                  column_family_id == vidardb::TablePropertiesCollectorFactory::
-                                         Context::kUnknownColumnFamily
-                     ? std::string("N/A")
-                     : vidardb::ToString(column_family_id),
+                 Context::kUnknownColumnFamily
+                 ? std::string("N/A")
+                 : vidardb::ToString(column_family_id),
                  prop_delim, kv_delim);
   AppendProperty(
-      result, "column family name",
-      column_family_name.empty() ? std::string("N/A") : column_family_name,
-      prop_delim, kv_delim);
+    result, "column family name",
+    column_family_name.empty() ? std::string("N/A") : column_family_name,
+    prop_delim, kv_delim);
 
   AppendProperty(result, "comparator name",
                  comparator_name.empty() ? std::string("N/A") : comparator_name,
@@ -104,13 +104,13 @@ std::string TableProperties::ToString(
 
   AppendProperty(result, "property collectors names",
                  property_collectors_names.empty() ? std::string("N/A")
-                                                   : property_collectors_names,
+                 : property_collectors_names,
                  prop_delim, kv_delim);
 
   AppendProperty(
-      result, "SST file compression algo",
-      compression_name.empty() ? std::string("N/A") : compression_name,
-      prop_delim, kv_delim);
+    result, "SST file compression algo",
+    compression_name.empty() ? std::string("N/A") : compression_name,
+    prop_delim, kv_delim);
 
   return result;
 }
@@ -126,34 +126,34 @@ void TableProperties::Add(const TableProperties& tp) {
 }
 
 const std::string TablePropertiesNames::kDataSize  =
-    "vidardb.data.size";
+  "vidardb.data.size";
 const std::string TablePropertiesNames::kIndexSize =
-    "vidardb.index.size";
+  "vidardb.index.size";
 const std::string TablePropertiesNames::kFilterSize =
-    "vidardb.filter.size";
+  "vidardb.filter.size";
 const std::string TablePropertiesNames::kRawKeySize =
-    "vidardb.raw.key.size";
+  "vidardb.raw.key.size";
 const std::string TablePropertiesNames::kRawValueSize =
-    "vidardb.raw.value.size";
+  "vidardb.raw.value.size";
 const std::string TablePropertiesNames::kNumDataBlocks =
-    "vidardb.num.data.blocks";
+  "vidardb.num.data.blocks";
 const std::string TablePropertiesNames::kNumEntries =
-    "vidardb.num.entries";
+  "vidardb.num.entries";
 const std::string TablePropertiesNames::kFilterPolicy =
-    "vidardb.filter.policy";
+  "vidardb.filter.policy";
 const std::string TablePropertiesNames::kFormatVersion =
-    "vidardb.format.version";
+  "vidardb.format.version";
 const std::string TablePropertiesNames::kFixedKeyLen =
-    "vidardb.fixed.key.length";
+  "vidardb.fixed.key.length";
 const std::string TablePropertiesNames::kColumnFamilyId =
-    "vidardb.column.family.id";
+  "vidardb.column.family.id";
 const std::string TablePropertiesNames::kColumnFamilyName =
-    "vidardb.column.family.name";
+  "vidardb.column.family.name";
 const std::string TablePropertiesNames::kComparator = "vidardb.comparator";
 const std::string TablePropertiesNames::kMergeOperator =
-    "vidardb.merge.operator";
+  "vidardb.merge.operator";
 const std::string TablePropertiesNames::kPropertyCollectors =
-    "vidardb.property.collectors";
+  "vidardb.property.collectors";
 const std::string TablePropertiesNames::kCompression = "vidardb.compression";
 
 extern const std::string kPropertiesBlock = "vidardb.properties";

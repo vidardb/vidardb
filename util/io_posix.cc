@@ -86,7 +86,9 @@ size_t Lower(const size_t size, const size_t fac) {
   return size - (size % fac);
 }
 
-bool IsSectorAligned(const size_t off) { return off % kSectorSize == 0; }
+bool IsSectorAligned(const size_t off) {
+  return off % kSectorSize == 0;
+}
 
 static bool IsPageAligned(const void* ptr) {
   return uintptr_t(ptr) % (kPageSize) == 0;
@@ -102,7 +104,7 @@ Status ReadAligned(int fd, Slice* data, const uint64_t offset,
   ssize_t status = -1;
   while (bytes_read < size) {
     status =
-        pread(fd, scratch + bytes_read, size - bytes_read, offset + bytes_read);
+      pread(fd, scratch + bytes_read, size - bytes_read, offset + bytes_read);
     if (status <= 0) {
       if (errno == EINTR) {
         continue;
@@ -149,7 +151,7 @@ Status ReadUnaligned(int fd, Slice* data, const uint64_t offset,
 
   // copy data upto min(size, what was read)
   memcpy(scratch, reinterpret_cast<char*>(aligned_scratch.get()) +
-                      (offset % kSectorSize),
+         (offset % kSectorSize),
          std::min(size, scratch_slice.size()));
   *data = Slice(scratch, std::min(size, scratch_slice.size()));
   return s;
@@ -169,14 +171,16 @@ Status DirectIORead(int fd, Slice* result, size_t off, size_t n,
  * PosixSequentialFile
  */
 PosixSequentialFile::PosixSequentialFile(const std::string& fname, FILE* f,
-                                         const EnvOptions& options)
+    const EnvOptions& options)
 //    : filename_(fname),
-    : SequentialFile(fname),
-      file_(f),
-      fd_(fileno(f)),
-      use_os_buffer_(options.use_os_buffer) {}
+  : SequentialFile(fname),
+    file_(f),
+    fd_(fileno(f)),
+    use_os_buffer_(options.use_os_buffer) {}
 
-PosixSequentialFile::~PosixSequentialFile() { fclose(file_); }
+PosixSequentialFile::~PosixSequentialFile() {
+  fclose(file_);
+}
 
 Status PosixSequentialFile::Read(size_t n, Slice* result, char* scratch) {
   Status s;
@@ -228,7 +232,7 @@ Status PosixSequentialFile::InvalidateCache(size_t offset, size_t length) {
  * PosixDirectIOSequentialFile
  */
 Status PosixDirectIOSequentialFile::Read(size_t n, Slice* result,
-                                         char* scratch) {
+    char* scratch) {
   const size_t off = off_.fetch_add(n);
   return DirectIORead(fd_, result, off, n, scratch);
 }
@@ -239,7 +243,7 @@ Status PosixDirectIOSequentialFile::Skip(uint64_t n) {
 }
 
 Status PosixDirectIOSequentialFile::InvalidateCache(size_t /*offset*/,
-                                                    size_t /*length*/) {
+    size_t /*length*/) {
   return Status::OK();
 }
 
@@ -302,13 +306,15 @@ size_t PosixHelper::GetUniqueIdFromFile(int fd, char* id, size_t max_size) {
  * pread() based random-access
  */
 PosixRandomAccessFile::PosixRandomAccessFile(const std::string& fname, int fd,
-                                             const EnvOptions& options)
-    : /*filename_(fname),*/ RandomAccessFile(fname),  // Shichao
-      fd_(fd), use_os_buffer_(options.use_os_buffer) {
+    const EnvOptions& options)
+  : /*filename_(fname),*/ RandomAccessFile(fname),  // Shichao
+    fd_(fd), use_os_buffer_(options.use_os_buffer) {
   assert(!options.use_mmap_reads || sizeof(void*) < 8);
 }
 
-PosixRandomAccessFile::~PosixRandomAccessFile() { close(fd_); }
+PosixRandomAccessFile::~PosixRandomAccessFile() {
+  close(fd_);
+}
 
 Status PosixRandomAccessFile::Read(uint64_t offset, size_t n, Slice* result,
                                    char* scratch) const {
@@ -351,24 +357,24 @@ size_t PosixRandomAccessFile::GetUniqueId(char* id, size_t max_size) const {
 
 void PosixRandomAccessFile::Hint(AccessPattern pattern) {
   switch (pattern) {
-    case NORMAL:
-      Fadvise(fd_, 0, 0, POSIX_FADV_NORMAL);
-      break;
-    case RANDOM:
-      Fadvise(fd_, 0, 0, POSIX_FADV_RANDOM);
-      break;
-    case SEQUENTIAL:
-      Fadvise(fd_, 0, 0, POSIX_FADV_SEQUENTIAL);
-      break;
-    case WILLNEED:
-      Fadvise(fd_, 0, 0, POSIX_FADV_WILLNEED);
-      break;
-    case DONTNEED:
-      Fadvise(fd_, 0, 0, POSIX_FADV_DONTNEED);
-      break;
-    default:
-      assert(false);
-      break;
+  case NORMAL:
+    Fadvise(fd_, 0, 0, POSIX_FADV_NORMAL);
+    break;
+  case RANDOM:
+    Fadvise(fd_, 0, 0, POSIX_FADV_RANDOM);
+    break;
+  case SEQUENTIAL:
+    Fadvise(fd_, 0, 0, POSIX_FADV_SEQUENTIAL);
+    break;
+  case WILLNEED:
+    Fadvise(fd_, 0, 0, POSIX_FADV_WILLNEED);
+    break;
+  case DONTNEED:
+    Fadvise(fd_, 0, 0, POSIX_FADV_DONTNEED);
+    break;
+  default:
+    assert(false);
+    break;
   }
 }
 
@@ -389,7 +395,7 @@ Status PosixRandomAccessFile::InvalidateCache(size_t offset, size_t length) {
  * PosixDirectIORandomAccessFile
  */
 Status PosixDirectIORandomAccessFile::Read(uint64_t offset, size_t n,
-                                           Slice* result, char* scratch) const {
+    Slice* result, char* scratch) const {
   Status s = DirectIORead(fd_, result, offset, n, scratch);
   return s;
 }
@@ -401,11 +407,11 @@ Status PosixDirectIORandomAccessFile::Read(uint64_t offset, size_t n,
  */
 // base[0,length-1] contains the mmapped contents of the file.
 PosixMmapReadableFile::PosixMmapReadableFile(const int fd,
-                                             const std::string& fname,
-                                             void* base, size_t length,
-                                             const EnvOptions& options)
-    : RandomAccessFile(fname),  // Shichao
-      fd_(fd), /*filename_(fname),*/ mmapped_region_(base), length_(length) {
+    const std::string& fname,
+    void* base, size_t length,
+    const EnvOptions& options)
+  : RandomAccessFile(fname),  // Shichao
+    fd_(fd), /*filename_(fname),*/ mmapped_region_(base), length_(length) {
   fd_ = fd_ + 0;  // suppress the warning for used variables
   assert(options.use_mmap_reads);
   assert(options.use_os_buffer);
@@ -530,15 +536,15 @@ Status PosixMmapFile::Msync() {
 PosixMmapFile::PosixMmapFile(const std::string& fname, int fd, size_t page_size,
                              const EnvOptions& options)
 //    : filename_(fname),  // Shichao
-    : WritableFile(fname),
-      fd_(fd),
-      page_size_(page_size),
-      map_size_(Roundup(65536, page_size)),
-      base_(nullptr),
-      limit_(nullptr),
-      dst_(nullptr),
-      last_sync_(nullptr),
-      file_offset_(0) {
+  : WritableFile(fname),
+    fd_(fd),
+    page_size_(page_size),
+    map_size_(Roundup(65536, page_size)),
+    base_(nullptr),
+    limit_(nullptr),
+    dst_(nullptr),
+    last_sync_(nullptr),
+    file_offset_(0) {
 #ifdef VIDARDB_FALLOCATE_PRESENT
   allow_fallocate_ = options.allow_fallocate;
   fallocate_with_keep_size_ = options.fallocate_with_keep_size;
@@ -607,7 +613,9 @@ Status PosixMmapFile::Close() {
   return s;
 }
 
-Status PosixMmapFile::Flush() { return Status::OK(); }
+Status PosixMmapFile::Flush() {
+  return Status::OK();
+}
 
 Status PosixMmapFile::Sync() {
   if (fdatasync(fd_) < 0) {
@@ -659,8 +667,8 @@ Status PosixMmapFile::Allocate(uint64_t offset, uint64_t len) {
   int alloc_status = 0;
   if (allow_fallocate_) {
     alloc_status = fallocate(
-        fd_, fallocate_with_keep_size_ ? FALLOC_FL_KEEP_SIZE : 0,
-          static_cast<off_t>(offset), static_cast<off_t>(len));
+                     fd_, fallocate_with_keep_size_ ? FALLOC_FL_KEEP_SIZE : 0,
+                     static_cast<off_t>(offset), static_cast<off_t>(len));
   }
   if (alloc_status == 0) {
     return Status::OK();
@@ -678,7 +686,7 @@ Status PosixMmapFile::Allocate(uint64_t offset, uint64_t len) {
 PosixWritableFile::PosixWritableFile(const std::string& fname, int fd,
                                      const EnvOptions& options)
 //    : filename_(fname),  //Shichao
-    : WritableFile(fname), fd_(fd), filesize_(0) {
+  : WritableFile(fname), fd_(fd), filesize_(0) {
 #ifdef VIDARDB_FALLOCATE_PRESENT
   allow_fallocate_ = options.allow_fallocate;
   fallocate_with_keep_size_ = options.fallocate_with_keep_size;
@@ -750,7 +758,9 @@ Status PosixWritableFile::Close() {
 }
 
 // write out the cached data to the OS cache
-Status PosixWritableFile::Flush() { return Status::OK(); }
+Status PosixWritableFile::Flush() {
+  return Status::OK();
+}
 
 Status PosixWritableFile::Sync() {
   if (fdatasync(fd_) < 0) {
@@ -766,9 +776,13 @@ Status PosixWritableFile::Fsync() {
   return Status::OK();
 }
 
-bool PosixWritableFile::IsSyncThreadSafe() const { return true; }
+bool PosixWritableFile::IsSyncThreadSafe() const {
+  return true;
+}
 
-uint64_t PosixWritableFile::GetFileSize() { return filesize_; }
+uint64_t PosixWritableFile::GetFileSize() {
+  return filesize_;
+}
 
 Status PosixWritableFile::InvalidateCache(size_t offset, size_t length) {
 #ifndef OS_LINUX
@@ -792,8 +806,8 @@ Status PosixWritableFile::Allocate(uint64_t offset, uint64_t len) {
   int alloc_status = 0;
   if (allow_fallocate_) {
     alloc_status = fallocate(
-        fd_, fallocate_with_keep_size_ ? FALLOC_FL_KEEP_SIZE : 0,
-        static_cast<off_t>(offset), static_cast<off_t>(len));
+                     fd_, fallocate_with_keep_size_ ? FALLOC_FL_KEEP_SIZE : 0,
+                     static_cast<off_t>(offset), static_cast<off_t>(len));
   }
   if (alloc_status == 0) {
     return Status::OK();
@@ -806,7 +820,7 @@ Status PosixWritableFile::RangeSync(uint64_t offset, uint64_t nbytes) {
   assert(offset <= static_cast<uint64_t>(std::numeric_limits<off_t>::max()));
   assert(nbytes <= static_cast<uint64_t>(std::numeric_limits<off_t>::max()));
   if (sync_file_range(fd_, static_cast<off_t>(offset),
-      static_cast<off_t>(nbytes), SYNC_FILE_RANGE_WRITE) == 0) {
+                      static_cast<off_t>(nbytes), SYNC_FILE_RANGE_WRITE) == 0) {
     return Status::OK();
   } else {
     return IOError(filename_, errno);
@@ -830,7 +844,7 @@ Status PosixDirectIOWritableFile::Append(const Slice& data) {
 }
 
 Status PosixDirectIOWritableFile::PositionedAppend(const Slice& data,
-                                                   uint64_t offset) {
+    uint64_t offset) {
   assert(IsSectorAligned(offset));
   assert(IsSectorAligned(data.size()));
   assert(IsPageAligned(data.data()));
@@ -845,7 +859,9 @@ Status PosixDirectIOWritableFile::PositionedAppend(const Slice& data,
  * PosixDirectory
  */
 
-PosixDirectory::~PosixDirectory() { close(fd_); }
+PosixDirectory::~PosixDirectory() {
+  close(fd_);
+}
 
 Status PosixDirectory::Fsync() {
   if (fsync(fd_) == -1) {

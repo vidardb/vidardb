@@ -22,7 +22,9 @@ class SnapshotImpl : public Snapshot {
  public:
   SequenceNumber number_;  // const after creation
 
-  virtual SequenceNumber GetSequenceNumber() const override { return number_; }
+  virtual SequenceNumber GetSequenceNumber() const override {
+    return number_;
+  }
 
  private:
   friend class SnapshotList;
@@ -48,9 +50,17 @@ class SnapshotList {
     count_ = 0;
   }
 
-  bool empty() const { return list_.next_ == &list_; }
-  SnapshotImpl* oldest() const { assert(!empty()); return list_.next_; }
-  SnapshotImpl* newest() const { assert(!empty()); return list_.prev_; }
+  bool empty() const {
+    return list_.next_ == &list_;
+  }
+  SnapshotImpl* oldest() const {
+    assert(!empty());
+    return list_.next_;
+  }
+  SnapshotImpl* newest() const {
+    assert(!empty());
+    return list_.prev_;
+  }
 
   const SnapshotImpl* New(SnapshotImpl* s, SequenceNumber seq,
                           uint64_t unix_time, bool is_write_conflict_boundary) {
@@ -76,7 +86,7 @@ class SnapshotList {
 
   // retrieve all snapshot numbers. They are sorted in ascending order.
   std::vector<SequenceNumber> GetAll(
-      SequenceNumber* oldest_write_conflict_snapshot = nullptr) {
+    SequenceNumber* oldest_write_conflict_snapshot = nullptr) {
     std::vector<SequenceNumber> ret;
 
     if (oldest_write_conflict_snapshot != nullptr) {
@@ -119,7 +129,9 @@ class SnapshotList {
     }
   }
 
-  uint64_t count() const { return count_; }
+  uint64_t count() const {
+    return count_;
+  }
 
  private:
   // Dummy head of doubly-linked list of snapshots

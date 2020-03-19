@@ -18,7 +18,7 @@ enum PerfLevel : char {
   kDisable = 0,                   // disable perf stats
   kEnableCount = 1,               // enable only count stats
   kEnableTimeExceptForMutex = 2,  // Other than count stats, also enable time
-                                  // stats except for mutexes
+  // stats except for mutexes
   kEnableTime = 3,                // enable count and time stats
   kOutOfBounds = 4                // N.B. Must always be the last value!
 };

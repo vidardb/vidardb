@@ -96,20 +96,20 @@ namespace {
 class Repairer {
  public:
   Repairer(const std::string& dbname, const Options& options)
-      : dbname_(dbname),
-        env_(options.env),
-        icmp_(options.comparator),
-        options_(SanitizeOptions(dbname, &icmp_, options)),
-        ioptions_(options_),
-        raw_table_cache_(
-            // TableCache can be small since we expect each table to be opened
-            // once.
-            NewLRUCache(10, options_.table_cache_numshardbits)),
-        next_file_number_(1) {
+    : dbname_(dbname),
+      env_(options.env),
+      icmp_(options.comparator),
+      options_(SanitizeOptions(dbname, &icmp_, options)),
+      ioptions_(options_),
+      raw_table_cache_(
+        // TableCache can be small since we expect each table to be opened
+        // once.
+        NewLRUCache(10, options_.table_cache_numshardbits)),
+      next_file_number_(1) {
     GetIntTblPropCollectorFactory(options, &int_tbl_prop_collector_factories_);
 
     table_cache_ =
-        new TableCache(ioptions_, env_options_, raw_table_cache_.get());
+      new TableCache(ioptions_, env_options_, raw_table_cache_.get());
     edit_ = new VersionEdit();
   }
 
@@ -172,7 +172,7 @@ class Repairer {
     bool found_file = false;
     for (size_t path_id = 0; path_id < options_.db_paths.size(); path_id++) {
       Status status =
-          env_->GetChildren(options_.db_paths[path_id].path, &filenames);
+        env_->GetChildren(options_.db_paths[path_id].path, &filenames);
       if (!status.ok()) {
         return status;
       }
@@ -244,7 +244,7 @@ class Repairer {
       return status;
     }
     unique_ptr<SequentialFileReader> lfile_reader(
-        new SequentialFileReader(std::move(lfile)));
+      new SequentialFileReader(std::move(lfile)));
 
     // Create the log reader.
     LogReporter reporter;
@@ -264,15 +264,15 @@ class Repairer {
     WriteBatch batch;
     WriteBuffer wb(options_.db_write_buffer_size);
     MemTable* mem =
-        new MemTable(icmp_, ioptions_, MutableCFOptions(options_, ioptions_),
-                     &wb, kMaxSequenceNumber);
+      new MemTable(icmp_, ioptions_, MutableCFOptions(options_, ioptions_),
+                   &wb, kMaxSequenceNumber);
     auto cf_mems_default = new ColumnFamilyMemTablesDefault(mem);
     mem->Ref();
     int counter = 0;
     while (reader.ReadRecord(&record, &scratch)) {
       if (record.size() < WriteBatchInternal::kHeader) {
         reporter.Corruption(
-            record.size(), Status::Corruption("log record too small"));
+          record.size(), Status::Corruption("log record too small"));
         continue;
       }
       WriteBatchInternal::SetContents(&batch, record);
@@ -298,13 +298,13 @@ class Repairer {
       ScopedArenaIterator iter(mem->NewIterator(ro, &arena));
       MutableCFOptions mutable_cf_options(options_, ioptions_);
       status = BuildTable(
-          dbname_, env_, ioptions_, mutable_cf_options, env_options_,
-          table_cache_, iter.get(), &meta, icmp_,
-          &int_tbl_prop_collector_factories_,
-          TablePropertiesCollectorFactory::Context::kUnknownColumnFamily,
-          std::string() /* column_family_name */, {}, kMaxSequenceNumber,
-          kNoCompression, CompressionOptions(), false,
-          nullptr /* internal_stats */, TableFileCreationReason::kRecovery);
+                 dbname_, env_, ioptions_, mutable_cf_options, env_options_,
+                 table_cache_, iter.get(), &meta, icmp_,
+                 &int_tbl_prop_collector_factories_,
+                 TablePropertiesCollectorFactory::Context::kUnknownColumnFamily,
+                 std::string() /* column_family_name */, {}, kMaxSequenceNumber,
+                 kNoCompression, CompressionOptions(), false,
+                 nullptr /* internal_stats */, TableFileCreationReason::kRecovery);
     }
     delete mem->Unref();
     delete cf_mems_default;
@@ -327,7 +327,7 @@ class Repairer {
       Status status = ScanTable(&t);
       if (!status.ok()) {
         std::string fname = TableFileName(
-            options_.db_paths, t.meta.fd.GetNumber(), t.meta.fd.GetPathId());
+                              options_.db_paths, t.meta.fd.GetNumber(), t.meta.fd.GetPathId());
         char file_num_buf[kFormatFileNumberBufSize];
         FormatFileNumber(t.meta.fd.GetNumber(), t.meta.fd.GetPathId(),
                          file_num_buf, sizeof(file_num_buf));
@@ -351,7 +351,7 @@ class Repairer {
                                 file_size, file_size);  // Shichao
     if (status.ok()) {
       InternalIterator* iter = table_cache_->NewIterator(
-          ReadOptions(), env_options_, icmp_, t->meta.fd);
+                                 ReadOptions(), env_options_, icmp_, t->meta.fd);
       bool empty = true;
       ParsedInternalKey parsed;
       t->min_sequence = 0;
@@ -423,7 +423,7 @@ class Repairer {
     //fprintf(stderr, "NewDescriptor:\n%s\n", edit_.DebugString().c_str());
     {
       unique_ptr<WritableFileWriter> file_writer(
-          new WritableFileWriter(std::move(file), env_options));
+        new WritableFileWriter(std::move(file), env_options));
       log::Writer log(std::move(file_writer), 0, false);
       std::string record;
       edit_->EncodeTo(&record);

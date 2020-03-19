@@ -13,11 +13,11 @@ namespace vidardb {
 class PerfStepTimer {
  public:
   explicit PerfStepTimer(uint64_t* metric, bool for_mutex = false)
-      : enabled_(perf_level >= PerfLevel::kEnableTime ||
-                 (!for_mutex && perf_level >= kEnableTimeExceptForMutex)),
-        env_(enabled_ ? Env::Default() : nullptr),
-        start_(0),
-        metric_(metric) {}
+    : enabled_(perf_level >= PerfLevel::kEnableTime ||
+               (!for_mutex && perf_level >= kEnableTimeExceptForMutex)),
+      env_(enabled_ ? Env::Default() : nullptr),
+      start_(0),
+      metric_(metric) {}
 
   ~PerfStepTimer() {
     Stop();

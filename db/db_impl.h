@@ -134,12 +134,12 @@ class DBImpl : public DB {
   virtual Status ContinueBackgroundWork() override;
 
   virtual Status EnableAutoCompaction(
-      const std::vector<ColumnFamilyHandle*>& column_family_handles) override;
+    const std::vector<ColumnFamilyHandle*>& column_family_handles) override;
 
   using DB::SetOptions;
   Status SetOptions(
-      ColumnFamilyHandle* column_family,
-      const std::unordered_map<std::string, std::string>& options_map) override;
+    ColumnFamilyHandle* column_family,
+    const std::unordered_map<std::string, std::string>& options_map) override;
 
   using DB::NumberLevels;
   virtual int NumberLevels(ColumnFamilyHandle* column_family) override;
@@ -147,12 +147,12 @@ class DBImpl : public DB {
   virtual int MaxMemCompactionLevel(ColumnFamilyHandle* column_family) override;
   using DB::Level0StopWriteTrigger;
   virtual int Level0StopWriteTrigger(
-      ColumnFamilyHandle* column_family) override;
+    ColumnFamilyHandle* column_family) override;
   virtual const std::string& GetName() const override;
   virtual Env* GetEnv() const override;
   using DB::GetOptions;
   virtual const Options& GetOptions(
-      ColumnFamilyHandle* column_family) const override;
+    ColumnFamilyHandle* column_family) const override;
   using DB::GetDBOptions;
   virtual const DBOptions& GetDBOptions() const override;
   using DB::Flush;
@@ -173,23 +173,23 @@ class DBImpl : public DB {
   virtual Status GetSortedWalFiles(VectorLogPtr& files) override;
 
   virtual Status GetUpdatesSince(
-      SequenceNumber seq_number, unique_ptr<TransactionLogIterator>* iter,
-      const TransactionLogIterator::ReadOptions&
-          read_options = TransactionLogIterator::ReadOptions()) override;
+    SequenceNumber seq_number, unique_ptr<TransactionLogIterator>* iter,
+    const TransactionLogIterator::ReadOptions&
+    read_options = TransactionLogIterator::ReadOptions()) override;
   virtual Status DeleteFile(std::string name) override;
   Status DeleteFilesInRange(ColumnFamilyHandle* column_family,
                             const Slice* begin, const Slice* end);
 
   virtual void GetLiveFilesMetaData(
-      std::vector<LiveFileMetaData>* metadata) override;
+    std::vector<LiveFileMetaData>* metadata) override;
 
   // Obtains the meta data of the specified column family of the DB.
   // Status::NotFound() will be returned if the current DB does not have
   // any column family match the specified name.
   // TODO(yhchiang): output parameter is placed in the end in this codebase.
   virtual void GetColumnFamilyMetaData(
-      ColumnFamilyHandle* column_family,
-      ColumnFamilyMetaData* metadata) override;
+    ColumnFamilyHandle* column_family,
+    ColumnFamilyMetaData* metadata) override;
 
   // experimental API
   Status SuggestCompactRange(ColumnFamilyHandle* column_family,
@@ -208,7 +208,7 @@ class DBImpl : public DB {
   // If include_history=true, will also search Memtables in MemTableList
   // History.
   SequenceNumber GetEarliestMemTableSequenceNumber(SuperVersion* sv,
-                                                   bool include_history);
+      bool include_history);
 
   // For a given key, check to see if there are any records for this key
   // in the memtables, including memtable history.  If cache_only is false,
@@ -267,7 +267,7 @@ class DBImpl : public DB {
   // The keys of this iterator are internal keys (see format.h).
   // The returned iterator should be deleted when no longer needed.
   InternalIterator* NewInternalIterator(
-      Arena* arena, ColumnFamilyHandle* column_family = nullptr);
+    Arena* arena, ColumnFamilyHandle* column_family = nullptr);
 
 #ifndef NDEBUG
   // Extra methods (for testing) that are not in the public DB interface
@@ -291,7 +291,7 @@ class DBImpl : public DB {
   // Return the maximum overlapping data (in bytes) at next level for any
   // file at a level >= 1.
   int64_t TEST_MaxNextLevelOverlappingBytes(ColumnFamilyHandle* column_family =
-                                                nullptr);
+        nullptr);
 
   // Return the current manifest file no.
   uint64_t TEST_Current_Manifest_FileNo();
@@ -323,15 +323,19 @@ class DBImpl : public DB {
 
   // Returns column family name to ImmutableCFOptions map.
   Status TEST_GetAllImmutableCFOptions(
-      std::unordered_map<std::string, const ImmutableCFOptions*>* iopts_map);
+    std::unordered_map<std::string, const ImmutableCFOptions*>* iopts_map);
 
   // Return the lastest MutableCFOptions of of a column family
   Status TEST_GetLatestMutableCFOptions(ColumnFamilyHandle* column_family,
                                         MutableCFOptions* mutable_cf_opitons);
 
-  Cache* TEST_table_cache() { return table_cache_.get(); }
+  Cache* TEST_table_cache() {
+    return table_cache_.get();
+  }
 
-  WriteController& TEST_write_controler() { return write_controller_; }
+  WriteController& TEST_write_controler() {
+    return write_controller_;
+  }
 
   uint64_t TEST_FindMinLogContainingOutstandingPrep();
   uint64_t TEST_FindMinPrepLogReferencedByMemTable();
@@ -358,7 +362,9 @@ class DBImpl : public DB {
 
   ColumnFamilyHandle* DefaultColumnFamily() const override;
 
-  const SnapshotList& snapshots() const { return snapshots_; }
+  const SnapshotList& snapshots() const {
+    return snapshots_;
+  }
 
   void CancelAllBackgroundWork(bool wait);
 
@@ -388,7 +394,7 @@ class DBImpl : public DB {
 
   // Same as above, should called without mutex held and not on write thread.
   void ReturnAndCleanupSuperVersionUnlocked(uint32_t colun_family_id,
-                                            SuperVersion* sv);
+      SuperVersion* sv);
 
   // REQUIRED: this function should only be called on the write thread or if the
   // mutex is held.  Return value only valid until next call to this function or
@@ -421,12 +427,16 @@ class DBImpl : public DB {
     WriteBatch* batch_;
     explicit RecoveredTransaction(const uint64_t log, const std::string& name,
                                   WriteBatch* batch)
-        : log_number_(log), name_(name), batch_(batch) {}
+      : log_number_(log), name_(name), batch_(batch) {}
 
-    ~RecoveredTransaction() { delete batch_; }
+    ~RecoveredTransaction() {
+      delete batch_;
+    }
   };
 
-  bool allow_2pc() const { return db_options_.allow_2pc; }
+  bool allow_2pc() const {
+    return db_options_.allow_2pc;
+  }
 
   std::unordered_map<std::string, RecoveredTransaction*>
   recovered_transactions() {
@@ -475,7 +485,7 @@ class DBImpl : public DB {
   const DBOptions db_options_;
   Statistics* stats_;
   std::unordered_map<std::string, RecoveredTransaction*>
-      recovered_transactions_;
+  recovered_transactions_;
 
   InternalIterator* NewInternalIterator(const ReadOptions&,
                                         ColumnFamilyData* cfd,
@@ -501,7 +511,7 @@ class DBImpl : public DB {
                                    Compaction *c, const Status &st,
                                    const CompactionJobStats& job_stats,
                                    int job_id);
-  void NotifyOnMemTableSealed(ColumnFamilyData* cfd, 
+  void NotifyOnMemTableSealed(ColumnFamilyData* cfd,
                               const MemTableInfo& mem_table_info);
 
   void NewThreadStatusCfInfo(ColumnFamilyData* cfd) const;
@@ -604,10 +614,10 @@ class DBImpl : public DB {
 
 #ifndef VIDARDB_LITE
   Status CompactFilesImpl(
-      const CompactionOptions& compact_options, ColumnFamilyData* cfd,
-      Version* version, const std::vector<std::string>& input_file_names,
-      const int output_level, int output_path_id, JobContext* job_context,
-      LogBuffer* log_buffer);
+    const CompactionOptions& compact_options, ColumnFamilyData* cfd,
+    Version* version, const std::vector<std::string>& input_file_names,
+    const int output_level, int output_path_id, JobContext* job_context,
+    LogBuffer* log_buffer);
 #endif  // VIDARDB_LITE
 
   ColumnFamilyData* GetColumnFamilyDataByName(const std::string& cf_name);
@@ -636,7 +646,7 @@ class DBImpl : public DB {
   // Return the minimum empty level that could hold the total data in the
   // input level. Return the input level, if such level could not be found.
   int FindMinimumEmptyLevelFitting(ColumnFamilyData* cfd,
-      const MutableCFOptions& mutable_cf_options, int level);
+                                   const MutableCFOptions& mutable_cf_options, int level);
 
   // Move the files in the input level to the target level.
   // If target_level < 0, automatically calculate the minimum level that could
@@ -679,7 +689,7 @@ class DBImpl : public DB {
   InstrumentedCondVar bg_cv_;
   uint64_t logfile_number_;
   std::deque<uint64_t>
-      log_recycle_files;  // a list of log files that we can recycle
+  log_recycle_files;  // a list of log files that we can recycle
   bool log_dir_synced_;
   bool log_empty_;
   ColumnFamilyHandleImpl* default_cf_handle_;
@@ -687,8 +697,10 @@ class DBImpl : public DB {
   unique_ptr<ColumnFamilyMemTablesImpl> column_family_memtables_;
   struct LogFileNumberSize {
     explicit LogFileNumberSize(uint64_t _number)
-        : number(_number) {}
-    void AddSize(uint64_t new_size) { size += new_size; }
+      : number(_number) {}
+    void AddSize(uint64_t new_size) {
+      size += new_size;
+    }
     uint64_t number;
     uint64_t size = 0;
     bool getting_flushed = false;
@@ -696,7 +708,7 @@ class DBImpl : public DB {
   struct LogWriterNumber {
     // pass ownership of _writer
     LogWriterNumber(uint64_t _number, log::Writer* _writer)
-        : number(_number), writer(_writer) {}
+      : number(_number), writer(_writer) {}
 
     log::Writer* ReleaseWriter() {
       auto* w = writer;
@@ -755,7 +767,9 @@ class DBImpl : public DB {
       return db_dir_.get();
     }
 
-    Directory* GetDbDir() { return db_dir_.get(); }
+    Directory* GetDbDir() {
+      return db_dir_.get();
+    }
 
    private:
     std::unique_ptr<Directory> db_dir_;
@@ -952,24 +966,24 @@ class DBImpl : public DB {
   // job_context which can have new_superversion already
   // allocated.
   void InstallSuperVersionAndScheduleWorkWrapper(
-      ColumnFamilyData* cfd, JobContext* job_context,
-      const MutableCFOptions& mutable_cf_options);
+    ColumnFamilyData* cfd, JobContext* job_context,
+    const MutableCFOptions& mutable_cf_options);
 
   // All ColumnFamily state changes go through this function. Here we analyze
   // the new state and we schedule background work if we detect that the new
   // state needs flush or compaction.
   SuperVersion* InstallSuperVersionAndScheduleWork(
-      ColumnFamilyData* cfd, SuperVersion* new_sv,
-      const MutableCFOptions& mutable_cf_options);
+    ColumnFamilyData* cfd, SuperVersion* new_sv,
+    const MutableCFOptions& mutable_cf_options);
 
 #ifndef VIDARDB_LITE
   using DB::GetPropertiesOfAllTables;
   virtual Status GetPropertiesOfAllTables(ColumnFamilyHandle* column_family,
                                           TablePropertiesCollection* props)
-      override;
+  override;
   virtual Status GetPropertiesOfTablesInRange(
-      ColumnFamilyHandle* column_family, const Range* range, std::size_t n,
-      TablePropertiesCollection* props) override;
+    ColumnFamilyHandle* column_family, const Range* range, std::size_t n,
+    TablePropertiesCollection* props) override;
 
 #endif  // VIDARDB_LITE
 

@@ -77,7 +77,7 @@ class DeleteSchedulerTest : public testing::Test {
   void NewDeleteScheduler() {
     ASSERT_OK(env_->CreateDirIfMissing(trash_dir_));
     delete_scheduler_.reset(new DeleteScheduler(
-        env_, trash_dir_, rate_bytes_per_sec_, nullptr, nullptr));
+                              env_, trash_dir_, rate_bytes_per_sec_, nullptr, nullptr));
   }
 
   Env* env_;
@@ -96,14 +96,18 @@ class DeleteSchedulerTest : public testing::Test {
 // 5- Make sure that all created files were completely deleted
 TEST_F(DeleteSchedulerTest, BasicRateLimiting) {
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      {"DeleteSchedulerTest::BasicRateLimiting:1",
-       "DeleteScheduler::BackgroundEmptyTrash"},
+    {
+      "DeleteSchedulerTest::BasicRateLimiting:1",
+      "DeleteScheduler::BackgroundEmptyTrash"
+    },
   });
 
   std::vector<uint64_t> penalties;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DeleteScheduler::BackgroundEmptyTrash:Wait",
-      [&](void* arg) { penalties.push_back(*(static_cast<int*>(arg))); });
+    "DeleteScheduler::BackgroundEmptyTrash:Wait",
+  [&](void* arg) {
+    penalties.push_back(*(static_cast<int*>(arg)));
+  });
 
   int num_files = 100;  // 100 files
   uint64_t file_size = 1024;  // every file is 1 kb
@@ -163,14 +167,18 @@ TEST_F(DeleteSchedulerTest, BasicRateLimiting) {
 // 5- Make sure that all created files were completely deleted
 TEST_F(DeleteSchedulerTest, RateLimitingMultiThreaded) {
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      {"DeleteSchedulerTest::RateLimitingMultiThreaded:1",
-       "DeleteScheduler::BackgroundEmptyTrash"},
+    {
+      "DeleteSchedulerTest::RateLimitingMultiThreaded:1",
+      "DeleteScheduler::BackgroundEmptyTrash"
+    },
   });
 
   std::vector<uint64_t> penalties;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DeleteScheduler::BackgroundEmptyTrash:Wait",
-      [&](void* arg) { penalties.push_back(*(static_cast<int*>(arg))); });
+    "DeleteScheduler::BackgroundEmptyTrash:Wait",
+  [&](void* arg) {
+    penalties.push_back(*(static_cast<int*>(arg)));
+  });
 
   int thread_cnt = 10;
   int num_files = 10;  // 10 files per thread
@@ -243,8 +251,10 @@ TEST_F(DeleteSchedulerTest, RateLimitingMultiThreaded) {
 TEST_F(DeleteSchedulerTest, DisableRateLimiting) {
   int bg_delete_file = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DeleteScheduler::DeleteTrashFile:DeleteFile",
-      [&](void* arg) { bg_delete_file++; });
+    "DeleteScheduler::DeleteTrashFile:DeleteFile",
+  [&](void* arg) {
+    bg_delete_file++;
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -273,8 +283,10 @@ TEST_F(DeleteSchedulerTest, DisableRateLimiting) {
 // 4- Make sure that files are deleted from trash
 TEST_F(DeleteSchedulerTest, ConflictNames) {
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      {"DeleteSchedulerTest::ConflictNames:1",
-       "DeleteScheduler::BackgroundEmptyTrash"},
+    {
+      "DeleteSchedulerTest::ConflictNames:1",
+      "DeleteScheduler::BackgroundEmptyTrash"
+    },
   });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -309,8 +321,10 @@ TEST_F(DeleteSchedulerTest, ConflictNames) {
 //    reported 10 background errors
 TEST_F(DeleteSchedulerTest, BackgroundError) {
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      {"DeleteSchedulerTest::BackgroundError:1",
-       "DeleteScheduler::BackgroundEmptyTrash"},
+    {
+      "DeleteSchedulerTest::BackgroundError:1",
+      "DeleteScheduler::BackgroundEmptyTrash"
+    },
   });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -350,8 +364,10 @@ TEST_F(DeleteSchedulerTest, BackgroundError) {
 TEST_F(DeleteSchedulerTest, StartBGEmptyTrashMultipleTimes) {
   int bg_delete_file = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DeleteScheduler::DeleteTrashFile:DeleteFile",
-      [&](void* arg) { bg_delete_file++; });
+    "DeleteScheduler::DeleteTrashFile:DeleteFile",
+  [&](void* arg) {
+    bg_delete_file++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   rate_bytes_per_sec_ = 1024 * 1024;  // 1 MB / sec
@@ -385,8 +401,10 @@ TEST_F(DeleteSchedulerTest, StartBGEmptyTrashMultipleTimes) {
 TEST_F(DeleteSchedulerTest, DestructorWithNonEmptyQueue) {
   int bg_delete_file = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DeleteScheduler::DeleteTrashFile:DeleteFile",
-      [&](void* arg) { bg_delete_file++; });
+    "DeleteScheduler::DeleteTrashFile:DeleteFile",
+  [&](void* arg) {
+    bg_delete_file++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   rate_bytes_per_sec_ = 1;  // 1 Byte / sec
@@ -414,8 +432,10 @@ TEST_F(DeleteSchedulerTest, DestructorWithNonEmptyQueue) {
 TEST_F(DeleteSchedulerTest, MoveToTrashError) {
   int bg_delete_file = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DeleteScheduler::DeleteTrashFile:DeleteFile",
-      [&](void* arg) { bg_delete_file++; });
+    "DeleteScheduler::DeleteTrashFile:DeleteFile",
+  [&](void* arg) {
+    bg_delete_file++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   rate_bytes_per_sec_ = 1024;  // 1 Kb / sec

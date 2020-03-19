@@ -16,7 +16,7 @@ namespace vidardb {
 
 DBImplReadOnly::DBImplReadOnly(const DBOptions& db_options,
                                const std::string& dbname)
-    : DBImpl(db_options, dbname) {
+  : DBImpl(db_options, dbname) {
   Log(INFO_LEVEL, db_options_.info_log, "Opening the db in read only mode");
   LogFlush(db_options_.info_log);
 }
@@ -49,15 +49,15 @@ Iterator* DBImplReadOnly::NewIterator(const ReadOptions& read_options,
   SuperVersion* super_version = cfd->GetSuperVersion()->Ref();
   SequenceNumber latest_snapshot = versions_->LastSequence();
   auto db_iter = NewArenaWrappedDbIterator(
-      env_, *cfd->ioptions(), cfd->user_comparator(),
-      (read_options.snapshot != nullptr
-           ? reinterpret_cast<const SnapshotImpl*>(read_options.snapshot)
-                 ->number_
-           : latest_snapshot),
-      super_version->mutable_cf_options.max_sequential_skip_in_iterations,
-      super_version->version_number);
+                   env_, *cfd->ioptions(), cfd->user_comparator(),
+                   (read_options.snapshot != nullptr
+                    ? reinterpret_cast<const SnapshotImpl*>(read_options.snapshot)
+                    ->number_
+                    : latest_snapshot),
+                   super_version->mutable_cf_options.max_sequential_skip_in_iterations,
+                   super_version->version_number);
   auto internal_iter = NewInternalIterator(
-      read_options, cfd, super_version, db_iter->GetArena());
+                         read_options, cfd, super_version, db_iter->GetArena());
   db_iter->SetIterUnderDBIter(internal_iter);
   return db_iter;
 }
@@ -72,7 +72,7 @@ Status DB::OpenForReadOnly(const Options& options, const std::string& dbname,
   ColumnFamilyOptions cf_options(options);
   std::vector<ColumnFamilyDescriptor> column_families;
   column_families.push_back(
-      ColumnFamilyDescriptor(kDefaultColumnFamilyName, cf_options));
+    ColumnFamilyDescriptor(kDefaultColumnFamilyName, cf_options));
   std::vector<ColumnFamilyHandle*> handles;
 
   s = DB::OpenForReadOnly(db_options, dbname, column_families, &handles, dbptr);
@@ -86,10 +86,10 @@ Status DB::OpenForReadOnly(const Options& options, const std::string& dbname,
 }
 
 Status DB::OpenForReadOnly(
-    const DBOptions& db_options, const std::string& dbname,
-    const std::vector<ColumnFamilyDescriptor>& column_families,
-    std::vector<ColumnFamilyHandle*>* handles, DB** dbptr,
-    bool error_if_log_file_exist) {
+  const DBOptions& db_options, const std::string& dbname,
+  const std::vector<ColumnFamilyDescriptor>& column_families,
+  std::vector<ColumnFamilyHandle*>* handles, DB** dbptr,
+  bool error_if_log_file_exist) {
   *dbptr = nullptr;
   handles->clear();
 
@@ -101,7 +101,7 @@ Status DB::OpenForReadOnly(
     // set column family handles
     for (auto cf : column_families) {
       auto cfd =
-          impl->versions_->GetColumnFamilySet()->GetColumnFamily(cf.name);
+        impl->versions_->GetColumnFamilySet()->GetColumnFamily(cf.name);
       if (cfd == nullptr) {
         s = Status::InvalidArgument("Column family not found: ", cf.name);
         break;
@@ -119,7 +119,7 @@ Status DB::OpenForReadOnly(
     *dbptr = impl;
     for (auto* h : *handles) {
       impl->NewThreadStatusCfInfo(
-          reinterpret_cast<ColumnFamilyHandleImpl*>(h)->cfd());
+        reinterpret_cast<ColumnFamilyHandleImpl*>(h)->cfd());
     }
   } else {
     for (auto h : *handles) {
@@ -139,10 +139,10 @@ Status DB::OpenForReadOnly(const Options& options, const std::string& dbname,
 }
 
 Status DB::OpenForReadOnly(
-    const DBOptions& db_options, const std::string& dbname,
-    const std::vector<ColumnFamilyDescriptor>& column_families,
-    std::vector<ColumnFamilyHandle*>* handles, DB** dbptr,
-    bool error_if_log_file_exist) {
+  const DBOptions& db_options, const std::string& dbname,
+  const std::vector<ColumnFamilyDescriptor>& column_families,
+  std::vector<ColumnFamilyHandle*>* handles, DB** dbptr,
+  bool error_if_log_file_exist) {
   return Status::NotSupported("Not supported in VIDARDB_LITE.");
 }
 #endif  // !VIDARDB_LITE

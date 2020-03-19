@@ -39,7 +39,7 @@ void UpdateOptionsFiles(DB* db,
 
 // Verify whether the current Options Files are the latest ones.
 void VerifyOptionsFileName(
-    DB* db, const std::unordered_set<std::string>& past_filenames) {
+  DB* db, const std::unordered_set<std::string>& past_filenames) {
   std::vector<std::string> filenames;
   std::unordered_set<std::string> current_filenames;
   db->GetEnv()->GetChildren(db->GetName(), &filenames);

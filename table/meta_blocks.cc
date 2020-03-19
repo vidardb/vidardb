@@ -24,7 +24,7 @@
 namespace vidardb {
 
 MetaIndexBuilder::MetaIndexBuilder()
-    : meta_index_block_(new BlockBuilder(1 /* restart interval */)) {}
+  : meta_index_block_(new BlockBuilder(1 /* restart interval */)) {}
 
 void MetaIndexBuilder::Add(const std::string& key,
                            const BlockHandle& handle) {
@@ -41,7 +41,7 @@ Slice MetaIndexBuilder::Finish() {
 }
 
 PropertyBlockBuilder::PropertyBlockBuilder()
-    : properties_block_(new BlockBuilder(1 /* restart interval */)) {}
+  : properties_block_(new BlockBuilder(1 /* restart interval */)) {}
 
 void PropertyBlockBuilder::Add(const std::string& name,
                                const std::string& val) {
@@ -58,7 +58,7 @@ void PropertyBlockBuilder::Add(const std::string& name, uint64_t val) {
 }
 
 void PropertyBlockBuilder::Add(
-    const UserCollectedProperties& user_collected_properties) {
+  const UserCollectedProperties& user_collected_properties) {
   for (const auto& prop : user_collected_properties) {
     Add(prop.first, prop.second);
   }
@@ -103,7 +103,7 @@ Slice PropertyBlockBuilder::Finish() {
 
 /******************************* Shichao *****************************/
 MetaColumnBlockBuilder::MetaColumnBlockBuilder()
-    : meta_column_block_(new BlockBuilder(1)) {}
+  : meta_column_block_(new BlockBuilder(1)) {}
 
 void MetaColumnBlockBuilder::Add(bool key, uint32_t value) {
   std::string str_key, str_val;
@@ -120,8 +120,8 @@ void MetaColumnBlockBuilder::Add(uint32_t key, uint64_t value) {
 }
 
 void MetaColumnBlockBuilder::Add(const std::string& key,
-                             const std::string& value) {
-    meta_column_block_->Add(key, value);
+                                 const std::string& value) {
+  meta_column_block_->Add(key, value);
 }
 
 Slice MetaColumnBlockBuilder::Finish() {
@@ -130,7 +130,7 @@ Slice MetaColumnBlockBuilder::Finish() {
 /******************************* Shichao *****************************/
 
 void LogPropertiesCollectionError(
-    Logger* info_log, const std::string& method, const std::string& name) {
+  Logger* info_log, const std::string& method, const std::string& name) {
   assert(method == "Add" || method == "Finish");
 
   std::string msg =
@@ -140,9 +140,9 @@ void LogPropertiesCollectionError(
 }
 
 bool NotifyCollectTableCollectorsOnAdd(
-    const Slice& key, const Slice& value, uint64_t file_size,
-    const std::vector<std::unique_ptr<IntTblPropCollector>>& collectors,
-    Logger* info_log) {
+  const Slice& key, const Slice& value, uint64_t file_size,
+  const std::vector<std::unique_ptr<IntTblPropCollector>>& collectors,
+  Logger* info_log) {
   bool all_succeeded = true;
   for (auto& collector : collectors) {
     Status s = collector->InternalAdd(key, value, file_size);
@@ -156,8 +156,8 @@ bool NotifyCollectTableCollectorsOnAdd(
 }
 
 bool NotifyCollectTableCollectorsOnFinish(
-    const std::vector<std::unique_ptr<IntTblPropCollector>>& collectors,
-    Logger* info_log, PropertyBlockBuilder* builder) {
+  const std::vector<std::unique_ptr<IntTblPropCollector>>& collectors,
+  Logger* info_log, PropertyBlockBuilder* builder) {
   bool all_succeeded = true;
   for (auto& collector : collectors) {
     UserCollectedProperties user_collected_properties;
@@ -199,26 +199,36 @@ Status ReadProperties(const Slice& handle_value, RandomAccessFileReader* file,
 
   Block properties_block(std::move(block_contents));
   std::unique_ptr<InternalIterator> iter(
-      properties_block.NewIterator(BytewiseComparator()));
+    properties_block.NewIterator(BytewiseComparator()));
 
   auto new_table_properties = new TableProperties();
   // All pre-defined properties of type uint64_t
   std::unordered_map<std::string, uint64_t*> predefined_uint64_properties = {
-      {TablePropertiesNames::kDataSize, &new_table_properties->data_size},
-      {TablePropertiesNames::kIndexSize, &new_table_properties->index_size},
-      {TablePropertiesNames::kFilterSize, &new_table_properties->filter_size},
-      {TablePropertiesNames::kRawKeySize, &new_table_properties->raw_key_size},
-      {TablePropertiesNames::kRawValueSize,
-       &new_table_properties->raw_value_size},
-      {TablePropertiesNames::kNumDataBlocks,
-       &new_table_properties->num_data_blocks},
-      {TablePropertiesNames::kNumEntries, &new_table_properties->num_entries},
-      {TablePropertiesNames::kFormatVersion,
-       &new_table_properties->format_version},
-      {TablePropertiesNames::kFixedKeyLen,
-       &new_table_properties->fixed_key_len},
-      {TablePropertiesNames::kColumnFamilyId,
-       &new_table_properties->column_family_id},
+    {TablePropertiesNames::kDataSize, &new_table_properties->data_size},
+    {TablePropertiesNames::kIndexSize, &new_table_properties->index_size},
+    {TablePropertiesNames::kFilterSize, &new_table_properties->filter_size},
+    {TablePropertiesNames::kRawKeySize, &new_table_properties->raw_key_size},
+    {
+      TablePropertiesNames::kRawValueSize,
+      &new_table_properties->raw_value_size
+    },
+    {
+      TablePropertiesNames::kNumDataBlocks,
+      &new_table_properties->num_data_blocks
+    },
+    {TablePropertiesNames::kNumEntries, &new_table_properties->num_entries},
+    {
+      TablePropertiesNames::kFormatVersion,
+      &new_table_properties->format_version
+    },
+    {
+      TablePropertiesNames::kFixedKeyLen,
+      &new_table_properties->fixed_key_len
+    },
+    {
+      TablePropertiesNames::kColumnFamilyId,
+      &new_table_properties->column_family_id
+    },
   };
 
   std::string last_key;
@@ -260,7 +270,7 @@ Status ReadProperties(const Slice& handle_value, RandomAccessFileReader* file,
     } else {
       // handle user-collected properties
       new_table_properties->user_collected_properties.insert(
-          {key, raw_val.ToString()});
+      {key, raw_val.ToString()});
     }
   }
   if (s.ok()) {
@@ -294,7 +304,7 @@ Status ReadMetaColumnBlock(const Slice& handle_value,
 
   Block column_block(std::move(block_contents));
   std::unique_ptr<InternalIterator> iter(
-      column_block.NewIterator(BytewiseComparator()));
+    column_block.NewIterator(BytewiseComparator()));
 
   auto i = 0u;
   for (iter->SeekToFirst(); iter->Valid(); iter->Next(), ++i) {
@@ -341,7 +351,7 @@ Status ReadTableProperties(RandomAccessFileReader* file, uint64_t file_size,
   }
   Block metaindex_block(std::move(metaindex_contents));
   std::unique_ptr<InternalIterator> meta_iter(
-      metaindex_block.NewIterator(BytewiseComparator()));
+    metaindex_block.NewIterator(BytewiseComparator()));
 
   // -- Read property block
   bool found_properties_block = true;

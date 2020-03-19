@@ -61,10 +61,10 @@ struct ColumnFamilyDescriptor {
   std::string name;
   ColumnFamilyOptions options;
   ColumnFamilyDescriptor()
-      : name(kDefaultColumnFamilyName), options(ColumnFamilyOptions()) {}
+    : name(kDefaultColumnFamilyName), options(ColumnFamilyOptions()) {}
   ColumnFamilyDescriptor(const std::string& _name,
                          const ColumnFamilyOptions& _options)
-      : name(_name), options(_options) {}
+    : name(_name), options(_options) {}
 };
 
 class ColumnFamilyHandle {
@@ -105,17 +105,17 @@ struct RangeQueryKeyVal {
   std::string user_val;
 
   RangeQueryKeyVal(const std::string& key, const std::string& val) :
-                   user_key(key), user_val(val) { }
+    user_key(key), user_val(val) { }
 
   RangeQueryKeyVal(std::string&& key, const std::string&& val) :
-                   user_key(std::move(key)), user_val(std::move(val)) { }
+    user_key(std::move(key)), user_val(std::move(val)) { }
 
   RangeQueryKeyVal(const RangeQueryKeyVal& kv) :
-                   user_key(kv.user_key), user_val(kv.user_val) { }
+    user_key(kv.user_key), user_val(kv.user_val) { }
 
   RangeQueryKeyVal(RangeQueryKeyVal&& kv) :
-                   user_key(std::move(kv.user_key)),
-                   user_val(std::move(kv.user_val)) { }
+    user_key(std::move(kv.user_key)),
+    user_val(std::move(kv.user_val)) { }
 
   RangeQueryKeyVal& operator=(const RangeQueryKeyVal& kv) {
     user_key = kv.user_key;
@@ -172,10 +172,10 @@ class DB {
   // Not supported in VIDARDB_LITE, in which case the function will
   // return Status::NotSupported.
   static Status OpenForReadOnly(
-      const DBOptions& db_options, const std::string& name,
-      const std::vector<ColumnFamilyDescriptor>& column_families,
-      std::vector<ColumnFamilyHandle*>* handles, DB** dbptr,
-      bool error_if_log_file_exist = false);
+    const DBOptions& db_options, const std::string& name,
+    const std::vector<ColumnFamilyDescriptor>& column_families,
+    std::vector<ColumnFamilyHandle*>* handles, DB** dbptr,
+    bool error_if_log_file_exist = false);
 
   // Open DB with column families.
   // db_options specify database specific options
@@ -560,9 +560,9 @@ class DB {
   __declspec(deprecated)
 #endif
   virtual Status
-      CompactRange(ColumnFamilyHandle* column_family, const Slice* begin,
-                   const Slice* end, bool change_level = false,
-                   int target_level = -1, uint32_t target_path_id = 0) {
+  CompactRange(ColumnFamilyHandle* column_family, const Slice* begin,
+               const Slice* end, bool change_level = false,
+               int target_level = -1, uint32_t target_path_id = 0) {
     CompactRangeOptions options;
     options.change_level = change_level;
     options.target_level = target_level;
@@ -575,9 +575,9 @@ class DB {
   __declspec(deprecated)
 #endif
   virtual Status
-      CompactRange(const Slice* begin, const Slice* end,
-                   bool change_level = false, int target_level = -1,
-                   uint32_t target_path_id = 0) {
+  CompactRange(const Slice* begin, const Slice* end,
+               bool change_level = false, int target_level = -1,
+               uint32_t target_path_id = 0) {
     CompactRangeOptions options;
     options.change_level = change_level;
     options.target_level = target_level;
@@ -586,12 +586,12 @@ class DB {
   }
 
   virtual Status SetOptions(
-      ColumnFamilyHandle* /*column_family*/,
-      const std::unordered_map<std::string, std::string>& /*new_options*/) {
+    ColumnFamilyHandle* /*column_family*/,
+    const std::unordered_map<std::string, std::string>& /*new_options*/) {
     return Status::NotSupported("Not implemented");
   }
   virtual Status SetOptions(
-      const std::unordered_map<std::string, std::string>& new_options) {
+    const std::unordered_map<std::string, std::string>& new_options) {
     return SetOptions(DefaultColumnFamily(), new_options);
   }
 
@@ -632,11 +632,13 @@ class DB {
   // parameter itself within the column family option.
   //
   virtual Status EnableAutoCompaction(
-      const std::vector<ColumnFamilyHandle*>& column_family_handles) = 0;
+    const std::vector<ColumnFamilyHandle*>& column_family_handles) = 0;
 
   // Number of levels used for this DB.
   virtual int NumberLevels(ColumnFamilyHandle* column_family) = 0;
-  virtual int NumberLevels() { return NumberLevels(DefaultColumnFamily()); }
+  virtual int NumberLevels() {
+    return NumberLevels(DefaultColumnFamily());
+  }
 
   // Maximum level to which a new compacted memtable is pushed if it
   // does not create overlap.
@@ -663,7 +665,7 @@ class DB {
   // DB::CreateColumnFamily() will have been "sanitized" and transformed
   // in an implementation-defined manner.
   virtual const Options& GetOptions(ColumnFamilyHandle* column_family)
-      const = 0;
+  const = 0;
   virtual const Options& GetOptions() const {
     return GetOptions(DefaultColumnFamily());
   }
@@ -736,9 +738,9 @@ class DB {
   // cleared aggressively and the iterator might keep getting invalid before
   // an update is read.
   virtual Status GetUpdatesSince(
-      SequenceNumber seq_number, unique_ptr<TransactionLogIterator>* iter,
-      const TransactionLogIterator::ReadOptions&
-          read_options = TransactionLogIterator::ReadOptions()) = 0;
+    SequenceNumber seq_number, unique_ptr<TransactionLogIterator>* iter,
+    const TransactionLogIterator::ReadOptions&
+    read_options = TransactionLogIterator::ReadOptions()) = 0;
 
 // Windows API macro interference
 #undef DeleteFile
@@ -750,7 +752,7 @@ class DB {
   // Returns a list of all table files with their level, start key
   // and end key
   virtual void GetLiveFilesMetaData(
-      std::vector<LiveFileMetaData>* /*metadata*/) {}
+    std::vector<LiveFileMetaData>* /*metadata*/) {}
 
   // Obtains the meta data of the specified column family of the DB.
   // Status::NotFound() will be returned if the current DB does not have
@@ -810,12 +812,14 @@ class DB {
     return GetPropertiesOfAllTables(DefaultColumnFamily(), props);
   }
   virtual Status GetPropertiesOfTablesInRange(
-      ColumnFamilyHandle* column_family, const Range* range, std::size_t n,
-      TablePropertiesCollection* props) = 0;
+    ColumnFamilyHandle* column_family, const Range* range, std::size_t n,
+    TablePropertiesCollection* props) = 0;
 #endif  // VIDARDB_LITE
 
   // Needed for StackableDB
-  virtual DB* GetRootDB() { return this; }
+  virtual DB* GetRootDB() {
+    return this;
+  }
 
  private:
   // No copying allowed

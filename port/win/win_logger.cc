@@ -30,13 +30,13 @@ namespace port {
 
 WinLogger::WinLogger(uint64_t (*gettid)(), Env* env, HANDLE file,
                      const InfoLogLevel log_level)
-    : Logger(log_level),
-      gettid_(gettid),
-      log_size_(0),
-      last_flush_micros_(0),
-      env_(env),
-      flush_pending_(false),
-      file_(file) {}
+  : Logger(log_level),
+    gettid_(gettid),
+    log_size_(0),
+    last_flush_micros_(0),
+    env_(env),
+    flush_pending_(false),
+    file_(file) {}
 
 void WinLogger::DebugWriter(const char* str, int len) {
   DWORD bytesWritten = 0;
@@ -47,9 +47,13 @@ void WinLogger::DebugWriter(const char* str, int len) {
   }
 }
 
-WinLogger::~WinLogger() { close(); }
+WinLogger::~WinLogger() {
+  close();
+}
 
-void WinLogger::close() { CloseHandle(file_); }
+void WinLogger::close() {
+  CloseHandle(file_);
+}
 
 void WinLogger::Flush() {
   if (flush_pending_) {
@@ -128,7 +132,7 @@ void WinLogger::Logv(const char* format, va_list ap) {
 
     DWORD bytesWritten = 0;
     BOOL ret = WriteFile(file_, base, static_cast<DWORD>(write_size),
-      &bytesWritten, NULL);
+                         &bytesWritten, NULL);
     if (ret == FALSE) {
       std::string errSz = GetWindowsErrSz(GetLastError());
       fprintf(stderr, errSz.c_str());
@@ -141,7 +145,7 @@ void WinLogger::Logv(const char* format, va_list ap) {
     }
 
     uint64_t now_micros =
-        static_cast<uint64_t>(now_tv.tv_sec) * 1000000 + now_tv.tv_usec;
+      static_cast<uint64_t>(now_tv.tv_sec) * 1000000 + now_tv.tv_usec;
     if (now_micros - last_flush_micros_ >= flush_every_seconds_ * 1000000) {
       flush_pending_ = false;
       // With Windows API writes go to OS buffers directly so no fflush needed
@@ -153,7 +157,9 @@ void WinLogger::Logv(const char* format, va_list ap) {
   }
 }
 
-size_t WinLogger::GetLogFileSize() const { return log_size_; }
+size_t WinLogger::GetLogFileSize() const {
+  return log_size_;
+}
 
 }
 

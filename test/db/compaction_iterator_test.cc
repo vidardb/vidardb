@@ -11,7 +11,7 @@ namespace vidardb {
 
 class CompactionIteratorTest : public testing::Test {
  public:
-  CompactionIteratorTest() : cmp_(BytewiseComparator()), snapshots_({}) {}
+  CompactionIteratorTest() : cmp_(BytewiseComparator()), snapshots_( {}) {}
 
   void InitIterator(const std::vector<std::string>& ks,
                     const std::vector<std::string>& vs,
@@ -19,8 +19,8 @@ class CompactionIteratorTest : public testing::Test {
     iter_.reset(new test::VectorIterator(ks, vs));
     iter_->SeekToFirst();
     c_iter_.reset(new CompactionIterator(
-        iter_.get(), cmp_, last_sequence, &snapshots_,
-        kMaxSequenceNumber, Env::Default(), false));
+                    iter_.get(), cmp_, last_sequence, &snapshots_,
+                    kMaxSequenceNumber, Env::Default(), false));
   }
 
   const Comparator* cmp_;
@@ -33,8 +33,9 @@ class CompactionIteratorTest : public testing::Test {
 // the input is not.
 TEST_F(CompactionIteratorTest, EmptyResult) {
   InitIterator({test::KeyStr("a", 5, kTypeSingleDeletion),
-                test::KeyStr("a", 3, kTypeValue)},
-               {"", "val"}, 5);
+                test::KeyStr("a", 3, kTypeValue)
+               },
+  {"", "val"}, 5);
   c_iter_->SeekToFirst();
   ASSERT_FALSE(c_iter_->Valid());
 }
@@ -44,8 +45,9 @@ TEST_F(CompactionIteratorTest, EmptyResult) {
 TEST_F(CompactionIteratorTest, CorruptionAfterSingleDeletion) {
   InitIterator({test::KeyStr("a", 5, kTypeSingleDeletion),
                 test::KeyStr("a", 3, kTypeValue, true),
-                test::KeyStr("b", 10, kTypeValue)},
-               {"", "val", "val2"}, 10);
+                test::KeyStr("b", 10, kTypeValue)
+               },
+  {"", "val", "val2"}, 10);
   c_iter_->SeekToFirst();
   ASSERT_TRUE(c_iter_->Valid());
   ASSERT_EQ(test::KeyStr("a", 5, kTypeSingleDeletion),

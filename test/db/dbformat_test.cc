@@ -101,20 +101,20 @@ TEST_F(FormatTest, InternalKeyShortSeparator) {
                     IKey("AAA2AA", 200, kTypeValue)));
 
   ASSERT_EQ(
-      IKey("AAA2", kMaxSequenceNumber, kValueTypeForSeek),
-      Shorten(IKey("AAA1AAA", 100, kTypeValue), IKey("AAA4", 200, kTypeValue)));
+    IKey("AAA2", kMaxSequenceNumber, kValueTypeForSeek),
+    Shorten(IKey("AAA1AAA", 100, kTypeValue), IKey("AAA4", 200, kTypeValue)));
 
   ASSERT_EQ(
-      IKey("AAA1B", kMaxSequenceNumber, kValueTypeForSeek),
-      Shorten(IKey("AAA1AAA", 100, kTypeValue), IKey("AAA2", 200, kTypeValue)));
+    IKey("AAA1B", kMaxSequenceNumber, kValueTypeForSeek),
+    Shorten(IKey("AAA1AAA", 100, kTypeValue), IKey("AAA2", 200, kTypeValue)));
 
   ASSERT_EQ(IKey("AAA2", kMaxSequenceNumber, kValueTypeForSeek),
             Shorten(IKey("AAA1AAA", 100, kTypeValue),
                     IKey("AAA2A", 200, kTypeValue)));
 
   ASSERT_EQ(
-      IKey("AAA1", 100, kTypeValue),
-      Shorten(IKey("AAA1", 100, kTypeValue), IKey("AAA2", 200, kTypeValue)));
+    IKey("AAA1", 100, kTypeValue),
+    Shorten(IKey("AAA1", 100, kTypeValue), IKey("AAA2", 200, kTypeValue)));
 
   // When start user key is prefix of limit user key
   ASSERT_EQ(IKey("foo", 100, kTypeValue),
@@ -170,7 +170,7 @@ TEST_F(FormatTest, IterKeyOperation) {
   k.TrimAppend(27, p, 26);
   ASSERT_EQ(std::string(k.GetKey().data(), k.GetKey().size()),
             std::string("abcdefghijklmnopqrstuvwxyz0"
-              "abcdefghijklmnopqrstuvwxyz"));
+                        "abcdefghijklmnopqrstuvwxyz"));
 }
 
 TEST_F(FormatTest, UpdateInternalKey) {

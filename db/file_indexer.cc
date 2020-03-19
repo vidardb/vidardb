@@ -15,9 +15,11 @@
 namespace vidardb {
 
 FileIndexer::FileIndexer(const Comparator* ucmp)
-    : num_levels_(0), ucmp_(ucmp), level_rb_(nullptr) {}
+  : num_levels_(0), ucmp_(ucmp), level_rb_(nullptr) {}
 
-size_t FileIndexer::NumLevelIndex() const { return next_level_index_.size(); }
+size_t FileIndexer::NumLevelIndex() const {
+  return next_level_index_.size();
+}
 
 size_t FileIndexer::LevelIndexSize(size_t level) const {
   if (level >= next_level_index_.size()) {
@@ -47,8 +49,8 @@ void FileIndexer::GetNextLevelIndex(const size_t level, const size_t file_index,
 
   if (cmp_smallest < 0) {
     *left_bound = (level > 0 && file_index > 0)
-                      ? index_units[file_index - 1].largest_lb
-                      : 0;
+                  ? index_units[file_index - 1].largest_lb
+                  : 0;
     *right_bound = index.smallest_rb;
   } else if (cmp_smallest == 0) {
     *left_bound = index.smallest_lb;
@@ -106,40 +108,48 @@ void FileIndexer::UpdateIndex(Arena* arena, const size_t num_levels,
     index_level.index_units = new (mem) IndexUnit[upper_size];
 
     CalculateLB(
-        upper_files, lower_files, &index_level,
-        [this](const FileMetaData * a, const FileMetaData * b)->int {
-          return ucmp_->Compare(a->smallest.user_key(), b->largest.user_key());
-        },
-        [](IndexUnit* index, int32_t f_idx) { index->smallest_lb = f_idx; });
+      upper_files, lower_files, &index_level,
+    [this](const FileMetaData * a, const FileMetaData * b)->int {
+      return ucmp_->Compare(a->smallest.user_key(), b->largest.user_key());
+    },
+    [](IndexUnit* index, int32_t f_idx) {
+      index->smallest_lb = f_idx;
+    });
     CalculateLB(
-        upper_files, lower_files, &index_level,
-        [this](const FileMetaData * a, const FileMetaData * b)->int {
-          return ucmp_->Compare(a->largest.user_key(), b->largest.user_key());
-        },
-        [](IndexUnit* index, int32_t f_idx) { index->largest_lb = f_idx; });
+      upper_files, lower_files, &index_level,
+    [this](const FileMetaData * a, const FileMetaData * b)->int {
+      return ucmp_->Compare(a->largest.user_key(), b->largest.user_key());
+    },
+    [](IndexUnit* index, int32_t f_idx) {
+      index->largest_lb = f_idx;
+    });
     CalculateRB(
-        upper_files, lower_files, &index_level,
-        [this](const FileMetaData * a, const FileMetaData * b)->int {
-          return ucmp_->Compare(a->smallest.user_key(), b->smallest.user_key());
-        },
-        [](IndexUnit* index, int32_t f_idx) { index->smallest_rb = f_idx; });
+      upper_files, lower_files, &index_level,
+    [this](const FileMetaData * a, const FileMetaData * b)->int {
+      return ucmp_->Compare(a->smallest.user_key(), b->smallest.user_key());
+    },
+    [](IndexUnit* index, int32_t f_idx) {
+      index->smallest_rb = f_idx;
+    });
     CalculateRB(
-        upper_files, lower_files, &index_level,
-        [this](const FileMetaData * a, const FileMetaData * b)->int {
-          return ucmp_->Compare(a->largest.user_key(), b->smallest.user_key());
-        },
-        [](IndexUnit* index, int32_t f_idx) { index->largest_rb = f_idx; });
+      upper_files, lower_files, &index_level,
+    [this](const FileMetaData * a, const FileMetaData * b)->int {
+      return ucmp_->Compare(a->largest.user_key(), b->smallest.user_key());
+    },
+    [](IndexUnit* index, int32_t f_idx) {
+      index->largest_rb = f_idx;
+    });
   }
 
   level_rb_[num_levels_ - 1] =
-      static_cast<int32_t>(files[num_levels_ - 1].size()) - 1;
+    static_cast<int32_t>(files[num_levels_ - 1].size()) - 1;
 }
 
 void FileIndexer::CalculateLB(
-    const std::vector<FileMetaData*>& upper_files,
-    const std::vector<FileMetaData*>& lower_files, IndexLevel* index_level,
-    std::function<int(const FileMetaData*, const FileMetaData*)> cmp_op,
-    std::function<void(IndexUnit*, int32_t)> set_index) {
+  const std::vector<FileMetaData*>& upper_files,
+  const std::vector<FileMetaData*>& lower_files, IndexLevel* index_level,
+  std::function<int(const FileMetaData*, const FileMetaData*)> cmp_op,
+  std::function<void(IndexUnit*, int32_t)> set_index) {
   const int32_t upper_size = static_cast<int32_t>(upper_files.size());
   const int32_t lower_size = static_cast<int32_t>(lower_files.size());
   int32_t upper_idx = 0;
@@ -174,10 +184,10 @@ void FileIndexer::CalculateLB(
 }
 
 void FileIndexer::CalculateRB(
-    const std::vector<FileMetaData*>& upper_files,
-    const std::vector<FileMetaData*>& lower_files, IndexLevel* index_level,
-    std::function<int(const FileMetaData*, const FileMetaData*)> cmp_op,
-    std::function<void(IndexUnit*, int32_t)> set_index) {
+  const std::vector<FileMetaData*>& upper_files,
+  const std::vector<FileMetaData*>& lower_files, IndexLevel* index_level,
+  std::function<int(const FileMetaData*, const FileMetaData*)> cmp_op,
+  std::function<void(IndexUnit*, int32_t)> set_index) {
   const int32_t upper_size = static_cast<int32_t>(upper_files.size());
   const int32_t lower_size = static_cast<int32_t>(lower_files.size());
   int32_t upper_idx = upper_size - 1;

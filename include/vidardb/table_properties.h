@@ -81,7 +81,7 @@ class TablePropertiesCollector {
   // @params value  the value that is inserted into the table.
   virtual Status Add(const Slice& /*key*/, const Slice& /*value*/) {
     return Status::InvalidArgument(
-        "TablePropertiesCollector::Add() deprecated.");
+             "TablePropertiesCollector::Add() deprecated.");
   }
 
   // AddUserKey() will be called when a new key/value pair is inserted into the
@@ -109,7 +109,9 @@ class TablePropertiesCollector {
   virtual const char* Name() const = 0;
 
   // EXPERIMENTAL Return whether the output file should be further compacted
-  virtual bool NeedCompact() const { return false; }
+  virtual bool NeedCompact() const {
+    return false;
+  }
 };
 
 // Constructs TablePropertiesCollector. Internals create a new
@@ -124,7 +126,7 @@ class TablePropertiesCollectorFactory {
   virtual ~TablePropertiesCollectorFactory() {}
   // has to be thread-safe
   virtual TablePropertiesCollector* CreateTablePropertiesCollector(
-      TablePropertiesCollectorFactory::Context context) = 0;
+    TablePropertiesCollectorFactory::Context context) = 0;
 
   // The name of the properties collector can be used for debugging purpose.
   virtual const char* Name() const = 0;
@@ -155,7 +157,7 @@ struct TableProperties {
   // ID of column family for this SST file, corresponding to the CF identified
   // by column_family_name.
   uint64_t column_family_id =
-      vidardb::TablePropertiesCollectorFactory::Context::kUnknownColumnFamily;
+    vidardb::TablePropertiesCollectorFactory::Context::kUnknownColumnFamily;
 
   // Name of the column family with which this SST file is associated.
   // If column family is unknown, `column_family_name` will be an empty string.

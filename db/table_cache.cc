@@ -70,7 +70,7 @@ void AppendVarint64(IterKey* key, uint64_t v) {
 
 TableCache::TableCache(const ImmutableCFOptions& ioptions,
                        const EnvOptions& env_options, Cache* const cache)
-    : ioptions_(ioptions), env_options_(env_options), cache_(cache) {
+  : ioptions_(ioptions), env_options_(env_options), cache_(cache) {
   if (ioptions_.row_cache) {
     // If the same cache is shared by multiple instances, we need to
     // disambiguate its entries.
@@ -90,13 +90,13 @@ void TableCache::ReleaseHandle(Cache::Handle* handle) {
 }
 
 Status TableCache::GetTableReader(
-    const EnvOptions& env_options,
-    const InternalKeyComparator& internal_comparator, const FileDescriptor& fd,
-    bool sequential_mode, size_t readahead, bool record_read_stats,
-    HistogramImpl* file_read_hist, unique_ptr<TableReader>* table_reader,
-    int level, bool os_cache/*Shichao*/, const std::vector<uint32_t>& cols) {  // Shichao
+  const EnvOptions& env_options,
+  const InternalKeyComparator& internal_comparator, const FileDescriptor& fd,
+  bool sequential_mode, size_t readahead, bool record_read_stats,
+  HistogramImpl* file_read_hist, unique_ptr<TableReader>* table_reader,
+  int level, bool os_cache/*Shichao*/, const std::vector<uint32_t>& cols) {  // Shichao
   std::string fname =
-      TableFileName(ioptions_.db_paths, fd.GetNumber(), fd.GetPathId());
+    TableFileName(ioptions_.db_paths, fd.GetNumber(), fd.GetPathId());
   unique_ptr<RandomAccessFile> file;
   /*************************** Shichao *************************/
   EnvOptions eo;
@@ -106,7 +106,7 @@ Status TableCache::GetTableReader(
   }
   /*************************** Shichao *************************/
   Status s = ioptions_.env->NewRandomAccessFile(fname, &file,
-      os_cache? env_options: eo);  // Shichao
+             os_cache? env_options: eo);  // Shichao
 
   if (readahead > 0) {
     file = NewReadaheadRandomAccessFile(std::move(file), readahead);
@@ -119,14 +119,14 @@ Status TableCache::GetTableReader(
     }
     StopWatch sw(ioptions_.env, ioptions_.statistics, TABLE_OPEN_IO_MICROS);
     std::unique_ptr<RandomAccessFileReader> file_reader(
-        new RandomAccessFileReader(std::move(file), ioptions_.env,
-                                   ioptions_.statistics, record_read_stats,
-                                   file_read_hist));
+      new RandomAccessFileReader(std::move(file), ioptions_.env,
+                                 ioptions_.statistics, record_read_stats,
+                                 file_read_hist));
 
     s = ioptions_.table_factory->NewTableReader(
-        TableReaderOptions(ioptions_, os_cache? env_options: eo,  // Shichao
-            internal_comparator, level, cols),      // Shichao
-        std::move(file_reader), fd.GetFileSize(), table_reader);
+          TableReaderOptions(ioptions_, os_cache? env_options: eo,  // Shichao
+                             internal_comparator, level, cols),      // Shichao
+          std::move(file_reader), fd.GetFileSize(), table_reader);
     TEST_SYNC_POINT("TableCache::GetTableReader:0");
   }
   return s;
@@ -179,10 +179,10 @@ Status TableCache::FindTable(const EnvOptions& env_options,
 }
 
 InternalIterator* TableCache::NewIterator(
-    const ReadOptions& options, const EnvOptions& env_options,
-    const InternalKeyComparator& icomparator, const FileDescriptor& fd,
-    TableReader** table_reader_ptr, HistogramImpl* file_read_hist,
-    bool for_compaction, Arena* arena, int level, bool os_cache) {  // Shichao
+  const ReadOptions& options, const EnvOptions& env_options,
+  const InternalKeyComparator& icomparator, const FileDescriptor& fd,
+  TableReader** table_reader_ptr, HistogramImpl* file_read_hist,
+  bool for_compaction, Arena* arena, int level, bool os_cache) {  // Shichao
   PERF_TIMER_GUARD(new_table_iterator_nanos);
 
   if (table_reader_ptr != nullptr) {
@@ -211,9 +211,9 @@ InternalIterator* TableCache::NewIterator(
   if (create_new_table_reader) {
     unique_ptr<TableReader> table_reader_unique_ptr;
     Status s = GetTableReader(
-        env_options, icomparator, fd, true /* sequential_mode */, readahead,
-        !for_compaction /* record stats */, nullptr, &table_reader_unique_ptr,
-        level, os_cache/*Shichao*/, options.columns/*Shichao*/);
+                 env_options, icomparator, fd, true /* sequential_mode */, readahead,
+                 !for_compaction /* record stats */, nullptr, &table_reader_unique_ptr,
+                 level, os_cache/*Shichao*/, options.columns/*Shichao*/);
     if (!s.ok()) {
       return NewErrorInternalIterator(s, arena);
     }
@@ -233,7 +233,7 @@ InternalIterator* TableCache::NewIterator(
   }
 
   InternalIterator* result =
-      table_reader->NewIterator(options, arena);
+    table_reader->NewIterator(options, arena);
 
   if (create_new_table_reader) {
     assert(handle == nullptr);
@@ -277,7 +277,7 @@ Status TableCache::Get(const ReadOptions& options,
     // reads, we append the sequence number (incremented by 1 to
     // distinguish from 0) only in this case.
     uint64_t seq_no =
-        options.snapshot == nullptr ? 0 : 1 + GetInternalKeySeqno(k);
+      options.snapshot == nullptr ? 0 : 1 + GetInternalKeySeqno(k);
 
     // Compute row cache key.
     row_cache_key.TrimAppend(row_cache_key.Size(), row_cache_id_.data(),
@@ -289,7 +289,7 @@ Status TableCache::Get(const ReadOptions& options,
 
     if (auto row_handle = ioptions_.row_cache->Lookup(row_cache_key.GetKey())) {
       auto found_row_cache_entry = static_cast<const std::string*>(
-          ioptions_.row_cache->Value(row_handle));
+                                     ioptions_.row_cache->Value(row_handle));
       replayGetContextLog(*found_row_cache_entry, user_key, get_context);
       ioptions_.row_cache->Release(row_handle);
       RecordTick(ioptions_.statistics, ROW_CACHE_HIT);
@@ -327,7 +327,7 @@ Status TableCache::Get(const ReadOptions& options,
   // Put the replay log in row cache only if something was found.
   if (s.ok() && row_cache_entry && !row_cache_entry->empty()) {
     size_t charge =
-        row_cache_key.Size() + row_cache_entry->size() + sizeof(std::string);
+      row_cache_key.Size() + row_cache_entry->size() + sizeof(std::string);
     void* row_ptr = new std::string(std::move(*row_cache_entry));
     ioptions_.row_cache->Insert(row_cache_key.GetKey(), row_ptr, charge,
                                 &DeleteEntry<std::string>);
@@ -338,9 +338,9 @@ Status TableCache::Get(const ReadOptions& options,
 }
 
 Status TableCache::GetTableProperties(
-    const EnvOptions& env_options,
-    const InternalKeyComparator& internal_comparator, const FileDescriptor& fd,
-    std::shared_ptr<const TableProperties>* properties, bool no_io) {
+  const EnvOptions& env_options,
+  const InternalKeyComparator& internal_comparator, const FileDescriptor& fd,
+  std::shared_ptr<const TableProperties>* properties, bool no_io) {
   Status s;
   auto table_reader = fd.table_reader;
   // table already been pre-loaded?
@@ -363,9 +363,9 @@ Status TableCache::GetTableProperties(
 }
 
 size_t TableCache::GetMemoryUsageByTableReader(
-    const EnvOptions& env_options,
-    const InternalKeyComparator& internal_comparator,
-    const FileDescriptor& fd) {
+  const EnvOptions& env_options,
+  const InternalKeyComparator& internal_comparator,
+  const FileDescriptor& fd) {
   auto table_reader = fd.table_reader;
   // table already been pre-loaded?
   if (table_reader) {

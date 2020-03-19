@@ -21,28 +21,28 @@ class EventHelpers {
   static void AppendCurrentTime(JSONWriter* json_writer);
 #ifndef VIDARDB_LITE
   static void NotifyTableFileCreationStarted(
-      const std::vector<std::shared_ptr<EventListener>>& listeners,
-      const std::string& db_name, const std::string& cf_name,
-      const std::string& file_path, int job_id, TableFileCreationReason reason);
+    const std::vector<std::shared_ptr<EventListener>>& listeners,
+    const std::string& db_name, const std::string& cf_name,
+    const std::string& file_path, int job_id, TableFileCreationReason reason);
 #endif  // !VIDARDB_LITE
   static void LogAndNotifyTableFileCreationFinished(
-      EventLogger* event_logger,
-      const std::vector<std::shared_ptr<EventListener>>& listeners,
-      const std::string& db_name, const std::string& cf_name,
-      const std::string& file_path, int job_id, const FileDescriptor& fd,
-      const TableProperties& table_properties, TableFileCreationReason reason,
-      const Status& s);
+    EventLogger* event_logger,
+    const std::vector<std::shared_ptr<EventListener>>& listeners,
+    const std::string& db_name, const std::string& cf_name,
+    const std::string& file_path, int job_id, const FileDescriptor& fd,
+    const TableProperties& table_properties, TableFileCreationReason reason,
+    const Status& s);
   static void LogAndNotifyTableFileDeletion(
-      EventLogger* event_logger, int job_id,
-      uint64_t file_number, const std::string& file_path,
-      const Status& status, const std::string& db_name,
-      const std::vector<std::shared_ptr<EventListener>>& listeners);
+    EventLogger* event_logger, int job_id,
+    uint64_t file_number, const std::string& file_path,
+    const Status& status, const std::string& db_name,
+    const std::vector<std::shared_ptr<EventListener>>& listeners);
 
  private:
   static void LogAndNotifyTableFileCreation(
-      EventLogger* event_logger,
-      const std::vector<std::shared_ptr<EventListener>>& listeners,
-      const FileDescriptor& fd, const TableFileCreationInfo& info);
+    EventLogger* event_logger,
+    const std::vector<std::shared_ptr<EventListener>>& listeners,
+    const FileDescriptor& fd, const TableFileCreationInfo& info);
 };
 
 }  // namespace vidardb

@@ -29,7 +29,9 @@ static int DecodeKey(const Slice& k) {
   assert(k.size() == 4);
   return DecodeFixed32(k.data());
 }
-static void* EncodeValue(uintptr_t v) { return reinterpret_cast<void*>(v); }
+static void* EncodeValue(uintptr_t v) {
+  return reinterpret_cast<void*>(v);
+}
 static int DecodeValue(void* v) {
   return static_cast<int>(reinterpret_cast<uintptr_t>(v));
 }
@@ -55,8 +57,8 @@ class CacheTest : public testing::Test {
   shared_ptr<Cache> cache2_;
 
   CacheTest() :
-      cache_(NewLRUCache(kCacheSize, kNumShardBits)),
-      cache2_(NewLRUCache(kCacheSize2, kNumShardBits2)) {
+    cache_(NewLRUCache(kCacheSize, kNumShardBits)),
+    cache2_(NewLRUCache(kCacheSize2, kNumShardBits2)) {
     current_ = this;
   }
 
@@ -388,7 +390,9 @@ class Value {
  public:
   explicit Value(size_t v) : v_(v) { }
 
-  ~Value() { std::cout << v_ << " is destructed\n"; }
+  ~Value() {
+    std::cout << v_ << " is destructed\n";
+  }
 };
 
 namespace {

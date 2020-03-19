@@ -57,11 +57,17 @@ namespace {
 // DummyPropertiesCollector used to test BlockBasedTableProperties
 class DummyPropertiesCollector : public TablePropertiesCollector {
  public:
-  const char* Name() const { return ""; }
+  const char* Name() const {
+    return "";
+  }
 
-  Status Finish(UserCollectedProperties* properties) { return Status::OK(); }
+  Status Finish(UserCollectedProperties* properties) {
+    return Status::OK();
+  }
 
-  Status Add(const Slice& user_key, const Slice& value) { return Status::OK(); }
+  Status Add(const Slice& user_key, const Slice& value) {
+    return Status::OK();
+  }
 
   virtual UserCollectedProperties GetReadableProperties() const {
     return UserCollectedProperties{};
@@ -69,23 +75,27 @@ class DummyPropertiesCollector : public TablePropertiesCollector {
 };
 
 class DummyPropertiesCollectorFactory1
-    : public TablePropertiesCollectorFactory {
+  : public TablePropertiesCollectorFactory {
  public:
   virtual TablePropertiesCollector* CreateTablePropertiesCollector(
-      TablePropertiesCollectorFactory::Context context) {
+    TablePropertiesCollectorFactory::Context context) {
     return new DummyPropertiesCollector();
   }
-  const char* Name() const { return "DummyPropertiesCollector1"; }
+  const char* Name() const {
+    return "DummyPropertiesCollector1";
+  }
 };
 
 class DummyPropertiesCollectorFactory2
-    : public TablePropertiesCollectorFactory {
+  : public TablePropertiesCollectorFactory {
  public:
   virtual TablePropertiesCollector* CreateTablePropertiesCollector(
-      TablePropertiesCollectorFactory::Context context) {
+    TablePropertiesCollectorFactory::Context context) {
     return new DummyPropertiesCollector();
   }
-  const char* Name() const { return "DummyPropertiesCollector2"; }
+  const char* Name() const {
+    return "DummyPropertiesCollector2";
+  }
 };
 
 // Return reverse of "key".
@@ -141,7 +151,7 @@ void Increment(const Comparator* cmp, std::string* key) {
 class Constructor {
  public:
   explicit Constructor(const Comparator* cmp)
-      : data_(stl_wrappers::LessOfComparator(cmp)) {}
+    : data_(stl_wrappers::LessOfComparator(cmp)) {}
   virtual ~Constructor() { }
 
   void Add(const std::string& key, const Slice& value) {
@@ -176,13 +186,21 @@ class Constructor {
 
   virtual InternalIterator* NewIterator() const = 0;
 
-  virtual const stl_wrappers::KVMap& data() { return data_; }
+  virtual const stl_wrappers::KVMap& data() {
+    return data_;
+  }
 
-  virtual bool IsArenaMode() const { return false; }
+  virtual bool IsArenaMode() const {
+    return false;
+  }
 
-  virtual DB* db() const { return nullptr; }  // Overridden in DBConstructor
+  virtual DB* db() const {
+    return nullptr;  // Overridden in DBConstructor
+  }
 
-  virtual bool AnywayDeleteIterator() const { return false; }
+  virtual bool AnywayDeleteIterator() const {
+    return false;
+  }
 
  protected:
   const InternalKeyComparator* last_internal_key_;
@@ -194,9 +212,9 @@ class Constructor {
 class BlockConstructor: public Constructor {
  public:
   explicit BlockConstructor(const Comparator* cmp)
-      : Constructor(cmp),
-        comparator_(cmp),
-        block_(nullptr) { }
+    : Constructor(cmp),
+      comparator_(cmp),
+      block_(nullptr) { }
   ~BlockConstructor() {
     delete block_;
   }
@@ -237,7 +255,7 @@ class KeyConvertingIterator : public InternalIterator {
  public:
   explicit KeyConvertingIterator(InternalIterator* iter,
                                  bool arena_mode = false)
-      : iter_(iter), arena_mode_(arena_mode) {}
+    : iter_(iter), arena_mode_(arena_mode) {}
   virtual ~KeyConvertingIterator() {
     if (arena_mode_) {
       iter_->~InternalIterator();
@@ -245,17 +263,27 @@ class KeyConvertingIterator : public InternalIterator {
       delete iter_;
     }
   }
-  virtual bool Valid() const override { return iter_->Valid(); }
+  virtual bool Valid() const override {
+    return iter_->Valid();
+  }
   virtual void Seek(const Slice& target) override {
     ParsedInternalKey ikey(target, kMaxSequenceNumber, kTypeValue);
     std::string encoded;
     AppendInternalKey(&encoded, ikey);
     iter_->Seek(encoded);
   }
-  virtual void SeekToFirst() override { iter_->SeekToFirst(); }
-  virtual void SeekToLast() override { iter_->SeekToLast(); }
-  virtual void Next() override { iter_->Next(); }
-  virtual void Prev() override { iter_->Prev(); }
+  virtual void SeekToFirst() override {
+    iter_->SeekToFirst();
+  }
+  virtual void SeekToLast() override {
+    iter_->SeekToLast();
+  }
+  virtual void Next() override {
+    iter_->Next();
+  }
+  virtual void Prev() override {
+    iter_->Prev();
+  }
 
   virtual Slice key() const override {
     assert(Valid());
@@ -267,7 +295,9 @@ class KeyConvertingIterator : public InternalIterator {
     return parsed_key.user_key;
   }
 
-  virtual Slice value() const override { return iter_->value(); }
+  virtual Slice value() const override {
+    return iter_->value();
+  }
   virtual Status status() const override {
     return status_.ok() ? iter_->status() : status_;
   }
@@ -286,9 +316,11 @@ class TableConstructor: public Constructor {
  public:
   explicit TableConstructor(const Comparator* cmp,
                             bool convert_to_internal_key = false)
-      : Constructor(cmp),
-        convert_to_internal_key_(convert_to_internal_key) {}
-  ~TableConstructor() { Reset(); }
+    : Constructor(cmp),
+      convert_to_internal_key_(convert_to_internal_key) {}
+  ~TableConstructor() {
+    Reset();
+  }
 
   virtual Status FinishImpl(const Options& options,
                             const ImmutableCFOptions& ioptions,
@@ -303,13 +335,13 @@ class TableConstructor: public Constructor {
         int_tbl_prop_collector_factories;
     std::string column_family_name;
     builder.reset(ioptions.table_factory->NewTableBuilder(
-        TableBuilderOptions(ioptions, internal_comparator,
-                            &int_tbl_prop_collector_factories,
-                            options.compression, CompressionOptions(),
-                            nullptr /* compression_dict */, column_family_name,
-                            EnvOptions()),
-        TablePropertiesCollectorFactory::Context::kUnknownColumnFamily,
-        file_writer_.get()));
+                    TableBuilderOptions(ioptions, internal_comparator,
+                                        &int_tbl_prop_collector_factories,
+                                        options.compression, CompressionOptions(),
+                                        nullptr /* compression_dict */, column_family_name,
+                                        EnvOptions()),
+                    TablePropertiesCollectorFactory::Context::kUnknownColumnFamily,
+                    file_writer_.get()));
 
     for (const auto kv : kv_map) {
       if (convert_to_internal_key_) {
@@ -331,10 +363,10 @@ class TableConstructor: public Constructor {
     // Open the table
     uniq_id_ = cur_uniq_id_++;
     file_reader_.reset(test::GetRandomAccessFileReader(new test::StringSource(
-        GetSink()->contents(), uniq_id_, ioptions.allow_mmap_reads)));
+                         GetSink()->contents(), uniq_id_, ioptions.allow_mmap_reads)));
     return ioptions.table_factory->NewTableReader(
-        TableReaderOptions(ioptions, soptions, internal_comparator),
-        std::move(file_reader_), GetSink()->contents().size(), &table_reader_);
+             TableReaderOptions(ioptions, soptions, internal_comparator),
+             std::move(file_reader_), GetSink()->contents().size(), &table_reader_);
   }
 
   virtual InternalIterator* NewIterator() const override {
@@ -353,10 +385,10 @@ class TableConstructor: public Constructor {
 
   virtual Status Reopen(const ImmutableCFOptions& ioptions) {
     file_reader_.reset(test::GetRandomAccessFileReader(new test::StringSource(
-        GetSink()->contents(), uniq_id_, ioptions.allow_mmap_reads)));
+                         GetSink()->contents(), uniq_id_, ioptions.allow_mmap_reads)));
     return ioptions.table_factory->NewTableReader(
-        TableReaderOptions(ioptions, soptions, *last_internal_key_),
-        std::move(file_reader_), GetSink()->contents().size(), &table_reader_);
+             TableReaderOptions(ioptions, soptions, *last_internal_key_),
+             std::move(file_reader_), GetSink()->contents().size(), &table_reader_);
   }
 
   virtual TableReader* GetTableReader() {
@@ -367,7 +399,9 @@ class TableConstructor: public Constructor {
     return convert_to_internal_key_;
   }
 
-  void ResetTableReader() { table_reader_.reset(); }
+  void ResetTableReader() {
+    table_reader_.reset();
+  }
 
  private:
   void Reset() {
@@ -397,10 +431,10 @@ uint64_t TableConstructor::cur_uniq_id_ = 1;
 class MemTableConstructor: public Constructor {
  public:
   explicit MemTableConstructor(const Comparator* cmp, WriteBuffer* wb)
-      : Constructor(cmp),
-        internal_comparator_(cmp),
-        write_buffer_(wb),
-        table_factory_(new SkipListFactory) {
+    : Constructor(cmp),
+      internal_comparator_(cmp),
+      write_buffer_(wb),
+      table_factory_(new SkipListFactory) {
     options_.memtable_factory = table_factory_;
     ImmutableCFOptions ioptions(options_);
     memtable_ = new MemTable(internal_comparator_, ioptions,
@@ -430,12 +464,16 @@ class MemTableConstructor: public Constructor {
   }
   virtual InternalIterator* NewIterator() const override {
     return new KeyConvertingIterator(
-        memtable_->NewIterator(ReadOptions(), &arena_), true);
+             memtable_->NewIterator(ReadOptions(), &arena_), true);
   }
 
-  virtual bool AnywayDeleteIterator() const override { return true; }
+  virtual bool AnywayDeleteIterator() const override {
+    return true;
+  }
 
-  virtual bool IsArenaMode() const override { return true; }
+  virtual bool IsArenaMode() const override {
+    return true;
+  }
 
  private:
   mutable Arena arena_;
@@ -449,15 +487,33 @@ class MemTableConstructor: public Constructor {
 class InternalIteratorFromIterator : public InternalIterator {
  public:
   explicit InternalIteratorFromIterator(Iterator* it) : it_(it) {}
-  virtual bool Valid() const override { return it_->Valid(); }
-  virtual void Seek(const Slice& target) override { it_->Seek(target); }
-  virtual void SeekToFirst() override { it_->SeekToFirst(); }
-  virtual void SeekToLast() override { it_->SeekToLast(); }
-  virtual void Next() override { it_->Next(); }
-  virtual void Prev() override { it_->Prev(); }
-  Slice key() const override { return it_->key(); }
-  Slice value() const override { return it_->value(); }
-  virtual Status status() const override { return it_->status(); }
+  virtual bool Valid() const override {
+    return it_->Valid();
+  }
+  virtual void Seek(const Slice& target) override {
+    it_->Seek(target);
+  }
+  virtual void SeekToFirst() override {
+    it_->SeekToFirst();
+  }
+  virtual void SeekToLast() override {
+    it_->SeekToLast();
+  }
+  virtual void Next() override {
+    it_->Next();
+  }
+  virtual void Prev() override {
+    it_->Prev();
+  }
+  Slice key() const override {
+    return it_->key();
+  }
+  Slice value() const override {
+    return it_->value();
+  }
+  virtual Status status() const override {
+    return it_->status();
+  }
 
  private:
   unique_ptr<Iterator> it_;
@@ -466,8 +522,8 @@ class InternalIteratorFromIterator : public InternalIterator {
 class DBConstructor: public Constructor {
  public:
   explicit DBConstructor(const Comparator* cmp)
-      : Constructor(cmp),
-        comparator_(cmp) {
+    : Constructor(cmp),
+      comparator_(cmp) {
     db_ = nullptr;
     NewDB();
   }
@@ -494,7 +550,9 @@ class DBConstructor: public Constructor {
     return new InternalIteratorFromIterator(db_->NewIterator(ReadOptions()));
   }
 
-  virtual DB* db() const override { return db_; }
+  virtual DB* db() const override {
+    return db_;
+  }
 
  private:
   void NewDB() {
@@ -534,9 +592,10 @@ struct TestArgs {
 static std::vector<TestArgs> GenerateArgList() {
   std::vector<TestArgs> test_args;
   std::vector<TestType> test_types = {
-      BLOCK_BASED_TABLE_TEST,
-      BLOCK_TEST,
-      MEMTABLE_TEST, DB_TEST};
+    BLOCK_BASED_TABLE_TEST,
+    BLOCK_TEST,
+    MEMTABLE_TEST, DB_TEST
+  };
   std::vector<bool> reverse_compare_types = {false, true};
   std::vector<int> restart_intervals = {16, 1, 1024};
 
@@ -590,9 +649,9 @@ static std::vector<TestArgs> GenerateArgList() {
 class HarnessTest : public testing::Test {
  public:
   HarnessTest()
-      : ioptions_(options_),
-        constructor_(nullptr),
-        write_buffer_(options_.db_write_buffer_size) {}
+    : ioptions_(options_),
+      constructor_(nullptr),
+      write_buffer_(options_.db_write_buffer_size) {}
 
   void Init(const TestArgs& args) {
     delete constructor_;
@@ -606,46 +665,48 @@ class HarnessTest : public testing::Test {
     }
 
     internal_comparator_.reset(
-        new test::PlainInternalKeyComparator(options_.comparator));
+      new test::PlainInternalKeyComparator(options_.comparator));
 
     support_prev_ = true;
     only_support_prefix_seek_ = false;
     options_.allow_mmap_reads = args.use_mmap;
     switch (args.type) {
-      case BLOCK_BASED_TABLE_TEST:
-        table_options_.flush_block_policy_factory.reset(
-            new FlushBlockBySizePolicyFactory());
-        table_options_.block_size = 256;
-        table_options_.block_restart_interval = args.restart_interval;
-        table_options_.index_block_restart_interval = args.restart_interval;
-        options_.table_factory.reset(
-            new BlockBasedTableFactory(table_options_));
-        constructor_ = new TableConstructor(options_.comparator);
-        break;
-      case BLOCK_TEST:
-        table_options_.block_size = 256;
-        options_.table_factory.reset(
-            new BlockBasedTableFactory(table_options_));
-        constructor_ = new BlockConstructor(options_.comparator);
-        break;
-      case MEMTABLE_TEST:
-        table_options_.block_size = 256;
-        options_.table_factory.reset(
-            new BlockBasedTableFactory(table_options_));
-        constructor_ = new MemTableConstructor(options_.comparator,
-                                               &write_buffer_);
-        break;
-      case DB_TEST:
-        table_options_.block_size = 256;
-        options_.table_factory.reset(
-            new BlockBasedTableFactory(table_options_));
-        constructor_ = new DBConstructor(options_.comparator);
-        break;
+    case BLOCK_BASED_TABLE_TEST:
+      table_options_.flush_block_policy_factory.reset(
+        new FlushBlockBySizePolicyFactory());
+      table_options_.block_size = 256;
+      table_options_.block_restart_interval = args.restart_interval;
+      table_options_.index_block_restart_interval = args.restart_interval;
+      options_.table_factory.reset(
+        new BlockBasedTableFactory(table_options_));
+      constructor_ = new TableConstructor(options_.comparator);
+      break;
+    case BLOCK_TEST:
+      table_options_.block_size = 256;
+      options_.table_factory.reset(
+        new BlockBasedTableFactory(table_options_));
+      constructor_ = new BlockConstructor(options_.comparator);
+      break;
+    case MEMTABLE_TEST:
+      table_options_.block_size = 256;
+      options_.table_factory.reset(
+        new BlockBasedTableFactory(table_options_));
+      constructor_ = new MemTableConstructor(options_.comparator,
+                                             &write_buffer_);
+      break;
+    case DB_TEST:
+      table_options_.block_size = 256;
+      options_.table_factory.reset(
+        new BlockBasedTableFactory(table_options_));
+      constructor_ = new DBConstructor(options_.comparator);
+      break;
     }
     ioptions_ = ImmutableCFOptions(options_);
   }
 
-  ~HarnessTest() { delete constructor_; }
+  ~HarnessTest() {
+    delete constructor_;
+  }
 
   void Add(const std::string& key, const std::string& value) {
     constructor_->Add(key, value);
@@ -710,60 +771,60 @@ class HarnessTest : public testing::Test {
     for (int i = 0; i < 200; i++) {
       const int toss = rnd->Uniform(support_prev_ ? 5 : 3);
       switch (toss) {
-        case 0: {
-          if (iter->Valid()) {
-            if (kVerbose) fprintf(stderr, "Next\n");
-            iter->Next();
-            ++model_iter;
-            ASSERT_EQ(ToString(data, model_iter), ToString(iter));
-          }
-          break;
-        }
-
-        case 1: {
-          if (kVerbose) fprintf(stderr, "SeekToFirst\n");
-          iter->SeekToFirst();
-          model_iter = data.begin();
+      case 0: {
+        if (iter->Valid()) {
+          if (kVerbose) fprintf(stderr, "Next\n");
+          iter->Next();
+          ++model_iter;
           ASSERT_EQ(ToString(data, model_iter), ToString(iter));
-          break;
         }
+        break;
+      }
 
-        case 2: {
-          std::string key = PickRandomKey(rnd, keys);
-          model_iter = data.lower_bound(key);
-          if (kVerbose) fprintf(stderr, "Seek '%s'\n",
+      case 1: {
+        if (kVerbose) fprintf(stderr, "SeekToFirst\n");
+        iter->SeekToFirst();
+        model_iter = data.begin();
+        ASSERT_EQ(ToString(data, model_iter), ToString(iter));
+        break;
+      }
+
+      case 2: {
+        std::string key = PickRandomKey(rnd, keys);
+        model_iter = data.lower_bound(key);
+        if (kVerbose) fprintf(stderr, "Seek '%s'\n",
                                 EscapeString(key).c_str());
-          iter->Seek(Slice(key));
-          ASSERT_EQ(ToString(data, model_iter), ToString(iter));
-          break;
-        }
+        iter->Seek(Slice(key));
+        ASSERT_EQ(ToString(data, model_iter), ToString(iter));
+        break;
+      }
 
-        case 3: {
-          if (iter->Valid()) {
-            if (kVerbose) fprintf(stderr, "Prev\n");
-            iter->Prev();
-            if (model_iter == data.begin()) {
-              model_iter = data.end();   // Wrap around to invalid value
-            } else {
-              --model_iter;
-            }
-            ASSERT_EQ(ToString(data, model_iter), ToString(iter));
-          }
-          break;
-        }
-
-        case 4: {
-          if (kVerbose) fprintf(stderr, "SeekToLast\n");
-          iter->SeekToLast();
-          if (keys.empty()) {
-            model_iter = data.end();
+      case 3: {
+        if (iter->Valid()) {
+          if (kVerbose) fprintf(stderr, "Prev\n");
+          iter->Prev();
+          if (model_iter == data.begin()) {
+            model_iter = data.end();   // Wrap around to invalid value
           } else {
-            std::string last = data.rbegin()->first;
-            model_iter = data.lower_bound(last);
+            --model_iter;
           }
           ASSERT_EQ(ToString(data, model_iter), ToString(iter));
-          break;
         }
+        break;
+      }
+
+      case 4: {
+        if (kVerbose) fprintf(stderr, "SeekToLast\n");
+        iter->SeekToLast();
+        if (keys.empty()) {
+          model_iter = data.end();
+        } else {
+          std::string last = data.rbegin()->first;
+          model_iter = data.lower_bound(last);
+        }
+        ASSERT_EQ(ToString(data, model_iter), ToString(iter));
+        break;
+      }
       }
     }
     if (constructor_->IsArenaMode() && !constructor_->AnywayDeleteIterator()) {
@@ -806,21 +867,23 @@ class HarnessTest : public testing::Test {
       const int index = rnd->Uniform(static_cast<int>(keys.size()));
       std::string result = keys[index];
       switch (rnd->Uniform(support_prev_ ? 3 : 1)) {
-        case 0:
-          // Return an existing key
-          break;
-        case 2: {
-          // Return something larger than an existing key
-          Increment(options_.comparator, &result);
-          break;
-        }
+      case 0:
+        // Return an existing key
+        break;
+      case 2: {
+        // Return something larger than an existing key
+        Increment(options_.comparator, &result);
+        break;
+      }
       }
       return result;
     }
   }
 
   // Returns nullptr if not running against a DB
-  DB* db() const { return constructor_->db(); }
+  DB* db() const {
+    return constructor_->db();
+  }
 
  private:
   Options options_ = Options();
@@ -848,10 +911,10 @@ static bool Between(uint64_t val, uint64_t low, uint64_t high) {
 class TableTest : public testing::Test {
  public:
   const InternalKeyComparator& GetPlainInternalComparator(
-      const Comparator* comp) {
+    const Comparator* comp) {
     if (!plain_internal_comparator) {
       plain_internal_comparator.reset(
-          new test::PlainInternalKeyComparator(comp));
+        new test::PlainInternalKeyComparator(comp));
     }
     return *plain_internal_comparator;
   }
@@ -869,21 +932,23 @@ class TablePropertyTest : public testing::Test {};
 // properties.
 TEST_F(TablePropertyTest, PrefixScanTest) {
   UserCollectedProperties props{{"num.111.1", "1"},
-                                {"num.111.2", "2"},
-                                {"num.111.3", "3"},
-                                {"num.333.1", "1"},
-                                {"num.333.2", "2"},
-                                {"num.333.3", "3"},
-                                {"num.555.1", "1"},
-                                {"num.555.2", "2"},
-                                {"num.555.3", "3"}, };
+    {"num.111.2", "2"},
+    {"num.111.3", "3"},
+    {"num.333.1", "1"},
+    {"num.333.2", "2"},
+    {"num.333.3", "3"},
+    {"num.555.1", "1"},
+    {"num.555.2", "2"},
+    {"num.555.3", "3"}, };
 
   // prefixes that exist
-  for (const std::string& prefix : {"num.111", "num.333", "num.555"}) {
+  for (const std::string& prefix : {
+  "num.111", "num.333", "num.555"
+}) {
     int num = 0;
     for (auto pos = props.lower_bound(prefix);
          pos != props.end() &&
-             pos->first.compare(0, prefix.size(), prefix) == 0;
+         pos->first.compare(0, prefix.size(), prefix) == 0;
          ++pos) {
       ++num;
       auto key = prefix + "." + ToString(num);
@@ -894,8 +959,9 @@ TEST_F(TablePropertyTest, PrefixScanTest) {
   }
 
   // prefixes that don't exist
-  for (const std::string& prefix :
-       {"num.000", "num.222", "num.444", "num.666"}) {
+  for (const std::string& prefix : {
+  "num.000", "num.222", "num.444", "num.666"
+}) {
     auto pos = props.lower_bound(prefix);
     ASSERT_TRUE(pos == props.end() ||
                 pos->first.compare(0, prefix.size(), prefix) != 0);
@@ -982,9 +1048,9 @@ TEST_F(BlockBasedTableTest, BlockBasedTableProperties2) {
     options.table_factory.reset(NewBlockBasedTableFactory(table_options));
     options.comparator = &reverse_key_comparator;
     options.table_properties_collector_factories.emplace_back(
-        new DummyPropertiesCollectorFactory1());
+      new DummyPropertiesCollectorFactory1());
     options.table_properties_collector_factories.emplace_back(
-        new DummyPropertiesCollectorFactory2());
+      new DummyPropertiesCollectorFactory2());
 
     const ImmutableCFOptions ioptions(options);
     c.Finish(options, ioptions, table_options,
@@ -1085,39 +1151,39 @@ TEST_F(BlockBasedTableTest, PrefetchTest) {
                 /*keys_not_in_cache=*/ {"k06", "k07"});
   PrefetchRange(&c, &opt, &table_options, keys,
                 "k01", "k01",
-                {"k01", "k02", "k03"},
-                {"k04", "k05", "k06", "k07"});
+  {"k01", "k02", "k03"},
+  {"k04", "k05", "k06", "k07"});
   // odd
   PrefetchRange(&c, &opt, &table_options, keys,
                 "a", "z",
-                {"k01", "k02", "k03", "k04", "k05", "k06", "k07"},
-                {});
+  {"k01", "k02", "k03", "k04", "k05", "k06", "k07"},
+  {});
   PrefetchRange(&c, &opt, &table_options, keys,
                 "k00", "k00",
-                {"k01", "k02", "k03"},
-                {"k04", "k05", "k06", "k07"});
+  {"k01", "k02", "k03"},
+  {"k04", "k05", "k06", "k07"});
   // Edge cases
   PrefetchRange(&c, &opt, &table_options, keys,
                 "k00", "k06",
-                {"k01", "k02", "k03", "k04", "k05", "k06", "k07"},
-                {});
+  {"k01", "k02", "k03", "k04", "k05", "k06", "k07"},
+  {});
   PrefetchRange(&c, &opt, &table_options, keys,
                 "k00", "zzz",
-                {"k01", "k02", "k03", "k04", "k05", "k06", "k07"},
-                {});
+  {"k01", "k02", "k03", "k04", "k05", "k06", "k07"},
+  {});
   // null keys
   PrefetchRange(&c, &opt, &table_options, keys,
                 nullptr, nullptr,
-                {"k01", "k02", "k03", "k04", "k05", "k06", "k07"},
-                {});
+  {"k01", "k02", "k03", "k04", "k05", "k06", "k07"},
+  {});
   PrefetchRange(&c, &opt, &table_options, keys,
                 "k04", nullptr,
-                {"k04", "k05", "k06", "k07"},
-                {"k01", "k02", "k03"});
+  {"k04", "k05", "k06", "k07"},
+  {"k01", "k02", "k03"});
   PrefetchRange(&c, &opt, &table_options, keys,
                 nullptr, "k05",
-                {"k01", "k02", "k03", "k04", "k05"},
-                {"k06", "k07"});
+  {"k01", "k02", "k03", "k04", "k05"},
+  {"k06", "k07"});
   // invalid
   PrefetchRange(&c, &opt, &table_options, keys,
                 "k06", "k00", {}, {},
@@ -1308,11 +1374,11 @@ class BlockCachePropertiesSnapshot {
     data_block_cache_miss = statistics->getTickerCount(BLOCK_CACHE_DATA_MISS);
     data_block_cache_hit = statistics->getTickerCount(BLOCK_CACHE_DATA_HIT);
     filter_block_cache_miss =
-        statistics->getTickerCount(BLOCK_CACHE_FILTER_MISS);
+      statistics->getTickerCount(BLOCK_CACHE_FILTER_MISS);
     filter_block_cache_hit = statistics->getTickerCount(BLOCK_CACHE_FILTER_HIT);
     block_cache_bytes_read = statistics->getTickerCount(BLOCK_CACHE_BYTES_READ);
     block_cache_bytes_write =
-        statistics->getTickerCount(BLOCK_CACHE_BYTES_WRITE);
+      statistics->getTickerCount(BLOCK_CACHE_BYTES_WRITE);
   }
 
   void AssertIndexBlockStat(int64_t expected_index_block_cache_miss,
@@ -1343,9 +1409,13 @@ class BlockCachePropertiesSnapshot {
               block_cache_hit);
   }
 
-  int64_t GetCacheBytesRead() { return block_cache_bytes_read; }
+  int64_t GetCacheBytesRead() {
+    return block_cache_bytes_read;
+  }
 
-  int64_t GetCacheBytesWrite() { return block_cache_bytes_write; }
+  int64_t GetCacheBytesWrite() {
+    return block_cache_bytes_write;
+  }
 
  private:
   int64_t block_cache_miss = 0;
@@ -1568,7 +1638,7 @@ void ValidateBlockSizeDeviation(int value, int expected) {
   BlockBasedTableFactory* factory = new BlockBasedTableFactory(table_options);
 
   const BlockBasedTableOptions* normalized_table_options =
-      (const BlockBasedTableOptions*)factory->GetOptions();
+    (const BlockBasedTableOptions*)factory->GetOptions();
   ASSERT_EQ(normalized_table_options->block_size_deviation, expected);
 
   delete factory;
@@ -1580,7 +1650,7 @@ void ValidateBlockRestartInterval(int value, int expected) {
   BlockBasedTableFactory* factory = new BlockBasedTableFactory(table_options);
 
   const BlockBasedTableOptions* normalized_table_options =
-      (const BlockBasedTableOptions*)factory->GetOptions();
+    (const BlockBasedTableOptions*)factory->GetOptions();
   ASSERT_EQ(normalized_table_options->block_restart_interval, expected);
 
   delete factory;
@@ -1826,8 +1896,7 @@ TEST_F(GeneralTableTest, ApproximateOffsetOfCompressed) {
 
   if (!XPRESS_Supported()) {
     fprintf(stderr, "skipping xpress and xpress compression tests\n");
-  }
-  else {
+  } else {
     compression_state.push_back(kXpressCompression);
   }
 
@@ -1893,8 +1962,8 @@ TEST_F(MemTableTest, Simple) {
   ImmutableCFOptions ioptions(options);
   WriteBuffer wb(options.db_write_buffer_size);
   MemTable* memtable =
-      new MemTable(cmp, ioptions, MutableCFOptions(options, ioptions), &wb,
-                   kMaxSequenceNumber);
+    new MemTable(cmp, ioptions, MutableCFOptions(options, ioptions), &wb,
+                 kMaxSequenceNumber);
   memtable->Ref();
   WriteBatch batch;
   WriteBatchInternal::SetSequence(&batch, 100);
@@ -1904,7 +1973,7 @@ TEST_F(MemTableTest, Simple) {
   batch.Put(std::string("largekey"), std::string("vlarge"));
   ColumnFamilyMemTablesDefault cf_mems_default(memtable);
   ASSERT_TRUE(
-      WriteBatchInternal::InsertInto(&batch, &cf_mems_default, nullptr).ok());
+    WriteBatchInternal::InsertInto(&batch, &cf_mems_default, nullptr).ok());
 
   Arena arena;
   ScopedArenaIterator iter(memtable->NewIterator(ReadOptions(), &arena));
@@ -1983,15 +2052,17 @@ TEST_F(HarnessTest, FooterTests) {
 }
 
 class IndexBlockRestartIntervalTest
-    : public BlockBasedTableTest,
-      public ::testing::WithParamInterface<int> {
+  : public BlockBasedTableTest,
+    public ::testing::WithParamInterface<int> {
  public:
-  static std::vector<int> GetRestartValues() { return {-1, 0, 1, 8, 16, 32}; }
+  static std::vector<int> GetRestartValues() {
+    return {-1, 0, 1, 8, 16, 32};
+  }
 };
 
 INSTANTIATE_TEST_CASE_P(
-    IndexBlockRestartIntervalTest, IndexBlockRestartIntervalTest,
-    ::testing::ValuesIn(IndexBlockRestartIntervalTest::GetRestartValues()));
+  IndexBlockRestartIntervalTest, IndexBlockRestartIntervalTest,
+  ::testing::ValuesIn(IndexBlockRestartIntervalTest::GetRestartValues()));
 
 TEST_P(IndexBlockRestartIntervalTest, IndexBlockRestartInterval) {
   const int kKeysInTable = 10000;
@@ -2016,7 +2087,7 @@ TEST_P(IndexBlockRestartIntervalTest, IndexBlockRestartInterval) {
   std::vector<std::string> keys;
   stl_wrappers::KVMap kvmap;
   std::unique_ptr<InternalKeyComparator> comparator(
-      new InternalKeyComparator(BytewiseComparator()));
+    new InternalKeyComparator(BytewiseComparator()));
   const ImmutableCFOptions ioptions(options);
   c.Finish(options, ioptions, table_options, *comparator, &keys, &kvmap);
   auto reader = c.GetTableReader();

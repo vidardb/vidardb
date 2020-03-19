@@ -30,62 +30,62 @@ int main(int argc, char* argv[]) {
   options.create_if_missing = true;
 
   // adaptive table factory
-  #ifdef ROW_STORE
+#ifdef ROW_STORE
   const int knob = -1;
-  #endif
-  #ifdef COLUMN_STORE
+#endif
+#ifdef COLUMN_STORE
   const int knob = 0;
-  #endif
+#endif
 
   shared_ptr<TableFactory> block_based_table(NewBlockBasedTableFactory());
   shared_ptr<TableFactory> column_table(NewColumnTableFactory());
   ColumnTableOptions* column_opts =
-      static_cast<ColumnTableOptions*>(column_table->GetOptions());
+    static_cast<ColumnTableOptions*>(column_table->GetOptions());
   column_opts->column_count = M;
   options.table_factory.reset(NewAdaptiveTableFactory(block_based_table,
-      block_based_table, column_table, knob));
+                              block_based_table, column_table, knob));
 
   Status s = DB::Open(options, kDBPath, &db);
   assert(s.ok());
 
   // insert data
-  #ifdef COLUMN_STORE
+#ifdef COLUMN_STORE
   WriteOptions write_options;
   // write_options.sync = true;
   Splitter *splitter = column_opts->splitter.get();
-  s = db->Put(write_options, "1", 
-      splitter->Stitch(vector<string>{"chen1", "33", "hangzhou"}));
+  s = db->Put(write_options, "1",
+              splitter->Stitch(vector<string> {"chen1", "33", "hangzhou"}));
   assert(s.ok());
-  s = db->Put(write_options, "2", 
-      splitter->Stitch(vector<string>{"wang2", "32", "wuhan"}));
+  s = db->Put(write_options, "2",
+              splitter->Stitch(vector<string> {"wang2", "32", "wuhan"}));
   assert(s.ok());
-  s = db->Put(write_options, "3", 
-      splitter->Stitch(vector<string>{"zhao3", "35", "nanjing"}));
+  s = db->Put(write_options, "3",
+              splitter->Stitch(vector<string> {"zhao3", "35", "nanjing"}));
   assert(s.ok());
-  s = db->Put(write_options, "4", 
-      splitter->Stitch(vector<string>{"liao4", "28", "beijing"}));
+  s = db->Put(write_options, "4",
+              splitter->Stitch(vector<string> {"liao4", "28", "beijing"}));
   assert(s.ok());
-  s = db->Put(write_options, "5", 
-      splitter->Stitch(vector<string>{"jiang5", "30", "shanghai"}));
+  s = db->Put(write_options, "5",
+              splitter->Stitch(vector<string> {"jiang5", "30", "shanghai"}));
   assert(s.ok());
-  s = db->Put(write_options, "6", 
-      splitter->Stitch(vector<string>{"lian6", "30", "changsha"}));
+  s = db->Put(write_options, "6",
+              splitter->Stitch(vector<string> {"lian6", "30", "changsha"}));
   assert(s.ok());
   s = db->Delete(write_options, "1");
   assert(s.ok());
-  s = db->Put(write_options, "3", 
-      splitter->Stitch(vector<string>{"zhao333", "35", "nanjing"}));
+  s = db->Put(write_options, "3",
+              splitter->Stitch(vector<string> {"zhao333", "35", "nanjing"}));
   assert(s.ok());
-  s = db->Put(write_options, "6", 
-      splitter->Stitch(vector<string>{"lian666", "30", "changsha"}));
+  s = db->Put(write_options, "6",
+              splitter->Stitch(vector<string> {"lian666", "30", "changsha"}));
   assert(s.ok());
-  s = db->Put(write_options, "1", 
-      splitter->Stitch(vector<string>{"chen1111", "33", "hangzhou"}));
+  s = db->Put(write_options, "1",
+              splitter->Stitch(vector<string> {"chen1111", "33", "hangzhou"}));
   assert(s.ok());
   s = db->Delete(write_options, "3");
   assert(s.ok());
-  #endif
-  #ifdef ROW_STORE
+#endif
+#ifdef ROW_STORE
   WriteOptions write_options;
   // write_options.sync = true;
   s = db->Put(write_options, "1", "data1");
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
   assert(s.ok());
   s = db->Delete(write_options, "3");
   assert(s.ok());
-  #endif
+#endif
 
   // test memtable or sstable
   s = db->Flush(FlushOptions());
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
   Range range("1", "6"); // [1, 6]
 //  Range range("1", kRangeQueryMax); // [1, max]
 
-  #ifdef COLUMN_STORE
+#ifdef COLUMN_STORE
   list<RangeQueryKeyVal> res;
   bool next = true;
   while (next) { // range query loop
@@ -144,8 +144,8 @@ int main(int argc, char* argv[]) {
     }
     cout << endl;
   }
-  #endif
-  #ifdef ROW_STORE
+#endif
+#ifdef ROW_STORE
   list<RangeQueryKeyVal> res;
   bool next = true;
   while (next) { // range query loop
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     }
     cout << endl;
   }
-  #endif
+#endif
 
   delete db;
   return 0;

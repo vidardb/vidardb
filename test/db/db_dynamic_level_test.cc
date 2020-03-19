@@ -144,7 +144,7 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBase2) {
 
   DestroyAndReopen(options);
   ASSERT_OK(dbfull()->SetOptions({
-      {"disable_auto_compactions", "true"},
+    {"disable_auto_compactions", "true"},
   }));
 
   uint64_t int_prop;
@@ -160,7 +160,7 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBase2) {
                   RandomString(&rnd, 380)));
   }
   ASSERT_OK(dbfull()->SetOptions({
-      {"disable_auto_compactions", "false"},
+    {"disable_auto_compactions", "false"},
   }));
   Flush();
   dbfull()->TEST_WaitForCompact();
@@ -170,7 +170,7 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBase2) {
   // Insert extra about 28K to L0. After they are compacted to L4, base level
   // should be changed to L3.
   ASSERT_OK(dbfull()->SetOptions({
-      {"disable_auto_compactions", "true"},
+    {"disable_auto_compactions", "true"},
   }));
   for (int i = 0; i < 70; i++) {
     ASSERT_OK(Put(Key(static_cast<int>(rnd.Uniform(kMaxKey))),
@@ -178,7 +178,7 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBase2) {
   }
 
   ASSERT_OK(dbfull()->SetOptions({
-      {"disable_auto_compactions", "false"},
+    {"disable_auto_compactions", "false"},
   }));
   Flush();
   dbfull()->TEST_WaitForCompact();
@@ -193,11 +193,13 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBase2) {
   // level.
   // Hold compaction jobs to make sure
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "CompactionJob::Run():Start",
-      [&](void* arg) { env_->SleepForMicroseconds(100000); });
+    "CompactionJob::Run():Start",
+  [&](void* arg) {
+    env_->SleepForMicroseconds(100000);
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   ASSERT_OK(dbfull()->SetOptions({
-      {"disable_auto_compactions", "true"},
+    {"disable_auto_compactions", "true"},
   }));
   // Write about 40K more
   for (int i = 0; i < 100; i++) {
@@ -205,7 +207,7 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBase2) {
                   RandomString(&rnd, 380)));
   }
   ASSERT_OK(dbfull()->SetOptions({
-      {"disable_auto_compactions", "false"},
+    {"disable_auto_compactions", "false"},
   }));
   Flush();
   // Wait for 200 milliseconds before proceeding compactions to make sure two
@@ -221,7 +223,7 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBase2) {
   // We try to make last levels' targets to be 40K, 160K, 640K, add triggers
   // another compaction from 40K->160K.
   ASSERT_OK(dbfull()->SetOptions({
-      {"disable_auto_compactions", "true"},
+    {"disable_auto_compactions", "true"},
   }));
   // Write about 600K more
   for (int i = 0; i < 1500; i++) {
@@ -229,7 +231,7 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBase2) {
                   RandomString(&rnd, 380)));
   }
   ASSERT_OK(dbfull()->SetOptions({
-      {"disable_auto_compactions", "false"},
+    {"disable_auto_compactions", "false"},
   }));
   Flush();
   dbfull()->TEST_WaitForCompact();
@@ -243,10 +245,12 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBase2) {
   vidardb::SyncPoint::GetInstance()->ClearAllCallBacks();
 
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      {"CompactionJob::Run():Start", "DynamicLevelMaxBytesBase2:0"},
-      {"DynamicLevelMaxBytesBase2:1", "CompactionJob::Run():End"},
-      {"DynamicLevelMaxBytesBase2:compact_range_finish",
-       "FlushJob::WriteLevel0Table"},
+    {"CompactionJob::Run():Start", "DynamicLevelMaxBytesBase2:0"},
+    {"DynamicLevelMaxBytesBase2:1", "CompactionJob::Run():End"},
+    {
+      "DynamicLevelMaxBytesBase2:compact_range_finish",
+      "FlushJob::WriteLevel0Table"
+    },
   });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -337,10 +341,10 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesCompactRange) {
 
   std::set<int> output_levels;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "CompactionPicker::CompactRange:Return", [&](void* arg) {
-        Compaction* compaction = reinterpret_cast<Compaction*>(arg);
-        output_levels.insert(compaction->output_level());
-      });
+  "CompactionPicker::CompactRange:Return", [&](void* arg) {
+    Compaction* compaction = reinterpret_cast<Compaction*>(arg);
+    output_levels.insert(compaction->output_level());
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   dbfull()->CompactRange(CompactRangeOptions(), nullptr, nullptr);
@@ -377,8 +381,10 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBaseInc) {
 
   int non_trivial = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial",
-      [&](void* arg) { non_trivial++; });
+    "DBImpl::BackgroundCompaction:NonTrivial",
+  [&](void* arg) {
+    non_trivial++;
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Random rnd(301);
@@ -474,7 +480,7 @@ TEST_F(DBTestDynamicLevel, MigrateToDynamicLevelMaxBytesBase) {
   t.join();
 
   ASSERT_OK(dbfull()->SetOptions({
-      {"disable_auto_compactions", "false"},
+    {"disable_auto_compactions", "false"},
   }));
 
   int total_keys2 = 2000;

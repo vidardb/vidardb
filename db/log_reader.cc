@@ -24,20 +24,20 @@ Reader::Reporter::~Reporter() {
 Reader::Reader(std::shared_ptr<Logger> info_log,
                unique_ptr<SequentialFileReader>&& _file, Reporter* reporter,
                bool checksum, uint64_t initial_offset, uint64_t log_num)
-    : info_log_(info_log),
-      file_(std::move(_file)),
-      reporter_(reporter),
-      checksum_(checksum),
-      backing_store_(new char[kBlockSize]),
-      buffer_(),
-      eof_(false),
-      read_error_(false),
-      eof_offset_(0),
-      last_record_offset_(0),
-      end_of_buffer_offset_(0),
-      initial_offset_(initial_offset),
-      log_number_(log_num),
-      recycled_(false) {}
+  : info_log_(info_log),
+    file_(std::move(_file)),
+    reporter_(reporter),
+    checksum_(checksum),
+    backing_store_(new char[kBlockSize]),
+    buffer_(),
+    eof_(false),
+    read_error_(false),
+    eof_offset_(0),
+    last_record_offset_(0),
+    end_of_buffer_offset_(0),
+    initial_offset_(initial_offset),
+    log_number_(log_num),
+    recycled_(false) {}
 
 Reader::~Reader() {
   delete[] backing_store_;
@@ -94,66 +94,81 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
     size_t drop_size;
     const unsigned int record_type = ReadPhysicalRecord(&fragment, &drop_size);
     switch (record_type) {
-      case kFullType:
-      case kRecyclableFullType:
-        if (in_fragmented_record && !scratch->empty()) {
-          // Handle bug in earlier versions of log::Writer where
-          // it could emit an empty kFirstType record at the tail end
-          // of a block followed by a kFullType or kFirstType record
-          // at the beginning of the next block.
-          ReportCorruption(scratch->size(), "partial record without end(1)");
-        }
-        prospective_record_offset = physical_record_offset;
-        scratch->clear();
-        *record = fragment;
+    case kFullType:
+    case kRecyclableFullType:
+      if (in_fragmented_record && !scratch->empty()) {
+        // Handle bug in earlier versions of log::Writer where
+        // it could emit an empty kFirstType record at the tail end
+        // of a block followed by a kFullType or kFirstType record
+        // at the beginning of the next block.
+        ReportCorruption(scratch->size(), "partial record without end(1)");
+      }
+      prospective_record_offset = physical_record_offset;
+      scratch->clear();
+      *record = fragment;
+      last_record_offset_ = prospective_record_offset;
+      return true;
+
+    case kFirstType:
+    case kRecyclableFirstType:
+      if (in_fragmented_record && !scratch->empty()) {
+        // Handle bug in earlier versions of log::Writer where
+        // it could emit an empty kFirstType record at the tail end
+        // of a block followed by a kFullType or kFirstType record
+        // at the beginning of the next block.
+        ReportCorruption(scratch->size(), "partial record without end(2)");
+      }
+      prospective_record_offset = physical_record_offset;
+      scratch->assign(fragment.data(), fragment.size());
+      in_fragmented_record = true;
+      break;
+
+    case kMiddleType:
+    case kRecyclableMiddleType:
+      if (!in_fragmented_record) {
+        ReportCorruption(fragment.size(),
+                         "missing start of fragmented record(1)");
+      } else {
+        scratch->append(fragment.data(), fragment.size());
+      }
+      break;
+
+    case kLastType:
+    case kRecyclableLastType:
+      if (!in_fragmented_record) {
+        ReportCorruption(fragment.size(),
+                         "missing start of fragmented record(2)");
+      } else {
+        scratch->append(fragment.data(), fragment.size());
+        *record = Slice(*scratch);
         last_record_offset_ = prospective_record_offset;
         return true;
+      }
+      break;
 
-      case kFirstType:
-      case kRecyclableFirstType:
-        if (in_fragmented_record && !scratch->empty()) {
-          // Handle bug in earlier versions of log::Writer where
-          // it could emit an empty kFirstType record at the tail end
-          // of a block followed by a kFullType or kFirstType record
-          // at the beginning of the next block.
-          ReportCorruption(scratch->size(), "partial record without end(2)");
-        }
-        prospective_record_offset = physical_record_offset;
-        scratch->assign(fragment.data(), fragment.size());
-        in_fragmented_record = true;
-        break;
+    case kBadHeader:
+      if (wal_recovery_mode == WALRecoveryMode::kAbsoluteConsistency) {
+        // in clean shutdown we don't expect any error in the log files
+        ReportCorruption(drop_size, "truncated header");
+      }
+    // fall-thru
 
-      case kMiddleType:
-      case kRecyclableMiddleType:
-        if (!in_fragmented_record) {
-          ReportCorruption(fragment.size(),
-                           "missing start of fragmented record(1)");
-        } else {
-          scratch->append(fragment.data(), fragment.size());
-        }
-        break;
-
-      case kLastType:
-      case kRecyclableLastType:
-        if (!in_fragmented_record) {
-          ReportCorruption(fragment.size(),
-                           "missing start of fragmented record(2)");
-        } else {
-          scratch->append(fragment.data(), fragment.size());
-          *record = Slice(*scratch);
-          last_record_offset_ = prospective_record_offset;
-          return true;
-        }
-        break;
-
-      case kBadHeader:
+    case kEof:
+      if (in_fragmented_record) {
         if (wal_recovery_mode == WALRecoveryMode::kAbsoluteConsistency) {
           // in clean shutdown we don't expect any error in the log files
-          ReportCorruption(drop_size, "truncated header");
+          ReportCorruption(scratch->size(), "error reading trailing data");
         }
-      // fall-thru
+        // This can be caused by the writer dying immediately after
+        //  writing a physical record but before completing the next; don't
+        //  treat it as a corruption, just ignore the entire logical record.
+        scratch->clear();
+      }
+      return false;
 
-      case kEof:
+    case kOldRecord:
+      if (wal_recovery_mode != WALRecoveryMode::kSkipAnyCorruptedRecords) {
+        // Treat a record from a previous instance of the log as EOF.
         if (in_fragmented_record) {
           if (wal_recovery_mode == WALRecoveryMode::kAbsoluteConsistency) {
             // in clean shutdown we don't expect any error in the log files
@@ -165,61 +180,46 @@ bool Reader::ReadRecord(Slice* record, std::string* scratch,
           scratch->clear();
         }
         return false;
+      }
+    // fall-thru
 
-      case kOldRecord:
-        if (wal_recovery_mode != WALRecoveryMode::kSkipAnyCorruptedRecords) {
-          // Treat a record from a previous instance of the log as EOF.
-          if (in_fragmented_record) {
-            if (wal_recovery_mode == WALRecoveryMode::kAbsoluteConsistency) {
-              // in clean shutdown we don't expect any error in the log files
-              ReportCorruption(scratch->size(), "error reading trailing data");
-            }
-            // This can be caused by the writer dying immediately after
-            //  writing a physical record but before completing the next; don't
-            //  treat it as a corruption, just ignore the entire logical record.
-            scratch->clear();
-          }
-          return false;
-        }
-      // fall-thru
-
-      case kBadRecord:
-        if (in_fragmented_record) {
-          ReportCorruption(scratch->size(), "error in middle of record");
-          in_fragmented_record = false;
-          scratch->clear();
-        }
-        break;
-
-      case kBadRecordLen:
-      case kBadRecordChecksum:
-        if (recycled_ &&
-            wal_recovery_mode ==
-                WALRecoveryMode::kTolerateCorruptedTailRecords) {
-          scratch->clear();
-          return false;
-        }
-	if (record_type == kBadRecordLen)
-	  ReportCorruption(drop_size, "bad record length");
-	else
-	  ReportCorruption(drop_size, "checksum mismatch");
-        if (in_fragmented_record) {
-          ReportCorruption(scratch->size(), "error in middle of record");
-          in_fragmented_record = false;
-          scratch->clear();
-        }
-        break;
-
-      default: {
-        char buf[40];
-        snprintf(buf, sizeof(buf), "unknown record type %u", record_type);
-        ReportCorruption(
-            (fragment.size() + (in_fragmented_record ? scratch->size() : 0)),
-            buf);
+    case kBadRecord:
+      if (in_fragmented_record) {
+        ReportCorruption(scratch->size(), "error in middle of record");
         in_fragmented_record = false;
         scratch->clear();
-        break;
       }
+      break;
+
+    case kBadRecordLen:
+    case kBadRecordChecksum:
+      if (recycled_ &&
+          wal_recovery_mode ==
+          WALRecoveryMode::kTolerateCorruptedTailRecords) {
+        scratch->clear();
+        return false;
+      }
+      if (record_type == kBadRecordLen)
+        ReportCorruption(drop_size, "bad record length");
+      else
+        ReportCorruption(drop_size, "checksum mismatch");
+      if (in_fragmented_record) {
+        ReportCorruption(scratch->size(), "error in middle of record");
+        in_fragmented_record = false;
+        scratch->clear();
+      }
+      break;
+
+    default: {
+      char buf[40];
+      snprintf(buf, sizeof(buf), "unknown record type %u", record_type);
+      ReportCorruption(
+        (fragment.size() + (in_fragmented_record ? scratch->size() : 0)),
+        buf);
+      in_fragmented_record = false;
+      scratch->clear();
+      break;
+    }
     }
   }
   return false;
@@ -261,7 +261,7 @@ void Reader::UnmarkEOF() {
 
   Slice read_buffer;
   Status status = file_->Read(remaining, &read_buffer,
-    backing_store_ + eof_offset_);
+                              backing_store_ + eof_offset_);
 
   size_t added = read_buffer.size();
   end_of_buffer_offset_ += added;
@@ -278,11 +278,11 @@ void Reader::UnmarkEOF() {
   if (read_buffer.data() != backing_store_ + eof_offset_) {
     // Read did not write to backing_store_
     memmove(backing_store_ + eof_offset_, read_buffer.data(),
-      read_buffer.size());
+            read_buffer.size());
   }
 
   buffer_ = Slice(backing_store_ + consumed_bytes,
-    eof_offset_ + added - consumed_bytes);
+                  eof_offset_ + added - consumed_bytes);
 
   if (added < remaining) {
     eof_ = true;
@@ -343,7 +343,7 @@ unsigned int Reader::ReadPhysicalRecord(Slice* result, size_t* drop_size) {
     if (buffer_.size() < (size_t)kHeaderSize) {
       int r;
       if (!ReadMore(drop_size, &r)) {
-	return r;
+        return r;
       }
       continue;
     }
@@ -362,11 +362,11 @@ unsigned int Reader::ReadPhysicalRecord(Slice* result, size_t* drop_size) {
       header_size = kRecyclableHeaderSize;
       // We need enough for the larger header
       if (buffer_.size() < (size_t)kRecyclableHeaderSize) {
-	int r;
-	if (!ReadMore(drop_size, &r)) {
+        int r;
+        if (!ReadMore(drop_size, &r)) {
           return r;
         }
-	continue;
+        continue;
       }
       const uint32_t log_num = DecodeFixed32(header + 7);
       if (log_num != log_number_) {

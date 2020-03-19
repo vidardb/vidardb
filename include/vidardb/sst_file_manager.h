@@ -73,8 +73,8 @@ class SstFileManager {
 // @param status: If not nullptr, status will contain any errors that happened
 //    during creating the missing trash_dir or deleting existing files in trash.
 extern SstFileManager* NewSstFileManager(
-    Env* env, std::shared_ptr<Logger> info_log = nullptr,
-    std::string trash_dir = "", int64_t rate_bytes_per_sec = 0,
-    bool delete_exisitng_trash = true, Status* status = nullptr);
+  Env* env, std::shared_ptr<Logger> info_log = nullptr,
+  std::string trash_dir = "", int64_t rate_bytes_per_sec = 0,
+  bool delete_exisitng_trash = true, Status* status = nullptr);
 
 }  // namespace vidardb

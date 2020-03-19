@@ -71,24 +71,24 @@ FlushJob::FlushJob(const std::string& dbname, ColumnFamilyData* cfd,
                    Directory* db_directory, Directory* output_file_directory,
                    CompressionType output_compression, Statistics* stats,
                    EventLogger* event_logger, bool measure_io_stats)
-    : dbname_(dbname),
-      cfd_(cfd),
-      db_options_(db_options),
-      mutable_cf_options_(mutable_cf_options),
-      env_options_(env_options),
-      versions_(versions),
-      db_mutex_(db_mutex),
-      shutting_down_(shutting_down),
-      existing_snapshots_(std::move(existing_snapshots)),
-      earliest_write_conflict_snapshot_(earliest_write_conflict_snapshot),
-      job_context_(job_context),
-      log_buffer_(log_buffer),
-      db_directory_(db_directory),
-      output_file_directory_(output_file_directory),
-      output_compression_(output_compression),
-      stats_(stats),
-      event_logger_(event_logger),
-      measure_io_stats_(measure_io_stats) {
+  : dbname_(dbname),
+    cfd_(cfd),
+    db_options_(db_options),
+    mutable_cf_options_(mutable_cf_options),
+    env_options_(env_options),
+    versions_(versions),
+    db_mutex_(db_mutex),
+    shutting_down_(shutting_down),
+    existing_snapshots_(std::move(existing_snapshots)),
+    earliest_write_conflict_snapshot_(earliest_write_conflict_snapshot),
+    job_context_(job_context),
+    log_buffer_(log_buffer),
+    db_directory_(db_directory),
+    output_file_directory_(output_file_directory),
+    output_compression_(output_compression),
+    stats_(stats),
+    event_logger_(event_logger),
+    measure_io_stats_(measure_io_stats) {
   // Update the thread status to indicate flush.
   ReportStartedFlush();
   TEST_SYNC_POINT("FlushJob::FlushJob()");
@@ -103,8 +103,8 @@ void FlushJob::ReportStartedFlush() {
                                     cfd_->options()->enable_thread_tracking);
   ThreadStatusUtil::SetThreadOperation(ThreadStatus::OP_FLUSH);
   ThreadStatusUtil::SetThreadOperationProperty(
-      ThreadStatus::COMPACTION_JOB_ID,
-      job_context_->job_id);
+    ThreadStatus::COMPACTION_JOB_ID,
+    job_context_->job_id);
   IOSTATS_RESET(bytes_written);
 }
 
@@ -114,20 +114,20 @@ void FlushJob::ReportFlushInputSize(const std::vector<MemTable*>& mems) {
     input_size += mem->ApproximateMemoryUsage();
   }
   ThreadStatusUtil::IncreaseThreadOperationProperty(
-      ThreadStatus::FLUSH_BYTES_MEMTABLES,
-      input_size);
+    ThreadStatus::FLUSH_BYTES_MEMTABLES,
+    input_size);
 }
 
 void FlushJob::RecordFlushIOStats() {
   RecordTick(stats_, FLUSH_WRITE_BYTES, IOSTATS(bytes_written));
   ThreadStatusUtil::IncreaseThreadOperationProperty(
-      ThreadStatus::FLUSH_BYTES_WRITTEN, IOSTATS(bytes_written));
+    ThreadStatus::FLUSH_BYTES_WRITTEN, IOSTATS(bytes_written));
   IOSTATS_RESET(bytes_written);
 }
 
 Status FlushJob::Run(FileMetaData* file_meta) {
   AutoThreadOperationStageUpdater stage_run(
-      ThreadStatus::STAGE_FLUSH_RUN);
+    ThreadStatus::STAGE_FLUSH_RUN);
   // I/O measurement variables
   PerfLevel prev_perf_level = PerfLevel::kEnableTime;
   uint64_t prev_write_nanos = 0;
@@ -172,7 +172,7 @@ Status FlushJob::Run(FileMetaData* file_meta) {
   if (s.ok() &&
       (shutting_down_->load(std::memory_order_acquire) || cfd_->IsDropped())) {
     s = Status::ShutdownInProgress(
-        "Database shutdown or Column family drop during flush");
+          "Database shutdown or Column family drop during flush");
   }
 
   if (!s.ok()) {
@@ -181,9 +181,9 @@ Status FlushJob::Run(FileMetaData* file_meta) {
     TEST_SYNC_POINT("FlushJob::InstallResults");
     // Replace immutable memtable with the generated Table
     s = cfd_->imm()->InstallMemtableFlushResults(
-        cfd_, mutable_cf_options_, mems, versions_, db_mutex_,
-        meta.fd.GetNumber(), &job_context_->memtables_to_free, db_directory_,
-        log_buffer_);
+          cfd_, mutable_cf_options_, mems, versions_, db_mutex_,
+          meta.fd.GetNumber(), &job_context_->memtables_to_free, db_directory_,
+          log_buffer_);
   }
 
   if (s.ok() && file_meta != nullptr) {
@@ -221,7 +221,7 @@ Status FlushJob::Run(FileMetaData* file_meta) {
 Status FlushJob::WriteLevel0Table(const std::vector<MemTable*>& mems,
                                   VersionEdit* edit, FileMetaData* meta) {
   AutoThreadOperationStageUpdater stage_updater(
-      ThreadStatus::STAGE_FLUSH_WRITE_L0);
+    ThreadStatus::STAGE_FLUSH_WRITE_L0);
   db_mutex_->AssertHeld();
   const uint64_t start_micros = db_options_.env->NowMicros();
   // path 0 for level 0 file.
@@ -260,8 +260,8 @@ Status FlushJob::WriteLevel0Table(const std::vector<MemTable*>& mems,
 
     {
       ScopedArenaIterator iter(
-          NewMergingIterator(&cfd_->internal_comparator(), &memtables[0],
-                             static_cast<int>(memtables.size()), &arena));
+        NewMergingIterator(&cfd_->internal_comparator(), &memtables[0],
+                           static_cast<int>(memtables.size()), &arena));
       Log(InfoLogLevel::INFO_LEVEL, db_options_.info_log,
           "[%s] [JOB %d] Level-0 flush table #%" PRIu64 ": started",
           cfd_->GetName().c_str(), job_context_->job_id, meta->fd.GetNumber());
@@ -269,15 +269,15 @@ Status FlushJob::WriteLevel0Table(const std::vector<MemTable*>& mems,
       TEST_SYNC_POINT_CALLBACK("FlushJob::WriteLevel0Table:output_compression",
                                &output_compression_);
       s = BuildTable(
-          dbname_, db_options_.env, *cfd_->ioptions(), mutable_cf_options_,
-          env_options_, cfd_->table_cache(), iter.get(), meta,
-          cfd_->internal_comparator(), cfd_->int_tbl_prop_collector_factories(),
-          cfd_->GetID(), cfd_->GetName(), existing_snapshots_,
-          earliest_write_conflict_snapshot_, output_compression_,
-          cfd_->ioptions()->compression_opts,
-          mutable_cf_options_.paranoid_file_checks, cfd_->internal_stats(),
-          TableFileCreationReason::kFlush, event_logger_, job_context_->job_id,
-          Env::IO_HIGH, &table_properties_, 0 /* level */);
+            dbname_, db_options_.env, *cfd_->ioptions(), mutable_cf_options_,
+            env_options_, cfd_->table_cache(), iter.get(), meta,
+            cfd_->internal_comparator(), cfd_->int_tbl_prop_collector_factories(),
+            cfd_->GetID(), cfd_->GetName(), existing_snapshots_,
+            earliest_write_conflict_snapshot_, output_compression_,
+            cfd_->ioptions()->compression_opts,
+            mutable_cf_options_.paranoid_file_checks, cfd_->internal_stats(),
+            TableFileCreationReason::kFlush, event_logger_, job_context_->job_id,
+            Env::IO_HIGH, &table_properties_, 0 /* level */);
       LogFlush(db_options_.info_log);
     }
     Log(InfoLogLevel::INFO_LEVEL, db_options_.info_log,

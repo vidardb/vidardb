@@ -22,7 +22,7 @@ class DBTestXactLogIterator : public DBTestBase {
   DBTestXactLogIterator() : DBTestBase("/db_log_iter_test") {}
 
   std::unique_ptr<TransactionLogIterator> OpenTransactionLogIter(
-      const SequenceNumber seq) {
+    const SequenceNumber seq) {
     unique_ptr<TransactionLogIterator> iter;
     Status status = dbfull()->GetUpdatesSince(seq, &iter);
     EXPECT_OK(status);
@@ -33,8 +33,8 @@ class DBTestXactLogIterator : public DBTestBase {
 
 namespace {
 SequenceNumber ReadRecords(
-    std::unique_ptr<TransactionLogIterator>& iter,
-    int& count) {
+  std::unique_ptr<TransactionLogIterator>& iter,
+  int& count) {
   count = 0;
   SequenceNumber lastSequence = 0;
   BatchResult res;
@@ -50,8 +50,8 @@ SequenceNumber ReadRecords(
 }
 
 void ExpectRecords(
-    const int expected_no_records,
-    std::unique_ptr<TransactionLogIterator>& iter) {
+  const int expected_no_records,
+  std::unique_ptr<TransactionLogIterator>& iter) {
   int num_records;
   ReadRecords(iter, num_records);
   ASSERT_EQ(num_records, expected_no_records);
@@ -89,19 +89,24 @@ TEST_F(DBTestXactLogIterator, TransactionLogIterator) {
 TEST_F(DBTestXactLogIterator, TransactionLogIteratorRace) {
   static const int LOG_ITERATOR_RACE_TEST_COUNT = 2;
   static const char* sync_points[LOG_ITERATOR_RACE_TEST_COUNT][4] = {
-      {"WalManager::GetSortedWalFiles:1",  "WalManager::PurgeObsoleteFiles:1",
-       "WalManager::PurgeObsoleteFiles:2", "WalManager::GetSortedWalFiles:2"},
-      {"WalManager::GetSortedWalsOfType:1",
-       "WalManager::PurgeObsoleteFiles:1",
-       "WalManager::PurgeObsoleteFiles:2",
-       "WalManager::GetSortedWalsOfType:2"}};
+    {
+      "WalManager::GetSortedWalFiles:1",  "WalManager::PurgeObsoleteFiles:1",
+      "WalManager::PurgeObsoleteFiles:2", "WalManager::GetSortedWalFiles:2"
+    },
+    {
+      "WalManager::GetSortedWalsOfType:1",
+      "WalManager::PurgeObsoleteFiles:1",
+      "WalManager::PurgeObsoleteFiles:2",
+      "WalManager::GetSortedWalsOfType:2"
+    }
+  };
   for (int test = 0; test < LOG_ITERATOR_RACE_TEST_COUNT; ++test) {
     // Setup sync point dependency to reproduce the race condition of
     // a log file moved to archived dir, in the middle of GetSortedWalFiles
-    vidardb::SyncPoint::GetInstance()->LoadDependency(
-      { { sync_points[test][0], sync_points[test][1] },
-        { sync_points[test][2], sync_points[test][3] },
-      });
+    vidardb::SyncPoint::GetInstance()->LoadDependency( {
+      { sync_points[test][0], sync_points[test][1] },
+      { sync_points[test][2], sync_points[test][3] },
+    });
 
     do {
       vidardb::SyncPoint::GetInstance()->ClearTrace();
@@ -189,7 +194,7 @@ TEST_F(DBTestXactLogIterator, TransactionLogIteratorCorruptedLog) {
       mem_env_->Truncate(logfile_path, wal_files.front()->SizeFileBytes() / 2);
     } else {
       ASSERT_EQ(0, truncate(logfile_path.c_str(),
-                   wal_files.front()->SizeFileBytes() / 2));
+                            wal_files.front()->SizeFileBytes() / 2));
     }
 
     // Insert a new entry to a new log file
@@ -267,13 +272,13 @@ TEST_F(DBTestXactLogIterator, TransactionLogIteratorBlobs) {
   } handler;
   res.writeBatchPtr->Iterate(&handler);
   ASSERT_EQ(
-      "Put(1, key1, 1024)"
-      "Put(0, key2, 1024)"
-      "LogData(blob1)"
-      "Put(1, key3, 1024)"
-      "LogData(blob2)"
-      "Delete(0, key2)",
-      handler.seen);
+    "Put(1, key1, 1024)"
+    "Put(0, key2, 1024)"
+    "LogData(blob1)"
+    "Put(1, key3, 1024)"
+    "LogData(blob2)"
+    "Delete(0, key2)",
+    handler.seen);
 }
 }  // namespace vidardb
 

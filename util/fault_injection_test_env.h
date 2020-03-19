@@ -37,14 +37,16 @@ struct FileState {
   ssize_t pos_at_last_flush_;
 
   explicit FileState(const std::string& filename)
-      : filename_(filename),
-        pos_(-1),
-        pos_at_last_sync_(-1),
-        pos_at_last_flush_(-1) {}
+    : filename_(filename),
+      pos_(-1),
+      pos_at_last_sync_(-1),
+      pos_at_last_flush_(-1) {}
 
   FileState() : pos_(-1), pos_at_last_sync_(-1), pos_at_last_flush_(-1) {}
 
-  bool IsFullySynced() const { return pos_ <= 0 || pos_ == pos_at_last_sync_; }
+  bool IsFullySynced() const {
+    return pos_ <= 0 || pos_ == pos_at_last_sync_;
+  }
 
   Status DropUnsyncedData(Env* env) const;
 
@@ -66,7 +68,9 @@ class TestWritableFile : public WritableFile {
   virtual Status Close() override;
   virtual Status Flush() override;
   virtual Status Sync() override;
-  virtual bool IsSyncThreadSafe() const override { return true; }
+  virtual bool IsSyncThreadSafe() const override {
+    return true;
+  }
 
  private:
   FileState state_;
@@ -79,7 +83,7 @@ class TestDirectory : public Directory {
  public:
   explicit TestDirectory(FaultInjectionTestEnv* env, std::string dirname,
                          Directory* dir)
-      : env_(env), dirname_(dirname), dir_(dir) {}
+    : env_(env), dirname_(dirname), dir_(dir) {}
   ~TestDirectory() {}
 
   virtual Status Fsync() override;
@@ -93,7 +97,7 @@ class TestDirectory : public Directory {
 class FaultInjectionTestEnv : public EnvWrapper {
  public:
   explicit FaultInjectionTestEnv(Env* base)
-      : EnvWrapper(base), filesystem_active_(true) {}
+    : EnvWrapper(base), filesystem_active_(true) {}
   virtual ~FaultInjectionTestEnv() {}
 
   Status NewDirectory(const std::string& name,
@@ -137,12 +141,16 @@ class FaultInjectionTestEnv : public EnvWrapper {
     MutexLock l(&mutex_);
     return filesystem_active_;
   }
-  void SetFilesystemActiveNoLock(bool active) { filesystem_active_ = active; }
+  void SetFilesystemActiveNoLock(bool active) {
+    filesystem_active_ = active;
+  }
   void SetFilesystemActive(bool active) {
     MutexLock l(&mutex_);
     SetFilesystemActiveNoLock(active);
   }
-  void AssertNoOpenFile() { assert(open_files_.empty()); }
+  void AssertNoOpenFile() {
+    assert(open_files_.empty());
+  }
 
  private:
   port::Mutex mutex_;

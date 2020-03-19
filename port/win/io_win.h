@@ -56,15 +56,15 @@ inline int fsync(HANDLE hFile) {
 }
 
 SSIZE_T pwrite(HANDLE hFile, const char* src, size_t numBytes,
-  uint64_t offset);
+               uint64_t offset);
 
 SSIZE_T pread(HANDLE hFile, char* src, size_t numBytes, uint64_t offset);
 
 Status fallocate(const std::string& filename, HANDLE hFile,
-  uint64_t to_size);
+                 uint64_t to_size);
 
 Status ftruncate(const std::string& filename, HANDLE hFile,
-  uint64_t toSize);
+                 uint64_t toSize);
 
 
 size_t GetUniqueIdFromFile(HANDLE hFile, char* id, size_t max_size);
@@ -78,15 +78,15 @@ class WinMmapReadableFile : public RandomAccessFile {
   const void* mapped_region_;
   const size_t length_;
 
-public:
+ public:
   // mapped_region_[0,length-1] contains the mmapped contents of the file.
   WinMmapReadableFile(const std::string& fileName, HANDLE hFile, HANDLE hMap,
-    const void* mapped_region, size_t length);
+                      const void* mapped_region, size_t length);
 
   ~WinMmapReadableFile();
 
   virtual Status Read(uint64_t offset, size_t n, Slice* result,
-    char* scratch) const override;
+                      char* scratch) const override;
 
   virtual Status InvalidateCache(size_t offset, size_t length) override;
 
@@ -98,7 +98,7 @@ public:
 // file before reading from it, or for log files, the reading code
 // knows enough to skip zero suffixes.
 class WinMmapFile : public WritableFile {
-private:
+ private:
 //  const std::string filename_;  // Shichao
   HANDLE hFile_;
   HANDLE hMap_;
@@ -107,7 +107,7 @@ private:
   // increments. We may decide if this is a memory
   // page size or SSD page size
   const size_t
-    allocation_granularity_;  // View must start at such a granularity
+  allocation_granularity_;  // View must start at such a granularity
 
   size_t reserved_size_;      // Preallocated size
 
@@ -136,10 +136,10 @@ private:
 
   virtual Status PreallocateInternal(uint64_t spaceToReserve);
 
-public:
+ public:
 
   WinMmapFile(const std::string& fname, HANDLE hFile, size_t page_size,
-    size_t allocation_granularity, const EnvOptions& options);
+              size_t allocation_granularity, const EnvOptions& options);
 
   ~WinMmapFile();
 
@@ -176,7 +176,7 @@ public:
 };
 
 class WinSequentialFile : public SequentialFile {
-private:
+ private:
 //  const std::string filename_;  // Shichao
   HANDLE file_;
 
@@ -190,9 +190,9 @@ private:
   // implementing this.
   bool use_os_buffer_;
 
-public:
+ public:
   WinSequentialFile(const std::string& fname, HANDLE f,
-    const EnvOptions& options);
+                    const EnvOptions& options);
 
   ~WinSequentialFile();
 
@@ -214,7 +214,7 @@ class WinRandomAccessFile : public RandomAccessFile {
   mutable std::mutex buffer_mut_;
   mutable AlignedBuffer buffer_;
   mutable uint64_t
-    buffered_start_;  // file offset set that is currently buffered
+  buffered_start_;  // file offset set that is currently buffered
 
   /*
   * The function reads a requested amount of bytes into the specified aligned
@@ -239,36 +239,36 @@ class WinRandomAccessFile : public RandomAccessFile {
   * @dest - user supplied buffer
   */
   SSIZE_T ReadIntoBuffer(uint64_t user_offset, uint64_t first_page_start,
-    size_t bytes_to_read, size_t& left,
-    AlignedBuffer& buffer, char* dest) const;
-  
+                         size_t bytes_to_read, size_t& left,
+                         AlignedBuffer& buffer, char* dest) const;
+
   SSIZE_T ReadIntoOneShotBuffer(uint64_t user_offset, uint64_t first_page_start,
-    size_t bytes_to_read, size_t& left,
-    char* dest) const;
+                                size_t bytes_to_read, size_t& left,
+                                char* dest) const;
 
   SSIZE_T ReadIntoInstanceBuffer(uint64_t user_offset,
-    uint64_t first_page_start,
-    size_t bytes_to_read, size_t& left,
-    char* dest) const;
+                                 uint64_t first_page_start,
+                                 size_t bytes_to_read, size_t& left,
+                                 char* dest) const;
 
   void CalculateReadParameters(uint64_t offset, size_t bytes_requested,
-    size_t& actual_bytes_toread,
-    uint64_t& first_page_start) const;
+                               size_t& actual_bytes_toread,
+                               uint64_t& first_page_start) const;
 
   // Override for behavior change
   virtual SSIZE_T PositionedReadInternal(char* src, size_t numBytes,
-     uint64_t offset) const;
+                                         uint64_t offset) const;
 
-public:
+ public:
   WinRandomAccessFile(const std::string& fname, HANDLE hFile, size_t alignment,
-    const EnvOptions& options);
+                      const EnvOptions& options);
 
   ~WinRandomAccessFile();
 
   virtual void EnableReadAhead() override;
 
   virtual Status Read(uint64_t offset, size_t n, Slice* result,
-    char* scratch) const override;
+                      char* scratch) const override;
 
   virtual bool ShouldForwardRawRequest() const override;
 
@@ -293,7 +293,7 @@ public:
 // No padding is required for
 // buffered access.
 class WinWritableFile : public WritableFile {
-private:
+ private:
 //  const std::string filename_;  // Shichao
   HANDLE            hFile_;
   const bool        use_os_buffer_;  // Used to indicate unbuffered access, the file
@@ -304,9 +304,9 @@ private:
 
   virtual Status PreallocateInternal(uint64_t spaceToReserve);
 
-public:
+ public:
   WinWritableFile(const std::string& fname, HANDLE hFile, size_t alignment,
-    size_t capacity, const EnvOptions& options);
+                  size_t capacity, const EnvOptions& options);
 
   ~WinWritableFile();
 
@@ -341,14 +341,14 @@ public:
 };
 
 class WinDirectory : public Directory {
-public:
+ public:
   WinDirectory() {}
 
   virtual Status Fsync() override;
 };
 
 class WinFileLock : public FileLock {
-public:
+ public:
   explicit WinFileLock(HANDLE hFile) : hFile_(hFile) {
     assert(hFile != NULL);
     assert(hFile != INVALID_HANDLE_VALUE);
@@ -356,7 +356,7 @@ public:
 
   ~WinFileLock();
 
-private:
+ private:
   HANDLE hFile_;
 };
 

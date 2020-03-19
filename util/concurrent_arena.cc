@@ -20,7 +20,7 @@ __thread uint32_t ConcurrentArena::tls_cpuid = 0;
 #endif
 
 ConcurrentArena::ConcurrentArena(size_t block_size, size_t huge_page_size)
-    : shard_block_size_(block_size / 8), arena_(block_size, huge_page_size) {
+  : shard_block_size_(block_size / 8), arena_(block_size, huge_page_size) {
   // find a power of two >= num_cpus and >= 8
   auto num_cpus = std::thread::hardware_concurrency();
   index_mask_ = 7;
@@ -37,7 +37,7 @@ ConcurrentArena::Shard* ConcurrentArena::Repick() {
   if (UNLIKELY(cpuid < 0)) {
     // cpu id unavailable, just pick randomly
     cpuid =
-        Random::GetTLSInstance()->Uniform(static_cast<int>(index_mask_) + 1);
+      Random::GetTLSInstance()->Uniform(static_cast<int>(index_mask_) + 1);
   }
 #ifdef VIDARDB_SUPPORT_THREAD_LOCAL
   // even if we are cpu 0, use a non-zero tls_cpuid so we can tell we

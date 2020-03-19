@@ -58,7 +58,7 @@ class PosixDirectIOSequentialFile : public SequentialFile {
  public:
   explicit PosixDirectIOSequentialFile(const std::string& filename, int fd)
 //      : filename_(filename), fd_(fd) {}  // Shichao
-      : SequentialFile(filename), fd_(fd) {}
+    : SequentialFile(filename), fd_(fd) {}
 
   virtual ~PosixDirectIOSequentialFile() {}
 
@@ -96,7 +96,7 @@ class PosixRandomAccessFile : public RandomAccessFile {
 class PosixDirectIORandomAccessFile : public PosixRandomAccessFile {
  public:
   explicit PosixDirectIORandomAccessFile(const std::string& filename, int fd)
-      : PosixRandomAccessFile(filename, fd, EnvOptions()) {}
+    : PosixRandomAccessFile(filename, fd, EnvOptions()) {}
   virtual ~PosixDirectIORandomAccessFile() {}
 
   Status Read(uint64_t offset, size_t n, Slice* result,
@@ -124,7 +124,9 @@ class PosixWritableFile : public WritableFile {
 
   // Means Close() will properly take care of truncate
   // and it does not need any additional information
-  virtual Status Truncate(uint64_t size) override { return Status::OK(); }
+  virtual Status Truncate(uint64_t size) override {
+    return Status::OK();
+  }
   virtual Status Close() override;
   virtual Status Append(const Slice& data) override;
   virtual Status Flush() override;
@@ -143,14 +145,20 @@ class PosixWritableFile : public WritableFile {
 class PosixDirectIOWritableFile : public PosixWritableFile {
  public:
   explicit PosixDirectIOWritableFile(const std::string& filename, int fd)
-      : PosixWritableFile(filename, fd, EnvOptions()) {}
+    : PosixWritableFile(filename, fd, EnvOptions()) {}
   virtual ~PosixDirectIOWritableFile() {}
 
-  bool UseOSBuffer() const override { return false; }
-  size_t GetRequiredBufferAlignment() const override { return 4 * 1024; }
+  bool UseOSBuffer() const override {
+    return false;
+  }
+  size_t GetRequiredBufferAlignment() const override {
+    return 4 * 1024;
+  }
   Status Append(const Slice& data) override;
   Status PositionedAppend(const Slice& data, uint64_t offset) override;
-  bool UseDirectIO() const override { return true; }
+  bool UseDirectIO() const override {
+    return true;
+  }
   Status InvalidateCache(size_t offset, size_t length) override {
     return Status::OK();
   }
@@ -189,7 +197,9 @@ class PosixMmapFile : public WritableFile {
 #endif
 
   // Roundup x to a multiple of y
-  static size_t Roundup(size_t x, size_t y) { return ((x + y - 1) / y) * y; }
+  static size_t Roundup(size_t x, size_t y) {
+    return ((x + y - 1) / y) * y;
+  }
 
   size_t TruncateToPageBoundary(size_t s) {
     s -= (s & (page_size_ - 1));
@@ -208,7 +218,9 @@ class PosixMmapFile : public WritableFile {
 
   // Means Close() will properly take care of truncate
   // and it does not need any additional information
-  virtual Status Truncate(uint64_t size) override { return Status::OK(); }
+  virtual Status Truncate(uint64_t size) override {
+    return Status::OK();
+  }
   virtual Status Close() override;
   virtual Status Append(const Slice& data) override;
   virtual Status Flush() override;

@@ -54,8 +54,8 @@ class ErrorEnv : public EnvWrapper {
   int num_writable_file_errors_;
 
   ErrorEnv() : EnvWrapper(Env::Default()),
-               writable_file_error_(false),
-               num_writable_file_errors_(0) { }
+    writable_file_error_(false),
+    num_writable_file_errors_(0) { }
 
   virtual Status NewWritableFile(const std::string& fname,
                                  unique_ptr<WritableFile>* result,
@@ -76,7 +76,7 @@ class ErrorEnv : public EnvWrapper {
 class PlainInternalKeyComparator : public InternalKeyComparator {
  public:
   explicit PlainInternalKeyComparator(const Comparator* c)
-      : InternalKeyComparator(c) {}
+    : InternalKeyComparator(c) {}
 
   virtual ~PlainInternalKeyComparator() {}
 
@@ -135,34 +135,50 @@ extern const Comparator* Uint64Comparator();
 class VectorIterator : public InternalIterator {
  public:
   explicit VectorIterator(const std::vector<std::string>& keys)
-      : keys_(keys), current_(keys.size()) {
+    : keys_(keys), current_(keys.size()) {
     std::sort(keys_.begin(), keys_.end());
     values_.resize(keys.size());
   }
 
   VectorIterator(const std::vector<std::string>& keys,
-      const std::vector<std::string>& values)
+                 const std::vector<std::string>& values)
     : keys_(keys), values_(values), current_(keys.size()) {
     assert(keys_.size() == values_.size());
   }
 
-  virtual bool Valid() const override { return current_ < keys_.size(); }
+  virtual bool Valid() const override {
+    return current_ < keys_.size();
+  }
 
-  virtual void SeekToFirst() override { current_ = 0; }
-  virtual void SeekToLast() override { current_ = keys_.size() - 1; }
+  virtual void SeekToFirst() override {
+    current_ = 0;
+  }
+  virtual void SeekToLast() override {
+    current_ = keys_.size() - 1;
+  }
 
   virtual void Seek(const Slice& target) override {
     current_ = std::lower_bound(keys_.begin(), keys_.end(), target.ToString()) -
                keys_.begin();
   }
 
-  virtual void Next() override { current_++; }
-  virtual void Prev() override { current_--; }
+  virtual void Next() override {
+    current_++;
+  }
+  virtual void Prev() override {
+    current_--;
+  }
 
-  virtual Slice key() const override { return Slice(keys_[current_]); }
-  virtual Slice value() const override { return Slice(values_[current_]); }
+  virtual Slice key() const override {
+    return Slice(keys_[current_]);
+  }
+  virtual Slice value() const override {
+    return Slice(values_[current_]);
+  }
 
-  virtual Status status() const override { return Status::OK(); }
+  virtual Status status() const override {
+    return Status::OK();
+  }
 
  private:
   std::vector<std::string> keys_;
@@ -180,35 +196,41 @@ class StringSink: public WritableFile {
   std::string contents_;
 
   explicit StringSink(Slice* reader_contents = nullptr) :
-      WritableFile(),
-      contents_(""),
-      reader_contents_(reader_contents),
-      last_flush_(0) {
+    WritableFile(),
+    contents_(""),
+    reader_contents_(reader_contents),
+    last_flush_(0) {
     if (reader_contents_ != nullptr) {
       *reader_contents_ = Slice(contents_.data(), 0);
     }
   }
 
-  const std::string& contents() const { return contents_; }
+  const std::string& contents() const {
+    return contents_;
+  }
 
   virtual Status Truncate(uint64_t size) override {
     contents_.resize(static_cast<size_t>(size));
     return Status::OK();
   }
-  virtual Status Close() override { return Status::OK(); }
+  virtual Status Close() override {
+    return Status::OK();
+  }
   virtual Status Flush() override {
     if (reader_contents_ != nullptr) {
       assert(reader_contents_->size() <= last_flush_);
       size_t offset = last_flush_ - reader_contents_->size();
       *reader_contents_ = Slice(
-          contents_.data() + offset,
-          contents_.size() - offset);
+                            contents_.data() + offset,
+                            contents_.size() - offset);
       last_flush_ = contents_.size();
     }
 
     return Status::OK();
   }
-  virtual Status Sync() override { return Status::OK(); }
+  virtual Status Sync() override {
+    return Status::OK();
+  }
   virtual Status Append(const Slice& slice) override {
     contents_.append(slice.data(), slice.size());
     return Status::OK();
@@ -217,7 +239,7 @@ class StringSink: public WritableFile {
     if (reader_contents_ != nullptr) {
       contents_.resize(contents_.size() - bytes);
       *reader_contents_ = Slice(
-          reader_contents_->data(), reader_contents_->size() - bytes);
+                            reader_contents_->data(), reader_contents_->size() - bytes);
       last_flush_ = contents_.size();
     }
   }
@@ -233,18 +255,22 @@ class StringSink: public WritableFile {
 class OverwritingStringSink : public WritableFile {
  public:
   explicit OverwritingStringSink(Slice* reader_contents)
-      : WritableFile(),
-        contents_(""),
-        reader_contents_(reader_contents),
-        last_flush_(0) {}
+    : WritableFile(),
+      contents_(""),
+      reader_contents_(reader_contents),
+      last_flush_(0) {}
 
-  const std::string& contents() const { return contents_; }
+  const std::string& contents() const {
+    return contents_;
+  }
 
   virtual Status Truncate(uint64_t size) override {
     contents_.resize(static_cast<size_t>(size));
     return Status::OK();
   }
-  virtual Status Close() override { return Status::OK(); }
+  virtual Status Close() override {
+    return Status::OK();
+  }
   virtual Status Flush() override {
     if (last_flush_ < contents_.size()) {
       assert(reader_contents_->size() >= contents_.size());
@@ -254,7 +280,9 @@ class OverwritingStringSink : public WritableFile {
     }
     return Status::OK();
   }
-  virtual Status Sync() override { return Status::OK(); }
+  virtual Status Sync() override {
+    return Status::OK();
+  }
   virtual Status Append(const Slice& slice) override {
     contents_.append(slice.data(), slice.size());
     return Status::OK();
@@ -274,17 +302,19 @@ class StringSource: public RandomAccessFile {
  public:
   explicit StringSource(const Slice& contents, uint64_t uniq_id = 0,
                         bool mmap = false)
-      : contents_(contents.data(), contents.size()),
-        uniq_id_(uniq_id),
-        mmap_(mmap),
-        total_reads_(0) {}
+    : contents_(contents.data(), contents.size()),
+      uniq_id_(uniq_id),
+      mmap_(mmap),
+      total_reads_(0) {}
 
   virtual ~StringSource() { }
 
-  uint64_t Size() const { return contents_.size(); }
+  uint64_t Size() const {
+    return contents_.size();
+  }
 
   virtual Status Read(uint64_t offset, size_t n, Slice* result,
-      char* scratch) const override {
+                      char* scratch) const override {
     total_reads_++;
     if (offset > contents_.size()) {
       return Status::InvalidArgument("invalid Read offset");
@@ -312,9 +342,13 @@ class StringSource: public RandomAccessFile {
     return static_cast<size_t>(rid-id);
   }
 
-  int total_reads() const { return total_reads_; }
+  int total_reads() const {
+    return total_reads_;
+  }
 
-  void set_total_reads(int tr) { total_reads_ = tr; }
+  void set_total_reads(int tr) {
+    total_reads_ = tr;
+  }
 
  private:
   std::string contents_;
@@ -327,7 +361,9 @@ class NullLogger : public Logger {
  public:
   using Logger::Logv;
   virtual void Logv(const char* format, va_list ap) override {}
-  virtual size_t GetLogFileSize() const override { return 0; }
+  virtual size_t GetLogFileSize() const override {
+    return 0;
+  }
 };
 
 // Corrupts key by changing the type
@@ -340,10 +376,10 @@ extern std::string KeyStr(const std::string& user_key,
 class SleepingBackgroundTask {
  public:
   SleepingBackgroundTask()
-      : bg_cv_(&mutex_),
-        should_sleep_(true),
-        done_with_sleep_(false),
-        sleeping_(false) {}
+    : bg_cv_(&mutex_),
+      should_sleep_(true),
+      done_with_sleep_(false),
+      sleeping_(false) {}
 
   bool IsSleeping() {
     MutexLock l(&mutex_);
@@ -412,7 +448,7 @@ class StringEnv : public EnvWrapper {
   class SeqStringSource : public SequentialFile {
    public:
     explicit SeqStringSource(const std::string& data)
-        : data_(data), offset_(0) {}
+      : data_(data), offset_(0) {}
     ~SeqStringSource() {}
     Status Read(size_t n, Slice* result, char* scratch) override {
       std::string output;
@@ -423,14 +459,14 @@ class StringEnv : public EnvWrapper {
         *result = Slice(scratch, n);
       } else {
         return Status::InvalidArgument(
-            "Attemp to read when it already reached eof.");
+                 "Attemp to read when it already reached eof.");
       }
       return Status::OK();
     }
     Status Skip(uint64_t n) override {
       if (offset_ >= data_.size()) {
         return Status::InvalidArgument(
-            "Attemp to read when it already reached eof.");
+                 "Attemp to read when it already reached eof.");
       }
       // TODO(yhchiang): Currently doesn't handle the overflow case.
       offset_ += n;
@@ -445,14 +481,20 @@ class StringEnv : public EnvWrapper {
   class StringSink : public WritableFile {
    public:
     explicit StringSink(std::string* contents)
-        : WritableFile(), contents_(contents) {}
+      : WritableFile(), contents_(contents) {}
     virtual Status Truncate(uint64_t size) override {
       contents_->resize(size);
       return Status::OK();
     }
-    virtual Status Close() override { return Status::OK(); }
-    virtual Status Flush() override { return Status::OK(); }
-    virtual Status Sync() override { return Status::OK(); }
+    virtual Status Close() override {
+      return Status::OK();
+    }
+    virtual Status Flush() override {
+      return Status::OK();
+    }
+    virtual Status Sync() override {
+      return Status::OK();
+    }
     virtual Status Append(const Slice& slice) override {
       contents_->append(slice.data(), slice.size());
       return Status::OK();
@@ -465,7 +507,9 @@ class StringEnv : public EnvWrapper {
   explicit StringEnv(Env* t) : EnvWrapper(t) {}
   virtual ~StringEnv() {}
 
-  const std::string& GetContent(const std::string& f) { return files_[f]; }
+  const std::string& GetContent(const std::string& f) {
+    return files_[f];
+  }
 
   const Status WriteToNewFile(const std::string& file_name,
                               const std::string& content) {
@@ -558,7 +602,9 @@ class StringEnv : public EnvWrapper {
     return Status::NotSupported();
   }
 
-  Status UnlockFile(FileLock* l) override { return Status::NotSupported(); }
+  Status UnlockFile(FileLock* l) override {
+    return Status::NotSupported();
+  }
 
  protected:
   std::unordered_map<std::string, std::string> files_;

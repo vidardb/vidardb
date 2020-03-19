@@ -58,13 +58,18 @@ class DBBenchTest : public testing::Test {
                 std::string(std::string("--db=") + db_path_).c_str(),
                 std::string(std::string("--wal_dir=") + wal_path_).c_str(),
                 std::string(std::string("--options_file=") + options_file_name)
-                    .c_str()});
+                .c_str()
+               });
     ASSERT_EQ(0, db_bench_tool(argc(), argv()));
   }
 
-  char** argv() { return argv_; }
+  char** argv() {
+    return argv_;
+  }
 
-  int argc() { return argc_; }
+  int argc() {
+    return argc_;
+  }
 
   std::string db_path_;
   std::string test_path_;
@@ -89,8 +94,8 @@ TEST_F(DBBenchTest, OptionsFile) {
   opt.max_background_compactions = 10;
   opt.arena_block_size = 8388608;
   ASSERT_OK(PersistVidarDBOptions(DBOptions(opt), {"default"},
-                                  {ColumnFamilyOptions(opt)}, kOptionsFileName,
-                                  Env::Default()));
+  {ColumnFamilyOptions(opt)}, kOptionsFileName,
+  Env::Default()));
 
   // override the following options as db_bench will not take these
   // options from the options file
@@ -111,8 +116,8 @@ TEST_F(DBBenchTest, OptionsFileUniversal) {
   opt.max_background_compactions = 10;
   opt.arena_block_size = 8388608;
   ASSERT_OK(PersistVidarDBOptions(DBOptions(opt), {"default"},
-                                  {ColumnFamilyOptions(opt)}, kOptionsFileName,
-                                  Env::Default()));
+  {ColumnFamilyOptions(opt)}, kOptionsFileName,
+  Env::Default()));
 
   // override the following options as db_bench will not take these
   // options from the options file
@@ -133,8 +138,8 @@ TEST_F(DBBenchTest, OptionsFileMultiLevelUniversal) {
   opt.max_background_compactions = 10;
   opt.arena_block_size = 8388608;
   ASSERT_OK(PersistVidarDBOptions(DBOptions(opt), {"default"},
-                                  {ColumnFamilyOptions(opt)}, kOptionsFileName,
-                                  Env::Default()));
+  {ColumnFamilyOptions(opt)}, kOptionsFileName,
+  Env::Default()));
 
   // override the following options as db_bench will not take these
   // options from the options file

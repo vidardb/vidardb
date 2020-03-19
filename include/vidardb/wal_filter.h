@@ -33,7 +33,7 @@ class WalFilter {
   virtual ~WalFilter() {}
 
   // Provide ColumnFamily->LogNumber map to filter
-  // so that filter can determine whether a log number applies to a given 
+  // so that filter can determine whether a log number applies to a given
   // column family (i.e. that log hasn't been flushed to SST already for the
   // column family).
   // We also pass in name->id map as only name is known during
@@ -76,16 +76,16 @@ class WalFilter {
   //                        Please see WalProcessingOption enum above for
   //                        details.
   virtual WalProcessingOption LogRecordFound(unsigned long long log_number,
-                                        const std::string& log_file_name,
-                                        const WriteBatch& batch,
-                                        WriteBatch* new_batch,
-                                        bool* batch_changed) {
+      const std::string& log_file_name,
+      const WriteBatch& batch,
+      WriteBatch* new_batch,
+      bool* batch_changed) {
     // Default implementation falls back to older function for compatibility
     return LogRecord(batch, new_batch, batch_changed);
   }
 
-  // Please see the comments for LogRecord above. This function is for 
-  // compatibility only and contains a subset of parameters. 
+  // Please see the comments for LogRecord above. This function is for
+  // compatibility only and contains a subset of parameters.
   // New code should use the function above.
   virtual WalProcessingOption LogRecord(const WriteBatch& batch,
                                         WriteBatch* new_batch,

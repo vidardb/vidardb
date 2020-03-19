@@ -50,10 +50,10 @@ struct ConstantColumnFamilyInfo {
 #ifdef VIDARDB_USING_THREAD_STATUS
  public:
   ConstantColumnFamilyInfo(
-      const void* _db_key,
-      const std::string& _db_name,
-      const std::string& _cf_name) :
-      db_key(_db_key), db_name(_db_name), cf_name(_cf_name) {}
+    const void* _db_key,
+    const std::string& _db_name,
+    const std::string& _cf_name) :
+    db_key(_db_key), db_name(_db_name), cf_name(_cf_name) {}
   const void* db_key;
   const std::string db_name;
   const std::string cf_name;
@@ -143,16 +143,16 @@ class ThreadStatusUpdater {
   //       whenever a thread operation is not OP_UNKNOWN, we will always
   //       have a consistent information on its properties.
   void SetThreadOperationProperty(
-      int i, uint64_t value);
+    int i, uint64_t value);
 
   // Increase the "i"th property of the current operation with
   // the specified delta.
   void IncreaseThreadOperationProperty(
-      int i, uint64_t delta);
+    int i, uint64_t delta);
 
   // Update the thread operation stage of the current thread.
   ThreadStatus::OperationStage SetThreadOperationStage(
-      const ThreadStatus::OperationStage stage);
+    const ThreadStatus::OperationStage stage);
 
   // Clear thread operation of the current thread.
   void ClearThreadOperation();
@@ -168,14 +168,14 @@ class ThreadStatusUpdater {
 
   // Obtain the status of all active registered threads.
   Status GetThreadList(
-      std::vector<ThreadStatus>* thread_list);
+    std::vector<ThreadStatus>* thread_list);
 
   // Create an entry in the global ColumnFamilyInfo table for the
   // specified column family.  This function should be called only
   // when the current thread does not hold db_mutex.
   void NewColumnFamilyInfo(
-      const void* db_key, const std::string& db_name,
-      const void* cf_key, const std::string& cf_name);
+    const void* db_key, const std::string& db_name,
+    const void* cf_key, const std::string& cf_name);
 
   // Erase all ConstantColumnFamilyInfo that is associated with the
   // specified db instance.  This function should be called only when
@@ -190,8 +190,8 @@ class ThreadStatusUpdater {
   // Verifies whether the input ColumnFamilyHandles matches
   // the information stored in the current cf_info_map.
   void TEST_VerifyColumnFamilyInfoMap(
-      const std::vector<ColumnFamilyHandle*>& handles,
-      bool check_exist);
+    const std::vector<ColumnFamilyHandle*>& handles,
+    bool check_exist);
 
  protected:
 #ifdef VIDARDB_USING_THREAD_STATUS
@@ -219,12 +219,12 @@ class ThreadStatusUpdater {
   // closing while GetThreadList function already get the pointer to its
   // CopnstantColumnFamilyInfo.
   std::unordered_map<
-      const void*, std::unique_ptr<ConstantColumnFamilyInfo>> cf_info_map_;
+  const void*, std::unique_ptr<ConstantColumnFamilyInfo>> cf_info_map_;
 
   // A db_key to cf_key map that allows erasing elements in cf_info_map
   // associated to the same db_key faster.
   std::unordered_map<
-      const void*, std::unordered_set<const void*>> db_key_map_;
+  const void*, std::unordered_set<const void*>> db_key_map_;
 
 #else
   static ThreadStatusData* thread_status_data_;

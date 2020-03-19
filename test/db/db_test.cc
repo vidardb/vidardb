@@ -65,8 +65,8 @@ class DBTest : public DBTestBase {
 };
 
 class DBTestWithParam
-    : public DBTest,
-      public testing::WithParamInterface<std::tuple<uint32_t, bool>> {
+  : public DBTest,
+    public testing::WithParamInterface<std::tuple<uint32_t, bool>> {
  public:
   DBTestWithParam() {
     max_subcompactions_ = std::get<0>(GetParam());
@@ -804,11 +804,11 @@ TEST_F(DBTest, RepeatedWritesToSameKey) {
     // We must have at most one file per level except for level-0,
     // which may have up to kL0_StopWritesTrigger files.
     const int kMaxFiles =
-        options.num_levels + options.level0_stop_writes_trigger;
+      options.num_levels + options.level0_stop_writes_trigger;
 
     Random rnd(301);
     std::string value =
-        RandomString(&rnd, static_cast<int>(2 * options.write_buffer_size));
+      RandomString(&rnd, static_cast<int>(2 * options.write_buffer_size));
     for (int i = 0; i < 5 * kMaxFiles; i++) {
       ASSERT_OK(Put(1, "key", value));
       ASSERT_LE(TotalTableFiles(1), kMaxFiles);
@@ -1017,7 +1017,7 @@ TEST_F(DBTest, ApproximateSizes) {
         }
         ASSERT_TRUE(Between(Size("", Key(50), 1), S1 * 50, S2 * 50));
         ASSERT_TRUE(
-            Between(Size("", Key(50) + ".suffix", 1), S1 * 50, S2 * 50));
+          Between(Size("", Key(50) + ".suffix", 1), S1 * 50, S2 * 50));
 
         std::string cstart_str = Key(compact_start);
         std::string cend_str = Key(compact_start + 9);
@@ -1268,7 +1268,7 @@ TEST_F(DBTest, ComparatorCheck) {
     new_options.comparator = &cmp;
     // only the non-default column family has non-matching comparator
     Status s = TryReopenWithColumnFamilies(
-        {"default", "pikachu"}, std::vector<Options>({options, new_options}));
+    {"default", "pikachu"}, std::vector<Options>({options, new_options}));
     ASSERT_TRUE(!s.ok());
     ASSERT_TRUE(s.ToString().find("comparator") != std::string::npos)
         << s.ToString();
@@ -1514,7 +1514,7 @@ TEST_F(DBTest, SnapshotFiles) {
     opts.env = env_;
     opts.create_if_missing = false;
     Status stat =
-        DB::Open(opts, snapdir, column_families, &cf_handles, &snapdb);
+      DB::Open(opts, snapdir, column_families, &cf_handles, &snapdb);
     ASSERT_OK(stat);
 
     ReadOptions roptions;
@@ -1660,7 +1660,8 @@ TEST_F(DBTest, CompactOnFlush) {
 TEST_F(DBTest, FlushOneColumnFamily) {
   Options options = CurrentOptions();
   CreateAndReopenWithCF({"pikachu", "ilya", "muromec", "dobrynia", "nikitich",
-                         "alyosha", "popovich"},
+                         "alyosha", "popovich"
+                        },
                         options);
 
   ASSERT_OK(Put(0, "Default", "Default"));
@@ -1894,13 +1895,13 @@ static void MTThreadBody(void* arg) {
       // Half of the time directly use WriteBatch. Half of the time use
       // WriteBatchWithIndex.
 //      if (rnd.OneIn(2)) {
-        WriteBatch batch;
-        for (int cf = 0; cf < kColumnFamilies; ++cf) {
-          snprintf(valbuf, sizeof(valbuf), "%d.%d.%d.%d.%-1000d", key, id,
-                   static_cast<int>(counter), cf, unique_id);
-          batch.Put(t->state->test->handles_[cf], Slice(keybuf), Slice(valbuf));
-        }
-        ASSERT_OK(db->Write(WriteOptions(), &batch));
+      WriteBatch batch;
+      for (int cf = 0; cf < kColumnFamilies; ++cf) {
+        snprintf(valbuf, sizeof(valbuf), "%d.%d.%d.%d.%-1000d", key, id,
+                 static_cast<int>(counter), cf, unique_id);
+        batch.Put(t->state->test->handles_[cf], Slice(keybuf), Slice(valbuf));
+      }
+      ASSERT_OK(db->Write(WriteOptions(), &batch));
 //      }
     }
     counter++;
@@ -1912,9 +1913,11 @@ static void MTThreadBody(void* arg) {
 }  // namespace
 
 class MultiThreadedDBTest : public DBTest,
-                            public ::testing::WithParamInterface<int> {
+  public ::testing::WithParamInterface<int> {
  public:
-  virtual void SetUp() override { option_config_ = GetParam(); }
+  virtual void SetUp() override {
+    option_config_ = GetParam();
+  }
 
   static std::vector<int> GenerateOptionConfigs() {
     std::vector<int> optionConfigs;
@@ -1964,8 +1967,8 @@ TEST_P(MultiThreadedDBTest, MultiThreaded) {
 }
 
 INSTANTIATE_TEST_CASE_P(
-    MultiThreaded, MultiThreadedDBTest,
-    ::testing::ValuesIn(MultiThreadedDBTest::GenerateOptionConfigs()));
+  MultiThreaded, MultiThreadedDBTest,
+  ::testing::ValuesIn(MultiThreadedDBTest::GenerateOptionConfigs()));
 #endif  // VIDARDB_LITE
 
 // Group commit test:
@@ -2097,14 +2100,14 @@ class ModelDB : public DB {
 
   using DB::GetPropertiesOfAllTables;
   virtual Status GetPropertiesOfAllTables(
-      ColumnFamilyHandle* column_family,
-      TablePropertiesCollection* props) override {
+    ColumnFamilyHandle* column_family,
+    TablePropertiesCollection* props) override {
     return Status();
   }
 
   virtual Status GetPropertiesOfTablesInRange(
-      ColumnFamilyHandle* column_family, const Range* range, std::size_t n,
-      TablePropertiesCollection* props) override {
+    ColumnFamilyHandle* column_family, const Range* range, std::size_t n,
+    TablePropertiesCollection* props) override {
     return Status();
   }
 #endif  // VIDARDB_LITE
@@ -2118,7 +2121,7 @@ class ModelDB : public DB {
       return new ModelIter(saved, true);
     } else {
       const KVMap* snapshot_state =
-          &(reinterpret_cast<const ModelSnapshot*>(options.snapshot)->map_);
+        &(reinterpret_cast<const ModelSnapshot*>(options.snapshot)->map_);
       return new ModelIter(snapshot_state, false);
     }
   }
@@ -2202,7 +2205,7 @@ class ModelDB : public DB {
   }
 
   Status EnableAutoCompaction(
-      const std::vector<ColumnFamilyHandle*>& column_family_handles) override {
+    const std::vector<ColumnFamilyHandle*>& column_family_handles) override {
     return Status::NotSupported("Not supported operation.");
   }
 
@@ -2213,28 +2216,34 @@ class ModelDB : public DB {
 
   using DB::MaxMemCompactionLevel;
   virtual int MaxMemCompactionLevel(
-      ColumnFamilyHandle* column_family) override {
+    ColumnFamilyHandle* column_family) override {
     return 1;
   }
 
   using DB::Level0StopWriteTrigger;
   virtual int Level0StopWriteTrigger(
-      ColumnFamilyHandle* column_family) override {
+    ColumnFamilyHandle* column_family) override {
     return -1;
   }
 
-  virtual const std::string& GetName() const override { return name_; }
+  virtual const std::string& GetName() const override {
+    return name_;
+  }
 
-  virtual Env* GetEnv() const override { return nullptr; }
+  virtual Env* GetEnv() const override {
+    return nullptr;
+  }
 
   using DB::GetOptions;
   virtual const Options& GetOptions(
-      ColumnFamilyHandle* column_family) const override {
+    ColumnFamilyHandle* column_family) const override {
     return options_;
   }
 
   using DB::GetDBOptions;
-  virtual const DBOptions& GetDBOptions() const override { return options_; }
+  virtual const DBOptions& GetDBOptions() const override {
+    return options_;
+  }
 
   using DB::Flush;
   virtual Status Flush(const vidardb::FlushOptions& options,
@@ -2243,10 +2252,14 @@ class ModelDB : public DB {
     return ret;
   }
 
-  virtual Status SyncWAL() override { return Status::OK(); }
+  virtual Status SyncWAL() override {
+    return Status::OK();
+  }
 
 #ifndef VIDARDB_LITE
-  virtual Status DisableFileDeletions() override { return Status::OK(); }
+  virtual Status DisableFileDeletions() override {
+    return Status::OK();
+  }
 
   virtual Status EnableFileDeletions(bool force) override {
     return Status::OK();
@@ -2260,25 +2273,29 @@ class ModelDB : public DB {
     return Status::OK();
   }
 
-  virtual Status DeleteFile(std::string name) override { return Status::OK(); }
+  virtual Status DeleteFile(std::string name) override {
+    return Status::OK();
+  }
 
   virtual Status GetUpdatesSince(
-      vidardb::SequenceNumber, unique_ptr<vidardb::TransactionLogIterator>*,
-      const TransactionLogIterator::ReadOptions& read_options =
-          TransactionLogIterator::ReadOptions()) override {
+    vidardb::SequenceNumber, unique_ptr<vidardb::TransactionLogIterator>*,
+    const TransactionLogIterator::ReadOptions& read_options =
+      TransactionLogIterator::ReadOptions()) override {
     return Status::NotSupported("Not supported in Model DB");
   }
 
   virtual void GetColumnFamilyMetaData(
-      ColumnFamilyHandle* column_family,
-      ColumnFamilyMetaData* metadata) override {}
+    ColumnFamilyHandle* column_family,
+    ColumnFamilyMetaData* metadata) override {}
 #endif  // VIDARDB_LITE
 
   virtual Status GetDbIdentity(std::string& identity) const override {
     return Status::OK();
   }
 
-  virtual SequenceNumber GetLatestSequenceNumber() const override { return 0; }
+  virtual SequenceNumber GetLatestSequenceNumber() const override {
+    return 0;
+  }
 
   virtual ColumnFamilyHandle* DefaultColumnFamily() const override {
     return nullptr;
@@ -2288,12 +2305,16 @@ class ModelDB : public DB {
   class ModelIter : public Iterator {
    public:
     ModelIter(const KVMap* map, bool owned)
-        : map_(map), owned_(owned), iter_(map_->end()) {}
+      : map_(map), owned_(owned), iter_(map_->end()) {}
     ~ModelIter() {
       if (owned_) delete map_;
     }
-    virtual bool Valid() const override { return iter_ != map_->end(); }
-    virtual void SeekToFirst() override { iter_ = map_->begin(); }
+    virtual bool Valid() const override {
+      return iter_ != map_->end();
+    }
+    virtual void SeekToFirst() override {
+      iter_ = map_->begin();
+    }
     virtual void SeekToLast() override {
       if (map_->empty()) {
         iter_ = map_->end();
@@ -2304,7 +2325,9 @@ class ModelDB : public DB {
     virtual void Seek(const Slice& k) override {
       iter_ = map_->lower_bound(k.ToString());
     }
-    virtual void Next() override { ++iter_; }
+    virtual void Next() override {
+      ++iter_;
+    }
     virtual void Prev() override {
       if (iter_ == map_->begin()) {
         iter_ = map_->end();
@@ -2313,9 +2336,15 @@ class ModelDB : public DB {
       --iter_;
     }
 
-    virtual Slice key() const override { return iter_->first; }
-    virtual Slice value() const override { return iter_->second; }
-    virtual Status status() const override { return Status::OK(); }
+    virtual Slice key() const override {
+      return iter_->first;
+    }
+    virtual Slice value() const override {
+      return iter_->second;
+    }
+    virtual Status status() const override {
+      return Status::OK();
+    }
 
    private:
     const KVMap* const map_;
@@ -2331,8 +2360,8 @@ static std::string RandomKey(Random* rnd, int minimum = 0) {
   int len;
   do {
     len = (rnd->OneIn(3)
-               ? 1  // Short sometimes to encourage collisions
-               : (rnd->OneIn(100) ? rnd->Skewed(10) : rnd->Uniform(10)));
+           ? 1  // Short sometimes to encourage collisions
+           : (rnd->OneIn(100) ? rnd->Skewed(10) : rnd->Uniform(10)));
   } while (len < minimum);
   return test::RandomKey(rnd, len);
 }
@@ -2380,16 +2409,18 @@ static bool CompareIterators(int step, DB* model, DB* db,
 }
 
 class DBTestRandomized : public DBTest,
-                         public ::testing::WithParamInterface<int> {
+  public ::testing::WithParamInterface<int> {
  public:
-  virtual void SetUp() override { option_config_ = GetParam(); }
+  virtual void SetUp() override {
+    option_config_ = GetParam();
+  }
 
   static std::vector<int> GenerateOptionConfigs() {
     std::vector<int> option_configs;
     // skip cuckoo hash as it does not support snapshot.
     for (int option_config = kDefault; option_config < kEnd; ++option_config) {
       if (!ShouldSkipOptions(option_config, kSkipDeletesFilterFirst |
-                                                kSkipNoSeekToLast)) {
+                             kSkipNoSeekToLast)) {
         option_configs.push_back(option_config);
       }
     }
@@ -2399,8 +2430,8 @@ class DBTestRandomized : public DBTest,
 };
 
 INSTANTIATE_TEST_CASE_P(
-    DBTestRandomized, DBTestRandomized,
-    ::testing::ValuesIn(DBTestRandomized::GenerateOptionConfigs()));
+  DBTestRandomized, DBTestRandomized,
+  ::testing::ValuesIn(DBTestRandomized::GenerateOptionConfigs()));
 
 TEST_P(DBTestRandomized, Randomized) {
   anon::OptionsOverride options_override;
@@ -2454,8 +2485,8 @@ TEST_P(DBTestRandomized, Randomized) {
       // iterator will be invalid right when seeking a non-existent key, right
       // than return a key that is close to it.
 
-        ASSERT_TRUE(CompareIterators(step, &model, db_, nullptr, nullptr));
-        ASSERT_TRUE(CompareIterators(step, &model, db_, model_snap, db_snap));
+      ASSERT_TRUE(CompareIterators(step, &model, db_, nullptr, nullptr));
+      ASSERT_TRUE(CompareIterators(step, &model, db_, model_snap, db_snap));
 
       // Save a snapshot from each DB this time that we'll use next
       // time we compare things, to make sure the current state is
@@ -2707,7 +2738,7 @@ TEST_F(DBTest, DynamicMemtableOptions) {
 
   // Increase buffer size
   ASSERT_OK(dbfull()->SetOptions({
-      {"write_buffer_size", "131072"},
+    {"write_buffer_size", "131072"},
   }));
 
   // The existing memtable is still 64KB in size, after it becomes immutable,
@@ -2738,8 +2769,10 @@ TEST_F(DBTest, DynamicMemtableOptions) {
   Random rnd(301);
 
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::DelayWrite:Wait",
-      [&](void* arg) { sleeping_task_low.WakeUp(); });
+    "DBImpl::DelayWrite:Wait",
+  [&](void* arg) {
+    sleeping_task_low.WakeUp();
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   while (!sleeping_task_low.WokenUp() && count < 256) {
@@ -2753,7 +2786,7 @@ TEST_F(DBTest, DynamicMemtableOptions) {
 
   // Increase
   ASSERT_OK(dbfull()->SetOptions({
-      {"max_write_buffer_number", "8"},
+    {"max_write_buffer_number", "8"},
   }));
   // Clean up memtable and L0
   dbfull()->CompactRange(CompactRangeOptions(), nullptr, nullptr);
@@ -2776,7 +2809,7 @@ TEST_F(DBTest, DynamicMemtableOptions) {
 
   // Decrease
   ASSERT_OK(dbfull()->SetOptions({
-      {"max_write_buffer_number", "4"},
+    {"max_write_buffer_number", "4"},
   }));
   // Clean up memtable and L0
   dbfull()->CompactRange(CompactRangeOptions(), nullptr, nullptr);
@@ -2848,7 +2881,7 @@ TEST_F(DBTest, GetThreadStatus) {
       }
       // Verify the total number of threades
       ASSERT_EQ(thread_type_counts[ThreadStatus::HIGH_PRIORITY] +
-                    thread_type_counts[ThreadStatus::LOW_PRIORITY],
+                thread_type_counts[ThreadStatus::LOW_PRIORITY],
                 kHighPriCounts[test] + kLowPriCounts[test]);
       // Verify the number of high-priority threads
       ASSERT_EQ(thread_type_counts[ThreadStatus::HIGH_PRIORITY],
@@ -2861,17 +2894,17 @@ TEST_F(DBTest, GetThreadStatus) {
       // repeat the test with multiple column families
       CreateAndReopenWithCF({"pikachu", "about-to-remove"}, options);
       env_->GetThreadStatusUpdater()->TEST_VerifyColumnFamilyInfoMap(handles_,
-                                                                     true);
+          true);
     }
   }
   db_->DropColumnFamily(handles_[2]);
   delete handles_[2];
   handles_.erase(handles_.begin() + 2);
   env_->GetThreadStatusUpdater()->TEST_VerifyColumnFamilyInfoMap(handles_,
-                                                                 true);
+      true);
   Close();
   env_->GetThreadStatusUpdater()->TEST_VerifyColumnFamilyInfoMap(handles_,
-                                                                 true);
+      true);
 }
 
 TEST_F(DBTest, DisableThreadStatus) {
@@ -2882,7 +2915,7 @@ TEST_F(DBTest, DisableThreadStatus) {
   CreateAndReopenWithCF({"pikachu", "about-to-remove"}, options);
   // Verify non of the column family info exists
   env_->GetThreadStatusUpdater()->TEST_VerifyColumnFamilyInfoMap(handles_,
-                                                                 false);
+      false);
 }
 
 TEST_F(DBTest, ThreadStatusFlush) {
@@ -2893,8 +2926,8 @@ TEST_F(DBTest, ThreadStatusFlush) {
   options = CurrentOptions(options);
 
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      {"FlushJob::FlushJob()", "DBTest::ThreadStatusFlush:1"},
-      {"DBTest::ThreadStatusFlush:2", "FlushJob::WriteLevel0Table"},
+    {"FlushJob::FlushJob()", "DBTest::ThreadStatusFlush:1"},
+    {"DBTest::ThreadStatusFlush:2", "FlushJob::WriteLevel0Table"},
   });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -2945,9 +2978,9 @@ TEST_P(DBTestWithParam, ThreadStatusSingleCompaction) {
   options.max_subcompactions = max_subcompactions_;
 
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      {"DBTest::ThreadStatusSingleCompaction:0", "DBImpl::BGWorkCompaction"},
-      {"CompactionJob::Run():Start", "DBTest::ThreadStatusSingleCompaction:1"},
-      {"DBTest::ThreadStatusSingleCompaction:2", "CompactionJob::Run():End"},
+    {"DBTest::ThreadStatusSingleCompaction:0", "DBImpl::BGWorkCompaction"},
+    {"CompactionJob::Run():Start", "DBTest::ThreadStatusSingleCompaction:1"},
+    {"DBTest::ThreadStatusSingleCompaction:2", "CompactionJob::Run():End"},
   });
   for (int tests = 0; tests < 2; ++tests) {
     DestroyAndReopen(options);
@@ -3052,7 +3085,7 @@ TEST_F(DBTest, PreShutdownFlush) {
   ASSERT_OK(Put(1, "key", "value"));
   CancelAllBackgroundWork(db_);
   Status s =
-      db_->CompactRange(CompactRangeOptions(), handles_[1], nullptr, nullptr);
+    db_->CompactRange(CompactRangeOptions(), handles_[1], nullptr, nullptr);
   ASSERT_TRUE(s.IsShutdownInProgress());
 }
 
@@ -3074,7 +3107,7 @@ TEST_P(DBTestWithParam, PreShutdownMultipleCompaction) {
   options.compaction_style = kCompactionStyleLevel;
   options.target_file_size_base = options.write_buffer_size;
   options.max_bytes_for_level_base =
-      options.target_file_size_base * kNumL0Files;
+    options.target_file_size_base * kNumL0Files;
   options.compression = kNoCompression;
   options = CurrentOptions(options);
   options.env = env_;
@@ -3091,16 +3124,25 @@ TEST_P(DBTestWithParam, PreShutdownMultipleCompaction) {
 
   std::vector<ThreadStatus> thread_list;
   // Delay both flush and compaction
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"FlushJob::FlushJob()", "CompactionJob::Run():Start"},
-       {"CompactionJob::Run():Start",
-        "DBTest::PreShutdownMultipleCompaction:Preshutdown"},
-       {"CompactionJob::Run():Start",
-        "DBTest::PreShutdownMultipleCompaction:VerifyCompaction"},
-       {"DBTest::PreShutdownMultipleCompaction:Preshutdown",
-        "CompactionJob::Run():End"},
-       {"CompactionJob::Run():End",
-        "DBTest::PreShutdownMultipleCompaction:VerifyPreshutdown"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {"FlushJob::FlushJob()", "CompactionJob::Run():Start"},
+    {
+      "CompactionJob::Run():Start",
+      "DBTest::PreShutdownMultipleCompaction:Preshutdown"
+    },
+    {
+      "CompactionJob::Run():Start",
+      "DBTest::PreShutdownMultipleCompaction:VerifyCompaction"
+    },
+    {
+      "DBTest::PreShutdownMultipleCompaction:Preshutdown",
+      "CompactionJob::Run():End"
+    },
+    {
+      "CompactionJob::Run():End",
+      "DBTest::PreShutdownMultipleCompaction:VerifyPreshutdown"
+    }
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -3121,7 +3163,7 @@ TEST_P(DBTestWithParam, PreShutdownMultipleCompaction) {
     // Speed up the test
     if (operation_count[ThreadStatus::OP_FLUSH] > 1 &&
         operation_count[ThreadStatus::OP_COMPACTION] >
-            0.6 * options.max_background_compactions) {
+        0.6 * options.max_background_compactions) {
       break;
     }
     if (file == 15 * kNumL0Files) {
@@ -3163,7 +3205,7 @@ TEST_P(DBTestWithParam, PreShutdownCompactionMiddle) {
   options.compaction_style = kCompactionStyleLevel;
   options.target_file_size_base = options.write_buffer_size;
   options.max_bytes_for_level_base =
-      options.target_file_size_base * kNumL0Files;
+    options.target_file_size_base * kNumL0Files;
   options.compression = kNoCompression;
   options = CurrentOptions(options);
   options.env = env_;
@@ -3180,14 +3222,21 @@ TEST_P(DBTestWithParam, PreShutdownCompactionMiddle) {
 
   std::vector<ThreadStatus> thread_list;
   // Delay both flush and compaction
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"DBTest::PreShutdownCompactionMiddle:Preshutdown",
-        "CompactionJob::Run():Inprogress"},
-       {"CompactionJob::Run():Start",
-        "DBTest::PreShutdownCompactionMiddle:VerifyCompaction"},
-       {"CompactionJob::Run():Inprogress", "CompactionJob::Run():End"},
-       {"CompactionJob::Run():End",
-        "DBTest::PreShutdownCompactionMiddle:VerifyPreshutdown"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {
+      "DBTest::PreShutdownCompactionMiddle:Preshutdown",
+      "CompactionJob::Run():Inprogress"
+    },
+    {
+      "CompactionJob::Run():Start",
+      "DBTest::PreShutdownCompactionMiddle:VerifyCompaction"
+    },
+    {"CompactionJob::Run():Inprogress", "CompactionJob::Run():End"},
+    {
+      "CompactionJob::Run():End",
+      "DBTest::PreShutdownCompactionMiddle:VerifyPreshutdown"
+    }
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -3208,7 +3257,7 @@ TEST_P(DBTestWithParam, PreShutdownCompactionMiddle) {
     // Speed up the test
     if (operation_count[ThreadStatus::OP_FLUSH] > 1 &&
         operation_count[ThreadStatus::OP_COMPACTION] >
-            0.6 * options.max_background_compactions) {
+        0.6 * options.max_background_compactions) {
       break;
     }
     if (file == 15 * kNumL0Files) {
@@ -3304,7 +3353,7 @@ TEST_F(DBTest, DynamicLevelCompressionPerLevel) {
   // Make sure data in files in L3 is not compacted by removing all files
   // in L4 and calculate number of rows
   ASSERT_OK(dbfull()->SetOptions({
-      {"disable_auto_compactions", "true"},
+    {"disable_auto_compactions", "true"},
   }));
   ColumnFamilyMetaData cf_meta;
   db_->GetColumnFamilyMetaData(&cf_meta);
@@ -3370,19 +3419,19 @@ TEST_F(DBTest, DynamicLevelCompressionPerLevel2) {
   std::atomic<int> num_lz4(0);
   std::atomic<int> num_no(0);
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "LevelCompactionPicker::PickCompaction:Return", [&](void* arg) {
-        Compaction* compaction = reinterpret_cast<Compaction*>(arg);
-        if (compaction->output_level() == 4) {
-          ASSERT_TRUE(compaction->output_compression() == kLZ4Compression);
-          num_lz4.fetch_add(1);
-        }
-      });
+  "LevelCompactionPicker::PickCompaction:Return", [&](void* arg) {
+    Compaction* compaction = reinterpret_cast<Compaction*>(arg);
+    if (compaction->output_level() == 4) {
+      ASSERT_TRUE(compaction->output_compression() == kLZ4Compression);
+      num_lz4.fetch_add(1);
+    }
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "FlushJob::WriteLevel0Table:output_compression", [&](void* arg) {
-        auto* compression = reinterpret_cast<CompressionType*>(arg);
-        ASSERT_TRUE(*compression == kNoCompression);
-        num_no.fetch_add(1);
-      });
+  "FlushJob::WriteLevel0Table:output_compression", [&](void* arg) {
+    auto* compression = reinterpret_cast<CompressionType*>(arg);
+    ASSERT_TRUE(*compression == kNoCompression);
+    num_no.fetch_add(1);
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   for (int i = 0; i < 100; i++) {
@@ -3411,22 +3460,22 @@ TEST_F(DBTest, DynamicLevelCompressionPerLevel2) {
   num_lz4.store(0);
   num_no.store(0);
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "LevelCompactionPicker::PickCompaction:Return", [&](void* arg) {
-        Compaction* compaction = reinterpret_cast<Compaction*>(arg);
-        if (compaction->output_level() == 4 && compaction->start_level() == 3) {
-          ASSERT_TRUE(compaction->output_compression() == kZlibCompression);
-          num_zlib.fetch_add(1);
-        } else {
-          ASSERT_TRUE(compaction->output_compression() == kLZ4Compression);
-          num_lz4.fetch_add(1);
-        }
-      });
+  "LevelCompactionPicker::PickCompaction:Return", [&](void* arg) {
+    Compaction* compaction = reinterpret_cast<Compaction*>(arg);
+    if (compaction->output_level() == 4 && compaction->start_level() == 3) {
+      ASSERT_TRUE(compaction->output_compression() == kZlibCompression);
+      num_zlib.fetch_add(1);
+    } else {
+      ASSERT_TRUE(compaction->output_compression() == kLZ4Compression);
+      num_lz4.fetch_add(1);
+    }
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "FlushJob::WriteLevel0Table:output_compression", [&](void* arg) {
-        auto* compression = reinterpret_cast<CompressionType*>(arg);
-        ASSERT_TRUE(*compression == kNoCompression);
-        num_no.fetch_add(1);
-      });
+  "FlushJob::WriteLevel0Table:output_compression", [&](void* arg) {
+    auto* compression = reinterpret_cast<CompressionType*>(arg);
+    ASSERT_TRUE(*compression == kNoCompression);
+    num_no.fetch_add(1);
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   for (int i = 101; i < 500; i++) {
@@ -3510,7 +3559,8 @@ TEST_F(DBTest, DynamicCompactionOptions) {
   // 2 L0 files have the same key range, compaction merge them and should
   // result in 2 32KB L1 files.
   ASSERT_OK(dbfull()->SetOptions({{"level0_file_num_compaction_trigger", "2"},
-                                  {"target_file_size_base", ToString(k32KB)}}));
+    {"target_file_size_base", ToString(k32KB)}
+  }));
 
   gen_l0_kb(0, 64, 1);
   ASSERT_EQ("1,1", FilesPerLevel());
@@ -3530,7 +3580,7 @@ TEST_F(DBTest, DynamicCompactionOptions) {
   // fill L1 and L2. L1 size should be around 256KB while L2 size should be
   // around 256KB x 4.
   ASSERT_OK(
-      dbfull()->SetOptions({{"max_bytes_for_level_base", ToString(k1MB)}}));
+  dbfull()->SetOptions({{"max_bytes_for_level_base", ToString(k1MB)}}));
 
   // writing 96 x 64KB => 6 * 1024KB
   // (L1 + L2) = (1 + 4) * 1024KB
@@ -3550,8 +3600,9 @@ TEST_F(DBTest, DynamicCompactionOptions) {
   // After filling enough data that can fit in L1 - L3, we should see L1 size
   // reduces to 128KB from 256KB which was asserted previously. Same for L2.
   ASSERT_OK(
-      dbfull()->SetOptions({{"max_bytes_for_level_multiplier", "2"},
-                            {"max_bytes_for_level_base", ToString(k128KB)}}));
+  dbfull()->SetOptions({{"max_bytes_for_level_multiplier", "2"},
+    {"max_bytes_for_level_base", ToString(k128KB)}
+  }));
 
   // writing 20 x 64KB = 10 x 128KB
   // (L1 + L2 + L3) = (1 + 2 + 4) * 128KB
@@ -3752,7 +3803,7 @@ TEST_F(DBTest, DynamicMiscOptions) {
   assert_reseek_count(200, 1);
 
   ASSERT_OK(
-      dbfull()->SetOptions({{"max_sequential_skip_in_iterations", "16"}}));
+  dbfull()->SetOptions({{"max_sequential_skip_in_iterations", "16"}}));
   // Clear memtable and make new option effective
   dbfull()->TEST_FlushMemTable(true);
   // No reseek
@@ -3763,41 +3814,42 @@ TEST_F(DBTest, DynamicMiscOptions) {
   // Test soft_pending_compaction_bytes_limit,
   // hard_pending_compaction_bytes_limit
   ASSERT_OK(dbfull()->SetOptions(
-      handles_[1], {{"soft_pending_compaction_bytes_limit", "200"},
-                    {"hard_pending_compaction_bytes_limit", "300"}}));
+  handles_[1], {{"soft_pending_compaction_bytes_limit", "200"},
+    {"hard_pending_compaction_bytes_limit", "300"}
+  }));
   ASSERT_OK(dbfull()->TEST_GetLatestMutableCFOptions(handles_[1],
-                                                     &mutable_cf_options));
+            &mutable_cf_options));
   ASSERT_EQ(200, mutable_cf_options.soft_pending_compaction_bytes_limit);
   ASSERT_EQ(300, mutable_cf_options.hard_pending_compaction_bytes_limit);
   // Test report_bg_io_stats
   ASSERT_OK(
-      dbfull()->SetOptions(handles_[1], {{"report_bg_io_stats", "true"}}));
+  dbfull()->SetOptions(handles_[1], {{"report_bg_io_stats", "true"}}));
   // sanity check
   ASSERT_OK(dbfull()->TEST_GetLatestMutableCFOptions(handles_[1],
-                                                     &mutable_cf_options));
+            &mutable_cf_options));
   ASSERT_EQ(true, mutable_cf_options.report_bg_io_stats);
   // Test min_partial_merge_operands
   ASSERT_OK(
-      dbfull()->SetOptions(handles_[1], {{"min_partial_merge_operands", "4"}}));
+  dbfull()->SetOptions(handles_[1], {{"min_partial_merge_operands", "4"}}));
   ASSERT_OK(dbfull()->TEST_GetLatestMutableCFOptions(handles_[1],
-                                                     &mutable_cf_options));
+            &mutable_cf_options));
   ASSERT_EQ(4, mutable_cf_options.min_partial_merge_operands);
   // Test compression
   // sanity check
   ASSERT_OK(dbfull()->SetOptions({{"compression", "kNoCompression"}}));
   ASSERT_OK(dbfull()->TEST_GetLatestMutableCFOptions(handles_[0],
-                                                     &mutable_cf_options));
+            &mutable_cf_options));
   ASSERT_EQ(CompressionType::kNoCompression, mutable_cf_options.compression);
   ASSERT_OK(dbfull()->SetOptions({{"compression", "kSnappyCompression"}}));
   ASSERT_OK(dbfull()->TEST_GetLatestMutableCFOptions(handles_[0],
-                                                     &mutable_cf_options));
+            &mutable_cf_options));
   ASSERT_EQ(CompressionType::kSnappyCompression,
             mutable_cf_options.compression);
   // Test paranoid_file_checks already done in db_block_cache_test
   ASSERT_OK(
-      dbfull()->SetOptions(handles_[1], {{"paranoid_file_checks", "true"}}));
+  dbfull()->SetOptions(handles_[1], {{"paranoid_file_checks", "true"}}));
   ASSERT_OK(dbfull()->TEST_GetLatestMutableCFOptions(handles_[1],
-                                                     &mutable_cf_options));
+            &mutable_cf_options));
   ASSERT_EQ(true, mutable_cf_options.report_bg_io_stats);
 }
 #endif  // VIDARDB_LITE
@@ -3836,8 +3888,8 @@ TEST_F(DBTest, L0L1L2AndUpHitCounter) {
   ASSERT_GT(TestGetTickerCount(options, GET_HIT_L2_AND_UP), 100);
 
   ASSERT_EQ(numkeys, TestGetTickerCount(options, GET_HIT_L0) +
-                         TestGetTickerCount(options, GET_HIT_L1) +
-                         TestGetTickerCount(options, GET_HIT_L2_AND_UP));
+            TestGetTickerCount(options, GET_HIT_L1) +
+            TestGetTickerCount(options, GET_HIT_L2_AND_UP));
 }
 
 TEST_F(DBTest, EncodeDecompressedBlockSizeTest) {
@@ -3848,7 +3900,8 @@ TEST_F(DBTest, EncodeDecompressedBlockSizeTest) {
   // iter 4 -- xpress
   CompressionType compressions[] = {kZlibCompression, kBZip2Compression,
                                     kLZ4Compression, kLZ4HCCompression,
-                                    kXpressCompression};
+                                    kXpressCompression
+                                   };
   for (auto comp : compressions) {
     if (!CompressionTypeSupported(comp)) {
       continue;
@@ -4029,8 +4082,10 @@ TEST_F(DBTest, AutomaticConflictsWithManualCompaction) {
 
   std::atomic<int> callback_count(0);
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction()::Conflict",
-      [&](void* arg) { callback_count.fetch_add(1); });
+    "DBImpl::BackgroundCompaction()::Conflict",
+  [&](void* arg) {
+    callback_count.fetch_add(1);
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   CompactRangeOptions croptions;
   croptions.exclusive_manual_compaction = false;
@@ -4102,22 +4157,34 @@ TEST_F(DBTest, FlushesInParallelWithCompactRange) {
     }
 
     if (iter == 1) {
-      vidardb::SyncPoint::GetInstance()->LoadDependency(
-          {{"DBImpl::RunManualCompaction()::1",
-            "DBTest::FlushesInParallelWithCompactRange:1"},
-           {"DBTest::FlushesInParallelWithCompactRange:2",
-            "DBImpl::RunManualCompaction()::2"}});
+      vidardb::SyncPoint::GetInstance()->LoadDependency( {
+        {
+          "DBImpl::RunManualCompaction()::1",
+          "DBTest::FlushesInParallelWithCompactRange:1"
+        },
+        {
+          "DBTest::FlushesInParallelWithCompactRange:2",
+          "DBImpl::RunManualCompaction()::2"
+        }
+      });
     } else {
-      vidardb::SyncPoint::GetInstance()->LoadDependency(
-          {{"CompactionJob::Run():Start",
-            "DBTest::FlushesInParallelWithCompactRange:1"},
-           {"DBTest::FlushesInParallelWithCompactRange:2",
-            "CompactionJob::Run():End"}});
+      vidardb::SyncPoint::GetInstance()->LoadDependency( {
+        {
+          "CompactionJob::Run():Start",
+          "DBTest::FlushesInParallelWithCompactRange:1"
+        },
+        {
+          "DBTest::FlushesInParallelWithCompactRange:2",
+          "CompactionJob::Run():End"
+        }
+      });
     }
     vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
     std::vector<std::thread> threads;
-    threads.emplace_back([&]() { Compact("a", "z"); });
+    threads.emplace_back([&]() {
+      Compact("a", "z");
+    });
 
     TEST_SYNC_POINT("DBTest::FlushesInParallelWithCompactRange:1");
 
@@ -4153,7 +4220,7 @@ TEST_F(DBTest, DelayedWriteRate) {
   options.level0_stop_writes_trigger = 999999;
   options.delayed_write_rate = 20000000;  // Start with 200MB/s
   options.memtable_factory.reset(
-      new SpecialSkipListFactory(kEntriesPerMemTable));
+    new SpecialSkipListFactory(kEntriesPerMemTable));
 
   CreateAndReopenWithCF({"pikachu"}, options);
 
@@ -4218,7 +4285,7 @@ TEST_F(DBTest, HardLimit) {
   options.max_bytes_for_level_base = 10000000000u;
   options.max_background_compactions = 1;
   options.memtable_factory.reset(
-      new SpecialSkipListFactory(KNumKeysByGenerateNewFile - 1));
+    new SpecialSkipListFactory(KNumKeysByGenerateNewFile - 1));
 
   env_->SetBackgroundThreads(1, Env::LOW);
   test::SleepingBackgroundTask sleeping_task_low;
@@ -4229,10 +4296,10 @@ TEST_F(DBTest, HardLimit) {
 
   std::atomic<int> callback_count(0);
   vidardb::SyncPoint::GetInstance()->SetCallBack("DBImpl::DelayWrite:Wait",
-                                                 [&](void* arg) {
-                                                   callback_count.fetch_add(1);
-                                                   sleeping_task_low.WakeUp();
-                                                 });
+  [&](void* arg) {
+    callback_count.fetch_add(1);
+    sleeping_task_low.WakeUp();
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Random rnd(301);
@@ -4322,12 +4389,12 @@ TEST_F(DBTest, SoftLimit) {
 
   // Only allow one compactin going through.
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "BackgroundCallCompaction:0", [&](void* arg) {
-        // Schedule a sleeping task.
-        sleeping_task_low.Reset();
-        env_->Schedule(&test::SleepingBackgroundTask::DoSleepTask,
-                       &sleeping_task_low, Env::Priority::LOW);
-      });
+  "BackgroundCallCompaction:0", [&](void* arg) {
+    // Schedule a sleeping task.
+    sleeping_task_low.Reset();
+    env_->Schedule(&test::SleepingBackgroundTask::DoSleepTask,
+                   &sleeping_task_low, Env::Priority::LOW);
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -4381,7 +4448,7 @@ TEST_F(DBTest, SoftLimit) {
 
   // shrink level base so L2 will hit soft limit easier.
   ASSERT_OK(dbfull()->SetOptions({
-      {"max_bytes_for_level_base", "5000"},
+    {"max_bytes_for_level_base", "5000"},
   }));
 
   Put("", "");
@@ -4404,7 +4471,7 @@ TEST_F(DBTest, LastWriteBufferDelay) {
   options.disable_auto_compactions = true;
   int kNumKeysPerMemtable = 3;
   options.memtable_factory.reset(
-      new SpecialSkipListFactory(kNumKeysPerMemtable));
+    new SpecialSkipListFactory(kNumKeysPerMemtable));
 
   Reopen(options);
   test::SleepingBackgroundTask sleeping_task;
@@ -4433,7 +4500,8 @@ TEST_F(DBTest, LastWriteBufferDelay) {
 TEST_F(DBTest, FailWhenCompressionNotSupportedTest) {
   CompressionType compressions[] = {kZlibCompression, kBZip2Compression,
                                     kLZ4Compression, kLZ4HCCompression,
-                                    kXpressCompression};
+                                    kXpressCompression
+                                   };
   for (auto comp : compressions) {
     if (!CompressionTypeSupported(comp)) {
       // not supported, we should fail the Open()
@@ -4473,9 +4541,10 @@ TEST_F(DBTest, RowCache) {
 #endif  // VIDARDB_LITE
 
 TEST_F(DBTest, DeletingOldWalAfterDrop) {
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"Test:AllowFlushes", "DBImpl::BGWorkFlush"},
-       {"DBImpl::BGWorkFlush:done", "Test:WaitForFlush"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {"Test:AllowFlushes", "DBImpl::BGWorkFlush"},
+    {"DBImpl::BGWorkFlush:done", "Test:WaitForFlush"}
+  });
   vidardb::SyncPoint::GetInstance()->ClearTrace();
 
   vidardb::SyncPoint::GetInstance()->DisableProcessing();
@@ -4515,7 +4584,7 @@ TEST_F(DBTest, UnsupportedManualSync) {
 
 INSTANTIATE_TEST_CASE_P(DBTestWithParam, DBTestWithParam,
                         ::testing::Combine(::testing::Values(1, 4),
-                                           ::testing::Bool()));
+                            ::testing::Bool()));
 
 TEST_F(DBTest, PauseBackgroundWorkTest) {
   Options options = CurrentOptions();

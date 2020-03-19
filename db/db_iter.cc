@@ -67,7 +67,9 @@ class DBIter: public Iterator {
   // The purpose of this approach is to avoid perf regression happening
   // when multiple threads bump the atomic counters from a DBIter::Next().
   struct LocalStatistics {
-    explicit LocalStatistics() { ResetCounters(); }
+    explicit LocalStatistics() {
+      ResetCounters();
+    }
 
     void ResetCounters() {
       next_count_ = 0;
@@ -102,19 +104,19 @@ class DBIter: public Iterator {
          InternalIterator* iter, SequenceNumber s, bool arena_mode,
          uint64_t max_sequential_skip_in_iterations, uint64_t version_number,
          const Slice* iterate_upper_bound = nullptr, bool pin_data = false)
-      : arena_mode_(arena_mode),
-        env_(env),
-        logger_(ioptions.info_log),
-        user_comparator_(cmp),
-        iter_(iter),
-        sequence_(s),
-        direction_(kForward),
-        valid_(false),
-        current_entry_is_merged_(false),
-        statistics_(ioptions.statistics),
-        version_number_(version_number),
-        iterate_upper_bound_(iterate_upper_bound),
-        pin_thru_lifetime_(pin_data) {
+    : arena_mode_(arena_mode),
+      env_(env),
+      logger_(ioptions.info_log),
+      user_comparator_(cmp),
+      iter_(iter),
+      sequence_(s),
+      direction_(kForward),
+      valid_(false),
+      current_entry_is_merged_(false),
+      statistics_(ioptions.statistics),
+      version_number_(version_number),
+      iterate_upper_bound_(iterate_upper_bound),
+      pin_thru_lifetime_(pin_data) {
     RecordTick(statistics_, NO_ITERATORS);
     max_skip_ = max_sequential_skip_in_iterations;
     if (pin_thru_lifetime_) {
@@ -140,7 +142,9 @@ class DBIter: public Iterator {
     iter_ = iter;
     iter_->SetPinnedItersMgr(&pinned_iters_mgr_);
   }
-  virtual bool Valid() const override { return valid_; }
+  virtual bool Valid() const override {
+    return valid_;
+  }
   virtual Slice key() const override {
     assert(valid_);
     return saved_key_.GetKey();
@@ -342,30 +346,30 @@ void DBIter::FindNextUserEntryInternal(bool skipping) {
 
       if (ikey.sequence <= sequence_) {
         if (skipping &&
-           user_comparator_->Compare(ikey.user_key, saved_key_.GetKey()) <= 0) {
+            user_comparator_->Compare(ikey.user_key, saved_key_.GetKey()) <= 0) {
           num_skipped++;  // skip this entry
           PERF_COUNTER_ADD(internal_key_skipped_count, 1);
         } else {
           switch (ikey.type) {
-            case kTypeDeletion:
-              // Arrange to skip all upcoming entries for this key since
-              // they are hidden by this deletion.
-              saved_key_.SetKey(
-                  ikey.user_key,
-                  !iter_->IsKeyPinned() || !pin_thru_lifetime_ /* copy */);
-              skipping = true;
-              num_skipped = 0;
-              PERF_COUNTER_ADD(internal_delete_skipped_count, 1);
-              break;
-            case kTypeValue:
-              valid_ = true;
-              saved_key_.SetKey(
-                  ikey.user_key,
-                  !iter_->IsKeyPinned() || !pin_thru_lifetime_ /* copy */);
-              return;
-            default:
-              assert(false);
-              break;
+          case kTypeDeletion:
+            // Arrange to skip all upcoming entries for this key since
+            // they are hidden by this deletion.
+            saved_key_.SetKey(
+              ikey.user_key,
+              !iter_->IsKeyPinned() || !pin_thru_lifetime_ /* copy */);
+            skipping = true;
+            num_skipped = 0;
+            PERF_COUNTER_ADD(internal_delete_skipped_count, 1);
+            break;
+          case kTypeValue:
+            valid_ = true;
+            saved_key_.SetKey(
+              ikey.user_key,
+              !iter_->IsKeyPinned() || !pin_thru_lifetime_ /* copy */);
+            return;
+          default:
+            assert(false);
+            break;
           }
         }
       }
@@ -379,7 +383,7 @@ void DBIter::FindNextUserEntryInternal(bool skipping) {
       num_skipped = 0;
       std::string last_key;
       AppendInternalKey(&last_key, ParsedInternalKey(saved_key_.GetKey(), 0,
-                                                     kTypeDeletion));
+                        kTypeDeletion));
       iter_->Seek(last_key);
       RecordTick(statistics_, NUMBER_OF_RESEEKS_IN_ITERATION);
     } else {
@@ -489,16 +493,16 @@ bool DBIter::FindValueForCurrentKey() {
 
     last_key_entry_type = ikey.type;
     switch (last_key_entry_type) {
-      case kTypeValue:
-        ReleaseTempPinnedData();
-        TempPinData();
-        pinned_value_ = iter_->value();
-        break;
-      case kTypeDeletion:
-        PERF_COUNTER_ADD(internal_delete_skipped_count, 1);
-        break;
-      default:
-        assert(false);
+    case kTypeValue:
+      ReleaseTempPinnedData();
+      TempPinData();
+      pinned_value_ = iter_->value();
+      break;
+    case kTypeDeletion:
+      PERF_COUNTER_ADD(internal_delete_skipped_count, 1);
+      break;
+    default:
+      assert(false);
     }
 
     PERF_COUNTER_ADD(internal_key_skipped_count, 1);
@@ -509,15 +513,15 @@ bool DBIter::FindValueForCurrentKey() {
   }
 
   switch (last_key_entry_type) {
-    case kTypeDeletion:
-      valid_ = false;
-      return false;
-    case kTypeValue:
-      // do nothing - we've already has value in saved_value_
-      break;
-    default:
-      assert(false);
-      break;
+  case kTypeDeletion:
+    valid_ = false;
+    return false;
+  case kTypeValue:
+    // do nothing - we've already has value in saved_value_
+    break;
+  default:
+    assert(false);
+    break;
   }
   valid_ = true;
   return true;
@@ -528,7 +532,7 @@ bool DBIter::FindValueForCurrentKey() {
 bool DBIter::FindValueForCurrentKeyUsingSeek() {
   std::string last_key;
   AppendInternalKey(&last_key, ParsedInternalKey(saved_key_.GetKey(), sequence_,
-                                                 kValueTypeForSeek));
+                    kValueTypeForSeek));
   iter_->Seek(last_key);
   RecordTick(statistics_, NUMBER_OF_RESEEKS_IN_ITERATION);
 
@@ -580,14 +584,14 @@ void DBIter::FindPrevUserKey() {
   FindParseableKey(&ikey, kReverse);
   int cmp;
   while (iter_->Valid() && ((cmp = user_comparator_->Compare(
-                                 ikey.user_key, saved_key_.GetKey())) == 0 ||
+                                     ikey.user_key, saved_key_.GetKey())) == 0 ||
                             (cmp > 0 && ikey.sequence > sequence_))) {
     if (cmp == 0) {
       if (num_skipped >= max_skip_) {
         num_skipped = 0;
         IterKey last_key;
         last_key.SetInternalKey(ParsedInternalKey(
-            saved_key_.GetKey(), kMaxSequenceNumber, kValueTypeForSeek));
+                                  saved_key_.GetKey(), kMaxSequenceNumber, kValueTypeForSeek));
         iter_->Seek(last_key.GetKey());
         RecordTick(statistics_, NUMBER_OF_RESEEKS_IN_ITERATION);
       } else {
@@ -715,52 +719,72 @@ Iterator* NewDBIterator(Env* env, const ImmutableCFOptions& ioptions,
                         uint64_t version_number,
                         const Slice* iterate_upper_bound, bool pin_data) {
   DBIter* db_iter =
-      new DBIter(env, ioptions, user_key_comparator, internal_iter, sequence,
-                 false, max_sequential_skip_in_iterations, version_number,
-                 iterate_upper_bound, pin_data);
+    new DBIter(env, ioptions, user_key_comparator, internal_iter, sequence,
+               false, max_sequential_skip_in_iterations, version_number,
+               iterate_upper_bound, pin_data);
   return db_iter;
 }
 
-ArenaWrappedDBIter::~ArenaWrappedDBIter() { db_iter_->~DBIter(); }
+ArenaWrappedDBIter::~ArenaWrappedDBIter() {
+  db_iter_->~DBIter();
+}
 
-void ArenaWrappedDBIter::SetDBIter(DBIter* iter) { db_iter_ = iter; }
+void ArenaWrappedDBIter::SetDBIter(DBIter* iter) {
+  db_iter_ = iter;
+}
 
 void ArenaWrappedDBIter::SetIterUnderDBIter(InternalIterator* iter) {
   static_cast<DBIter*>(db_iter_)->SetIter(iter);
 }
 
-inline bool ArenaWrappedDBIter::Valid() const { return db_iter_->Valid(); }
-inline void ArenaWrappedDBIter::SeekToFirst() { db_iter_->SeekToFirst(); }
-inline void ArenaWrappedDBIter::SeekToLast() { db_iter_->SeekToLast(); }
+inline bool ArenaWrappedDBIter::Valid() const {
+  return db_iter_->Valid();
+}
+inline void ArenaWrappedDBIter::SeekToFirst() {
+  db_iter_->SeekToFirst();
+}
+inline void ArenaWrappedDBIter::SeekToLast() {
+  db_iter_->SeekToLast();
+}
 inline void ArenaWrappedDBIter::Seek(const Slice& target) {
   db_iter_->Seek(target);
 }
-inline void ArenaWrappedDBIter::Next() { db_iter_->Next(); }
-inline void ArenaWrappedDBIter::Prev() { db_iter_->Prev(); }
-inline Slice ArenaWrappedDBIter::key() const { return db_iter_->key(); }
-inline Slice ArenaWrappedDBIter::value() const { return db_iter_->value(); }
-inline Status ArenaWrappedDBIter::status() const { return db_iter_->status(); }
+inline void ArenaWrappedDBIter::Next() {
+  db_iter_->Next();
+}
+inline void ArenaWrappedDBIter::Prev() {
+  db_iter_->Prev();
+}
+inline Slice ArenaWrappedDBIter::key() const {
+  return db_iter_->key();
+}
+inline Slice ArenaWrappedDBIter::value() const {
+  return db_iter_->value();
+}
+inline Status ArenaWrappedDBIter::status() const {
+  return db_iter_->status();
+}
 inline Status ArenaWrappedDBIter::GetProperty(std::string prop_name,
-                                              std::string* prop) {
+    std::string* prop) {
   return db_iter_->GetProperty(prop_name, prop);
 }
 void ArenaWrappedDBIter::RegisterCleanup(CleanupFunction function, void* arg1,
-                                         void* arg2) {
+    void* arg2) {
   db_iter_->RegisterCleanup(function, arg1, arg2);
 }
 
 ArenaWrappedDBIter* NewArenaWrappedDbIterator(
-    Env* env, const ImmutableCFOptions& ioptions,
-    const Comparator* user_key_comparator, const SequenceNumber& sequence,
-    uint64_t max_sequential_skip_in_iterations, uint64_t version_number,
-    const Slice* iterate_upper_bound, bool pin_data) {
+  Env* env, const ImmutableCFOptions& ioptions,
+  const Comparator* user_key_comparator, const SequenceNumber& sequence,
+  uint64_t max_sequential_skip_in_iterations, uint64_t version_number,
+  const Slice* iterate_upper_bound, bool pin_data) {
   ArenaWrappedDBIter* iter = new ArenaWrappedDBIter();
   Arena* arena = iter->GetArena();
   auto mem = arena->AllocateAligned(sizeof(DBIter));
   DBIter* db_iter =
-      new (mem) DBIter(env, ioptions, user_key_comparator, nullptr, sequence,
-                       true, max_sequential_skip_in_iterations, version_number,
-                       iterate_upper_bound, pin_data);
+    new (mem) DBIter(env, ioptions, user_key_comparator, nullptr, sequence,
+                     true, max_sequential_skip_in_iterations, version_number,
+                     iterate_upper_bound, pin_data);
 
   iter->SetDBIter(db_iter);
 

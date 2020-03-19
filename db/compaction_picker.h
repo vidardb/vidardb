@@ -57,13 +57,15 @@ class CompactionPicker {
   // Client is responsible for compaction_end storage -- when called,
   // *compaction_end should point to valid InternalKey!
   virtual Compaction* CompactRange(
-      const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
-      VersionStorageInfo* vstorage, int input_level, int output_level,
-      uint32_t output_path_id, const InternalKey* begin, const InternalKey* end,
-      InternalKey** compaction_end, bool* manual_conflict);
+    const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
+    VersionStorageInfo* vstorage, int input_level, int output_level,
+    uint32_t output_path_id, const InternalKey* begin, const InternalKey* end,
+    InternalKey** compaction_end, bool* manual_conflict);
 
   // The maximum allowed output level.  Default value is NumberLevels() - 1.
-  virtual int MaxOutputLevel() const { return NumberLevels() - 1; }
+  virtual int MaxOutputLevel() const {
+    return NumberLevels() - 1;
+  }
 
   virtual bool NeedsCompaction(const VersionStorageInfo* vstorage) const = 0;
 
@@ -90,18 +92,18 @@ class CompactionPicker {
   // Takes a list of CompactionInputFiles and returns a (manual) Compaction
   // object.
   Compaction* FormCompaction(
-      const CompactionOptions& compact_options,
-      const std::vector<CompactionInputFiles>& input_files, int output_level,
-      VersionStorageInfo* vstorage, const MutableCFOptions& mutable_cf_options,
-      uint32_t output_path_id);
+    const CompactionOptions& compact_options,
+    const std::vector<CompactionInputFiles>& input_files, int output_level,
+    VersionStorageInfo* vstorage, const MutableCFOptions& mutable_cf_options,
+    uint32_t output_path_id);
 
   // Converts a set of compaction input file numbers into
   // a list of CompactionInputFiles.
   Status GetCompactionInputsFromFileNumbers(
-      std::vector<CompactionInputFiles>* input_files,
-      std::unordered_set<uint64_t>* input_set,
-      const VersionStorageInfo* vstorage,
-      const CompactionOptions& compact_options) const;
+    std::vector<CompactionInputFiles>* input_files,
+    std::unordered_set<uint64_t>* input_set,
+    const VersionStorageInfo* vstorage,
+    const CompactionOptions& compact_options) const;
 
   // Used in universal compaction when the enabled_trivial_move
   // option is set. Checks whether there are any overlapping files
@@ -115,7 +117,9 @@ class CompactionPicker {
   }
 
  protected:
-  int NumberLevels() const { return ioptions_.num_levels; }
+  int NumberLevels() const {
+    return ioptions_.num_levels;
+  }
 
   // Stores the minimal range that covers all entries in inputs in
   // *smallest, *largest.
@@ -167,8 +171,8 @@ class CompactionPicker {
 // sanitizes "input_files" by adding necessary files.
 #ifndef VIDARDB_LITE
   virtual Status SanitizeCompactionInputFilesForAllLevels(
-      std::unordered_set<uint64_t>* input_files,
-      const ColumnFamilyMetaData& cf_meta, const int output_level) const;
+    std::unordered_set<uint64_t>* input_files,
+    const ColumnFamilyMetaData& cf_meta, const int output_level) const;
 #endif  // VIDARDB_LITE
 
   // Keeps track of all compactions that are running on Level0.
@@ -182,14 +186,14 @@ class LevelCompactionPicker : public CompactionPicker {
  public:
   LevelCompactionPicker(const ImmutableCFOptions& ioptions,
                         const InternalKeyComparator* icmp)
-      : CompactionPicker(ioptions, icmp) {}
+    : CompactionPicker(ioptions, icmp) {}
   virtual Compaction* PickCompaction(const std::string& cf_name,
                                      const MutableCFOptions& mutable_cf_options,
                                      VersionStorageInfo* vstorage,
                                      LogBuffer* log_buffer) override;
 
   virtual bool NeedsCompaction(
-      const VersionStorageInfo* vstorage) const override;
+    const VersionStorageInfo* vstorage) const override;
 
   // Pick a path ID to place a newly generated file, with its level
   static uint32_t GetPathId(const ImmutableCFOptions& ioptions,
@@ -210,9 +214,9 @@ class LevelCompactionPicker : public CompactionPicker {
   // This is still experimental. It will return meaningful results only if
   // clients call experimental feature SuggestCompactRange()
   void PickFilesMarkedForCompactionExperimental(const std::string& cf_name,
-                                                VersionStorageInfo* vstorage,
-                                                CompactionInputFiles* inputs,
-                                                int* level, int* output_level);
+      VersionStorageInfo* vstorage,
+      CompactionInputFiles* inputs,
+      int* level, int* output_level);
 };
 
 #ifndef VIDARDB_LITE
@@ -220,26 +224,28 @@ class UniversalCompactionPicker : public CompactionPicker {
  public:
   UniversalCompactionPicker(const ImmutableCFOptions& ioptions,
                             const InternalKeyComparator* icmp)
-      : CompactionPicker(ioptions, icmp) {}
+    : CompactionPicker(ioptions, icmp) {}
   virtual Compaction* PickCompaction(const std::string& cf_name,
                                      const MutableCFOptions& mutable_cf_options,
                                      VersionStorageInfo* vstorage,
                                      LogBuffer* log_buffer) override;
 
-  virtual int MaxOutputLevel() const override { return NumberLevels() - 1; }
+  virtual int MaxOutputLevel() const override {
+    return NumberLevels() - 1;
+  }
 
   virtual bool NeedsCompaction(
-      const VersionStorageInfo* vstorage) const override;
+    const VersionStorageInfo* vstorage) const override;
 
  private:
   struct SortedRun {
     SortedRun(int _level, FileMetaData* _file, uint64_t _size,
               uint64_t _compensated_file_size, bool _being_compacted)
-        : level(_level),
-          file(_file),
-          size(_size),
-          compensated_file_size(_compensated_file_size),
-          being_compacted(_being_compacted) {
+      : level(_level),
+        file(_file),
+        size(_size),
+        compensated_file_size(_compensated_file_size),
+        being_compacted(_being_compacted) {
       assert(compensated_file_size > 0);
       assert(level != 0 || file != nullptr);
     }
@@ -265,19 +271,19 @@ class UniversalCompactionPicker : public CompactionPicker {
 
   // Pick Universal compaction to limit read amplification
   Compaction* PickCompactionUniversalReadAmp(
-      const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
-      VersionStorageInfo* vstorage, double score, unsigned int ratio,
-      unsigned int num_files, const std::vector<SortedRun>& sorted_runs,
-      LogBuffer* log_buffer);
+    const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
+    VersionStorageInfo* vstorage, double score, unsigned int ratio,
+    unsigned int num_files, const std::vector<SortedRun>& sorted_runs,
+    LogBuffer* log_buffer);
 
   // Pick Universal compaction to limit space amplification.
   Compaction* PickCompactionUniversalSizeAmp(
-      const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
-      VersionStorageInfo* vstorage, double score,
-      const std::vector<SortedRun>& sorted_runs, LogBuffer* log_buffer);
+    const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
+    VersionStorageInfo* vstorage, double score,
+    const std::vector<SortedRun>& sorted_runs, LogBuffer* log_buffer);
 
   static std::vector<SortedRun> CalculateSortedRuns(
-      const VersionStorageInfo& vstorage, const ImmutableCFOptions& ioptions);
+    const VersionStorageInfo& vstorage, const ImmutableCFOptions& ioptions);
 
   // Pick a path ID to place a newly generated file, with its estimated file
   // size.
@@ -289,7 +295,7 @@ class FIFOCompactionPicker : public CompactionPicker {
  public:
   FIFOCompactionPicker(const ImmutableCFOptions& ioptions,
                        const InternalKeyComparator* icmp)
-      : CompactionPicker(ioptions, icmp) {}
+    : CompactionPicker(ioptions, icmp) {}
 
   virtual Compaction* PickCompaction(const std::string& cf_name,
                                      const MutableCFOptions& mutable_cf_options,
@@ -297,23 +303,25 @@ class FIFOCompactionPicker : public CompactionPicker {
                                      LogBuffer* log_buffer) override;
 
   virtual Compaction* CompactRange(
-      const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
-      VersionStorageInfo* vstorage, int input_level, int output_level,
-      uint32_t output_path_id, const InternalKey* begin, const InternalKey* end,
-      InternalKey** compaction_end, bool* manual_conflict) override;
+    const std::string& cf_name, const MutableCFOptions& mutable_cf_options,
+    VersionStorageInfo* vstorage, int input_level, int output_level,
+    uint32_t output_path_id, const InternalKey* begin, const InternalKey* end,
+    InternalKey** compaction_end, bool* manual_conflict) override;
 
   // The maximum allowed output level.  Always returns 0.
-  virtual int MaxOutputLevel() const override { return 0; }
+  virtual int MaxOutputLevel() const override {
+    return 0;
+  }
 
   virtual bool NeedsCompaction(
-      const VersionStorageInfo* vstorage) const override;
+    const VersionStorageInfo* vstorage) const override;
 };
 
 class NullCompactionPicker : public CompactionPicker {
  public:
   NullCompactionPicker(const ImmutableCFOptions& ioptions,
                        const InternalKeyComparator* icmp)
-      : CompactionPicker(ioptions, icmp) {}
+    : CompactionPicker(ioptions, icmp) {}
   virtual ~NullCompactionPicker() {}
 
   // Always return "nullptr"
@@ -337,7 +345,7 @@ class NullCompactionPicker : public CompactionPicker {
 
   // Always returns false.
   virtual bool NeedsCompaction(
-      const VersionStorageInfo* vstorage) const override {
+    const VersionStorageInfo* vstorage) const override {
     return false;
   }
 };

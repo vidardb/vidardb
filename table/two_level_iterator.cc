@@ -46,7 +46,9 @@ class TwoLevelIterator : public InternalIterator {
   virtual void Next() override;
   virtual void Prev() override;
 
-  virtual bool Valid() const override { return second_level_iter_.Valid(); }
+  virtual bool Valid() const override {
+    return second_level_iter_.Valid();
+  }
   virtual Slice key() const override {
     assert(Valid());
     return second_level_iter_.key();
@@ -67,7 +69,7 @@ class TwoLevelIterator : public InternalIterator {
     }
   }
   virtual void SetPinnedItersMgr(
-      PinnedIteratorsManager* pinned_iters_mgr) override {
+    PinnedIteratorsManager* pinned_iters_mgr) override {
     pinned_iters_mgr_ = pinned_iters_mgr;
     first_level_iter_.SetPinnedItersMgr(pinned_iters_mgr);
     if (second_level_iter_.iter()) {
@@ -102,10 +104,10 @@ class TwoLevelIterator : public InternalIterator {
 TwoLevelIterator::TwoLevelIterator(TwoLevelIteratorState* state,
                                    InternalIterator* first_level_iter,
                                    bool need_free_iter_and_state)
-    : state_(state),
-      first_level_iter_(first_level_iter),
-      need_free_iter_and_state_(need_free_iter_and_state),
-      pinned_iters_mgr_(nullptr) {}
+  : state_(state),
+    first_level_iter_(first_level_iter),
+    need_free_iter_and_state_(need_free_iter_and_state),
+    pinned_iters_mgr_(nullptr) {}
 
 void TwoLevelIterator::Seek(const Slice& target) {
   first_level_iter_.Seek(target);
@@ -151,7 +153,7 @@ void TwoLevelIterator::Prev() {
 void TwoLevelIterator::SkipEmptyDataBlocksForward() {
   while (second_level_iter_.iter() == nullptr ||
          (!second_level_iter_.Valid() &&
-         !second_level_iter_.status().IsIncomplete())) {
+          !second_level_iter_.status().IsIncomplete())) {
     // Move to next block
     if (!first_level_iter_.Valid()) {
       SetSecondLevelIterator(nullptr);
@@ -168,7 +170,7 @@ void TwoLevelIterator::SkipEmptyDataBlocksForward() {
 void TwoLevelIterator::SkipEmptyDataBlocksBackward() {
   while (second_level_iter_.iter() == nullptr ||
          (!second_level_iter_.Valid() &&
-         !second_level_iter_.status().IsIncomplete())) {
+          !second_level_iter_.status().IsIncomplete())) {
     // Move to next block
     if (!first_level_iter_.Valid()) {
       SetSecondLevelIterator(nullptr);
@@ -229,7 +231,7 @@ InternalIterator* NewTwoLevelIterator(TwoLevelIteratorState* state,
   } else {
     auto mem = arena->AllocateAligned(sizeof(TwoLevelIterator));
     return new (mem)
-        TwoLevelIterator(state, first_level_iter, need_free_iter_and_state);
+           TwoLevelIterator(state, first_level_iter, need_free_iter_and_state);
   }
 }
 

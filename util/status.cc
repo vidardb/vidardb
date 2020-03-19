@@ -22,7 +22,7 @@ const char* Status::CopyState(const char* state) {
 }
 
 Status::Status(Code _code, const Slice& msg, const Slice& msg2)
-    : code_(_code), subcode_(kNone) {
+  : code_(_code), subcode_(kNone) {
   assert(code_ != kOk);
   const uint32_t len1 = static_cast<uint32_t>(msg.size());
   const uint32_t len2 = static_cast<uint32_t>(msg2.size());
@@ -42,52 +42,52 @@ std::string Status::ToString() const {
   char tmp[30];
   const char* type;
   switch (code_) {
-    case kOk:
-      return "OK";
-    case kNotFound:
-      type = "NotFound: ";
-      break;
-    case kCorruption:
-      type = "Corruption: ";
-      break;
-    case kNotSupported:
-      type = "Not implemented: ";
-      break;
-    case kInvalidArgument:
-      type = "Invalid argument: ";
-      break;
-    case kIOError:
-      type = "IO error: ";
-      break;
-    case kMergeInProgress:
-      type = "Merge in progress: ";
-      break;
-    case kIncomplete:
-      type = "Result incomplete: ";
-      break;
-    case kShutdownInProgress:
-      type = "Shutdown in progress: ";
-      break;
-    case kTimedOut:
-      type = "Operation timed out: ";
-      break;
-    case kAborted:
-      type = "Operation aborted: ";
-      break;
-    case kBusy:
-      type = "Resource busy: ";
-      break;
-    case kExpired:
-      type = "Operation expired: ";
-      break;
-    case kTryAgain:
-      type = "Operation failed. Try again.: ";
-      break;
-    default:
-      snprintf(tmp, sizeof(tmp), "Unknown code(%d): ",
-               static_cast<int>(code()));
-      type = tmp;
-      break;
+  case kOk:
+    return "OK";
+  case kNotFound:
+    type = "NotFound: ";
+    break;
+  case kCorruption:
+    type = "Corruption: ";
+    break;
+  case kNotSupported:
+    type = "Not implemented: ";
+    break;
+  case kInvalidArgument:
+    type = "Invalid argument: ";
+    break;
+  case kIOError:
+    type = "IO error: ";
+    break;
+  case kMergeInProgress:
+    type = "Merge in progress: ";
+    break;
+  case kIncomplete:
+    type = "Result incomplete: ";
+    break;
+  case kShutdownInProgress:
+    type = "Shutdown in progress: ";
+    break;
+  case kTimedOut:
+    type = "Operation timed out: ";
+    break;
+  case kAborted:
+    type = "Operation aborted: ";
+    break;
+  case kBusy:
+    type = "Resource busy: ";
+    break;
+  case kExpired:
+    type = "Operation expired: ";
+    break;
+  case kTryAgain:
+    type = "Operation failed. Try again.: ";
+    break;
+  default:
+    snprintf(tmp, sizeof(tmp), "Unknown code(%d): ",
+             static_cast<int>(code()));
+    type = tmp;
+    break;
   }
   std::string result(type);
   if (subcode_ != kNone) {

@@ -31,11 +31,11 @@ namespace vidardb {
 class WalManagerTest : public testing::Test {
  public:
   WalManagerTest()
-      : env_(new MockEnv(Env::Default())),
-        dbname_(test::TmpDir() + "/wal_manager_test"),
-        table_cache_(NewLRUCache(50000, 16)),
-        write_buffer_(db_options_.db_write_buffer_size),
-        current_log_number_(0) {
+    : env_(new MockEnv(Env::Default())),
+      dbname_(test::TmpDir() + "/wal_manager_test"),
+      table_cache_(NewLRUCache(50000, 16)),
+      write_buffer_(db_options_.db_write_buffer_size),
+      current_log_number_(0) {
     DestroyDB(dbname_, Options());
   }
 
@@ -76,7 +76,7 @@ class WalManagerTest : public testing::Test {
     unique_ptr<WritableFile> file;
     ASSERT_OK(env_->NewWritableFile(fname, &file, env_options_));
     unique_ptr<WritableFileWriter> file_writer(
-        new WritableFileWriter(std::move(file), env_options_));
+      new WritableFileWriter(std::move(file), env_options_));
     current_log_writer_.reset(new log::Writer(std::move(file_writer), 0, false));
   }
 
@@ -90,10 +90,10 @@ class WalManagerTest : public testing::Test {
   }
 
   std::unique_ptr<TransactionLogIterator> OpenTransactionLogIter(
-      const SequenceNumber seq) {
+    const SequenceNumber seq) {
     unique_ptr<TransactionLogIterator> iter;
     Status status = wal_manager_->GetUpdatesSince(
-        seq, &iter, TransactionLogIterator::ReadOptions(), versions_.get());
+                      seq, &iter, TransactionLogIterator::ReadOptions(), versions_.get());
     EXPECT_OK(status);
     return iter;
   }
@@ -126,9 +126,9 @@ TEST_F(WalManagerTest, ReadFirstRecordCache) {
   ASSERT_EQ(s, 0U);
 
   unique_ptr<WritableFileWriter> file_writer(
-      new WritableFileWriter(std::move(file), EnvOptions()));
+    new WritableFileWriter(std::move(file), EnvOptions()));
   log::Writer writer(std::move(file_writer), 1,
-		     db_options_.recycle_log_file_num > 0);
+                     db_options_.recycle_log_file_num > 0);
   WriteBatch batch;
   batch.Put("foo", "bar");
   WriteBatchInternal::SetSequence(&batch, 10);
@@ -171,7 +171,7 @@ uint64_t GetLogDirSize(std::string dir_path, Env* env) {
   return dir_size;
 }
 std::vector<std::uint64_t> ListSpecificFiles(
-    Env* env, const std::string& path, const FileType expected_file_type) {
+  Env* env, const std::string& path, const FileType expected_file_type) {
   std::vector<std::string> files;
   std::vector<uint64_t> file_numbers;
   env->GetChildren(path, &files);
@@ -222,7 +222,7 @@ TEST_F(WalManagerTest, WALArchivalSizeLimit) {
   CreateArchiveLogs(20, 5000);
 
   std::vector<std::uint64_t> log_files =
-      ListSpecificFiles(env_.get(), archive_dir, kLogFile);
+    ListSpecificFiles(env_.get(), archive_dir, kLogFile);
   ASSERT_EQ(log_files.size(), 20U);
 
   db_options_.WAL_size_limit_MB = 8;
@@ -255,7 +255,7 @@ TEST_F(WalManagerTest, WALArchivalTtl) {
   CreateArchiveLogs(20, 5000);
 
   std::vector<uint64_t> log_files =
-      ListSpecificFiles(env_.get(), archive_dir, kLogFile);
+    ListSpecificFiles(env_.get(), archive_dir, kLogFile);
   ASSERT_GT(log_files.size(), 0U);
 
   db_options_.WAL_ttl_seconds = 1;

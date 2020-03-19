@@ -16,22 +16,22 @@
 namespace vidardb {
 
 TransactionLogIteratorImpl::TransactionLogIteratorImpl(
-    const std::string& dir, const DBOptions* options,
-    const TransactionLogIterator::ReadOptions& read_options,
-    const EnvOptions& soptions, const SequenceNumber seq,
-    std::unique_ptr<VectorLogPtr> files, VersionSet const* const versions)
-    : dir_(dir),
-      options_(options),
-      read_options_(read_options),
-      soptions_(soptions),
-      startingSequenceNumber_(seq),
-      files_(std::move(files)),
-      started_(false),
-      isValid_(false),
-      currentFileIndex_(0),
-      currentBatchSeq_(0),
-      currentLastSeq_(0),
-      versions_(versions) {
+  const std::string& dir, const DBOptions* options,
+  const TransactionLogIterator::ReadOptions& read_options,
+  const EnvOptions& soptions, const SequenceNumber seq,
+  std::unique_ptr<VectorLogPtr> files, VersionSet const* const versions)
+  : dir_(dir),
+    options_(options),
+    read_options_(read_options),
+    soptions_(soptions),
+    startingSequenceNumber_(seq),
+    files_(std::move(files)),
+    started_(false),
+    isValid_(false),
+    currentFileIndex_(0),
+    currentBatchSeq_(0),
+    currentLastSeq_(0),
+    versions_(versions) {
   assert(files_ != nullptr);
   assert(versions_ != nullptr);
 
@@ -41,7 +41,7 @@ TransactionLogIteratorImpl::TransactionLogIteratorImpl(
 }
 
 Status TransactionLogIteratorImpl::OpenLogFile(
-    const LogFile* logFile, unique_ptr<SequentialFileReader>* file_reader) {
+  const LogFile* logFile, unique_ptr<SequentialFileReader>* file_reader) {
   Env* env = options_->env;
   unique_ptr<SequentialFile> file;
   Status s;
@@ -81,8 +81,8 @@ bool TransactionLogIteratorImpl::Valid() {
 }
 
 bool TransactionLogIteratorImpl::RestrictedRead(
-    Slice* record,
-    std::string* scratch) {
+  Slice* record,
+  std::string* scratch) {
   // Don't read if no more complete entries to read from logs
   if (currentLastSeq_ >= versions_->LastSequence()) {
     return false;
@@ -91,8 +91,8 @@ bool TransactionLogIteratorImpl::RestrictedRead(
 }
 
 void TransactionLogIteratorImpl::SeekToStartSequence(
-    uint64_t startFileIndex,
-    bool strict) {
+  uint64_t startFileIndex,
+  bool strict) {
   std::string scratch;
   Slice record;
   started_ = false;
@@ -206,8 +206,8 @@ void TransactionLogIteratorImpl::NextImpl(bool internal) {
 }
 
 bool TransactionLogIteratorImpl::IsBatchExpected(
-    const WriteBatch* batch,
-    const SequenceNumber expectedSeq) {
+  const WriteBatch* batch,
+  const SequenceNumber expectedSeq) {
   assert(batch);
   SequenceNumber batchSeq = WriteBatchInternal::Sequence(batch);
   if (batchSeq != expectedSeq) {
@@ -263,8 +263,8 @@ Status TransactionLogIteratorImpl::OpenLogReader(const LogFile* logFile) {
   }
   assert(file);
   currentLogReader_.reset(new log::Reader(
-      options_->info_log, std::move(file), &reporter_,
-      read_options_.verify_checksums_, 0, logFile->LogNumber()));
+                            options_->info_log, std::move(file), &reporter_,
+                            read_options_.verify_checksums_, 0, logFile->LogNumber()));
   return Status::OK();
 }
 }  //  namespace vidardb

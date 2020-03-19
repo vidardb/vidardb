@@ -19,23 +19,25 @@ namespace vidardb {
 class MemFile {
  public:
   explicit MemFile(Env* env, const std::string& fn, bool _is_lock_file = false)
-      : env_(env),
-        fn_(fn),
-        refs_(0),
-        is_lock_file_(_is_lock_file),
-        locked_(false),
-        size_(0),
-        modified_time_(Now()),
-        rnd_(static_cast<uint32_t>(
-            MurmurHash(fn.data(), static_cast<int>(fn.size()), 0))),
-        fsynced_bytes_(0) {}
+    : env_(env),
+      fn_(fn),
+      refs_(0),
+      is_lock_file_(_is_lock_file),
+      locked_(false),
+      size_(0),
+      modified_time_(Now()),
+      rnd_(static_cast<uint32_t>(
+             MurmurHash(fn.data(), static_cast<int>(fn.size()), 0))),
+      fsynced_bytes_(0) {}
 
   void Ref() {
     MutexLock lock(&mutex_);
     ++refs_;
   }
 
-  bool is_lock_file() const { return is_lock_file_; }
+  bool is_lock_file() const {
+    return is_lock_file_;
+  }
 
   bool Lock() {
     assert(is_lock_file_);
@@ -88,7 +90,7 @@ class MemFile {
     }
     uint64_t buffered_bytes = size_ - fsynced_bytes_;
     uint64_t start =
-        fsynced_bytes_ + rnd_.Uniform(static_cast<int>(buffered_bytes));
+      fsynced_bytes_ + rnd_.Uniform(static_cast<int>(buffered_bytes));
     uint64_t end = std::min(start + 512, size_.load());
     MutexLock lock(&mutex_);
     for (uint64_t pos = start; pos < end; ++pos) {
@@ -248,13 +250,21 @@ class MockWritableFile : public WritableFile {
   virtual Status Truncate(uint64_t size) override {
     return Status::OK();
   }
-  virtual Status Close() override { return file_->Fsync(); }
+  virtual Status Close() override {
+    return file_->Fsync();
+  }
 
-  virtual Status Flush() override { return Status::OK(); }
+  virtual Status Flush() override {
+    return Status::OK();
+  }
 
-  virtual Status Sync() override { return file_->Fsync(); }
+  virtual Status Sync() override {
+    return file_->Fsync();
+  }
 
-  virtual uint64_t GetFileSize() override { return file_->Size(); }
+  virtual uint64_t GetFileSize() override {
+    return file_->Size();
+  }
 
  private:
   inline size_t RequestToken(size_t bytes) {
@@ -266,7 +276,9 @@ class MockWritableFile : public WritableFile {
 
 class MockEnvDirectory : public Directory {
  public:
-  virtual Status Fsync() override { return Status::OK(); }
+  virtual Status Fsync() override {
+    return Status::OK();
+  }
 };
 
 class MockEnvFileLock : public FileLock {
@@ -294,12 +306,12 @@ class TestMemLogger : public Logger {
  public:
   TestMemLogger(std::unique_ptr<WritableFile> f, Env* env,
                 const InfoLogLevel log_level = InfoLogLevel::ERROR_LEVEL)
-      : Logger(log_level),
-        file_(std::move(f)),
-        log_size_(0),
-        last_flush_micros_(0),
-        env_(env),
-        flush_pending_(false) {}
+    : Logger(log_level),
+      file_(std::move(f)),
+      log_size_(0),
+      last_flush_micros_(0),
+      env_(env),
+      flush_pending_(false) {}
   virtual ~TestMemLogger() {
   }
 
@@ -372,7 +384,7 @@ class TestMemLogger : public Logger {
       flush_pending_ = true;
       log_size_ += write_size;
       uint64_t now_micros = static_cast<uint64_t>(now_tv.tv_sec) * 1000000 +
-        now_tv.tv_usec;
+                            now_tv.tv_usec;
       if (now_micros - last_flush_micros_ >= flush_every_seconds_ * 1000000) {
         flush_pending_ = false;
         last_flush_micros_ = now_micros;
@@ -383,7 +395,9 @@ class TestMemLogger : public Logger {
       break;
     }
   }
-  size_t GetLogFileSize() const override { return log_size_; }
+  size_t GetLogFileSize() const override {
+    return log_size_;
+  }
 };
 
 }  // Anonymous namespace
@@ -396,10 +410,10 @@ MockEnv::~MockEnv() {
   }
 }
 
-  // Partial implementation of the Env interface.
+// Partial implementation of the Env interface.
 Status MockEnv::NewSequentialFile(const std::string& fname,
-                                     unique_ptr<SequentialFile>* result,
-                                     const EnvOptions& soptions) {
+                                  unique_ptr<SequentialFile>* result,
+                                  const EnvOptions& soptions) {
   auto fn = NormalizePath(fname);
   MutexLock lock(&mutex_);
   if (file_map_.find(fn) == file_map_.end()) {
@@ -415,8 +429,8 @@ Status MockEnv::NewSequentialFile(const std::string& fname,
 }
 
 Status MockEnv::NewRandomAccessFile(const std::string& fname,
-                                       unique_ptr<RandomAccessFile>* result,
-                                       const EnvOptions& soptions) {
+                                    unique_ptr<RandomAccessFile>* result,
+                                    const EnvOptions& soptions) {
   auto fn = NormalizePath(fname);
   MutexLock lock(&mutex_);
   if (file_map_.find(fn) == file_map_.end()) {
@@ -432,8 +446,8 @@ Status MockEnv::NewRandomAccessFile(const std::string& fname,
 }
 
 Status MockEnv::NewWritableFile(const std::string& fname,
-                                   unique_ptr<WritableFile>* result,
-                                   const EnvOptions& env_options) {
+                                unique_ptr<WritableFile>* result,
+                                const EnvOptions& env_options) {
   auto fn = NormalizePath(fname);
   MutexLock lock(&mutex_);
   if (file_map_.find(fn) != file_map_.end()) {
@@ -448,7 +462,7 @@ Status MockEnv::NewWritableFile(const std::string& fname,
 }
 
 Status MockEnv::NewDirectory(const std::string& name,
-                                unique_ptr<Directory>* result) {
+                             unique_ptr<Directory>* result) {
   result->reset(new MockEnvDirectory());
   return Status::OK();
 }
@@ -473,7 +487,7 @@ Status MockEnv::FileExists(const std::string& fname) {
 }
 
 Status MockEnv::GetChildren(const std::string& dir,
-                               std::vector<std::string>* result) {
+                            std::vector<std::string>* result) {
   auto d = NormalizePath(dir);
   {
     MutexLock lock(&mutex_);
@@ -486,7 +500,7 @@ Status MockEnv::GetChildren(const std::string& dir,
         size_t next_slash = filename.find('/', d.size() + 1);
         if (next_slash != std::string::npos) {
           result->push_back(filename.substr(
-                d.size() + 1, next_slash - d.size() - 1));
+                              d.size() + 1, next_slash - d.size() - 1));
         } else {
           result->push_back(filename.substr(d.size() + 1));
         }
@@ -542,7 +556,7 @@ Status MockEnv::GetFileSize(const std::string& fname, uint64_t* file_size) {
 }
 
 Status MockEnv::GetFileModificationTime(const std::string& fname,
-                                           uint64_t* time) {
+                                        uint64_t* time) {
   auto fn = NormalizePath(fname);
   MutexLock lock(&mutex_);
   auto iter = file_map_.find(fn);
@@ -581,7 +595,7 @@ Status MockEnv::LinkFile(const std::string& src, const std::string& dest) {
 }
 
 Status MockEnv::NewLogger(const std::string& fname,
-                             shared_ptr<Logger>* result) {
+                          shared_ptr<Logger>* result) {
   auto fn = NormalizePath(fname);
   MutexLock lock(&mutex_);
   auto iter = file_map_.find(fn);

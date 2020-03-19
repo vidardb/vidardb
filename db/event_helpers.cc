@@ -17,14 +17,14 @@ inline T SafeDivide(T a, T b) {
 void EventHelpers::AppendCurrentTime(JSONWriter* jwriter) {
   *jwriter << "time_micros"
            << std::chrono::duration_cast<std::chrono::microseconds>(
-                  std::chrono::system_clock::now().time_since_epoch()).count();
+             std::chrono::system_clock::now().time_since_epoch()).count();
 }
 
 #ifndef VIDARDB_LITE
 void EventHelpers::NotifyTableFileCreationStarted(
-    const std::vector<std::shared_ptr<EventListener>>& listeners,
-    const std::string& db_name, const std::string& cf_name,
-    const std::string& file_path, int job_id, TableFileCreationReason reason) {
+  const std::vector<std::shared_ptr<EventListener>>& listeners,
+  const std::string& db_name, const std::string& cf_name,
+  const std::string& file_path, int job_id, TableFileCreationReason reason) {
   TableFileCreationBriefInfo info;
   info.db_name = db_name;
   info.cf_name = cf_name;
@@ -38,12 +38,12 @@ void EventHelpers::NotifyTableFileCreationStarted(
 #endif  // !VIDARDB_LITE
 
 void EventHelpers::LogAndNotifyTableFileCreationFinished(
-    EventLogger* event_logger,
-    const std::vector<std::shared_ptr<EventListener>>& listeners,
-    const std::string& db_name, const std::string& cf_name,
-    const std::string& file_path, int job_id, const FileDescriptor& fd,
-    const TableProperties& table_properties, TableFileCreationReason reason,
-    const Status& s) {
+  EventLogger* event_logger,
+  const std::vector<std::shared_ptr<EventListener>>& listeners,
+  const std::string& db_name, const std::string& cf_name,
+  const std::string& file_path, int job_id, const FileDescriptor& fd,
+  const TableProperties& table_properties, TableFileCreationReason reason,
+  const Status& s) {
   if (s.ok() && event_logger) {
     JSONWriter jwriter;
     AppendCurrentTime(&jwriter);
@@ -102,10 +102,10 @@ void EventHelpers::LogAndNotifyTableFileCreationFinished(
 }
 
 void EventHelpers::LogAndNotifyTableFileDeletion(
-    EventLogger* event_logger, int job_id,
-    uint64_t file_number, const std::string& file_path,
-    const Status& status, const std::string& dbname,
-    const std::vector<std::shared_ptr<EventListener>>& listeners) {
+  EventLogger* event_logger, int job_id,
+  uint64_t file_number, const std::string& file_path,
+  const Status& status, const std::string& dbname,
+  const std::vector<std::shared_ptr<EventListener>>& listeners) {
 
   JSONWriter jwriter;
   AppendCurrentTime(&jwriter);

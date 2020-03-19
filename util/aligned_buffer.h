@@ -33,7 +33,7 @@ class AlignedBuffer {
   size_t cursize_;
   char* bufstart_;
 
-public:
+ public:
   AlignedBuffer()
     : alignment_(),
       capacity_(0),
@@ -95,8 +95,8 @@ public:
 
     char* p = buf_.get();
     bufstart_ = reinterpret_cast<char*>(
-      (reinterpret_cast<uintptr_t>(p)+(alignment_ - 1)) &
-      ~static_cast<uintptr_t>(alignment_ - 1));
+                  (reinterpret_cast<uintptr_t>(p)+(alignment_ - 1)) &
+                  ~static_cast<uintptr_t>(alignment_ - 1));
     capacity_ = size;
     cursize_ = 0;
   }

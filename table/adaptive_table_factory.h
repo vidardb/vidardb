@@ -32,12 +32,14 @@ class AdaptiveTableFactory : public TableFactory {
   ~AdaptiveTableFactory();
 
   explicit AdaptiveTableFactory(
-      std::shared_ptr<TableFactory> table_factory_to_write,
-      std::shared_ptr<TableFactory> block_based_table_factory,
-      std::shared_ptr<TableFactory> column_table_factory,  // Shichao
-      int knob);  // Shichao
+    std::shared_ptr<TableFactory> table_factory_to_write,
+    std::shared_ptr<TableFactory> block_based_table_factory,
+    std::shared_ptr<TableFactory> column_table_factory,  // Shichao
+    int knob);  // Shichao
 
-  const char* Name() const override { return "AdaptiveTableFactory"; }
+  const char* Name() const override {
+    return "AdaptiveTableFactory";
+  }
 
   Status NewTableReader(const TableReaderOptions& table_reader_options,
                         unique_ptr<RandomAccessFileReader>&& file,
@@ -45,8 +47,8 @@ class AdaptiveTableFactory : public TableFactory {
                         unique_ptr<TableReader>* table) const override;
 
   TableBuilder* NewTableBuilder(
-      const TableBuilderOptions& table_builder_options,
-      uint32_t column_family_id, WritableFileWriter* file) const override;
+    const TableBuilderOptions& table_builder_options,
+    uint32_t column_family_id, WritableFileWriter* file) const override;
 
   // Sanitizes the specified DB Options.
   Status SanitizeOptions(const DBOptions& db_opts,
@@ -59,13 +61,15 @@ class AdaptiveTableFactory : public TableFactory {
   /********************** Shichao **********************/
   // not thread-safe
   void SetWriteTableFactory(
-      std::shared_ptr<TableFactory> table_factory_to_write);
+    std::shared_ptr<TableFactory> table_factory_to_write);
 
   // thread-safe
   void SetOutputLevel(
-      const std::string& file_name, int output_level);
+    const std::string& file_name, int output_level);
 
-  int GetKnob() const { return knob_; }
+  int GetKnob() const {
+    return knob_;
+  }
   /********************** Shichao **********************/
 
  private:

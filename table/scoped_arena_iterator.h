@@ -13,15 +13,23 @@ namespace vidardb {
 class ScopedArenaIterator {
  public:
   explicit ScopedArenaIterator(InternalIterator* iter = nullptr)
-      : iter_(iter) {}
+    : iter_(iter) {}
 
-  InternalIterator* operator->() { return iter_; }
+  InternalIterator* operator->() {
+    return iter_;
+  }
 
-  void set(InternalIterator* iter) { iter_ = iter; }
+  void set(InternalIterator* iter) {
+    iter_ = iter;
+  }
 
-  InternalIterator* get() { return iter_; }
+  InternalIterator* get() {
+    return iter_;
+  }
 
-  ~ScopedArenaIterator() { iter_->~InternalIterator(); }
+  ~ScopedArenaIterator() {
+    iter_->~InternalIterator();
+  }
 
  private:
   InternalIterator* iter_;

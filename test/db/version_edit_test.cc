@@ -103,18 +103,18 @@ TEST_F(VersionEditTest, ForwardCompatibleNewFile4) {
   // Call back function to add extra customized builds.
   bool first = true;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "VersionEdit::EncodeTo:NewFile4:CustomizeFields", [&](void* arg) {
-        std::string* str = reinterpret_cast<std::string*>(arg);
-        PutVarint32(str, 33);
-        const std::string str1 = "random_string";
-        PutLengthPrefixedSlice(str, str1);
-        if (first) {
-          first = false;
-          PutVarint32(str, 22);
-          const std::string str2 = "s";
-          PutLengthPrefixedSlice(str, str2);
-        }
-      });
+  "VersionEdit::EncodeTo:NewFile4:CustomizeFields", [&](void* arg) {
+    std::string* str = reinterpret_cast<std::string*>(arg);
+    PutVarint32(str, 33);
+    const std::string str1 = "random_string";
+    PutLengthPrefixedSlice(str, str1);
+    if (first) {
+      first = false;
+      PutVarint32(str, 22);
+      const std::string str2 = "s";
+      PutLengthPrefixedSlice(str, str2);
+    }
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   edit.EncodeTo(&encoded);
   vidardb::SyncPoint::GetInstance()->DisableProcessing();
@@ -147,11 +147,11 @@ TEST_F(VersionEditTest, NewFile4NotSupportedField) {
 
   // Call back function to add extra customized builds.
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "VersionEdit::EncodeTo:NewFile4:CustomizeFields", [&](void* arg) {
-        std::string* str = reinterpret_cast<std::string*>(arg);
-        const std::string str1 = "s";
-        PutLengthPrefixedSlice(str, str1);
-      });
+  "VersionEdit::EncodeTo:NewFile4:CustomizeFields", [&](void* arg) {
+    std::string* str = reinterpret_cast<std::string*>(arg);
+    const std::string str1 = "s";
+    PutLengthPrefixedSlice(str, str1);
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   edit.EncodeTo(&encoded);
   vidardb::SyncPoint::GetInstance()->DisableProcessing();

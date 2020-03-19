@@ -36,7 +36,7 @@ class FlushedFileCollector : public EventListener {
   ~FlushedFileCollector() {}
 
   virtual void OnFlushCompleted(
-      DB* db, const FlushJobInfo& info) override {
+    DB* db, const FlushJobInfo& info) override {
     std::lock_guard<std::mutex> lock(mutex_);
     flushed_files_.push_back(info.file_path);
   }
@@ -77,8 +77,8 @@ TEST_F(CompactFilesTest, L0ConflictsFiles) {
   assert(db);
 
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      {"CompactFilesImpl:0", "BackgroundCallCompaction:0"},
-      {"BackgroundCallCompaction:1", "CompactFilesImpl:1"},
+    {"CompactFilesImpl:0", "BackgroundCallCompaction:0"},
+    {"BackgroundCallCompaction:1", "CompactFilesImpl:1"},
   });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -104,7 +104,7 @@ TEST_F(CompactFilesTest, L0ConflictsFiles) {
       // already in progress and doesn't do an L0 compaction
       // Once the background compaction finishes, the compact files finishes
       ASSERT_OK(
-          db->CompactFiles(vidardb::CompactionOptions(), {file1, file2}, 0));
+        db->CompactFiles(vidardb::CompactionOptions(), {file1, file2}, 0));
       break;
     }
   }
@@ -180,14 +180,14 @@ TEST_F(CompactFilesTest, CapturingPendingFiles) {
   EXPECT_EQ(5, l0_files.size());
 
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      {"CompactFilesImpl:2", "CompactFilesTest.CapturingPendingFiles:0"},
-      {"CompactFilesTest.CapturingPendingFiles:1", "CompactFilesImpl:3"},
+    {"CompactFilesImpl:2", "CompactFilesTest.CapturingPendingFiles:0"},
+    {"CompactFilesTest.CapturingPendingFiles:1", "CompactFilesImpl:3"},
   });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   // Start compacting files.
   std::thread compaction_thread(
-      [&] { EXPECT_OK(db->CompactFiles(CompactionOptions(), l0_files, 1)); });
+    [&] { EXPECT_OK(db->CompactFiles(CompactionOptions(), l0_files, 1)); });
 
   // In the meantime flush another file.
   TEST_SYNC_POINT("CompactFilesTest.CapturingPendingFiles:0");

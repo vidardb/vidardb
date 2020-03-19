@@ -171,11 +171,11 @@ DEFINE_int64(merge_keys, -1,
 DEFINE_int32(num_column_families, 1, "Number of Column Families to use.");
 
 DEFINE_int32(
-    num_hot_column_families, 0,
-    "Number of Hot Column Families. If more than 0, only write to this "
-    "number of column families. After finishing all the writes to them, "
-    "create new set of column families and insert to them. Only used "
-    "when num_column_families > 1.");
+  num_hot_column_families, 0,
+  "Number of Hot Column Families. If more than 0, only write to this "
+  "number of column families. After finishing all the writes to them, "
+  "create new set of column families and insert to them. Only used "
+  "when num_column_families > 1.");
 
 DEFINE_int64(reads, -1, "Number of read operations to do.  "
              "If negative, do FLAGS_num reads.");
@@ -287,8 +287,8 @@ DEFINE_uint64(subcompactions, 1,
               "Maximum number of subcompactions to divide L0-L1 compactions "
               "into.");
 static const bool FLAGS_subcompactions_dummy
-    __attribute__((unused)) = RegisterFlagValidator(&FLAGS_subcompactions,
-                                                    &ValidateUint32Range);
+__attribute__((unused)) = RegisterFlagValidator(&FLAGS_subcompactions,
+                          &ValidateUint32Range);
 
 DEFINE_int32(max_background_flushes,
              vidardb::Options().max_background_flushes,
@@ -519,22 +519,22 @@ DEFINE_uint64(transaction_lock_timeout, 100,
               "If using a transaction_db, specifies the lock wait timeout in"
               " milliseconds before failing a transaction waiting on a lock");
 DEFINE_string(
-    options_file, "",
-    "The path to a VidarDB options file.  If specified, then db_bench will "
-    "run with the VidarDB options in the default column family of the "
-    "specified options file. "
-    "Note that with this setting, db_bench will ONLY accept the following "
-    "VidarDB options related command-line arguments, all other arguments "
-    "that are related to VidarDB options will be ignored:\n"
-    "\t--use_existing_db\n"
-    "\t--statistics\n"
-    "\t--row_cache_size\n"
-    "\t--row_cache_numshardbits\n"
-    "\t--enable_io_prio\n"
-    "\t--disable_flashcache_for_background_threads\n"
-    "\t--flashcache_dev\n"
-    "\t--dump_malloc_stats\n"
-    "\t--num_multi_db\n");
+  options_file, "",
+  "The path to a VidarDB options file.  If specified, then db_bench will "
+  "run with the VidarDB options in the default column family of the "
+  "specified options file. "
+  "Note that with this setting, db_bench will ONLY accept the following "
+  "VidarDB options related command-line arguments, all other arguments "
+  "that are related to VidarDB options will be ignored:\n"
+  "\t--use_existing_db\n"
+  "\t--statistics\n"
+  "\t--row_cache_size\n"
+  "\t--row_cache_numshardbits\n"
+  "\t--enable_io_prio\n"
+  "\t--disable_flashcache_for_background_threads\n"
+  "\t--flashcache_dev\n"
+  "\t--dump_malloc_stats\n"
+  "\t--num_multi_db\n");
 #endif  // VIDARDB_LITE
 
 DEFINE_bool(report_bg_io_stats, false,
@@ -577,7 +577,7 @@ std::string ColumnFamilyName(size_t i) {
 DEFINE_string(compression_type, "snappy",
               "Algorithm to use to compress the database");
 static enum vidardb::CompressionType FLAGS_compression_type_e =
-    vidardb::kSnappyCompression;
+  vidardb::kSnappyCompression;
 
 DEFINE_int32(compression_level, -1,
              "Compression level. For zlib this should be -1 for the "
@@ -597,7 +597,7 @@ static bool ValidateCompressionLevel(const char* flagname, int32_t value) {
 }
 
 static const bool FLAGS_compression_level_dummy __attribute__((unused)) =
-    RegisterFlagValidator(&FLAGS_compression_level, &ValidateCompressionLevel);
+  RegisterFlagValidator(&FLAGS_compression_level, &ValidateCompressionLevel);
 
 DEFINE_int32(min_level_to_compress, -1, "If non-negative, compression starts"
              " from this level. Levels with number < min_level_to_compress are"
@@ -605,7 +605,7 @@ DEFINE_int32(min_level_to_compress, -1, "If non-negative, compression starts"
              "all levels.");
 
 static bool ValidateTableCacheNumshardbits(const char* flagname,
-                                           int32_t value) {
+    int32_t value) {
   if (0 >= value || value > 20) {
     fprintf(stderr, "Invalid value for --%s: %d, must be  0 < val <= 20\n",
             flagname, value);
@@ -676,8 +676,8 @@ DEFINE_bool(enable_write_thread_adaptive_yield, false,
             "Use a yielding spin loop for brief writer thread waits.");
 
 DEFINE_uint64(
-    write_thread_max_yield_usec, 100,
-    "Maximum microseconds for enable_write_thread_adaptive_yield operation.");
+  write_thread_max_yield_usec, 100,
+  "Maximum microseconds for enable_write_thread_adaptive_yield operation.");
 
 DEFINE_uint64(write_thread_slow_yield_usec, 3,
               "The threshold at which a slow yield is considered a signal that "
@@ -690,9 +690,9 @@ DEFINE_int32(rate_limit_delay_max_milliseconds, 1000,
 DEFINE_uint64(rate_limiter_bytes_per_sec, 0, "Set options.rate_limiter value.");
 
 DEFINE_uint64(
-    benchmark_write_rate_limit, 0,
-    "If non-zero, db_bench will rate-limit the writes going into VidarDB. This "
-    "is the global rate in bytes/second.");
+  benchmark_write_rate_limit, 0,
+  "If non-zero, db_bench will rate-limit the writes going into VidarDB. This "
+  "is the global rate in bytes/second.");
 
 DEFINE_int32(max_grandparent_overlap_factor, 10, "Control maximum bytes of "
              "overlaps in grandparent (i.e., level+2) before we stop building a"
@@ -825,32 +825,32 @@ DEFINE_bool(report_file_operations, false, "if report number of file "
             "operations");
 
 static const bool FLAGS_soft_rate_limit_dummy __attribute__((unused)) =
-    RegisterFlagValidator(&FLAGS_soft_rate_limit, &ValidateRateLimit);
+  RegisterFlagValidator(&FLAGS_soft_rate_limit, &ValidateRateLimit);
 
 static const bool FLAGS_hard_rate_limit_dummy __attribute__((unused)) =
-    RegisterFlagValidator(&FLAGS_hard_rate_limit, &ValidateRateLimit);
+  RegisterFlagValidator(&FLAGS_hard_rate_limit, &ValidateRateLimit);
 
 static const bool FLAGS_prefix_size_dummy __attribute__((unused)) =
-    RegisterFlagValidator(&FLAGS_prefix_size, &ValidatePrefixSize);
+  RegisterFlagValidator(&FLAGS_prefix_size, &ValidatePrefixSize);
 
 static const bool FLAGS_key_size_dummy __attribute__((unused)) =
-    RegisterFlagValidator(&FLAGS_key_size, &ValidateKeySize);
+  RegisterFlagValidator(&FLAGS_key_size, &ValidateKeySize);
 
 static const bool FLAGS_cache_numshardbits_dummy __attribute__((unused)) =
-    RegisterFlagValidator(&FLAGS_cache_numshardbits,
-                          &ValidateCacheNumshardbits);
+  RegisterFlagValidator(&FLAGS_cache_numshardbits,
+                        &ValidateCacheNumshardbits);
 
 static const bool FLAGS_readwritepercent_dummy __attribute__((unused)) =
-    RegisterFlagValidator(&FLAGS_readwritepercent, &ValidateInt32Percent);
+  RegisterFlagValidator(&FLAGS_readwritepercent, &ValidateInt32Percent);
 
 DEFINE_int32(disable_seek_compaction, false,
              "Not used, left here for backwards compatibility");
 
 static const bool FLAGS_deletepercent_dummy __attribute__((unused)) =
-    RegisterFlagValidator(&FLAGS_deletepercent, &ValidateInt32Percent);
+  RegisterFlagValidator(&FLAGS_deletepercent, &ValidateInt32Percent);
 static const bool FLAGS_table_cache_numshardbits_dummy __attribute__((unused)) =
-    RegisterFlagValidator(&FLAGS_table_cache_numshardbits,
-                          &ValidateTableCacheNumshardbits);
+  RegisterFlagValidator(&FLAGS_table_cache_numshardbits,
+                        &ValidateTableCacheNumshardbits);
 }  // namespace
 
 namespace vidardb {
@@ -867,7 +867,9 @@ struct ReportFileOpCounters {
 // A special Env to records and report file operations in db_bench
 class ReportFileOpEnv : public EnvWrapper {
  public:
-  explicit ReportFileOpEnv(Env* base) : EnvWrapper(base) { reset(); }
+  explicit ReportFileOpEnv(Env* base) : EnvWrapper(base) {
+    reset();
+  }
 
   void reset() {
     counters_.open_counter_ = 0;
@@ -887,7 +889,7 @@ class ReportFileOpEnv : public EnvWrapper {
      public:
       CountingFile(unique_ptr<SequentialFile>&& target,
                    ReportFileOpCounters* counters)
-          : target_(std::move(target)), counters_(counters) {}
+        : target_(std::move(target)), counters_(counters) {}
 
       virtual Status Read(size_t n, Slice* result, char* scratch) override {
         counters_->read_counter_.fetch_add(1, std::memory_order_relaxed);
@@ -897,7 +899,9 @@ class ReportFileOpEnv : public EnvWrapper {
         return rv;
       }
 
-      virtual Status Skip(uint64_t n) override { return target_->Skip(n); }
+      virtual Status Skip(uint64_t n) override {
+        return target_->Skip(n);
+      }
     };
 
     Status s = target()->NewSequentialFile(f, r, soptions);
@@ -919,7 +923,7 @@ class ReportFileOpEnv : public EnvWrapper {
      public:
       CountingFile(unique_ptr<RandomAccessFile>&& target,
                    ReportFileOpCounters* counters)
-          : target_(std::move(target)), counters_(counters) {}
+        : target_(std::move(target)), counters_(counters) {}
       virtual Status Read(uint64_t offset, size_t n, Slice* result,
                           char* scratch) const override {
         counters_->read_counter_.fetch_add(1, std::memory_order_relaxed);
@@ -948,7 +952,7 @@ class ReportFileOpEnv : public EnvWrapper {
      public:
       CountingFile(unique_ptr<WritableFile>&& target,
                    ReportFileOpCounters* counters)
-          : target_(std::move(target)), counters_(counters) {}
+        : target_(std::move(target)), counters_(counters) {}
 
       Status Append(const Slice& data) override {
         counters_->append_counter_.fetch_add(1, std::memory_order_relaxed);
@@ -958,10 +962,18 @@ class ReportFileOpEnv : public EnvWrapper {
         return rv;
       }
 
-      Status Truncate(uint64_t size) override { return target_->Truncate(size); }
-      Status Close() override { return target_->Close(); }
-      Status Flush() override { return target_->Flush(); }
-      Status Sync() override { return target_->Sync(); }
+      Status Truncate(uint64_t size) override {
+        return target_->Truncate(size);
+      }
+      Status Close() override {
+        return target_->Close();
+      }
+      Status Flush() override {
+        return target_->Flush();
+      }
+      Status Sync() override {
+        return target_->Sync();
+      }
     };
 
     Status s = target()->NewWritableFile(f, r, soptions);
@@ -973,7 +985,9 @@ class ReportFileOpEnv : public EnvWrapper {
   }
 
   // getter
-  ReportFileOpCounters* counters() { return &counters_; }
+  ReportFileOpCounters* counters() {
+    return &counters_;
+  }
 
  private:
   ReportFileOpCounters counters_;
@@ -1025,29 +1039,30 @@ struct DBWithColumnFamilies {
   std::vector<ColumnFamilyHandle*> cfh;
   DB* db;
   std::atomic<size_t> num_created;  // Need to be updated after all the
-                                    // new entries in cfh are set.
+  // new entries in cfh are set.
   size_t num_hot;  // Number of column families to be queried at each moment.
-                   // After each CreateNewCf(), another num_hot number of new
-                   // Column families will be created and used to be queried.
+  // After each CreateNewCf(), another num_hot number of new
+  // Column families will be created and used to be queried.
   port::Mutex create_cf_mutex;  // Only one thread can execute CreateNewCf()
 
   DBWithColumnFamilies()
-      : db(nullptr)
-  {
+    : db(nullptr) {
     cfh.clear();
     num_created = 0;
     num_hot = 0;
   }
 
   DBWithColumnFamilies(const DBWithColumnFamilies& other)
-      : cfh(other.cfh),
-        db(other.db),
-        num_created(other.num_created.load()),
-        num_hot(other.num_hot) {}
+    : cfh(other.cfh),
+      db(other.db),
+      num_created(other.num_created.load()),
+      num_hot(other.num_hot) {}
 
   void DeleteDBs() {
     std::for_each(cfh.begin(), cfh.end(),
-                  [](ColumnFamilyHandle* cfhi) { delete cfhi; });
+    [](ColumnFamilyHandle* cfhi) {
+      delete cfhi;
+    });
     cfh.clear();
     delete db;
     db = nullptr;
@@ -1071,7 +1086,7 @@ struct DBWithColumnFamilies {
     assert(new_num_created <= cfh.size());
     for (size_t i = num_created; i < new_num_created; i++) {
       Status s =
-          db->CreateColumnFamily(options, ColumnFamilyName(i), &(cfh[i]));
+        db->CreateColumnFamily(options, ColumnFamilyName(i), &(cfh[i]));
       if (!s.ok()) {
         fprintf(stderr, "create column family error: %s\n",
                 s.ToString().c_str());
@@ -1087,11 +1102,11 @@ class ReporterAgent {
  public:
   ReporterAgent(Env* env, const std::string& fname,
                 uint64_t report_interval_secs)
-      : env_(env),
-        total_ops_done_(0),
-        last_report_(0),
-        report_interval_secs_(report_interval_secs),
-        stop_(false) {
+    : env_(env),
+      total_ops_done_(0),
+      last_report_(0),
+      report_interval_secs_(report_interval_secs),
+      stop_(false) {
     auto s = env_->NewWritableFile(fname, &report_file_, EnvOptions());
     if (s.ok()) {
       s = report_file_->Append(Header() + "\n");
@@ -1105,7 +1120,9 @@ class ReporterAgent {
       abort();
     }
 
-    reporting_thread_ = std::thread([&]() { SleepAndReport(); });
+    reporting_thread_ = std::thread([&]() {
+      SleepAndReport();
+    });
   }
 
   ~ReporterAgent() {
@@ -1123,7 +1140,9 @@ class ReporterAgent {
   }
 
  private:
-  std::string Header() const { return "secs_elapsed,interval_qps"; }
+  std::string Header() const {
+    return "secs_elapsed,interval_qps";
+  }
   void SleepAndReport() {
     uint64_t kMicrosInSecond = 1000 * 1000;
     auto time_started = env_->NowMicros();
@@ -1132,7 +1151,9 @@ class ReporterAgent {
         std::unique_lock<std::mutex> lk(mutex_);
         if (stop_ ||
             stop_cv_.wait_for(lk, std::chrono::seconds(report_interval_secs_),
-                              [&]() { return stop_; })) {
+        [&]() {
+        return stop_;
+      })) {
           // stopping
           break;
         }
@@ -1141,8 +1162,8 @@ class ReporterAgent {
       auto total_ops_done_snapshot = total_ops_done_.load();
       // round the seconds elapsed
       auto secs_elapsed =
-          (env_->NowMicros() - time_started + kMicrosInSecond / 2) /
-          kMicrosInSecond;
+        (env_->NowMicros() - time_started + kMicrosInSecond / 2) /
+        kMicrosInSecond;
       std::string report = ToString(secs_elapsed) + "," +
                            ToString(total_ops_done_snapshot - last_report_) +
                            "\n";
@@ -1186,7 +1207,7 @@ enum OperationType : unsigned char {
 };
 
 static std::unordered_map<OperationType, std::string, std::hash<unsigned char>>
-                          OperationTypeString = {
+OperationTypeString = {
   {kRead, "read"},
   {kWrite, "write"},
   {kDelete, "delete"},
@@ -1212,13 +1233,15 @@ class Stats {
   uint64_t last_op_finish_;
   uint64_t last_report_finish_;
   std::unordered_map<OperationType, std::shared_ptr<HistogramImpl>,
-                     std::hash<unsigned char>> hist_;
+      std::hash<unsigned char>> hist_;
   std::string message_;
   bool exclude_from_merge_;
   ReporterAgent* reporter_agent_;  // does not own
 
  public:
-  Stats() { Start(-1); }
+  Stats() {
+    Start(-1);
+  }
 
   void SetReporterAgent(ReporterAgent* reporter_agent) {
     reporter_agent_ = reporter_agent;
@@ -1274,34 +1297,38 @@ class Stats {
     AppendWithSpace(&message_, msg);
   }
 
-  void SetId(int id) { id_ = id; }
-  void SetExcludeFromMerge() { exclude_from_merge_ = true; }
+  void SetId(int id) {
+    id_ = id;
+  }
+  void SetExcludeFromMerge() {
+    exclude_from_merge_ = true;
+  }
 
   void PrintThreadStatus() {
     std::vector<ThreadStatus> thread_list;
     FLAGS_env->GetThreadList(&thread_list);
 
     fprintf(stderr, "\n%18s %10s %12s %20s %13s %45s %12s %s\n",
-        "ThreadID", "ThreadType", "cfName", "Operation",
-        "ElapsedTime", "Stage", "State", "OperationProperties");
+            "ThreadID", "ThreadType", "cfName", "Operation",
+            "ElapsedTime", "Stage", "State", "OperationProperties");
 
     int64_t current_time = 0;
     Env::Default()->GetCurrentTime(&current_time);
     for (auto ts : thread_list) {
       fprintf(stderr, "%18" PRIu64 " %10s %12s %20s %13s %45s %12s",
-          ts.thread_id,
-          ThreadStatus::GetThreadTypeName(ts.thread_type).c_str(),
-          ts.cf_name.c_str(),
-          ThreadStatus::GetOperationName(ts.operation_type).c_str(),
-          ThreadStatus::MicrosToString(ts.op_elapsed_micros).c_str(),
-          ThreadStatus::GetOperationStageName(ts.operation_stage).c_str(),
-          ThreadStatus::GetStateName(ts.state_type).c_str());
+              ts.thread_id,
+              ThreadStatus::GetThreadTypeName(ts.thread_type).c_str(),
+              ts.cf_name.c_str(),
+              ThreadStatus::GetOperationName(ts.operation_type).c_str(),
+              ThreadStatus::MicrosToString(ts.op_elapsed_micros).c_str(),
+              ThreadStatus::GetOperationStageName(ts.operation_stage).c_str(),
+              ThreadStatus::GetStateName(ts.state_type).c_str());
 
       auto op_properties = ThreadStatus::InterpretOperationProperties(
-          ts.operation_type, ts.op_properties);
+                             ts.operation_type, ts.op_properties);
       for (const auto& op_prop : op_properties) {
         fprintf(stderr, " %s %" PRIu64" |",
-            op_prop.first.c_str(), op_prop.second);
+                op_prop.first.c_str(), op_prop.second);
       }
       fprintf(stderr, "\n");
     }
@@ -1321,8 +1348,7 @@ class Stats {
       uint64_t now = FLAGS_env->NowMicros();
       uint64_t micros = now - last_op_finish_;
 
-      if (hist_.find(op_type) == hist_.end())
-      {
+      if (hist_.find(op_type) == hist_.end()) {
         auto hist_temp = std::make_shared<HistogramImpl>();
         hist_.insert({op_type, std::move(hist_temp)});
       }
@@ -1383,10 +1409,10 @@ class Stats {
                 if (FLAGS_show_table_properties) {
                   for (int level = 0; level < FLAGS_num_levels; ++level) {
                     if (db->GetProperty(
-                            db_with_cfh->cfh[i],
-                            "vidardb.aggregated-table-properties-at-level" +
-                                ToString(level),
-                            &stats)) {
+                          db_with_cfh->cfh[i],
+                          "vidardb.aggregated-table-properties-at-level" +
+                          ToString(level),
+                          &stats)) {
                       if (stats.find("# entries=0") == std::string::npos) {
                         fprintf(stderr, "Level[%d]: %s\n", level,
                                 stats.c_str());
@@ -1402,9 +1428,9 @@ class Stats {
               if (FLAGS_show_table_properties) {
                 for (int level = 0; level < FLAGS_num_levels; ++level) {
                   if (db->GetProperty(
-                          "vidardb.aggregated-table-properties-at-level" +
-                              ToString(level),
-                          &stats)) {
+                        "vidardb.aggregated-table-properties-at-level" +
+                        ToString(level),
+                        &stats)) {
                     if (stats.find("# entries=0") == std::string::npos) {
                       fprintf(stderr, "Level[%d]: %s\n", level, stats.c_str());
                     }
@@ -1509,8 +1535,8 @@ struct ThreadState {
   SharedState* shared;
 
   /* implicit */ ThreadState(int index)
-      : tid(index),
-        rand((FLAGS_seed ? FLAGS_seed : 1000) + index) {
+    : tid(index),
+      rand((FLAGS_seed ? FLAGS_seed : 1000) + index) {
   }
 };
 
@@ -1524,7 +1550,9 @@ class Duration {
     start_at_ = FLAGS_env->NowMicros();
   }
 
-  int64_t GetStage() { return std::min(ops_, max_ops_ - 1) / ops_per_stage_; }
+  int64_t GetStage() {
+    return std::min(ops_, max_ops_ - 1) / ops_per_stage_;
+  }
 
   bool Done(int64_t increment) {
     if (increment <= 0) increment = 1;    // avoid Done(0) and infinite loops
@@ -1585,36 +1613,36 @@ class Benchmark {
   inline bool CompressSlice(const Slice& input, std::string* compressed) {
     bool ok = true;
     switch (FLAGS_compression_type_e) {
-      case vidardb::kSnappyCompression:
-        ok = Snappy_Compress(Options().compression_opts, input.data(),
-                             input.size(), compressed);
-        break;
-      case vidardb::kZlibCompression:
-        ok = Zlib_Compress(Options().compression_opts, 2, input.data(),
+    case vidardb::kSnappyCompression:
+      ok = Snappy_Compress(Options().compression_opts, input.data(),
                            input.size(), compressed);
-        break;
-      case vidardb::kBZip2Compression:
-        ok = BZip2_Compress(Options().compression_opts, 2, input.data(),
-                            input.size(), compressed);
-        break;
-      case vidardb::kLZ4Compression:
-        ok = LZ4_Compress(Options().compression_opts, 2, input.data(),
+      break;
+    case vidardb::kZlibCompression:
+      ok = Zlib_Compress(Options().compression_opts, 2, input.data(),
+                         input.size(), compressed);
+      break;
+    case vidardb::kBZip2Compression:
+      ok = BZip2_Compress(Options().compression_opts, 2, input.data(),
                           input.size(), compressed);
-        break;
-      case vidardb::kLZ4HCCompression:
-        ok = LZ4HC_Compress(Options().compression_opts, 2, input.data(),
-                            input.size(), compressed);
-        break;
-      case vidardb::kXpressCompression:
-        ok = XPRESS_Compress(input.data(),
-          input.size(), compressed);
-        break;
-      case vidardb::kZSTDNotFinalCompression:
-        ok = ZSTD_Compress(Options().compression_opts, input.data(),
+      break;
+    case vidardb::kLZ4Compression:
+      ok = LZ4_Compress(Options().compression_opts, 2, input.data(),
+                        input.size(), compressed);
+      break;
+    case vidardb::kLZ4HCCompression:
+      ok = LZ4HC_Compress(Options().compression_opts, 2, input.data(),
+                          input.size(), compressed);
+      break;
+    case vidardb::kXpressCompression:
+      ok = XPRESS_Compress(input.data(),
                            input.size(), compressed);
-        break;
-      default:
-        ok = false;
+      break;
+    case vidardb::kZSTDNotFinalCompression:
+      ok = ZSTD_Compress(Options().compression_opts, input.data(),
+                         input.size(), compressed);
+      break;
+    default:
+      ok = false;
     }
     return ok;
   }
@@ -1654,12 +1682,12 @@ class Benchmark {
     fprintf(stdout, "Compression: %s\n", compression.c_str());
 
     switch (FLAGS_rep_factory) {
-      case kPrefixHash:
-        fprintf(stdout, "Memtablerep: prefix_hash\n");
-        break;
-      case kSkipList:
-        fprintf(stdout, "Memtablerep: skip_list\n");
-        break;
+    case kPrefixHash:
+      fprintf(stdout, "Memtablerep: prefix_hash\n");
+      break;
+    case kSkipList:
+      fprintf(stdout, "Memtablerep: skip_list\n");
+      break;
     }
     fprintf(stdout, "Perf Level: %d\n", FLAGS_perf_level);
 
@@ -1671,7 +1699,7 @@ class Benchmark {
 #if defined(__GNUC__) && !defined(__OPTIMIZE__)
     fprintf(stdout,
             "WARNING: Optimization is disabled: benchmarks unnecessarily slow\n"
-            );
+           );
 #endif
 #ifndef NDEBUG
     fprintf(stdout,
@@ -1750,34 +1778,34 @@ class Benchmark {
 
  public:
   Benchmark()
-      : cache_(
-            FLAGS_cache_size >= 0
-                ? (FLAGS_cache_numshardbits >= 1
-                       ? NewLRUCache(FLAGS_cache_size, FLAGS_cache_numshardbits)
-                       : NewLRUCache(FLAGS_cache_size))
-                : nullptr),
-        compressed_cache_(FLAGS_compressed_cache_size >= 0
-                              ? (FLAGS_cache_numshardbits >= 1
-                                     ? NewLRUCache(FLAGS_compressed_cache_size,
-                                                   FLAGS_cache_numshardbits)
-                                     : NewLRUCache(FLAGS_compressed_cache_size))
-                              : nullptr),
-        num_(FLAGS_num),
-        value_size_(FLAGS_value_size),
-        key_size_(FLAGS_key_size),
-        prefix_size_(FLAGS_prefix_size),
-        keys_per_prefix_(FLAGS_keys_per_prefix),
-        entries_per_batch_(1),
-        reads_(FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads),
-        read_random_exp_range_(0.0),
-        writes_(FLAGS_writes < 0 ? FLAGS_num : FLAGS_writes),
-        readwrites_(
-            (FLAGS_writes < 0 && FLAGS_reads < 0)
-                ? FLAGS_num
-                : ((FLAGS_writes > FLAGS_reads) ? FLAGS_writes : FLAGS_reads)),
-        merge_keys_(FLAGS_merge_keys < 0 ? FLAGS_num : FLAGS_merge_keys),
-        report_file_operations_(FLAGS_report_file_operations),
-        cachedev_fd_(-1) {
+    : cache_(
+        FLAGS_cache_size >= 0
+        ? (FLAGS_cache_numshardbits >= 1
+           ? NewLRUCache(FLAGS_cache_size, FLAGS_cache_numshardbits)
+           : NewLRUCache(FLAGS_cache_size))
+        : nullptr),
+      compressed_cache_(FLAGS_compressed_cache_size >= 0
+                        ? (FLAGS_cache_numshardbits >= 1
+                           ? NewLRUCache(FLAGS_compressed_cache_size,
+                                         FLAGS_cache_numshardbits)
+                           : NewLRUCache(FLAGS_compressed_cache_size))
+                        : nullptr),
+      num_(FLAGS_num),
+      value_size_(FLAGS_value_size),
+      key_size_(FLAGS_key_size),
+      prefix_size_(FLAGS_prefix_size),
+      keys_per_prefix_(FLAGS_keys_per_prefix),
+      entries_per_batch_(1),
+      reads_(FLAGS_reads < 0 ? FLAGS_num : FLAGS_reads),
+      read_random_exp_range_(0.0),
+      writes_(FLAGS_writes < 0 ? FLAGS_num : FLAGS_writes),
+      readwrites_(
+        (FLAGS_writes < 0 && FLAGS_reads < 0)
+        ? FLAGS_num
+        : ((FLAGS_writes > FLAGS_reads) ? FLAGS_writes : FLAGS_reads)),
+      merge_keys_(FLAGS_merge_keys < 0 ? FLAGS_num : FLAGS_merge_keys),
+      report_file_operations_(FLAGS_report_file_operations),
+      cachedev_fd_(-1) {
 
     if (report_file_operations_) {
       if (!FLAGS_hdfs.empty()) {
@@ -2223,19 +2251,19 @@ class Benchmark {
     while (ok && bytes < 1024 * 1048576) {
       char *uncompressed = nullptr;
       switch (FLAGS_compression_type_e) {
-        case vidardb::kSnappyCompression: {
-          // get size and allocate here to make comparison fair
-          size_t ulength = 0;
-          if (!Snappy_GetUncompressedLength(compressed.data(),
-                                            compressed.size(), &ulength)) {
-            ok = false;
-            break;
-          }
-          uncompressed = new char[ulength];
-          ok = Snappy_Uncompress(compressed.data(), compressed.size(),
-                                 uncompressed);
+      case vidardb::kSnappyCompression: {
+        // get size and allocate here to make comparison fair
+        size_t ulength = 0;
+        if (!Snappy_GetUncompressedLength(compressed.data(),
+                                          compressed.size(), &ulength)) {
+          ok = false;
           break;
         }
+        uncompressed = new char[ulength];
+        ok = Snappy_Uncompress(compressed.data(), compressed.size(),
+                               uncompressed);
+        break;
+      }
       case vidardb::kZlibCompression:
         uncompressed = Zlib_Uncompress(compressed.data(), compressed.size(),
                                        &decompress_size, 2);
@@ -2258,7 +2286,7 @@ class Benchmark {
         break;
       case vidardb::kXpressCompression:
         uncompressed = XPRESS_Uncompress(compressed.data(), compressed.size(),
-          &decompress_size);
+                                         &decompress_size);
         ok = uncompressed != nullptr;
         break;
       case vidardb::kZSTDNotFinalCompression:
@@ -2301,7 +2329,7 @@ class Benchmark {
     options.min_write_buffer_number_to_merge =
       FLAGS_min_write_buffer_number_to_merge;
     options.max_write_buffer_number_to_maintain =
-        FLAGS_max_write_buffer_number_to_maintain;
+      FLAGS_max_write_buffer_number_to_maintain;
     options.max_background_compactions = FLAGS_max_background_compactions;
     options.max_subcompactions = static_cast<uint32_t>(FLAGS_subcompactions);
     options.max_background_flushes = FLAGS_max_background_flushes;
@@ -2316,7 +2344,7 @@ class Benchmark {
     }
     options.max_file_opening_threads = FLAGS_file_opening_threads;
     options.new_table_reader_for_compaction_inputs =
-        FLAGS_new_table_reader_for_compaction_inputs;
+      FLAGS_new_table_reader_for_compaction_inputs;
     options.compaction_readahead_size = FLAGS_compaction_readahead_size;
     options.random_access_max_buffer_size = FLAGS_random_access_max_buffer_size;
     options.writable_file_max_buffer_size = FLAGS_writable_file_max_buffer_size;
@@ -2327,36 +2355,36 @@ class Benchmark {
     options.target_file_size_multiplier = FLAGS_target_file_size_multiplier;
     options.max_bytes_for_level_base = FLAGS_max_bytes_for_level_base;
     options.level_compaction_dynamic_level_bytes =
-        FLAGS_level_compaction_dynamic_level_bytes;
+      FLAGS_level_compaction_dynamic_level_bytes;
     options.max_bytes_for_level_multiplier =
-        FLAGS_max_bytes_for_level_multiplier;
+      FLAGS_max_bytes_for_level_multiplier;
     options.filter_deletes = FLAGS_filter_deletes;
     if ((FLAGS_prefix_size == 0) && (FLAGS_rep_factory == kPrefixHash)) {
       fprintf(stderr, "prefix_size should be non-zero if PrefixHash or "
-                      "HashLinkedList memtablerep is used\n");
+              "HashLinkedList memtablerep is used\n");
       exit(1);
     }
     switch (FLAGS_rep_factory) {
-      case kSkipList:
-        options.memtable_factory.reset(new SkipListFactory(
-            FLAGS_skip_list_lookahead));
-        break;
-      default:
-        fprintf(stderr, "Only skip list is supported in lite mode\n");
+    case kSkipList:
+      options.memtable_factory.reset(new SkipListFactory(
+                                       FLAGS_skip_list_lookahead));
+      break;
+    default:
+      fprintf(stderr, "Only skip list is supported in lite mode\n");
     }
 
-      BlockBasedTableOptions block_based_options;
+    BlockBasedTableOptions block_based_options;
 
-      if (cache_ == nullptr) {
-        block_based_options.no_block_cache = true;
-      }
-      block_based_options.block_cache = cache_;
-      block_based_options.block_size = FLAGS_block_size;
-      block_based_options.block_restart_interval = FLAGS_block_restart_interval;
-      block_based_options.index_block_restart_interval =
-          FLAGS_index_block_restart_interval;
-      options.table_factory.reset(
-          NewBlockBasedTableFactory(block_based_options));
+    if (cache_ == nullptr) {
+      block_based_options.no_block_cache = true;
+    }
+    block_based_options.block_cache = cache_;
+    block_based_options.block_size = FLAGS_block_size;
+    block_based_options.block_restart_interval = FLAGS_block_restart_interval;
+    block_based_options.index_block_restart_interval =
+      FLAGS_index_block_restart_interval;
+    options.table_factory.reset(
+      NewBlockBasedTableFactory(block_based_options));
 
     if (FLAGS_max_bytes_for_level_multiplier_additional_v.size() > 0) {
       if (FLAGS_max_bytes_for_level_multiplier_additional_v.size() !=
@@ -2370,7 +2398,7 @@ class Benchmark {
     }
     options.level0_stop_writes_trigger = FLAGS_level0_stop_writes_trigger;
     options.level0_file_num_compaction_trigger =
-        FLAGS_level0_file_num_compaction_trigger;
+      FLAGS_level0_file_num_compaction_trigger;
     options.level0_slowdown_writes_trigger =
       FLAGS_level0_slowdown_writes_trigger;
     options.compression = FLAGS_compression_type_e;
@@ -2394,14 +2422,14 @@ class Benchmark {
     options.soft_rate_limit = FLAGS_soft_rate_limit;
     options.hard_rate_limit = FLAGS_hard_rate_limit;
     options.soft_pending_compaction_bytes_limit =
-        FLAGS_soft_pending_compaction_bytes_limit;
+      FLAGS_soft_pending_compaction_bytes_limit;
     options.hard_pending_compaction_bytes_limit =
-        FLAGS_hard_pending_compaction_bytes_limit;
+      FLAGS_hard_pending_compaction_bytes_limit;
     options.delayed_write_rate = FLAGS_delayed_write_rate;
     options.allow_concurrent_memtable_write =
-        FLAGS_allow_concurrent_memtable_write;
+      FLAGS_allow_concurrent_memtable_write;
     options.enable_write_thread_adaptive_yield =
-        FLAGS_enable_write_thread_adaptive_yield;
+      FLAGS_enable_write_thread_adaptive_yield;
     options.write_thread_max_yield_usec = FLAGS_write_thread_max_yield_usec;
     options.write_thread_slow_yield_usec = FLAGS_write_thread_slow_yield_usec;
     options.rate_limit_delay_max_milliseconds =
@@ -2448,7 +2476,7 @@ class Benchmark {
         FLAGS_universal_compression_size_percent;
     }
     options.compaction_options_universal.allow_trivial_move =
-        FLAGS_universal_allow_trivial_move;
+      FLAGS_universal_allow_trivial_move;
     if (FLAGS_thread_status_per_interval > 0) {
       options.enable_thread_tracking = true;
     }
@@ -2475,7 +2503,7 @@ class Benchmark {
     if (FLAGS_row_cache_size) {
       if (FLAGS_cache_numshardbits >= 1) {
         options.row_cache =
-            NewLRUCache(FLAGS_row_cache_size, FLAGS_cache_numshardbits);
+          NewLRUCache(FLAGS_row_cache_size, FLAGS_cache_numshardbits);
       } else {
         options.row_cache = NewLRUCache(FLAGS_row_cache_size);
       }
@@ -2509,7 +2537,7 @@ class Benchmark {
   }
 
   void OpenDb(const Options& options, const std::string& db_name,
-      DBWithColumnFamilies* db) {
+              DBWithColumnFamilies* db) {
     Status s;
     // Open with column families if necessary.
     if (FLAGS_num_column_families > 1) {
@@ -2523,12 +2551,12 @@ class Benchmark {
       std::vector<ColumnFamilyDescriptor> column_families;
       for (size_t i = 0; i < num_hot; i++) {
         column_families.push_back(ColumnFamilyDescriptor(
-              ColumnFamilyName(i), ColumnFamilyOptions(options)));
+                                    ColumnFamilyName(i), ColumnFamilyOptions(options)));
       }
 #ifndef VIDARDB_LITE
       if (FLAGS_readonly) {
         s = DB::OpenForReadOnly(options, db_name, column_families,
-            &db->cfh, &db->db);
+                                &db->cfh, &db->db);
       } else {
         s = DB::Open(options, db_name, column_families, &db->cfh, &db->db);
       }
@@ -2570,7 +2598,7 @@ class Benchmark {
   class KeyGenerator {
    public:
     KeyGenerator(Random64* rand, WriteMode mode,
-        uint64_t num, uint64_t num_per_set = 64 * 1024)
+                 uint64_t num, uint64_t num_per_set = 64 * 1024)
       : rand_(rand),
         mode_(mode),
         num_(num),
@@ -2585,19 +2613,19 @@ class Benchmark {
           values_[i] = i;
         }
         std::shuffle(
-            values_.begin(), values_.end(),
-            std::default_random_engine(static_cast<unsigned int>(FLAGS_seed)));
+          values_.begin(), values_.end(),
+          std::default_random_engine(static_cast<unsigned int>(FLAGS_seed)));
       }
     }
 
     uint64_t Next() {
       switch (mode_) {
-        case SEQUENTIAL:
-          return next_++;
-        case RANDOM:
-          return rand_->Next() % num_;
-        case UNIQUE_RANDOM:
-          return values_[next_++];
+      case SEQUENTIAL:
+        return next_++;
+      case RANDOM:
+        return rand_->Next() % num_;
+      case UNIQUE_RANDOM:
+        return values_[next_++];
       }
       assert(false);
       return std::numeric_limits<uint64_t>::max();
@@ -2814,7 +2842,7 @@ class Benchmark {
                           read_random_exp_range_;
       long double exp_ran = std::exp(order);
       uint64_t rand_num =
-          static_cast<int64_t>(exp_ran * static_cast<long double>(FLAGS_num));
+        static_cast<int64_t>(exp_ran * static_cast<long double>(FLAGS_num));
       // Map to a different number to avoid locality.
       const uint64_t kBigPrime = 0x5bd1e995;
       // Overflow is like %(2^64). Will have little impact of results.
@@ -3045,7 +3073,7 @@ class Benchmark {
       Status s;
 
       if (write_merge == kWrite) {
-          s = db->Put(write_options_, key, gen.Generate(value_size_));
+        s = db->Put(write_options_, key, gen.Generate(value_size_));
       }
       if (!s.ok()) {
         fprintf(stderr, "put or merge error: %s\n", s.ToString().c_str());
@@ -3167,7 +3195,7 @@ class Benchmark {
         put_weight = 100 - get_weight - delete_weight;
       }
       GenerateKeyFromInt(thread->rand.Next() % FLAGS_numdistinct,
-          FLAGS_numdistinct, &key);
+                         FLAGS_numdistinct, &key);
       if (get_weight > 0) {
         // do all the gets first
         Status s = GetMany(db, options, key, &value);
@@ -3362,7 +3390,7 @@ class Benchmark {
 
     char msg[100];
     snprintf(msg, sizeof(msg), "( updates:%" PRIu64 " found:%" PRIu64 ")",
-            readwrites_, found);
+             readwrites_, found);
     thread->stats.AddBytes(bytes);
     thread->stats.AddMessage(msg);
   }
@@ -3429,7 +3457,7 @@ class Benchmark {
 
     std::default_random_engine generator;
     std::normal_distribution<double> distribution(FLAGS_numdistinct / 2.0,
-                                                  FLAGS_stddev);
+        FLAGS_stddev);
     Duration duration(FLAGS_duration, FLAGS_num);
     while (!duration.Done(1)) {
       int64_t rnd_id = static_cast<int64_t>(distribution(generator));
@@ -3504,13 +3532,13 @@ int db_bench_tool(int argc, char** argv) {
   FLAGS_compaction_pri_e = (vidardb::CompactionPri)FLAGS_compaction_pri;
 
   std::vector<std::string> fanout = vidardb::StringSplit(
-      FLAGS_max_bytes_for_level_multiplier_additional, ',');
+                                      FLAGS_max_bytes_for_level_multiplier_additional, ',');
   for (size_t j = 0; j < fanout.size(); j++) {
     FLAGS_max_bytes_for_level_multiplier_additional_v.push_back(
 #ifndef CYGWIN
-        std::stoi(fanout[j]));
+      std::stoi(fanout[j]));
 #else
-        stoi(fanout[j]));
+      stoi(fanout[j]));
 #endif
   }
 

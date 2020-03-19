@@ -19,10 +19,18 @@ namespace vidardb {
 struct CompactionInputFiles {
   int level;
   std::vector<FileMetaData*> files;
-  inline bool empty() const { return files.empty(); }
-  inline size_t size() const { return files.size(); }
-  inline void clear() { files.clear(); }
-  inline FileMetaData* operator[](size_t i) const { return files[i]; }
+  inline bool empty() const {
+    return files.empty();
+  }
+  inline size_t size() const {
+    return files.size();
+  }
+  inline void clear() {
+    files.clear();
+  }
+  inline FileMetaData* operator[](size_t i) const {
+    return files[i];
+  }
 };
 
 class Version;
@@ -55,17 +63,25 @@ class Compaction {
     return inputs_[compaction_input_level].level;
   }
 
-  int start_level() const { return start_level_; }
+  int start_level() const {
+    return start_level_;
+  }
 
   // Outputs will go to this level
-  int output_level() const { return output_level_; }
+  int output_level() const {
+    return output_level_;
+  }
 
   // Returns the number of input levels in this compaction.
-  size_t num_input_levels() const { return inputs_.size(); }
+  size_t num_input_levels() const {
+    return inputs_.size();
+  }
 
   // Return the object that holds the edits to the descriptor done
   // by this compaction.
-  VersionEdit* edit() { return &edit_; }
+  VersionEdit* edit() {
+    return &edit_;
+  }
 
   // Returns the number of input files associated to the specified
   // compaction input level.
@@ -79,10 +95,14 @@ class Compaction {
   }
 
   // Returns input version of the compaction
-  Version* input_version() const { return input_version_; }
+  Version* input_version() const {
+    return input_version_;
+  }
 
   // Returns the ColumnFamilyData associated with the compaction.
-  ColumnFamilyData* column_family_data() const { return cfd_; }
+  ColumnFamilyData* column_family_data() const {
+    return cfd_;
+  }
 
   // Returns the file meta data of the 'i'th input file at the
   // specified compaction input level.
@@ -108,20 +128,28 @@ class Compaction {
   }
 
   // Maximum size of files to build during this compaction.
-  uint64_t max_output_file_size() const { return max_output_file_size_; }
+  uint64_t max_output_file_size() const {
+    return max_output_file_size_;
+  }
 
   // What compression for output
-  CompressionType output_compression() const { return output_compression_; }
+  CompressionType output_compression() const {
+    return output_compression_;
+  }
 
   // Whether need to write output file to second DB path.
-  uint32_t output_path_id() const { return output_path_id_; }
+  uint32_t output_path_id() const {
+    return output_path_id_;
+  }
 
   // Is this a trivial compaction that can be implemented by just
   // moving a single input file to the next level (no merging or splitting)
   bool IsTrivialMove() const;
 
   // If true, then the compaction can be done by simply deleting input files.
-  bool deletion_compaction() const { return deletion_compaction_; }
+  bool deletion_compaction() const {
+    return deletion_compaction_;
+  }
 
   // Add all inputs to this compaction as delete operations to *edit.
   void AddInputDeletions(VersionEdit* edit);
@@ -143,16 +171,24 @@ class Compaction {
   void Summary(char* output, int len);
 
   // Return the score that was used to pick this compaction run.
-  double score() const { return score_; }
+  double score() const {
+    return score_;
+  }
 
   // Is this compaction creating a file in the bottom most level?
-  bool bottommost_level() const { return bottommost_level_; }
+  bool bottommost_level() const {
+    return bottommost_level_;
+  }
 
   // Does this compaction include all sst files?
-  bool is_full_compaction() const { return is_full_compaction_; }
+  bool is_full_compaction() const {
+    return is_full_compaction_;
+  }
 
   // Was this compaction triggered manually by the client?
-  bool is_manual_compaction() const { return is_manual_compaction_; }
+  bool is_manual_compaction() const {
+    return is_manual_compaction_;
+  }
 
   // Used when allow_trivial_move option is set in
   // Universal compaction. If all the input files are
@@ -165,10 +201,14 @@ class Compaction {
   // Used when allow_trivial_move option is set in
   // Universal compaction. Returns true, if the input files
   // are non-overlapping and can be trivially moved.
-  bool is_trivial_move() const { return is_trivial_move_; }
+  bool is_trivial_move() const {
+    return is_trivial_move_;
+  }
 
   // How many total levels are there?
-  int number_levels() const { return number_levels_; }
+  int number_levels() const {
+    return number_levels_;
+  }
 
   // Return the MutableCFOptions that should be used throughout the compaction
   // procedure
@@ -204,8 +244,8 @@ class Compaction {
   // test function to validate the functionality of IsBottommostLevel()
   // function -- determines if compaction with inputs and storage is bottommost
   static bool TEST_IsBottommostLevel(
-      int output_level, VersionStorageInfo* vstorage,
-      const std::vector<CompactionInputFiles>& inputs);
+    int output_level, VersionStorageInfo* vstorage,
+    const std::vector<CompactionInputFiles>& inputs);
 
   TablePropertiesCollection GetOutputTableProperties() const {
     return output_table_properties_;
@@ -215,9 +255,13 @@ class Compaction {
     output_table_properties_ = std::move(tp);
   }
 
-  Slice GetLargestUserKey() const { return largest_user_key_; }
+  Slice GetLargestUserKey() const {
+    return largest_user_key_;
+  }
 
-  CompactionReason compaction_reason() { return compaction_reason_; }
+  CompactionReason compaction_reason() {
+    return compaction_reason_;
+  }
 
   const std::vector<FileMetaData*>& grandparents() const {
     return grandparents_;
@@ -239,8 +283,8 @@ class Compaction {
   // helper function to determine if compaction with inputs and storage is
   // bottommost
   static bool IsBottommostLevel(
-      int output_level, VersionStorageInfo* vstorage,
-      const std::vector<CompactionInputFiles>& inputs);
+    int output_level, VersionStorageInfo* vstorage,
+    const std::vector<CompactionInputFiles>& inputs);
 
   static bool IsFullCompaction(VersionStorageInfo* vstorage,
                                const std::vector<CompactionInputFiles>& inputs);

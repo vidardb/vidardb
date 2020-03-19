@@ -16,21 +16,21 @@
 namespace vidardb {
 
 CompactionIterator::CompactionIterator(
-    InternalIterator* input, const Comparator* cmp,
-    SequenceNumber last_sequence, std::vector<SequenceNumber>* snapshots,
-    SequenceNumber earliest_write_conflict_snapshot, Env* env,
-    bool expect_valid_internal_key, const Compaction* compaction,
-    LogBuffer* log_buffer)
-    : input_(input),
-      cmp_(cmp),
-      snapshots_(snapshots),
-      earliest_write_conflict_snapshot_(earliest_write_conflict_snapshot),
-      env_(env),
-      expect_valid_internal_key_(expect_valid_internal_key),
-      compaction_(compaction),
-      log_buffer_(log_buffer) {
+  InternalIterator* input, const Comparator* cmp,
+  SequenceNumber last_sequence, std::vector<SequenceNumber>* snapshots,
+  SequenceNumber earliest_write_conflict_snapshot, Env* env,
+  bool expect_valid_internal_key, const Compaction* compaction,
+  LogBuffer* log_buffer)
+  : input_(input),
+    cmp_(cmp),
+    snapshots_(snapshots),
+    earliest_write_conflict_snapshot_(earliest_write_conflict_snapshot),
+    env_(env),
+    expect_valid_internal_key_(expect_valid_internal_key),
+    compaction_(compaction),
+    log_buffer_(log_buffer) {
   bottommost_level_ =
-      compaction_ == nullptr ? false : compaction_->bottommost_level();
+    compaction_ == nullptr ? false : compaction_->bottommost_level();
   if (compaction_ != nullptr) {
     level_ptrs_ = std::vector<size_t>(compaction_->number_levels(), 0);
   }
@@ -62,12 +62,12 @@ void CompactionIterator::SeekToFirst() {
 void CompactionIterator::Next() {
   // If there is a merge output, return it before continuing to process the
   // input.
-    // Only advance the input iterator if there is no merge output and the
-    // iterator is not already at the next record.
-    if (!at_next_) {
-      input_->Next();
-    }
-    NextFromInput();
+  // Only advance the input iterator if there is no merge output and the
+  // iterator is not already at the next record.
+  if (!at_next_) {
+    input_->Next();
+  }
+  NextFromInput();
 
   if (valid_) {
     // Record that we've ouputted a record for the current key.
@@ -138,13 +138,13 @@ void CompactionIterator::NextFromInput() {
     // Otherwise, search though all existing snapshots to find the earliest
     // snapshot that is affected by this kv.
     SequenceNumber last_sequence __attribute__((__unused__)) =
-        current_user_key_sequence_;
+      current_user_key_sequence_;
     current_user_key_sequence_ = ikey_.sequence;
     SequenceNumber last_snapshot = current_user_key_snapshot_;
     SequenceNumber prev_snapshot = 0;  // 0 means no previous snapshot
     current_user_key_snapshot_ =
-        visible_at_tip_ ? visible_at_tip_ : findEarliestVisibleSnapshot(
-                                                ikey_.sequence, &prev_snapshot);
+      visible_at_tip_ ? visible_at_tip_ : findEarliestVisibleSnapshot(
+        ikey_.sequence, &prev_snapshot);
 
     if (clear_and_output_next_key_) {
       // In the previous iteration we encountered a single delete that we could
@@ -255,7 +255,7 @@ void CompactionIterator::NextFromInput() {
         has_current_user_key_ = false;
         if (compaction_ != nullptr && ikey_.sequence <= earliest_snapshot_ &&
             compaction_->KeyNotExistsBeyondOutputLevel(ikey_.user_key,
-                                                       &level_ptrs_)) {
+                &level_ptrs_)) {
           // Key doesn't exist outside of this range.
           // Can compact out this SingleDelete.
           ++iter_stats_.num_record_drop_obsolete;
@@ -284,7 +284,7 @@ void CompactionIterator::NextFromInput() {
     } else if (compaction_ != nullptr && ikey_.type == kTypeDeletion &&
                ikey_.sequence <= earliest_snapshot_ &&
                compaction_->KeyNotExistsBeyondOutputLevel(ikey_.user_key,
-                                                          &level_ptrs_)) {
+                   &level_ptrs_)) {
       // TODO(noetzli): This is the only place where we use compaction_
       // (besides the constructor). We should probably get rid of this
       // dependency and find a way to do similar filtering during flushes.
@@ -325,7 +325,7 @@ void CompactionIterator::PrepareOutput() {
 }
 
 inline SequenceNumber CompactionIterator::findEarliestVisibleSnapshot(
-    SequenceNumber in, SequenceNumber* prev_snapshot) {
+  SequenceNumber in, SequenceNumber* prev_snapshot) {
   assert(snapshots_->size());
   SequenceNumber prev __attribute__((__unused__)) = kMaxSequenceNumber;
   for (const auto cur : *snapshots_) {

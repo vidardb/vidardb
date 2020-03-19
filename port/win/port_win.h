@@ -113,11 +113,12 @@ class CondVar;
 class Mutex {
  public:
 
-   /* implicit */ Mutex(bool adaptive = false)
+  /* implicit */
+  Mutex(bool adaptive = false)
 #ifndef NDEBUG
-     : locked_(false)
+    : locked_(false)
 #endif
-   { }
+  { }
 
   ~Mutex();
 
@@ -163,15 +164,25 @@ class Mutex {
 
 class RWMutex {
  public:
-  RWMutex() { InitializeSRWLock(&srwLock_); }
+  RWMutex() {
+    InitializeSRWLock(&srwLock_);
+  }
 
-  void ReadLock() { AcquireSRWLockShared(&srwLock_); }
+  void ReadLock() {
+    AcquireSRWLockShared(&srwLock_);
+  }
 
-  void WriteLock() { AcquireSRWLockExclusive(&srwLock_); }
+  void WriteLock() {
+    AcquireSRWLockExclusive(&srwLock_);
+  }
 
-  void ReadUnlock() { ReleaseSRWLockShared(&srwLock_); }
+  void ReadUnlock() {
+    ReleaseSRWLockShared(&srwLock_);
+  }
 
-  void WriteUnlock() { ReleaseSRWLockExclusive(&srwLock_); }
+  void WriteUnlock() {
+    ReleaseSRWLockExclusive(&srwLock_);
+  }
 
   // Empty as in POSIX
   void AssertHeld() {}
@@ -212,14 +223,14 @@ class CondVar {
 // adopted in the project
 struct OnceType {
 
-    struct Init {};
+  struct Init {};
 
-    OnceType() {}
-    OnceType(const Init&) {}
-    OnceType(const OnceType&) = delete;
-    OnceType& operator=(const OnceType&) = delete;
+  OnceType() {}
+  OnceType(const Init&) {}
+  OnceType(const OnceType&) = delete;
+  OnceType& operator=(const OnceType&) = delete;
 
-    std::once_flag flag_;
+  std::once_flag flag_;
 };
 
 #define LEVELDB_ONCE_INIT port::OnceType::Init()

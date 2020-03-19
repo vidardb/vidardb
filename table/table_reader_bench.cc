@@ -75,7 +75,7 @@ void TableReaderBenchmark(Options& opts, EnvOptions& env_options,
   vidardb::InternalKeyComparator ikc(opts.comparator);
 
   std::string file_name = test::TmpDir()
-      + "/vidardb_table_reader_benchmark";
+                          + "/vidardb_table_reader_benchmark";
   std::string dbname = test::TmpDir() + "/vidardb_table_reader_bench_db";
   WriteOptions wo;
   Env* env = Env::Default();
@@ -89,17 +89,17 @@ void TableReaderBenchmark(Options& opts, EnvOptions& env_options,
     env->NewWritableFile(file_name, &file, env_options);
 
     std::vector<std::unique_ptr<IntTblPropCollectorFactory> >
-        int_tbl_prop_collector_factories;
+    int_tbl_prop_collector_factories;
 
     file_writer.reset(new WritableFileWriter(std::move(file), env_options));
 
     tb = opts.table_factory->NewTableBuilder(
-        TableBuilderOptions(ioptions, ikc, &int_tbl_prop_collector_factories,
-                            CompressionType::kNoCompression,
-                            CompressionOptions(),
-                            nullptr /* compression_dict */,
-                            kDefaultColumnFamilyName, EnvOptions()),
-        0 /* column_family_id */, file_writer.get());
+           TableBuilderOptions(ioptions, ikc, &int_tbl_prop_collector_factories,
+                               CompressionType::kNoCompression,
+                               CompressionOptions(),
+                               nullptr /* compression_dict */,
+                               kDefaultColumnFamilyName, EnvOptions()),
+           0 /* column_family_id */, file_writer.get());
   } else {
     s = DB::Open(opts, dbname, &db);
     ASSERT_OK(s);
@@ -134,10 +134,10 @@ void TableReaderBenchmark(Options& opts, EnvOptions& env_options,
     uint64_t file_size;
     env->GetFileSize(file_name, &file_size);
     unique_ptr<RandomAccessFileReader> file_reader(
-        new RandomAccessFileReader(std::move(raf)));
+      new RandomAccessFileReader(std::move(raf)));
     s = opts.table_factory->NewTableReader(
-        TableReaderOptions(ioptions, env_options, ikc), std::move(file_reader),
-        file_size, &table_reader);
+          TableReaderOptions(ioptions, env_options, ikc), std::move(file_reader),
+          file_size, &table_reader);
     if (!s.ok()) {
       fprintf(stderr, "Open Table Error: %s\n", s.ToString().c_str());
       exit(1);
@@ -212,8 +212,8 @@ void TableReaderBenchmark(Options& opts, EnvOptions& env_options,
           }
           if (count != r2_len) {
             fprintf(
-                stderr, "Iterator cannot iterate expected number of entries. "
-                "Expected %d but got %d\n", r2_len, count);
+              stderr, "Iterator cannot iterate expected number of entries. "
+              "Expected %d but got %d\n", r2_len, count);
             assert(false);
           }
           delete iter;
@@ -225,18 +225,18 @@ void TableReaderBenchmark(Options& opts, EnvOptions& env_options,
   }
 
   fprintf(
-      stderr,
-      "==================================================="
-      "====================================================\n"
-      "InMemoryTableSimpleBenchmark: %20s   num_key1:  %5d   "
-      "num_key2: %5d  %10s\n"
-      "==================================================="
-      "===================================================="
-      "\nHistogram (unit: %s): \n%s",
-      opts.table_factory->Name(), num_keys1, num_keys2,
-      for_iterator ? "iterator" : (if_query_empty_keys ? "empty" : "non_empty"),
-      measured_by_nanosecond ? "nanosecond" : "microsecond",
-      hist.ToString().c_str());
+    stderr,
+    "==================================================="
+    "====================================================\n"
+    "InMemoryTableSimpleBenchmark: %20s   num_key1:  %5d   "
+    "num_key2: %5d  %10s\n"
+    "==================================================="
+    "===================================================="
+    "\nHistogram (unit: %s): \n%s",
+    opts.table_factory->Name(), num_keys1, num_keys2,
+    for_iterator ? "iterator" : (if_query_empty_keys ? "empty" : "non_empty"),
+    measured_by_nanosecond ? "nanosecond" : "microsecond",
+    hist.ToString().c_str());
   if (!through_db) {
     env->DeleteFile(file_name);
   } else {

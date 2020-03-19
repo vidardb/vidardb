@@ -125,20 +125,22 @@ int ThreadDetach(pthread_t& thread) {
 }
 
 ThreadPool::ThreadPool()
-    : total_threads_limit_(1),
-      bgthreads_(0),
-      queue_(),
-      queue_len_(),
-      exit_all_threads_(false),
-      low_io_priority_(false),
-      env_(nullptr) {
+  : total_threads_limit_(1),
+    bgthreads_(0),
+    queue_(),
+    queue_len_(),
+    exit_all_threads_(false),
+    low_io_priority_(false),
+    env_(nullptr) {
 #ifndef VIDARDB_STD_THREADPOOL
   PthreadCall("mutex_init", pthread_mutex_init(&mu_, nullptr));
   PthreadCall("cvar_init", pthread_cond_init(&bgsignal_, nullptr));
 #endif
 }
 
-ThreadPool::~ThreadPool() { assert(bgthreads_.size() == 0U); }
+ThreadPool::~ThreadPool() {
+  assert(bgthreads_.size() == 0U);
+}
 
 void ThreadPool::JoinAllThreads() {
 
@@ -236,7 +238,7 @@ struct BGThreadMetadata {
   ThreadPool* thread_pool_;
   size_t thread_id_;  // Thread count in the thread.
   BGThreadMetadata(ThreadPool* thread_pool, size_t thread_id)
-      : thread_pool_(thread_pool), thread_id_(thread_id) {}
+    : thread_pool_(thread_pool), thread_id_(thread_id) {}
 };
 
 static void* BGThreadWrapper(void* arg) {
@@ -246,9 +248,9 @@ static void* BGThreadWrapper(void* arg) {
 #ifdef VIDARDB_USING_THREAD_STATUS
   // for thread-status
   ThreadStatusUtil::RegisterThread(
-      tp->GetHostEnv(), (tp->GetThreadPriority() == Env::Priority::HIGH
-                             ? ThreadStatus::HIGH_PRIORITY
-                             : ThreadStatus::LOW_PRIORITY));
+    tp->GetHostEnv(), (tp->GetThreadPriority() == Env::Priority::HIGH
+                       ? ThreadStatus::HIGH_PRIORITY
+                       : ThreadStatus::LOW_PRIORITY));
 #endif
   delete meta;
   tp->BGThread(thread_id);
@@ -291,7 +293,7 @@ void ThreadPool::StartBGThreads() {
   while ((int)bgthreads_.size() < total_threads_limit_) {
 #ifdef VIDARDB_STD_THREADPOOL
     std::thread p_t(&BGThreadWrapper,
-      new BGThreadMetadata(this, bgthreads_.size()));
+                    new BGThreadMetadata(this, bgthreads_.size()));
     bgthreads_.push_back(std::move(p_t));
 #else
     pthread_t t;

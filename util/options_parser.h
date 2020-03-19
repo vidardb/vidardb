@@ -31,7 +31,8 @@ enum OptionSection : char {
 };
 
 static const std::string opt_section_titles[] = {
-    "Version", "DBOptions", "CFOptions", "TableOptions/", "Unknown"};
+  "Version", "DBOptions", "CFOptions", "TableOptions/", "Unknown"
+};
 
 Status PersistVidarDBOptions(const DBOptions& db_opt,
                              const std::vector<std::string>& cf_names,
@@ -48,46 +49,54 @@ class VidarDBOptionsParser {
   static std::string TrimAndRemoveComment(const std::string& line,
                                           const bool trim_only = false);
 
-  const DBOptions* db_opt() const { return &db_opt_; }
+  const DBOptions* db_opt() const {
+    return &db_opt_;
+  }
   const std::unordered_map<std::string, std::string>* db_opt_map() const {
     return &db_opt_map_;
   }
-  const std::vector<ColumnFamilyOptions>* cf_opts() const { return &cf_opts_; }
-  const std::vector<std::string>* cf_names() const { return &cf_names_; }
+  const std::vector<ColumnFamilyOptions>* cf_opts() const {
+    return &cf_opts_;
+  }
+  const std::vector<std::string>* cf_names() const {
+    return &cf_names_;
+  }
   const std::vector<std::unordered_map<std::string, std::string>>* cf_opt_maps()
-      const {
+  const {
     return &cf_opt_maps_;
   }
 
   const ColumnFamilyOptions* GetCFOptions(const std::string& name) {
     return GetCFOptionsImpl(name);
   }
-  size_t NumColumnFamilies() { return cf_opts_.size(); }
+  size_t NumColumnFamilies() {
+    return cf_opts_.size();
+  }
 
   static Status VerifyVidarDBOptionsFromFile(
-      const DBOptions& db_opt, const std::vector<std::string>& cf_names,
-      const std::vector<ColumnFamilyOptions>& cf_opts,
-      const std::string& file_name, Env* env,
-      OptionsSanityCheckLevel sanity_check_level = kSanityLevelExactMatch);
+    const DBOptions& db_opt, const std::vector<std::string>& cf_names,
+    const std::vector<ColumnFamilyOptions>& cf_opts,
+    const std::string& file_name, Env* env,
+    OptionsSanityCheckLevel sanity_check_level = kSanityLevelExactMatch);
 
   static Status VerifyDBOptions(
-      const DBOptions& base_opt, const DBOptions& new_opt,
-      const std::unordered_map<std::string, std::string>* new_opt_map = nullptr,
-      OptionsSanityCheckLevel sanity_check_level = kSanityLevelExactMatch);
+    const DBOptions& base_opt, const DBOptions& new_opt,
+    const std::unordered_map<std::string, std::string>* new_opt_map = nullptr,
+    OptionsSanityCheckLevel sanity_check_level = kSanityLevelExactMatch);
 
   static Status VerifyCFOptions(
-      const ColumnFamilyOptions& base_opt, const ColumnFamilyOptions& new_opt,
-      const std::unordered_map<std::string, std::string>* new_opt_map = nullptr,
-      OptionsSanityCheckLevel sanity_check_level = kSanityLevelExactMatch);
+    const ColumnFamilyOptions& base_opt, const ColumnFamilyOptions& new_opt,
+    const std::unordered_map<std::string, std::string>* new_opt_map = nullptr,
+    OptionsSanityCheckLevel sanity_check_level = kSanityLevelExactMatch);
 
   static Status VerifyTableFactory(
-      const TableFactory* base_tf, const TableFactory* file_tf,
-      OptionsSanityCheckLevel sanity_check_level = kSanityLevelExactMatch);
+    const TableFactory* base_tf, const TableFactory* file_tf,
+    OptionsSanityCheckLevel sanity_check_level = kSanityLevelExactMatch);
 
   static Status VerifyBlockBasedTableFactory(
-      const BlockBasedTableFactory* base_tf,
-      const BlockBasedTableFactory* file_tf,
-      OptionsSanityCheckLevel sanity_check_level);
+    const BlockBasedTableFactory* base_tf,
+    const BlockBasedTableFactory* file_tf,
+    OptionsSanityCheckLevel sanity_check_level);
 
   static Status ExtraParserCheck(const VidarDBOptionsParser& input_parser);
 
@@ -104,9 +113,9 @@ class VidarDBOptionsParser {
                         const std::string& line, const int line_num);
 
   Status EndSection(
-      const OptionSection section, const std::string& title,
-      const std::string& section_arg,
-      const std::unordered_map<std::string, std::string>& opt_map);
+    const OptionSection section, const std::string& title,
+    const std::string& section_arg,
+    const std::unordered_map<std::string, std::string>& opt_map);
 
   Status ValidityCheck();
 

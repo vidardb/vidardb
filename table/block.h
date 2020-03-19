@@ -35,11 +35,17 @@ class Block {
 
   ~Block() = default;
 
-  size_t size() const { return size_; }
+  size_t size() const {
+    return size_;
+  }
 
-  const char* data() const { return data_; }
+  const char* data() const {
+    return data_;
+  }
 
-  bool cachable() const { return contents_.cachable; }
+  bool cachable() const {
+    return contents_.cachable;
+  }
 
   size_t usable_size() const {
 #ifdef VIDARDB_MALLOC_USABLE_SIZE
@@ -78,17 +84,17 @@ class Block {
 class BlockIter : public InternalIterator {
  public:
   BlockIter()
-      : comparator_(nullptr),
-        data_(nullptr),
-        restarts_(0),
-        num_restarts_(0),
-        current_(0),
-        restart_index_(0),
-        status_(Status::OK()) {}
+    : comparator_(nullptr),
+      data_(nullptr),
+      restarts_(0),
+      num_restarts_(0),
+      current_(0),
+      restart_index_(0),
+      status_(Status::OK()) {}
 
   BlockIter(const Comparator* comparator, const char* data, uint32_t restarts,
             uint32_t num_restarts)
-      : BlockIter() {
+    : BlockIter() {
     Initialize(comparator, data, restarts, num_restarts);
   }
 
@@ -109,9 +115,13 @@ class BlockIter : public InternalIterator {
     status_ = s;
   }
 
-  virtual bool Valid() const override { return current_ < restarts_; }
+  virtual bool Valid() const override {
+    return current_ < restarts_;
+  }
 
-  virtual Status status() const override { return status_; }
+  virtual Status status() const override {
+    return status_;
+  }
 
   virtual Slice key() const override {
     assert(Valid());
@@ -141,14 +151,16 @@ class BlockIter : public InternalIterator {
   }
 
   virtual void SetPinnedItersMgr(
-      PinnedIteratorsManager* pinned_iters_mgr) override {
+    PinnedIteratorsManager* pinned_iters_mgr) override {
     pinned_iters_mgr_ = pinned_iters_mgr;
   }
 
   PinnedIteratorsManager* pinned_iters_mgr_ = nullptr;
 #endif
 
-  virtual bool IsKeyPinned() const override { return key_.IsKeyPinned(); }
+  virtual bool IsKeyPinned() const override {
+    return key_.IsKeyPinned();
+  }
 
  protected:
   const Comparator* comparator_;
@@ -201,7 +213,7 @@ class ColumnBlockIter : public BlockIter {
   ColumnBlockIter() : BlockIter() {}
   ColumnBlockIter(const Comparator* comparator, const char* data,
                   uint32_t restarts, uint32_t num_restarts)
-      : ColumnBlockIter() {
+    : ColumnBlockIter() {
     Initialize(comparator, data, restarts, num_restarts);
   }
 

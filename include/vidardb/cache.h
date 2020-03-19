@@ -40,7 +40,7 @@ class Cache;
 extern std::shared_ptr<Cache> NewLRUCache(size_t capacity);
 extern std::shared_ptr<Cache> NewLRUCache(size_t capacity, int num_shard_bits);
 extern std::shared_ptr<Cache> NewLRUCache(size_t capacity, int num_shard_bits,
-                                          bool strict_capacity_limit);
+    bool strict_capacity_limit);
 
 class Cache {
  public:
@@ -133,8 +133,8 @@ class Cache {
   // memory - call this only if you're shutting down the process.
   // Any attempts of using cache after this call will fail terribly.
   // Always delete the DB object before calling this method!
-  virtual void DisownData(){
-      // default implementation is noop
+  virtual void DisownData() {
+    // default implementation is noop
   };
 
   // Apply callback to all entries in the cache

@@ -31,27 +31,33 @@ class ColumnFamilyMemTables {
   virtual uint64_t GetLogNumber() const = 0;
   virtual MemTable* GetMemTable() const = 0;
   virtual ColumnFamilyHandle* GetColumnFamilyHandle() = 0;
-  virtual ColumnFamilyData* current() { return nullptr; }
+  virtual ColumnFamilyData* current() {
+    return nullptr;
+  }
 };
 
 class ColumnFamilyMemTablesDefault : public ColumnFamilyMemTables {
  public:
   explicit ColumnFamilyMemTablesDefault(MemTable* mem)
-      : ok_(false), mem_(mem) {}
+    : ok_(false), mem_(mem) {}
 
   bool Seek(uint32_t column_family_id) override {
     ok_ = (column_family_id == 0);
     return ok_;
   }
 
-  uint64_t GetLogNumber() const override { return 0; }
+  uint64_t GetLogNumber() const override {
+    return 0;
+  }
 
   MemTable* GetMemTable() const override {
     assert(ok_);
     return mem_;
   }
 
-  ColumnFamilyHandle* GetColumnFamilyHandle() override { return nullptr; }
+  ColumnFamilyHandle* GetColumnFamilyHandle() override {
+    return nullptr;
+  }
 
  private:
   bool ok_;

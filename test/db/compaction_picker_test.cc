@@ -19,7 +19,9 @@ namespace vidardb {
 class CountingLogger : public Logger {
  public:
   using Logger::Logv;
-  virtual void Logv(const char* format, va_list ap) override { log_count++; }
+  virtual void Logv(const char* format, va_list ap) override {
+    log_count++;
+  }
   size_t log_count;
 };
 
@@ -45,15 +47,15 @@ class CompactionPickerTest : public testing::Test {
   int compaction_level_start_;
 
   CompactionPickerTest()
-      : ucmp_(BytewiseComparator()),
-        icmp_(ucmp_),
-        ioptions_(options_),
-        mutable_cf_options_(options_, ioptions_),
-        level_compaction_picker(ioptions_, &icmp_),
-        cf_name_("dummy"),
-        log_buffer_(InfoLogLevel::INFO_LEVEL, &logger_),
-        file_num_(1),
-        vstorage_(nullptr) {
+    : ucmp_(BytewiseComparator()),
+      icmp_(ucmp_),
+      ioptions_(options_),
+      mutable_cf_options_(options_, ioptions_),
+      level_compaction_picker(ioptions_, &icmp_),
+      cf_name_("dummy"),
+      log_buffer_(InfoLogLevel::INFO_LEVEL, &logger_),
+      file_num_(1),
+      vstorage_(nullptr) {
     fifo_options_.max_table_files_size = 1;
     mutable_cf_options_.RefreshDerivedOptions(ioptions_);
     ioptions_.db_paths.emplace_back("dummy",
@@ -67,7 +69,7 @@ class CompactionPickerTest : public testing::Test {
     DeleteVersionStorage();
     options_.num_levels = num_levels;
     vstorage_.reset(new VersionStorageInfo(
-        &icmp_, ucmp_, options_.num_levels, style, nullptr));
+                      &icmp_, ucmp_, options_.num_levels, style, nullptr));
     vstorage_->CalculateBaseBytes(ioptions_, mutable_cf_options_);
   }
 
@@ -110,7 +112,7 @@ class CompactionPickerTest : public testing::Test {
     int level = iter->second.second;
     assert(level < vstorage_->num_levels());
     input_files_[level - compaction_level_start_].files.emplace_back(
-        iter->second.first);
+      iter->second.first);
   }
 
   void UpdateVersionStorageInfo() {
@@ -380,7 +382,7 @@ TEST_F(CompactionPickerTest, LevelTriggerDynamic4) {
 TEST_F(CompactionPickerTest, NeedsCompactionUniversal) {
   NewVersionStorage(1, kCompactionStyleUniversal);
   UniversalCompactionPicker universal_compaction_picker(
-      ioptions_, &icmp_);
+    ioptions_, &icmp_);
   // must return false when there's no files.
   ASSERT_EQ(universal_compaction_picker.NeedsCompaction(vstorage_.get()),
             false);
@@ -425,8 +427,8 @@ TEST_F(CompactionPickerTest, CannotTrivialMoveUniversal) {
   UpdateVersionStorageInfo();
 
   std::unique_ptr<Compaction> compaction(
-      universal_compaction_picker.PickCompaction(
-          cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
+    universal_compaction_picker.PickCompaction(
+      cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
 
   ASSERT_TRUE(!compaction->is_trivial_move());
 }
@@ -451,8 +453,8 @@ TEST_F(CompactionPickerTest, AllowsTrivialMoveUniversal) {
   UpdateVersionStorageInfo();
 
   std::unique_ptr<Compaction> compaction(
-      universal_compaction_picker.PickCompaction(
-          cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
+    universal_compaction_picker.PickCompaction(
+      cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
 
   ASSERT_TRUE(compaction->is_trivial_move());
 }
@@ -460,7 +462,7 @@ TEST_F(CompactionPickerTest, AllowsTrivialMoveUniversal) {
 TEST_F(CompactionPickerTest, NeedsCompactionFIFO) {
   NewVersionStorage(1, kCompactionStyleFIFO);
   const int kFileCount =
-      mutable_cf_options_.level0_file_num_compaction_trigger * 3;
+    mutable_cf_options_.level0_file_num_compaction_trigger * 3;
   const uint64_t kFileSize = 100000;
   const uint64_t kMaxSize = kFileSize * kFileCount / 2;
 
@@ -524,7 +526,7 @@ TEST_F(CompactionPickerTest, CompactionPriMinOverlapping2) {
   Add(2, 6U, "150", "175",
       60000000U);  // Overlaps with file 26, 27, total size 521M
   Add(2, 7U, "176", "200", 60000000U);  // Overlaps with file 27, 28, total size
-                                        // 520M, the smalelst overlapping
+  // 520M, the smalelst overlapping
   Add(2, 8U, "201", "300",
       60000000U);  // Overlaps with file 28, 29, total size 521M
 
@@ -555,7 +557,7 @@ TEST_F(CompactionPickerTest, CompactionPriMinOverlapping3) {
   Add(2, 6U, "150", "167", 60000000U);  // Overlaps with file 26, 27
   Add(2, 7U, "168", "169", 60000000U);  // Overlaps with file 27
   Add(2, 8U, "201", "300", 61000000U);  // Overlaps with file 28, but the file
-                                        // itself is larger. Should be picked.
+  // itself is larger. Should be picked.
 
   Add(3, 26U, "160", "165", 260000000U);
   Add(3, 27U, "166", "170", 260000000U);
@@ -608,7 +610,7 @@ TEST_F(CompactionPickerTest, OverlappingUserKeys) {
   UpdateVersionStorageInfo();
 
   std::unique_ptr<Compaction> compaction(level_compaction_picker.PickCompaction(
-              cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
+      cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
   ASSERT_TRUE(compaction.get() != nullptr);
   ASSERT_EQ(1U, compaction->num_input_levels());
   ASSERT_EQ(2U, compaction->num_input_files(0));
@@ -627,7 +629,7 @@ TEST_F(CompactionPickerTest, OverlappingUserKeys2) {
   UpdateVersionStorageInfo();
 
   std::unique_ptr<Compaction> compaction(level_compaction_picker.PickCompaction(
-              cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
+      cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
   ASSERT_TRUE(compaction.get() != nullptr);
   ASSERT_EQ(2U, compaction->num_input_levels());
   ASSERT_EQ(2U, compaction->num_input_files(0));
@@ -652,7 +654,7 @@ TEST_F(CompactionPickerTest, OverlappingUserKeys3) {
   UpdateVersionStorageInfo();
 
   std::unique_ptr<Compaction> compaction(level_compaction_picker.PickCompaction(
-              cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
+      cf_name_, mutable_cf_options_, vstorage_.get(), &log_buffer_));
   ASSERT_TRUE(compaction.get() != nullptr);
   ASSERT_EQ(2U, compaction->num_input_levels());
   ASSERT_EQ(5U, compaction->num_input_files(0));
@@ -890,7 +892,7 @@ TEST_F(CompactionPickerTest, IsBottommostLevelTest) {
   AddToCompactionFiles(3U);
   AddToCompactionFiles(5U);
   bool result =
-      Compaction::TEST_IsBottommostLevel(2, vstorage_.get(), input_files_);
+    Compaction::TEST_IsBottommostLevel(2, vstorage_.get(), input_files_);
   ASSERT_TRUE(result);
 
   // case 2: Higher levels have no overlap

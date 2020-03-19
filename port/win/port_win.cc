@@ -35,13 +35,13 @@ void gettimeofday(struct timeval* tv, struct timezone* /* tz */) {
   using namespace std::chrono;
 
   microseconds usNow(
-      duration_cast<microseconds>(system_clock::now().time_since_epoch()));
+    duration_cast<microseconds>(system_clock::now().time_since_epoch()));
 
   seconds secNow(duration_cast<seconds>(usNow));
 
   tv->tv_sec = static_cast<long>(secNow.count());
   tv->tv_usec = static_cast<long>(usNow.count() -
-      duration_cast<microseconds>(secNow).count());
+                                  duration_cast<microseconds>(secNow).count());
 }
 
 Mutex::~Mutex() {}
@@ -96,11 +96,17 @@ bool CondVar::TimedWait(uint64_t abs_time_us) {
   return false;
 }
 
-void CondVar::Signal() { cv_.notify_one(); }
+void CondVar::Signal() {
+  cv_.notify_one();
+}
 
-void CondVar::SignalAll() { cv_.notify_all(); }
+void CondVar::SignalAll() {
+  cv_.notify_all();
+}
 
-int PhysicalCoreID() { return GetCurrentProcessorNumber(); }
+int PhysicalCoreID() {
+  return GetCurrentProcessorNumber();
+}
 
 void InitOnce(OnceType* once, void (*initializer)()) {
   std::call_once(once->flag_, initializer);
@@ -186,11 +192,11 @@ int truncate(const char* path, int64_t len) {
   }
 
   HANDLE hFile =
-      CreateFile(path, GENERIC_READ | GENERIC_WRITE,
-                 FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
-                 NULL,           // Security attrs
-                 OPEN_EXISTING,  // Truncate existing file only
-                 FILE_ATTRIBUTE_NORMAL, NULL);
+    CreateFile(path, GENERIC_READ | GENERIC_WRITE,
+               FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+               NULL,           // Security attrs
+               OPEN_EXISTING,  // Truncate existing file only
+               FILE_ATTRIBUTE_NORMAL, NULL);
 
   if (INVALID_HANDLE_VALUE == hFile) {
     auto lastError = GetLastError();
@@ -224,7 +230,9 @@ void Crash(const std::string& srcfile, int srcline) {
   abort();
 }
 
-int GetMaxOpenFiles() { return -1; }
+int GetMaxOpenFiles() {
+  return -1;
+}
 
 }  // namespace port
 }  // namespace vidardb
@@ -253,7 +261,7 @@ extern "C" {
 
 #pragma comment(linker, "/INCLUDE:p_vidardb_init_jemalloc")
 
-typedef void(WINAPI* CRT_Startup_Routine)(void);
+  typedef void(WINAPI* CRT_Startup_Routine)(void);
 
 // .CRT section is merged with .rdata on x64 so it must be constant data.
 // must be of external linkage
@@ -261,8 +269,8 @@ typedef void(WINAPI* CRT_Startup_Routine)(void);
 // constructors
 // which are placed into XCU
 #pragma const_seg(".CRT$XCT")
-extern const CRT_Startup_Routine p_vidardb_init_jemalloc;
-const CRT_Startup_Routine p_vidardb_init_jemalloc =
+  extern const CRT_Startup_Routine p_vidardb_init_jemalloc;
+  const CRT_Startup_Routine p_vidardb_init_jemalloc =
     vidardb::port::InitializeJemalloc;
 #pragma const_seg()
 
@@ -273,7 +281,7 @@ const CRT_Startup_Routine p_vidardb_init_jemalloc =
 #pragma comment(linker, "/INCLUDE:_p_vidardb_init_jemalloc")
 
 #pragma section(".CRT$XCT", read)
-JEMALLOC_SECTION(".CRT$XCT") JEMALLOC_ATTR(used) static const void(
+  JEMALLOC_SECTION(".CRT$XCT") JEMALLOC_ATTR(used) static const void(
     WINAPI* p_vidardb_init_jemalloc)(void) = vidardb::port::InitializeJemalloc;
 
 #endif  // _WIN64
@@ -300,8 +308,12 @@ void* operator new[](size_t size) {
   return p;
 }
 
-void operator delete(void* p) { je_free(p); }
+void operator delete(void* p) {
+  je_free(p);
+}
 
-void operator delete[](void* p) { je_free(p); }
+void operator delete[](void* p) {
+  je_free(p);
+}
 
 #endif  // JEMALLOC

@@ -67,7 +67,7 @@ inline bool IsValueType(ValueType t) {
 // We leave eight bits empty at the bottom so a type and sequence#
 // can be packed together into 64-bits.
 static const SequenceNumber kMaxSequenceNumber =
-    ((0x1ull << 56) - 1);
+  ((0x1ull << 56) - 1);
 
 struct ParsedInternalKey {
   Slice user_key;
@@ -76,7 +76,7 @@ struct ParsedInternalKey {
 
   ParsedInternalKey() { }  // Intentionally left uninitialized (for speed)
   ParsedInternalKey(const Slice& u, const SequenceNumber& seq, ValueType t)
-      : user_key(u), sequence(seq), type(t) { }
+    : user_key(u), sequence(seq), type(t) { }
   std::string DebugString(bool hex = false) const;
 };
 
@@ -136,7 +136,9 @@ class InternalKeyComparator : public Comparator {
                                      const Slice& limit) const override;
   virtual void FindShortSuccessor(std::string* key) const override;
 
-  const Comparator* user_comparator() const { return user_comparator_; }
+  const Comparator* user_comparator() const {
+    return user_comparator_;
+  }
 
   int Compare(const InternalKey& a, const InternalKey& b) const;
   int Compare(const ParsedInternalKey& a, const ParsedInternalKey& b) const;
@@ -191,14 +193,14 @@ class InternalKey {
   // user key
   void SetMaxPossibleForUserKey(const Slice& _user_key) {
     AppendInternalKey(&rep_, ParsedInternalKey(_user_key, kMaxSequenceNumber,
-                                               kValueTypeForSeek));
+                      kValueTypeForSeek));
   }
 
   // sets the internal key to be smaller or equal to all internal keys with this
   // user key
   void SetMinPossibleForUserKey(const Slice& _user_key) {
     AppendInternalKey(
-        &rep_, ParsedInternalKey(_user_key, 0, static_cast<ValueType>(0)));
+      &rep_, ParsedInternalKey(_user_key, 0, static_cast<ValueType>(0)));
   }
 
   bool Valid() const {
@@ -206,27 +208,35 @@ class InternalKey {
     return ParseInternalKey(Slice(rep_), &parsed);
   }
 
-  void DecodeFrom(const Slice& s) { rep_.assign(s.data(), s.size()); }
+  void DecodeFrom(const Slice& s) {
+    rep_.assign(s.data(), s.size());
+  }
   Slice Encode() const {
     assert(!rep_.empty());
     return rep_;
   }
 
-  Slice user_key() const { return ExtractUserKey(rep_); }
-  size_t size() { return rep_.size(); }
+  Slice user_key() const {
+    return ExtractUserKey(rep_);
+  }
+  size_t size() {
+    return rep_.size();
+  }
 
   void SetFrom(const ParsedInternalKey& p) {
     rep_.clear();
     AppendInternalKey(&rep_, p);
   }
 
-  void Clear() { rep_.clear(); }
+  void Clear() {
+    rep_.clear();
+  }
 
   std::string DebugString(bool hex = false) const;
 };
 
 inline int InternalKeyComparator::Compare(
-    const InternalKey& a, const InternalKey& b) const {
+  const InternalKey& a, const InternalKey& b) const {
   return Compare(a.Encode(), b.Encode());
 }
 
@@ -318,7 +328,7 @@ struct LookupRange {
 
   LookupRange(): start_(NULL), limit_(NULL) { }
   LookupRange(LookupKey* start, LookupKey* limit) :
-              start_(start), limit_(limit) { }
+    start_(start), limit_(limit) { }
   SequenceNumber SequenceNum() const {
     assert(start_ != NULL);
     const Slice& ikey = start_->internal_key();
@@ -393,7 +403,7 @@ inline bool CompressResultList(std::list<RangeQueryKeyVal>* res,
 
   // reserve the next start key which is also the current limit key
   RangeQueryMeta* meta =
-      static_cast<RangeQueryMeta*>(read_options.range_query_meta);
+    static_cast<RangeQueryMeta*>(read_options.range_query_meta);
   size_t ok_size = read_options.batch_capacity + 1;
   if (meta->map_res.size() <= ok_size) {
     return false;
@@ -402,8 +412,8 @@ inline bool CompressResultList(std::list<RangeQueryKeyVal>* res,
   size_t diff_size = meta->map_res.size() - ok_size;
   for (size_t i = 0u; i < diff_size; i++) {
     auto it = --(meta->map_res.end());
-    size_t delta_size = it->second.iter_->user_key.size() + 
-        it->second.iter_->user_val.size();
+    size_t delta_size = it->second.iter_->user_key.size() +
+                        it->second.iter_->user_val.size();
     res->erase(it->second.iter_);  // remove from list
     assert(read_options.result_size >= delta_size);
     read_options.result_size -= delta_size;
@@ -436,20 +446,28 @@ inline int CompareRangeLimit(const InternalKeyComparator& comparator,
 class IterKey {
  public:
   IterKey()
-      : buf_(space_), buf_size_(sizeof(space_)), key_(buf_), key_size_(0) {}
+    : buf_(space_), buf_size_(sizeof(space_)), key_(buf_), key_size_(0) {}
 
-  ~IterKey() { ResetBuffer(); }
+  ~IterKey() {
+    ResetBuffer();
+  }
 
-  Slice GetKey() const { return Slice(key_, key_size_); }
+  Slice GetKey() const {
+    return Slice(key_, key_size_);
+  }
 
   Slice GetUserKey() const {
     assert(key_size_ >= 8);
     return Slice(key_, key_size_ - 8);
   }
 
-  size_t Size() const { return key_size_; }
+  size_t Size() const {
+    return key_size_;
+  }
 
-  void Clear() { key_size_ = 0; }
+  void Clear() {
+    key_size_ = 0;
+  }
 
   // Append "non_shared_data" to its back, from "shared_len"
   // This function is used in Block::Iter::ParseNextKey
@@ -516,7 +534,9 @@ class IterKey {
     EncodeFixed64(&buf_[key_size_ - 8], newval);
   }
 
-  bool IsKeyPinned() const { return (key_ != buf_); }
+  bool IsKeyPinned() const {
+    return (key_ != buf_);
+  }
 
   void SetInternalKey(const Slice& key_prefix, const Slice& user_key,
                       SequenceNumber s,

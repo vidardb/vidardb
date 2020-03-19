@@ -78,8 +78,12 @@ class Writer {
 
   Status AddRecord(const Slice& slice);
 
-  WritableFileWriter* file() { return dest_.get(); }
-  const WritableFileWriter* file() const { return dest_.get(); }
+  WritableFileWriter* file() {
+    return dest_.get();
+  }
+  const WritableFileWriter* file() const {
+    return dest_.get();
+  }
 
  private:
   unique_ptr<WritableFileWriter> dest_;

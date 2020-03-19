@@ -13,17 +13,17 @@ namespace vidardb {
 
 #ifdef VIDARDB_USING_THREAD_STATUS
 __thread ThreadStatusUpdater*
-    ThreadStatusUtil::thread_updater_local_cache_ = nullptr;
+ThreadStatusUtil::thread_updater_local_cache_ = nullptr;
 __thread bool ThreadStatusUtil::thread_updater_initialized_ = false;
 
 void ThreadStatusUtil::RegisterThread(
-    const Env* env, ThreadStatus::ThreadType thread_type) {
+  const Env* env, ThreadStatus::ThreadType thread_type) {
   if (!MaybeInitThreadLocalUpdater(env)) {
     return;
   }
   assert(thread_updater_local_cache_);
   thread_updater_local_cache_->RegisterThread(
-      thread_type, env->GetThreadID());
+    thread_type, env->GetThreadID());
 }
 
 void ThreadStatusUtil::UnregisterThread() {
@@ -70,7 +70,7 @@ void ThreadStatusUtil::SetThreadOperation(ThreadStatus::OperationType op) {
 }
 
 ThreadStatus::OperationStage ThreadStatusUtil::SetThreadOperationStage(
-    ThreadStatus::OperationStage stage) {
+  ThreadStatus::OperationStage stage) {
   if (thread_updater_local_cache_ == nullptr) {
     // thread_updater_local_cache_ must be set in SetColumnFamily
     // or other ThreadStatusUtil functions.
@@ -81,7 +81,7 @@ ThreadStatus::OperationStage ThreadStatusUtil::SetThreadOperationStage(
 }
 
 void ThreadStatusUtil::SetThreadOperationProperty(
-    int code, uint64_t value) {
+  int code, uint64_t value) {
   if (thread_updater_local_cache_ == nullptr) {
     // thread_updater_local_cache_ must be set in SetColumnFamily
     // or other ThreadStatusUtil functions.
@@ -89,11 +89,11 @@ void ThreadStatusUtil::SetThreadOperationProperty(
   }
 
   thread_updater_local_cache_->SetThreadOperationProperty(
-      code, value);
+    code, value);
 }
 
 void ThreadStatusUtil::IncreaseThreadOperationProperty(
-    int code, uint64_t delta) {
+  int code, uint64_t delta) {
   if (thread_updater_local_cache_ == nullptr) {
     // thread_updater_local_cache_ must be set in SetColumnFamily
     // or other ThreadStatusUtil functions.
@@ -101,7 +101,7 @@ void ThreadStatusUtil::IncreaseThreadOperationProperty(
   }
 
   thread_updater_local_cache_->IncreaseThreadOperationProperty(
-      code, delta);
+    code, delta);
 }
 
 void ThreadStatusUtil::SetThreadState(ThreadStatus::StateType state) {
@@ -122,21 +122,21 @@ void ThreadStatusUtil::ResetThreadStatus() {
 }
 
 void ThreadStatusUtil::NewColumnFamilyInfo(const DB* db,
-                                           const ColumnFamilyData* cfd,
-                                           const std::string& cf_name,
-                                           const Env* env) {
+    const ColumnFamilyData* cfd,
+    const std::string& cf_name,
+    const Env* env) {
   if (!MaybeInitThreadLocalUpdater(env)) {
     return;
   }
   assert(thread_updater_local_cache_);
   if (thread_updater_local_cache_) {
     thread_updater_local_cache_->NewColumnFamilyInfo(db, db->GetName(), cfd,
-                                                     cf_name);
+        cf_name);
   }
 }
 
 void ThreadStatusUtil::EraseColumnFamilyInfo(
-    const ColumnFamilyData* cfd) {
+  const ColumnFamilyData* cfd) {
   if (thread_updater_local_cache_ == nullptr) {
     return;
   }
@@ -159,7 +159,7 @@ bool ThreadStatusUtil::MaybeInitThreadLocalUpdater(const Env* env) {
 }
 
 AutoThreadOperationStageUpdater::AutoThreadOperationStageUpdater(
-    ThreadStatus::OperationStage stage) {
+  ThreadStatus::OperationStage stage) {
   prev_stage_ = ThreadStatusUtil::SetThreadOperationStage(stage);
 }
 
@@ -184,23 +184,23 @@ void ThreadStatusUtil::SetThreadOperation(ThreadStatus::OperationType op) {
 }
 
 void ThreadStatusUtil::SetThreadOperationProperty(
-    int code, uint64_t value) {
+  int code, uint64_t value) {
 }
 
 void ThreadStatusUtil::IncreaseThreadOperationProperty(
-    int code, uint64_t delta) {
+  int code, uint64_t delta) {
 }
 
 void ThreadStatusUtil::SetThreadState(ThreadStatus::StateType state) {
 }
 
 void ThreadStatusUtil::NewColumnFamilyInfo(const DB* db,
-                                           const ColumnFamilyData* cfd,
-                                           const std::string& cf_name,
-                                           const Env* env) {}
+    const ColumnFamilyData* cfd,
+    const std::string& cf_name,
+    const Env* env) {}
 
 void ThreadStatusUtil::EraseColumnFamilyInfo(
-    const ColumnFamilyData* cfd) {
+  const ColumnFamilyData* cfd) {
 }
 
 void ThreadStatusUtil::EraseDatabaseInfo(const DB* db) {
@@ -210,7 +210,7 @@ void ThreadStatusUtil::ResetThreadStatus() {
 }
 
 AutoThreadOperationStageUpdater::AutoThreadOperationStageUpdater(
-    ThreadStatus::OperationStage stage) {
+  ThreadStatus::OperationStage stage) {
 }
 
 AutoThreadOperationStageUpdater::~AutoThreadOperationStageUpdater() {

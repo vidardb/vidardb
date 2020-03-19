@@ -30,9 +30,11 @@
 namespace vidardb {
 
 class TablePropertiesTest : public testing::Test,
-                            public testing::WithParamInterface<bool> {
+  public testing::WithParamInterface<bool> {
  public:
-  virtual void SetUp() override { backward_mode_ = GetParam(); }
+  virtual void SetUp() override {
+    backward_mode_ = GetParam();
+  }
 
   bool backward_mode_;
 };
@@ -45,44 +47,46 @@ static const std::string kTestColumnFamilyName = "test_column_fam";
 void MakeBuilder(const Options& options, const ImmutableCFOptions& ioptions,
                  const InternalKeyComparator& internal_comparator,
                  const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
-                     int_tbl_prop_collector_factories,
+                 int_tbl_prop_collector_factories,
                  std::unique_ptr<WritableFileWriter>* writable,
                  std::unique_ptr<TableBuilder>* builder) {
   unique_ptr<WritableFile> wf(new test::StringSink);
   writable->reset(new WritableFileWriter(std::move(wf), EnvOptions()));
 
   builder->reset(NewTableBuilder(
-      ioptions, internal_comparator, int_tbl_prop_collector_factories,
-      kTestColumnFamilyId, kTestColumnFamilyName,
-      writable->get(), options.compression, options.compression_opts));
+                   ioptions, internal_comparator, int_tbl_prop_collector_factories,
+                   kTestColumnFamilyId, kTestColumnFamilyName,
+                   writable->get(), options.compression, options.compression_opts));
 }
 }  // namespace
 
 // Collects keys that starts with "A" in a table.
 class RegularKeysStartWithA: public TablePropertiesCollector {
  public:
-  const char* Name() const override { return "RegularKeysStartWithA"; }
+  const char* Name() const override {
+    return "RegularKeysStartWithA";
+  }
 
   Status Finish(UserCollectedProperties* properties) override {
-     std::string encoded;
-     std::string encoded_num_puts;
-     std::string encoded_num_deletes;
-     std::string encoded_num_single_deletes;
-     std::string encoded_num_size_changes;
-     PutVarint32(&encoded, count_);
-     PutVarint32(&encoded_num_puts, num_puts_);
-     PutVarint32(&encoded_num_deletes, num_deletes_);
-     PutVarint32(&encoded_num_single_deletes, num_single_deletes_);
-     PutVarint32(&encoded_num_size_changes, num_size_changes_);
-     *properties = UserCollectedProperties{
-         {"TablePropertiesTest", message_},
-         {"Count", encoded},
-         {"NumPuts", encoded_num_puts},
-         {"NumDeletes", encoded_num_deletes},
-         {"NumSingleDeletes", encoded_num_single_deletes},
-         {"NumSizeChanges", encoded_num_size_changes},
-     };
-     return Status::OK();
+    std::string encoded;
+    std::string encoded_num_puts;
+    std::string encoded_num_deletes;
+    std::string encoded_num_single_deletes;
+    std::string encoded_num_size_changes;
+    PutVarint32(&encoded, count_);
+    PutVarint32(&encoded_num_puts, num_puts_);
+    PutVarint32(&encoded_num_deletes, num_deletes_);
+    PutVarint32(&encoded_num_single_deletes, num_single_deletes_);
+    PutVarint32(&encoded_num_size_changes, num_size_changes_);
+    *properties = UserCollectedProperties{
+      {"TablePropertiesTest", message_},
+      {"Count", encoded},
+      {"NumPuts", encoded_num_puts},
+      {"NumDeletes", encoded_num_deletes},
+      {"NumSingleDeletes", encoded_num_single_deletes},
+      {"NumSizeChanges", encoded_num_size_changes},
+    };
+    return Status::OK();
   }
 
   Status AddUserKey(const Slice& user_key, const Slice& value, EntryType type,
@@ -124,15 +128,17 @@ class RegularKeysStartWithA: public TablePropertiesCollector {
 // Collects keys that starts with "A" in a table. Backward compatible mode
 // It is also used to test internal key table property collector
 class RegularKeysStartWithABackwardCompatible
-    : public TablePropertiesCollector {
+  : public TablePropertiesCollector {
  public:
-  const char* Name() const override { return "RegularKeysStartWithA"; }
+  const char* Name() const override {
+    return "RegularKeysStartWithA";
+  }
 
   Status Finish(UserCollectedProperties* properties) override {
     std::string encoded;
     PutVarint32(&encoded, count_);
     *properties = UserCollectedProperties{{"TablePropertiesTest", "VidarDB"},
-                                          {"Count", encoded}};
+      {"Count", encoded}};
     return Status::OK();
   }
 
@@ -154,13 +160,15 @@ class RegularKeysStartWithABackwardCompatible
 
 class RegularKeysStartWithAInternal : public IntTblPropCollector {
  public:
-  const char* Name() const override { return "RegularKeysStartWithA"; }
+  const char* Name() const override {
+    return "RegularKeysStartWithA";
+  }
 
   Status Finish(UserCollectedProperties* properties) override {
     std::string encoded;
     PutVarint32(&encoded, count_);
     *properties = UserCollectedProperties{{"TablePropertiesTest", "VidarDB"},
-                                          {"Count", encoded}};
+      {"Count", encoded}};
     return Status::OK();
   }
 
@@ -182,12 +190,12 @@ class RegularKeysStartWithAInternal : public IntTblPropCollector {
 };
 
 class RegularKeysStartWithAFactory : public IntTblPropCollectorFactory,
-                                     public TablePropertiesCollectorFactory {
+  public TablePropertiesCollectorFactory {
  public:
   explicit RegularKeysStartWithAFactory(bool backward_mode)
-      : backward_mode_(backward_mode) {}
+    : backward_mode_(backward_mode) {}
   virtual TablePropertiesCollector* CreateTablePropertiesCollector(
-      TablePropertiesCollectorFactory::Context context) override {
+    TablePropertiesCollectorFactory::Context context) override {
     EXPECT_EQ(kTestColumnFamilyId, context.column_family_id);
     if (!backward_mode_) {
       return new RegularKeysStartWithA();
@@ -196,10 +204,12 @@ class RegularKeysStartWithAFactory : public IntTblPropCollectorFactory,
     }
   }
   virtual IntTblPropCollector* CreateIntTblPropCollector(
-      uint32_t column_family_id) override {
+    uint32_t column_family_id) override {
     return new RegularKeysStartWithAInternal();
   }
-  const char* Name() const override { return "RegularKeysStartWithA"; }
+  const char* Name() const override {
+    return "RegularKeysStartWithA";
+  }
 
   bool backward_mode_;
 };
@@ -223,15 +233,15 @@ class FlushBlockEveryThreePolicyFactory : public FlushBlockPolicyFactory {
   }
 
   FlushBlockPolicy* NewFlushBlockPolicy(
-      const BlockBasedTableOptions& table_options,
-      const BlockBuilder& data_block_builder) const override {
+    const BlockBasedTableOptions& table_options,
+    const BlockBuilder& data_block_builder) const override {
     return new FlushBlockEveryThreePolicy;
   }
 
   /************************** Shichao *************************/
   FlushBlockPolicy* NewFlushBlockPolicy(
-      const ColumnTableOptions& table_options,
-      const BlockBuilder& data_block_builder) const override {
+    const ColumnTableOptions& table_options,
+    const BlockBuilder& data_block_builder) const override {
     return new FlushBlockEveryThreePolicy;
   }
   /************************** Shichao *************************/
@@ -241,20 +251,20 @@ extern const uint64_t kBlockBasedTableMagicNumber;
 extern const uint64_t kPlainTableMagicNumber;
 namespace {
 void TestCustomizedTablePropertiesCollector(
-    bool backward_mode, uint64_t magic_number, bool test_int_tbl_prop_collector,
-    const Options& options, const InternalKeyComparator& internal_comparator) {
+  bool backward_mode, uint64_t magic_number, bool test_int_tbl_prop_collector,
+  const Options& options, const InternalKeyComparator& internal_comparator) {
   // make sure the entries will be inserted with order.
   std::map<std::pair<std::string, ValueType>, std::string> kvs = {
-      {{"About   ", kTypeValue}, "val5"},  // starts with 'A'
-      {{"Abstract", kTypeValue}, "val2"},  // starts with 'A'
-      {{"Around  ", kTypeValue}, "val7"},  // starts with 'A'
-      {{"Beyond  ", kTypeValue}, "val3"},
-      {{"Builder ", kTypeValue}, "val1"},
-      {{"Love    ", kTypeDeletion}, ""},
-      {{"Cancel  ", kTypeValue}, "val4"},
-      {{"Find    ", kTypeValue}, "val6"},
-      {{"Vidar   ", kTypeDeletion}, ""},
-      {{"Foo     ", kTypeSingleDeletion}, ""},
+    {{"About   ", kTypeValue}, "val5"},  // starts with 'A'
+    {{"Abstract", kTypeValue}, "val2"},  // starts with 'A'
+    {{"Around  ", kTypeValue}, "val7"},  // starts with 'A'
+    {{"Beyond  ", kTypeValue}, "val3"},
+    {{"Builder ", kTypeValue}, "val1"},
+    {{"Love    ", kTypeDeletion}, ""},
+    {{"Cancel  ", kTypeValue}, "val4"},
+    {{"Find    ", kTypeValue}, "val6"},
+    {{"Vidar   ", kTypeDeletion}, ""},
+    {{"Foo     ", kTypeSingleDeletion}, ""},
   };
 
   // -- Step 1: build table
@@ -265,7 +275,7 @@ void TestCustomizedTablePropertiesCollector(
       int_tbl_prop_collector_factories;
   if (test_int_tbl_prop_collector) {
     int_tbl_prop_collector_factories.emplace_back(
-        new RegularKeysStartWithAFactory(backward_mode));
+      new RegularKeysStartWithAFactory(backward_mode));
   } else {
     GetIntTblPropCollectorFactory(options, &int_tbl_prop_collector_factories);
   }
@@ -282,10 +292,10 @@ void TestCustomizedTablePropertiesCollector(
 
   // -- Step 2: Read properties
   test::StringSink* fwf =
-      static_cast<test::StringSink*>(writer->writable_file());
+    static_cast<test::StringSink*>(writer->writable_file());
   std::unique_ptr<RandomAccessFileReader> fake_file_reader(
-      test::GetRandomAccessFileReader(
-          new test::StringSource(fwf->contents())));
+    test::GetRandomAccessFileReader(
+      new test::StringSource(fwf->contents())));
   TableProperties* props;
   Status s = ReadTableProperties(fake_file_reader.get(), fwf->contents().size(),
                                  magic_number, Env::Default(), nullptr, &props);
@@ -334,16 +344,18 @@ void TestCustomizedTablePropertiesCollector(
 TEST_P(TablePropertiesTest, CustomizedTablePropertiesCollector) {
   // Test properties collectors with internal keys or regular keys
   // for block based table
-  for (bool encode_as_internal : { true, false }) {
+  for (bool encode_as_internal : {
+         true, false
+       }) {
     Options options;
     BlockBasedTableOptions table_options;
     table_options.flush_block_policy_factory =
-        std::make_shared<FlushBlockEveryThreePolicyFactory>();
+      std::make_shared<FlushBlockEveryThreePolicyFactory>();
     options.table_factory.reset(NewBlockBasedTableFactory(table_options));
 
     test::PlainInternalKeyComparator ikc(options.comparator);
     std::shared_ptr<TablePropertiesCollectorFactory> collector_factory(
-        new RegularKeysStartWithAFactory(backward_mode_));
+      new RegularKeysStartWithAFactory(backward_mode_));
     options.table_properties_collector_factories.resize(1);
     options.table_properties_collector_factories[0] = collector_factory;
 
@@ -355,17 +367,17 @@ TEST_P(TablePropertiesTest, CustomizedTablePropertiesCollector) {
 
 namespace {
 void TestInternalKeyPropertiesCollector(
-    bool backward_mode, uint64_t magic_number, bool sanitized,
-    std::shared_ptr<TableFactory> table_factory) {
+  bool backward_mode, uint64_t magic_number, bool sanitized,
+  std::shared_ptr<TableFactory> table_factory) {
   InternalKey keys[] = {
-      InternalKey("A       ", 0, ValueType::kTypeValue),
-      InternalKey("B       ", 1, ValueType::kTypeValue),
-      InternalKey("C       ", 2, ValueType::kTypeValue),
-      InternalKey("W       ", 3, ValueType::kTypeDeletion),
-      InternalKey("X       ", 4, ValueType::kTypeDeletion),
-      InternalKey("Y       ", 5, ValueType::kTypeDeletion),
-      InternalKey("Z       ", 6, ValueType::kTypeDeletion),
-      InternalKey("a       ", 7, ValueType::kTypeSingleDeletion),
+    InternalKey("A       ", 0, ValueType::kTypeValue),
+    InternalKey("B       ", 1, ValueType::kTypeValue),
+    InternalKey("C       ", 2, ValueType::kTypeValue),
+    InternalKey("W       ", 3, ValueType::kTypeDeletion),
+    InternalKey("X       ", 4, ValueType::kTypeDeletion),
+    InternalKey("Y       ", 5, ValueType::kTypeDeletion),
+    InternalKey("Z       ", 6, ValueType::kTypeDeletion),
+    InternalKey("a       ", 7, ValueType::kTypeSingleDeletion),
   };
 
   std::unique_ptr<TableBuilder> builder;
@@ -378,7 +390,7 @@ void TestInternalKeyPropertiesCollector(
   options.table_factory = table_factory;
   if (sanitized) {
     options.table_properties_collector_factories.emplace_back(
-        new RegularKeysStartWithAFactory(backward_mode));
+      new RegularKeysStartWithAFactory(backward_mode));
     // with sanitization, even regular properties collector will be able to
     // handle internal keys.
     auto comparator = options.comparator;
@@ -392,7 +404,7 @@ void TestInternalKeyPropertiesCollector(
     options.comparator = comparator;
   } else {
     int_tbl_prop_collector_factories.emplace_back(
-        new InternalKeyPropertiesCollectorFactory);
+      new InternalKeyPropertiesCollectorFactory);
   }
   const ImmutableCFOptions ioptions(options);
 
@@ -407,13 +419,13 @@ void TestInternalKeyPropertiesCollector(
     writable->Flush();
 
     test::StringSink* fwf =
-        static_cast<test::StringSink*>(writable->writable_file());
+      static_cast<test::StringSink*>(writable->writable_file());
     unique_ptr<RandomAccessFileReader> reader(test::GetRandomAccessFileReader(
-        new test::StringSource(fwf->contents())));
+          new test::StringSource(fwf->contents())));
     TableProperties* props;
     Status s =
-        ReadTableProperties(reader.get(), fwf->contents().size(), magic_number,
-                            Env::Default(), nullptr, &props);
+      ReadTableProperties(reader.get(), fwf->contents().size(), magic_number,
+                          Env::Default(), nullptr, &props);
     ASSERT_OK(s);
 
     std::unique_ptr<TableProperties> props_guard(props);
@@ -460,12 +472,12 @@ void TestInternalKeyPropertiesCollector(
 
 TEST_P(TablePropertiesTest, InternalKeyPropertiesCollector) {
   TestInternalKeyPropertiesCollector(
-      backward_mode_, kBlockBasedTableMagicNumber, true /* sanitize */,
-      std::make_shared<BlockBasedTableFactory>());
+    backward_mode_, kBlockBasedTableMagicNumber, true /* sanitize */,
+    std::make_shared<BlockBasedTableFactory>());
   if (backward_mode_) {
     TestInternalKeyPropertiesCollector(
-        backward_mode_, kBlockBasedTableMagicNumber, false /* not sanitize */,
-        std::make_shared<BlockBasedTableFactory>());
+      backward_mode_, kBlockBasedTableMagicNumber, false /* not sanitize */,
+      std::make_shared<BlockBasedTableFactory>());
   }
 }
 

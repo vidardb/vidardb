@@ -40,7 +40,7 @@ std::string RandomString(Random* rnd, int len) {
 class EnvCounter : public EnvWrapper {
  public:
   explicit EnvCounter(Env* base)
-      : EnvWrapper(base), num_new_writable_file_(0) {}
+    : EnvWrapper(base), num_new_writable_file_(0) {}
   int GetNumberOfNewWritableFileCalls() {
     return num_new_writable_file_;
   }
@@ -161,19 +161,19 @@ class ColumnFamilyTest : public testing::Test {
     names_.clear();
     for (size_t i = 0; i < cf.size(); ++i) {
       column_families.push_back(ColumnFamilyDescriptor(
-          cf[i], options.size() == 0 ? column_family_options_ : options[i]));
+                                  cf[i], options.size() == 0 ? column_family_options_ : options[i]));
       names_.push_back(cf[i]);
     }
     return DB::Open(db_options_, dbname_, column_families, &handles_, &db_);
   }
 
   Status OpenReadOnly(std::vector<std::string> cf,
-                         std::vector<ColumnFamilyOptions> options = {}) {
+                      std::vector<ColumnFamilyOptions> options = {}) {
     std::vector<ColumnFamilyDescriptor> column_families;
     names_.clear();
     for (size_t i = 0; i < cf.size(); ++i) {
       column_families.push_back(ColumnFamilyDescriptor(
-          cf[i], options.size() == 0 ? column_family_options_ : options[i]));
+                                  cf[i], options.size() == 0 ? column_family_options_ : options[i]));
       names_.push_back(cf[i]);
     }
     return DB::OpenForReadOnly(db_options_, dbname_, column_families, &handles_,
@@ -182,7 +182,7 @@ class ColumnFamilyTest : public testing::Test {
 
 #ifndef VIDARDB_LITE  // ReadOnlyDB is not supported
   void AssertOpenReadOnly(std::vector<std::string> cf,
-                    std::vector<ColumnFamilyOptions> options = {}) {
+                          std::vector<ColumnFamilyOptions> options = {}) {
     ASSERT_OK(OpenReadOnly(cf, options));
   }
 #endif  // !VIDARDB_LITE
@@ -197,7 +197,9 @@ class ColumnFamilyTest : public testing::Test {
     Open({"default"});
   }
 
-  DBImpl* dbfull() { return reinterpret_cast<DBImpl*>(db_); }
+  DBImpl* dbfull() {
+    return reinterpret_cast<DBImpl*>(db_);
+  }
 
   int GetProperty(int cf, std::string property) {
     std::string value;
@@ -215,16 +217,16 @@ class ColumnFamilyTest : public testing::Test {
   }
 
   void CreateColumnFamilies(
-      const std::vector<std::string>& cfs,
-      const std::vector<ColumnFamilyOptions> options = {}) {
+    const std::vector<std::string>& cfs,
+    const std::vector<ColumnFamilyOptions> options = {}) {
     int cfi = static_cast<int>(handles_.size());
     handles_.resize(cfi + cfs.size());
     names_.resize(cfi + cfs.size());
     for (size_t i = 0; i < cfs.size(); ++i) {
       const auto& current_cf_opt =
-          options.size() == 0 ? column_family_options_ : options[i];
+        options.size() == 0 ? column_family_options_ : options[i];
       ASSERT_OK(
-          db_->CreateColumnFamily(current_cf_opt, cfs[i], &handles_[cfi]));
+        db_->CreateColumnFamily(current_cf_opt, cfs[i], &handles_[cfi]));
       names_[cfi] = cfs[i];
 
 #ifndef VIDARDB_LITE  // VidarDBLite does not support GetDescriptor
@@ -329,7 +331,7 @@ class ColumnFamilyTest : public testing::Test {
 
   void Compact(int cf, const Slice& start, const Slice& limit) {
     ASSERT_OK(
-        db_->CompactRange(CompactRangeOptions(), handles_[cf], &start, &limit));
+      db_->CompactRange(CompactRangeOptions(), handles_[cf], &start, &limit));
   }
 
   int NumTableFilesAtLevel(int level, int cf) {
@@ -669,7 +671,7 @@ TEST_F(ColumnFamilyTest, FlushTest) {
 
     for (int i = 0; i < 3; ++i) {
       uint64_t max_total_in_memory_state =
-          MaxTotalInMemoryState();
+        MaxTotalInMemoryState();
       Flush(i);
       AssertMaxTotalInMemoryState(max_total_in_memory_state);
     }
@@ -1005,18 +1007,19 @@ TEST_F(ColumnFamilyTest, MultipleManualCompactions) {
     AssertFilesPerLevel(ToString(i + 1), 1);
   }
   bool cf_1_1 = true;
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"ColumnFamilyTest::MultiManual:4", "ColumnFamilyTest::MultiManual:1"},
-       {"ColumnFamilyTest::MultiManual:2", "ColumnFamilyTest::MultiManual:5"},
-       {"ColumnFamilyTest::MultiManual:2", "ColumnFamilyTest::MultiManual:3"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {"ColumnFamilyTest::MultiManual:4", "ColumnFamilyTest::MultiManual:1"},
+    {"ColumnFamilyTest::MultiManual:2", "ColumnFamilyTest::MultiManual:5"},
+    {"ColumnFamilyTest::MultiManual:2", "ColumnFamilyTest::MultiManual:3"}
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
-        if (cf_1_1) {
-          TEST_SYNC_POINT("ColumnFamilyTest::MultiManual:4");
-          cf_1_1 = false;
-          TEST_SYNC_POINT("ColumnFamilyTest::MultiManual:3");
-        }
-      });
+  "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
+    if (cf_1_1) {
+      TEST_SYNC_POINT("ColumnFamilyTest::MultiManual:4");
+      cf_1_1 = false;
+      TEST_SYNC_POINT("ColumnFamilyTest::MultiManual:3");
+    }
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   std::vector<std::thread> threads;
@@ -1024,7 +1027,7 @@ TEST_F(ColumnFamilyTest, MultipleManualCompactions) {
     CompactRangeOptions compact_options;
     compact_options.exclusive_manual_compaction = false;
     ASSERT_OK(
-        db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
+      db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
   });
 
   // SETUP column family "two" -- level style with 4 levels
@@ -1039,7 +1042,7 @@ TEST_F(ColumnFamilyTest, MultipleManualCompactions) {
     CompactRangeOptions compact_options;
     compact_options.exclusive_manual_compaction = false;
     ASSERT_OK(
-        db_->CompactRange(compact_options, handles_[2], nullptr, nullptr));
+      db_->CompactRange(compact_options, handles_[2], nullptr, nullptr));
     TEST_SYNC_POINT("ColumnFamilyTest::MultiManual:2");
   });
 
@@ -1097,18 +1100,19 @@ TEST_F(ColumnFamilyTest, AutomaticAndManualCompactions) {
   Reopen({default_cf, one, two});
 
   bool cf_1_1 = true;
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"ColumnFamilyTest::AutoManual:4", "ColumnFamilyTest::AutoManual:1"},
-       {"ColumnFamilyTest::AutoManual:2", "ColumnFamilyTest::AutoManual:5"},
-       {"ColumnFamilyTest::AutoManual:2", "ColumnFamilyTest::AutoManual:3"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {"ColumnFamilyTest::AutoManual:4", "ColumnFamilyTest::AutoManual:1"},
+    {"ColumnFamilyTest::AutoManual:2", "ColumnFamilyTest::AutoManual:5"},
+    {"ColumnFamilyTest::AutoManual:2", "ColumnFamilyTest::AutoManual:3"}
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
-        if (cf_1_1) {
-          cf_1_1 = false;
-          TEST_SYNC_POINT("ColumnFamilyTest::AutoManual:4");
-          TEST_SYNC_POINT("ColumnFamilyTest::AutoManual:3");
-        }
-      });
+  "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
+    if (cf_1_1) {
+      cf_1_1 = false;
+      TEST_SYNC_POINT("ColumnFamilyTest::AutoManual:4");
+      TEST_SYNC_POINT("ColumnFamilyTest::AutoManual:3");
+    }
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   // SETUP column family "one" -- universal style
   for (int i = 0; i < one.level0_file_num_compaction_trigger; ++i) {
@@ -1131,7 +1135,7 @@ TEST_F(ColumnFamilyTest, AutomaticAndManualCompactions) {
     CompactRangeOptions compact_options;
     compact_options.exclusive_manual_compaction = false;
     ASSERT_OK(
-        db_->CompactRange(compact_options, handles_[2], nullptr, nullptr));
+      db_->CompactRange(compact_options, handles_[2], nullptr, nullptr));
     TEST_SYNC_POINT("ColumnFamilyTest::AutoManual:2");
   });
 
@@ -1198,28 +1202,29 @@ TEST_F(ColumnFamilyTest, ManualAndAutomaticCompactions) {
   }
   bool cf_1_1 = true;
   bool cf_1_2 = true;
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"ColumnFamilyTest::ManualAuto:4", "ColumnFamilyTest::ManualAuto:1"},
-       {"ColumnFamilyTest::ManualAuto:5", "ColumnFamilyTest::ManualAuto:2"},
-       {"ColumnFamilyTest::ManualAuto:2", "ColumnFamilyTest::ManualAuto:3"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {"ColumnFamilyTest::ManualAuto:4", "ColumnFamilyTest::ManualAuto:1"},
+    {"ColumnFamilyTest::ManualAuto:5", "ColumnFamilyTest::ManualAuto:2"},
+    {"ColumnFamilyTest::ManualAuto:2", "ColumnFamilyTest::ManualAuto:3"}
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
-        if (cf_1_1) {
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:4");
-          cf_1_1 = false;
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:3");
-        } else if (cf_1_2) {
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:2");
-          cf_1_2 = false;
-        }
-      });
+  "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
+    if (cf_1_1) {
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:4");
+      cf_1_1 = false;
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:3");
+    } else if (cf_1_2) {
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:2");
+      cf_1_2 = false;
+    }
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   std::thread threads([&] {
     CompactRangeOptions compact_options;
     compact_options.exclusive_manual_compaction = false;
     ASSERT_OK(
-        db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
+      db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
   });
 
   TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:1");
@@ -1289,30 +1294,33 @@ TEST_F(ColumnFamilyTest, SameCFManualManualCompactions) {
   }
   bool cf_1_1 = true;
   bool cf_1_2 = true;
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"ColumnFamilyTest::ManualManual:4", "ColumnFamilyTest::ManualManual:2"},
-       {"ColumnFamilyTest::ManualManual:4", "ColumnFamilyTest::ManualManual:5"},
-       {"ColumnFamilyTest::ManualManual:1", "ColumnFamilyTest::ManualManual:2"},
-       {"ColumnFamilyTest::ManualManual:1",
-        "ColumnFamilyTest::ManualManual:3"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {"ColumnFamilyTest::ManualManual:4", "ColumnFamilyTest::ManualManual:2"},
+    {"ColumnFamilyTest::ManualManual:4", "ColumnFamilyTest::ManualManual:5"},
+    {"ColumnFamilyTest::ManualManual:1", "ColumnFamilyTest::ManualManual:2"},
+    {
+      "ColumnFamilyTest::ManualManual:1",
+      "ColumnFamilyTest::ManualManual:3"
+    }
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
-        if (cf_1_1) {
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualManual:4");
-          cf_1_1 = false;
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualManual:3");
-        } else if (cf_1_2) {
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualManual:2");
-          cf_1_2 = false;
-        }
-      });
+  "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
+    if (cf_1_1) {
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualManual:4");
+      cf_1_1 = false;
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualManual:3");
+    } else if (cf_1_2) {
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualManual:2");
+      cf_1_2 = false;
+    }
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   std::thread threads([&] {
     CompactRangeOptions compact_options;
     compact_options.exclusive_manual_compaction = true;
     ASSERT_OK(
-        db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
+      db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
   });
 
   TEST_SYNC_POINT("ColumnFamilyTest::ManualManual:5");
@@ -1332,7 +1340,7 @@ TEST_F(ColumnFamilyTest, SameCFManualManualCompactions) {
     CompactRangeOptions compact_options;
     compact_options.exclusive_manual_compaction = false;
     ASSERT_OK(
-        db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
+      db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
   });
 
   TEST_SYNC_POINT("ColumnFamilyTest::ManualManual:1");
@@ -1388,29 +1396,30 @@ TEST_F(ColumnFamilyTest, SameCFManualAutomaticCompactions) {
   }
   bool cf_1_1 = true;
   bool cf_1_2 = true;
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"ColumnFamilyTest::ManualAuto:4", "ColumnFamilyTest::ManualAuto:2"},
-       {"ColumnFamilyTest::ManualAuto:4", "ColumnFamilyTest::ManualAuto:5"},
-       {"ColumnFamilyTest::ManualAuto:1", "ColumnFamilyTest::ManualAuto:2"},
-       {"ColumnFamilyTest::ManualAuto:1", "ColumnFamilyTest::ManualAuto:3"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {"ColumnFamilyTest::ManualAuto:4", "ColumnFamilyTest::ManualAuto:2"},
+    {"ColumnFamilyTest::ManualAuto:4", "ColumnFamilyTest::ManualAuto:5"},
+    {"ColumnFamilyTest::ManualAuto:1", "ColumnFamilyTest::ManualAuto:2"},
+    {"ColumnFamilyTest::ManualAuto:1", "ColumnFamilyTest::ManualAuto:3"}
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
-        if (cf_1_1) {
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:4");
-          cf_1_1 = false;
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:3");
-        } else if (cf_1_2) {
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:2");
-          cf_1_2 = false;
-        }
-      });
+  "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
+    if (cf_1_1) {
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:4");
+      cf_1_1 = false;
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:3");
+    } else if (cf_1_2) {
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:2");
+      cf_1_2 = false;
+    }
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   std::thread threads([&] {
     CompactRangeOptions compact_options;
     compact_options.exclusive_manual_compaction = false;
     ASSERT_OK(
-        db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
+      db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
   });
 
   TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:5");
@@ -1478,31 +1487,34 @@ TEST_F(ColumnFamilyTest, SameCFManualAutomaticCompactionsLevel) {
   }
   bool cf_1_1 = true;
   bool cf_1_2 = true;
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"ColumnFamilyTest::ManualAuto:4", "ColumnFamilyTest::ManualAuto:2"},
-       {"ColumnFamilyTest::ManualAuto:4", "ColumnFamilyTest::ManualAuto:5"},
-       {"ColumnFamilyTest::ManualAuto:3", "ColumnFamilyTest::ManualAuto:2"},
-       {"LevelCompactionPicker::PickCompactionBySize:0",
-        "ColumnFamilyTest::ManualAuto:3"},
-       {"ColumnFamilyTest::ManualAuto:1", "ColumnFamilyTest::ManualAuto:3"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {"ColumnFamilyTest::ManualAuto:4", "ColumnFamilyTest::ManualAuto:2"},
+    {"ColumnFamilyTest::ManualAuto:4", "ColumnFamilyTest::ManualAuto:5"},
+    {"ColumnFamilyTest::ManualAuto:3", "ColumnFamilyTest::ManualAuto:2"},
+    {
+      "LevelCompactionPicker::PickCompactionBySize:0",
+      "ColumnFamilyTest::ManualAuto:3"
+    },
+    {"ColumnFamilyTest::ManualAuto:1", "ColumnFamilyTest::ManualAuto:3"}
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
-        if (cf_1_1) {
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:4");
-          cf_1_1 = false;
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:3");
-        } else if (cf_1_2) {
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:2");
-          cf_1_2 = false;
-        }
-      });
+  "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
+    if (cf_1_1) {
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:4");
+      cf_1_1 = false;
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:3");
+    } else if (cf_1_2) {
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:2");
+      cf_1_2 = false;
+    }
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   std::thread threads([&] {
     CompactRangeOptions compact_options;
     compact_options.exclusive_manual_compaction = false;
     ASSERT_OK(
-        db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
+      db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
   });
 
   TEST_SYNC_POINT("ColumnFamilyTest::ManualAuto:5");
@@ -1575,45 +1587,58 @@ TEST_F(ColumnFamilyTest, SameCFManualAutomaticConflict) {
   }
   bool cf_1_1 = true;
   bool cf_1_2 = true;
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"DBImpl::BackgroundCompaction()::Conflict",
-        "ColumnFamilyTest::ManualAutoCon:7"},
-       {"ColumnFamilyTest::ManualAutoCon:9",
-        "ColumnFamilyTest::ManualAutoCon:8"},
-       {"ColumnFamilyTest::ManualAutoCon:2",
-        "ColumnFamilyTest::ManualAutoCon:6"},
-       {"ColumnFamilyTest::ManualAutoCon:4",
-        "ColumnFamilyTest::ManualAutoCon:5"},
-       {"ColumnFamilyTest::ManualAutoCon:1",
-        "ColumnFamilyTest::ManualAutoCon:2"},
-       {"ColumnFamilyTest::ManualAutoCon:1",
-        "ColumnFamilyTest::ManualAutoCon:3"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {
+      "DBImpl::BackgroundCompaction()::Conflict",
+      "ColumnFamilyTest::ManualAutoCon:7"
+    },
+    {
+      "ColumnFamilyTest::ManualAutoCon:9",
+      "ColumnFamilyTest::ManualAutoCon:8"
+    },
+    {
+      "ColumnFamilyTest::ManualAutoCon:2",
+      "ColumnFamilyTest::ManualAutoCon:6"
+    },
+    {
+      "ColumnFamilyTest::ManualAutoCon:4",
+      "ColumnFamilyTest::ManualAutoCon:5"
+    },
+    {
+      "ColumnFamilyTest::ManualAutoCon:1",
+      "ColumnFamilyTest::ManualAutoCon:2"
+    },
+    {
+      "ColumnFamilyTest::ManualAutoCon:1",
+      "ColumnFamilyTest::ManualAutoCon:3"
+    }
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
-        if (cf_1_1) {
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualAutoCon:4");
-          cf_1_1 = false;
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualAutoCon:3");
-        } else if (cf_1_2) {
-          cf_1_2 = false;
-          TEST_SYNC_POINT("ColumnFamilyTest::ManualAutoCon:2");
-        }
-      });
+  "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
+    if (cf_1_1) {
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualAutoCon:4");
+      cf_1_1 = false;
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualAutoCon:3");
+    } else if (cf_1_2) {
+      cf_1_2 = false;
+      TEST_SYNC_POINT("ColumnFamilyTest::ManualAutoCon:2");
+    }
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::RunManualCompaction:NotScheduled", [&](void* arg) {
-        InstrumentedMutex* mutex = static_cast<InstrumentedMutex*>(arg);
-        mutex->Unlock();
-        TEST_SYNC_POINT("ColumnFamilyTest::ManualAutoCon:9");
-        TEST_SYNC_POINT("ColumnFamilyTest::ManualAutoCon:7");
-        mutex->Lock();
-      });
+  "DBImpl::RunManualCompaction:NotScheduled", [&](void* arg) {
+    InstrumentedMutex* mutex = static_cast<InstrumentedMutex*>(arg);
+    mutex->Unlock();
+    TEST_SYNC_POINT("ColumnFamilyTest::ManualAutoCon:9");
+    TEST_SYNC_POINT("ColumnFamilyTest::ManualAutoCon:7");
+    mutex->Lock();
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   std::thread threads([&] {
     CompactRangeOptions compact_options;
     compact_options.exclusive_manual_compaction = false;
     ASSERT_OK(
-        db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
+      db_->CompactRange(compact_options, handles_[1], nullptr, nullptr));
     TEST_SYNC_POINT("ColumnFamilyTest::ManualAutoCon:6");
   });
 
@@ -1688,22 +1713,25 @@ TEST_F(ColumnFamilyTest, SameCFAutomaticManualCompactions) {
 
   bool cf_1_1 = true;
   bool cf_1_2 = true;
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"ColumnFamilyTest::AutoManual:4", "ColumnFamilyTest::AutoManual:2"},
-       {"ColumnFamilyTest::AutoManual:4", "ColumnFamilyTest::AutoManual:5"},
-       {"CompactionPicker::CompactRange:Conflict",
-        "ColumnFamilyTest::AutoManual:3"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {"ColumnFamilyTest::AutoManual:4", "ColumnFamilyTest::AutoManual:2"},
+    {"ColumnFamilyTest::AutoManual:4", "ColumnFamilyTest::AutoManual:5"},
+    {
+      "CompactionPicker::CompactRange:Conflict",
+      "ColumnFamilyTest::AutoManual:3"
+    }
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
-        if (cf_1_1) {
-          TEST_SYNC_POINT("ColumnFamilyTest::AutoManual:4");
-          cf_1_1 = false;
-          TEST_SYNC_POINT("ColumnFamilyTest::AutoManual:3");
-        } else if (cf_1_2) {
-          TEST_SYNC_POINT("ColumnFamilyTest::AutoManual:2");
-          cf_1_2 = false;
-        }
-      });
+  "DBImpl::BackgroundCompaction:NonTrivial:AfterRun", [&](void* arg) {
+    if (cf_1_1) {
+      TEST_SYNC_POINT("ColumnFamilyTest::AutoManual:4");
+      cf_1_1 = false;
+      TEST_SYNC_POINT("ColumnFamilyTest::AutoManual:3");
+    } else if (cf_1_2) {
+      TEST_SYNC_POINT("ColumnFamilyTest::AutoManual:2");
+      cf_1_2 = false;
+    }
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -1870,7 +1898,7 @@ TEST_F(ColumnFamilyTest, DontRollEmptyLogs) {
     WaitForFlush(i);
   }
   int total_new_writable_files =
-      env_->GetNumberOfNewWritableFileCalls() - num_writable_file_start;
+    env_->GetNumberOfNewWritableFileCalls() - num_writable_file_start;
   ASSERT_EQ(static_cast<size_t>(total_new_writable_files), handles_.size() + 1);
   Close();
 }
@@ -1929,10 +1957,10 @@ TEST_F(ColumnFamilyTest, SanitizeOptions) {
             original.level0_slowdown_writes_trigger = j;
             original.level0_file_num_compaction_trigger = k;
             original.write_buffer_size =
-                l * 4 * 1024 * 1024 + i * 1024 * 1024 + j * 1024 + k;
+              l * 4 * 1024 * 1024 + i * 1024 * 1024 + j * 1024 + k;
 
             ColumnFamilyOptions result =
-                SanitizeOptions(db_options, nullptr, original);
+              SanitizeOptions(db_options, nullptr, original);
             ASSERT_TRUE(result.level0_stop_writes_trigger >=
                         result.level0_slowdown_writes_trigger);
             ASSERT_TRUE(result.level0_slowdown_writes_trigger >=
@@ -1951,7 +1979,7 @@ TEST_F(ColumnFamilyTest, SanitizeOptions) {
             // Make sure Sanitize options sets arena_block_size to 1/8 of
             // the write_buffer_size, rounded up to a multiple of 4k.
             size_t expected_arena_block_size =
-                l * 4 * 1024 * 1024 / 8 + i * 1024 * 1024 / 8;
+              l * 4 * 1024 * 1024 / 8 + i * 1024 * 1024 / 8;
             if (j + k != 0) {
               // not a multiple of 4k, round up 4k
               expected_arena_block_size += 4 * 1024;
@@ -1988,7 +2016,7 @@ TEST_F(ColumnFamilyTest, ReadDroppedColumnFamily) {
 
     {
       std::unique_ptr<Iterator> iterator(
-          db_->NewIterator(ReadOptions(), handles_[2]));
+        db_->NewIterator(ReadOptions(), handles_[2]));
       iterator->SeekToFirst();
 
       if (iter == 0) {
@@ -2021,7 +2049,7 @@ TEST_F(ColumnFamilyTest, ReadDroppedColumnFamily) {
     // we're still able to read dropped CF
     for (int i = 0; i < 3; ++i) {
       std::unique_ptr<Iterator> iterator(
-          db_->NewIterator(ReadOptions(), handles_[i]));
+        db_->NewIterator(ReadOptions(), handles_[i]));
       int count = 0;
       for (iterator->SeekToFirst(); iterator->Valid(); iterator->Next()) {
         ASSERT_OK(iterator->status());
@@ -2047,13 +2075,20 @@ TEST_F(ColumnFamilyTest, FlushAndDropRaceCondition) {
   options.write_buffer_size = 100000;  // small write buffer size
   Reopen({options, options});
 
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"VersionSet::LogAndApply::ColumnFamilyDrop:0",
-        "FlushJob::WriteLevel0Table"},
-       {"VersionSet::LogAndApply::ColumnFamilyDrop:1",
-        "FlushJob::InstallResults"},
-       {"FlushJob::InstallResults",
-        "VersionSet::LogAndApply::ColumnFamilyDrop:2"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {
+      "VersionSet::LogAndApply::ColumnFamilyDrop:0",
+      "FlushJob::WriteLevel0Table"
+    },
+    {
+      "VersionSet::LogAndApply::ColumnFamilyDrop:1",
+      "FlushJob::InstallResults"
+    },
+    {
+      "FlushJob::InstallResults",
+      "VersionSet::LogAndApply::ColumnFamilyDrop:2"
+    }
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   test::SleepingBackgroundTask sleeping_task;
@@ -2081,7 +2116,7 @@ TEST_F(ColumnFamilyTest, FlushAndDropRaceCondition) {
     // Since we didn't delete CF handle, VidarDB's contract guarantees that
     // we're still able to read dropped CF
     std::unique_ptr<Iterator> iterator(
-        db_->NewIterator(ReadOptions(), handles_[1]));
+      db_->NewIterator(ReadOptions(), handles_[1]));
     int count = 0;
     for (iterator->SeekToFirst(); iterator->Valid(); iterator->Next()) {
       ASSERT_OK(iterator->status());
@@ -2134,7 +2169,7 @@ TEST_F(ColumnFamilyTest, CreateAndDropRace) {
   auto main_thread_id = std::this_thread::get_id();
 
   vidardb::SyncPoint::GetInstance()->SetCallBack("PersistVidarDBOptions:start",
-                                                 [&](void* arg) {
+  [&](void* arg) {
     auto current_thread_id = std::this_thread::get_id();
     // If it's the main thread hitting this sync-point, then it
     // will be blocked until some other thread update the test_stage.
@@ -2147,20 +2182,20 @@ TEST_F(ColumnFamilyTest, CreateAndDropRace) {
   });
 
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "WriteThread::EnterUnbatched:Wait", [&](void* arg) {
-        // This means a thread doing DropColumnFamily() is waiting for
-        // other thread to finish persisting options.
-        // In such case, we update the test_stage to unblock the main thread.
-        test_stage = kChildThreadWaitingMainThreadPersistOptions;
+  "WriteThread::EnterUnbatched:Wait", [&](void* arg) {
+    // This means a thread doing DropColumnFamily() is waiting for
+    // other thread to finish persisting options.
+    // In such case, we update the test_stage to unblock the main thread.
+    test_stage = kChildThreadWaitingMainThreadPersistOptions;
 
-        // Note that based on the test setting, this must not be the
-        // main thread.
-        ASSERT_NE(main_thread_id, std::this_thread::get_id());
-      });
+    // Note that based on the test setting, this must not be the
+    // main thread.
+    ASSERT_NE(main_thread_id, std::this_thread::get_id());
+  });
 
   // Create a database with four column families
   Open({"default", "one", "two", "three"},
-       {cf_opts[0], cf_opts[1], cf_opts[2], cf_opts[3]});
+  {cf_opts[0], cf_opts[1], cf_opts[2], cf_opts[3]});
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -2189,13 +2224,13 @@ TEST_F(ColumnFamilyTest, WriteStallSingleColumnFamily) {
 
   Open({"default"});
   ColumnFamilyData* cfd =
-      static_cast<ColumnFamilyHandleImpl*>(db_->DefaultColumnFamily())->cfd();
+    static_cast<ColumnFamilyHandleImpl*>(db_->DefaultColumnFamily())->cfd();
 
   VersionStorageInfo* vstorage = cfd->current()->storage_info();
 
   MutableCFOptions mutable_cf_options(
-      Options(db_options_, column_family_options_),
-      ImmutableCFOptions(Options(db_options_, column_family_options_)));
+    Options(db_options_, column_family_options_),
+    ImmutableCFOptions(Options(db_options_, column_family_options_)));
 
   mutable_cf_options.level0_slowdown_writes_trigger = 20;
   mutable_cf_options.level0_stop_writes_trigger = 10000;
@@ -2379,13 +2414,13 @@ TEST_F(ColumnFamilyTest, CompactionSpeedupSingleColumnFamily) {
   db_options_.max_background_compactions = 6;
   Open({"default"});
   ColumnFamilyData* cfd =
-      static_cast<ColumnFamilyHandleImpl*>(db_->DefaultColumnFamily())->cfd();
+    static_cast<ColumnFamilyHandleImpl*>(db_->DefaultColumnFamily())->cfd();
 
   VersionStorageInfo* vstorage = cfd->current()->storage_info();
 
   MutableCFOptions mutable_cf_options(
-      Options(db_options_, column_family_options_),
-      ImmutableCFOptions(Options(db_options_, column_family_options_)));
+    Options(db_options_, column_family_options_),
+    ImmutableCFOptions(Options(db_options_, column_family_options_)));
 
   // Speed up threshold = min(4 * 2, 4 + (36 - 4)/4) = 8
   mutable_cf_options.level0_file_num_compaction_trigger = 4;
@@ -2447,16 +2482,16 @@ TEST_F(ColumnFamilyTest, WriteStallTwoColumnFamilies) {
   Open();
   CreateColumnFamilies({"one"});
   ColumnFamilyData* cfd =
-      static_cast<ColumnFamilyHandleImpl*>(db_->DefaultColumnFamily())->cfd();
+    static_cast<ColumnFamilyHandleImpl*>(db_->DefaultColumnFamily())->cfd();
   VersionStorageInfo* vstorage = cfd->current()->storage_info();
 
   ColumnFamilyData* cfd1 =
-      static_cast<ColumnFamilyHandleImpl*>(handles_[1])->cfd();
+    static_cast<ColumnFamilyHandleImpl*>(handles_[1])->cfd();
   VersionStorageInfo* vstorage1 = cfd1->current()->storage_info();
 
   MutableCFOptions mutable_cf_options(
-      Options(db_options_, column_family_options_),
-      ImmutableCFOptions(Options(db_options_, column_family_options_)));
+    Options(db_options_, column_family_options_),
+    ImmutableCFOptions(Options(db_options_, column_family_options_)));
   mutable_cf_options.level0_slowdown_writes_trigger = 20;
   mutable_cf_options.level0_stop_writes_trigger = 10000;
   mutable_cf_options.soft_pending_compaction_bytes_limit = 200;
@@ -2531,16 +2566,16 @@ TEST_F(ColumnFamilyTest, CompactionSpeedupTwoColumnFamilies) {
   Open();
   CreateColumnFamilies({"one"});
   ColumnFamilyData* cfd =
-      static_cast<ColumnFamilyHandleImpl*>(db_->DefaultColumnFamily())->cfd();
+    static_cast<ColumnFamilyHandleImpl*>(db_->DefaultColumnFamily())->cfd();
   VersionStorageInfo* vstorage = cfd->current()->storage_info();
 
   ColumnFamilyData* cfd1 =
-      static_cast<ColumnFamilyHandleImpl*>(handles_[1])->cfd();
+    static_cast<ColumnFamilyHandleImpl*>(handles_[1])->cfd();
   VersionStorageInfo* vstorage1 = cfd1->current()->storage_info();
 
   MutableCFOptions mutable_cf_options(
-      Options(db_options_, column_family_options_),
-      ImmutableCFOptions(Options(db_options_, column_family_options_)));
+    Options(db_options_, column_family_options_),
+    ImmutableCFOptions(Options(db_options_, column_family_options_)));
   // Speed up threshold = min(4 * 2, 4 + (36 - 4)/4) = 8
   mutable_cf_options.level0_file_num_compaction_trigger = 4;
   mutable_cf_options.level0_slowdown_writes_trigger = 36;
@@ -2601,11 +2636,16 @@ TEST_F(ColumnFamilyTest, LogSyncConflictFlush) {
   Put(0, "", "");
   Put(1, "foo", "bar");
 
-  vidardb::SyncPoint::GetInstance()->LoadDependency(
-      {{"DBImpl::SyncWAL:BeforeMarkLogsSynced:1",
-        "ColumnFamilyTest::LogSyncConflictFlush:1"},
-       {"ColumnFamilyTest::LogSyncConflictFlush:2",
-        "DBImpl::SyncWAL:BeforeMarkLogsSynced:2"}});
+  vidardb::SyncPoint::GetInstance()->LoadDependency( {
+    {
+      "DBImpl::SyncWAL:BeforeMarkLogsSynced:1",
+      "ColumnFamilyTest::LogSyncConflictFlush:1"
+    },
+    {
+      "ColumnFamilyTest::LogSyncConflictFlush:2",
+      "DBImpl::SyncWAL:BeforeMarkLogsSynced:2"
+    }
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 

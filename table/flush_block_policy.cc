@@ -27,9 +27,9 @@ class FlushBlockBySizePolicy : public FlushBlockPolicy {
   FlushBlockBySizePolicy(const uint64_t block_size,
                          const uint64_t block_size_deviation,
                          const BlockBuilder& data_block_builder) :
-      block_size_(block_size),
-      block_size_deviation_(block_size_deviation),
-      data_block_builder_(data_block_builder) {
+    block_size_(block_size),
+    block_size_deviation_(block_size_deviation),
+    data_block_builder_(data_block_builder) {
   }
 
   virtual bool Update(const Slice& key,
@@ -67,20 +67,20 @@ class FlushBlockBySizePolicy : public FlushBlockPolicy {
 };
 
 FlushBlockPolicy* FlushBlockBySizePolicyFactory::NewFlushBlockPolicy(
-    const BlockBasedTableOptions& table_options,
-    const BlockBuilder& data_block_builder) const {
+  const BlockBasedTableOptions& table_options,
+  const BlockBuilder& data_block_builder) const {
   return new FlushBlockBySizePolicy(
-      table_options.block_size, table_options.block_size_deviation,
-      data_block_builder);
+           table_options.block_size, table_options.block_size_deviation,
+           data_block_builder);
 }
 
 /***************************** Shichao ******************************/
 FlushBlockPolicy* FlushBlockBySizePolicyFactory::NewFlushBlockPolicy(
-    const ColumnTableOptions& table_options,
-    const BlockBuilder& data_block_builder) const {
+  const ColumnTableOptions& table_options,
+  const BlockBuilder& data_block_builder) const {
   return new FlushBlockBySizePolicy(
-      table_options.block_size, table_options.block_size_deviation,
-      data_block_builder);
+           table_options.block_size, table_options.block_size_deviation,
+           data_block_builder);
 }
 /***************************** Shichao ******************************/
 

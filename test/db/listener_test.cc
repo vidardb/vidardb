@@ -47,7 +47,7 @@ struct TestPropertiesCollector : public vidardb::TablePropertiesCollector {
     return Status::OK();
   }
   virtual vidardb::Status Finish(
-      vidardb::UserCollectedProperties* properties) override {
+    vidardb::UserCollectedProperties* properties) override {
     properties->insert({"0", "1"});
     return Status::OK();
   }
@@ -66,10 +66,12 @@ struct TestPropertiesCollector : public vidardb::TablePropertiesCollector {
 class TestPropertiesCollectorFactory : public TablePropertiesCollectorFactory {
  public:
   virtual TablePropertiesCollector* CreateTablePropertiesCollector(
-      TablePropertiesCollectorFactory::Context context) override {
+    TablePropertiesCollectorFactory::Context context) override {
     return new TestPropertiesCollector;
   }
-  const char* Name() const override { return "TestTablePropertiesCollector"; }
+  const char* Name() const override {
+    return "TestTablePropertiesCollector";
+  }
 };
 
 class TestCompactionListener : public EventListener {
@@ -82,7 +84,9 @@ class TestCompactionListener : public EventListener {
     ASSERT_EQ(db->GetEnv()->GetThreadID(), ci.thread_id);
     ASSERT_GT(ci.thread_id, 0U);
 
-    for (auto fl : {ci.input_files, ci.output_files}) {
+    for (auto fl : {
+           ci.input_files, ci.output_files
+         }) {
       for (auto fn : fl) {
         auto it = ci.table_properties.find(fn);
         ASSERT_NE(it, ci.table_properties.end());
@@ -117,13 +121,14 @@ TEST_F(EventListenerTest, OnSingleDBCompactionTest) {
 #endif  // VIDARDB_USING_THREAD_STATUS
   options.level0_file_num_compaction_trigger = kNumL0Files;
   options.table_properties_collector_factories.push_back(
-      std::make_shared<TestPropertiesCollectorFactory>());
+    std::make_shared<TestPropertiesCollectorFactory>());
 
   TestCompactionListener* listener = new TestCompactionListener();
   options.listeners.emplace_back(listener);
   std::vector<std::string> cf_names = {
-      "pikachu", "ilya", "muromec", "dobrynia",
-      "nikitich", "alyosha", "popovich"};
+    "pikachu", "ilya", "muromec", "dobrynia",
+    "nikitich", "alyosha", "popovich"
+  };
   CreateAndReopenWithCF(cf_names, options);
   ASSERT_OK(Put(1, "pikachu", std::string(90000, 'p')));
   ASSERT_OK(Put(2, "ilya", std::string(90000, 'i')));
@@ -152,11 +157,11 @@ TEST_F(EventListenerTest, OnSingleDBCompactionTest) {
 class TestFlushListener : public EventListener {
  public:
   explicit TestFlushListener(Env* env)
-      : slowdown_count(0), stop_count(0), db_closed(), env_(env) {
+    : slowdown_count(0), stop_count(0), db_closed(), env_(env) {
     db_closed = false;
   }
   void OnTableFileCreated(
-      const TableFileCreationInfo& info) override {
+    const TableFileCreationInfo& info) override {
     // remember the info for later checking the FlushJobInfo.
     prev_fc_info_ = info;
     ASSERT_GT(info.db_name.size(), 0U);
@@ -190,7 +195,7 @@ class TestFlushListener : public EventListener {
   }
 
   void OnFlushCompleted(
-      DB* db, const FlushJobInfo& info) override {
+    DB* db, const FlushJobInfo& info) override {
     flushed_dbs_.push_back(db);
     flushed_column_family_names_.push_back(info.cf_name);
     if (info.triggered_writes_slowdown) {
@@ -231,10 +236,11 @@ TEST_F(EventListenerTest, OnSingleDBFlushTest) {
   TestFlushListener* listener = new TestFlushListener(options.env);
   options.listeners.emplace_back(listener);
   std::vector<std::string> cf_names = {
-      "pikachu", "ilya", "muromec", "dobrynia",
-      "nikitich", "alyosha", "popovich"};
+    "pikachu", "ilya", "muromec", "dobrynia",
+    "nikitich", "alyosha", "popovich"
+  };
   options.table_properties_collector_factories.push_back(
-      std::make_shared<TestPropertiesCollectorFactory>());
+    std::make_shared<TestPropertiesCollectorFactory>());
   CreateAndReopenWithCF(cf_names, options);
 
   ASSERT_OK(Put(1, "pikachu", std::string(90000, 'p')));
@@ -267,10 +273,11 @@ TEST_F(EventListenerTest, MultiCF) {
   TestFlushListener* listener = new TestFlushListener(options.env);
   options.listeners.emplace_back(listener);
   options.table_properties_collector_factories.push_back(
-      std::make_shared<TestPropertiesCollectorFactory>());
+    std::make_shared<TestPropertiesCollectorFactory>());
   std::vector<std::string> cf_names = {
-      "pikachu", "ilya", "muromec", "dobrynia",
-      "nikitich", "alyosha", "popovich"};
+    "pikachu", "ilya", "muromec", "dobrynia",
+    "nikitich", "alyosha", "popovich"
+  };
   CreateAndReopenWithCF(cf_names, options);
 
   ASSERT_OK(Put(1, "pikachu", std::string(90000, 'p')));
@@ -299,7 +306,7 @@ TEST_F(EventListenerTest, MultiDBMultiListeners) {
   options.enable_thread_tracking = true;
 #endif  // VIDARDB_USING_THREAD_STATUS
   options.table_properties_collector_factories.push_back(
-      std::make_shared<TestPropertiesCollectorFactory>());
+    std::make_shared<TestPropertiesCollectorFactory>());
   std::vector<TestFlushListener*> listeners;
   const int kNumDBs = 5;
   const int kNumListeners = 10;
@@ -308,8 +315,9 @@ TEST_F(EventListenerTest, MultiDBMultiListeners) {
   }
 
   std::vector<std::string> cf_names = {
-      "pikachu", "ilya", "muromec", "dobrynia",
-      "nikitich", "alyosha", "popovich"};
+    "pikachu", "ilya", "muromec", "dobrynia",
+    "nikitich", "alyosha", "popovich"
+  };
 
   options.create_if_missing = true;
   for (int i = 0; i < kNumListeners; ++i) {
@@ -339,7 +347,7 @@ TEST_F(EventListenerTest, MultiDBMultiListeners) {
   for (int d = 0; d < kNumDBs; ++d) {
     for (size_t c = 0; c < cf_names.size(); ++c) {
       ASSERT_OK(dbs[d]->Put(WriteOptions(), vec_handles[d][c],
-                cf_names[c], cf_names[c]));
+                            cf_names[c], cf_names[c]));
     }
   }
 
@@ -395,7 +403,7 @@ TEST_F(EventListenerTest, DisableBGCompaction) {
   options.compression = kNoCompression;
   options.write_buffer_size = 100000;  // Small write buffer
   options.table_properties_collector_factories.push_back(
-      std::make_shared<TestPropertiesCollectorFactory>());
+    std::make_shared<TestPropertiesCollectorFactory>());
 
   CreateAndReopenWithCF({"pikachu"}, options);
   ColumnFamilyMetaData cf_meta;
@@ -426,7 +434,7 @@ TEST_F(EventListenerTest, CompactionReasonLevel) {
   Options options;
   options.create_if_missing = true;
   options.memtable_factory.reset(
-      new SpecialSkipListFactory(DBTestBase::kNumKeysByGenerateNewRandomFile));
+    new SpecialSkipListFactory(DBTestBase::kNumKeysByGenerateNewRandomFile));
 
   TestCompactionReasonListener* listener = new TestCompactionReasonListener();
   options.listeners.emplace_back(listener);
@@ -491,7 +499,7 @@ TEST_F(EventListenerTest, CompactionReasonUniversal) {
   Options options;
   options.create_if_missing = true;
   options.memtable_factory.reset(
-      new SpecialSkipListFactory(DBTestBase::kNumKeysByGenerateNewRandomFile));
+    new SpecialSkipListFactory(DBTestBase::kNumKeysByGenerateNewRandomFile));
 
   TestCompactionReasonListener* listener = new TestCompactionReasonListener();
   options.listeners.emplace_back(listener);
@@ -552,7 +560,7 @@ TEST_F(EventListenerTest, CompactionReasonFIFO) {
   Options options;
   options.create_if_missing = true;
   options.memtable_factory.reset(
-      new SpecialSkipListFactory(DBTestBase::kNumKeysByGenerateNewRandomFile));
+    new SpecialSkipListFactory(DBTestBase::kNumKeysByGenerateNewRandomFile));
 
   TestCompactionReasonListener* listener = new TestCompactionReasonListener();
   options.listeners.emplace_back(listener);
@@ -582,7 +590,9 @@ class TableFileCreationListener : public EventListener {
    public:
     TestEnv() : EnvWrapper(Env::Default()) {}
 
-    void SetStatus(Status s) { status_ = s; }
+    void SetStatus(Status s) {
+      status_ = s;
+    }
 
     Status NewWritableFile(const std::string& fname,
                            std::unique_ptr<WritableFile>* result,
@@ -608,14 +618,14 @@ class TableFileCreationListener : public EventListener {
   int Index(TableFileCreationReason reason) {
     int idx;
     switch (reason) {
-      case TableFileCreationReason::kFlush:
-        idx = 0;
-        break;
-      case TableFileCreationReason::kCompaction:
-        idx = 1;
-        break;
-      default:
-        idx = -1;
+    case TableFileCreationReason::kFlush:
+      idx = 0;
+      break;
+    case TableFileCreationReason::kCompaction:
+      idx = 1;
+      break;
+    default:
+      idx = -1;
     }
     return idx;
   }
@@ -635,7 +645,7 @@ class TableFileCreationListener : public EventListener {
   }
 
   void OnTableFileCreationStarted(
-      const TableFileCreationBriefInfo& info) override {
+    const TableFileCreationBriefInfo& info) override {
     int idx = Index(info.reason);
     if (idx >= 0) {
       started_[idx]++;
@@ -718,16 +728,16 @@ TEST_F(EventListenerTest, TableFileCreationListenersTest) {
 }
 
 class MemTableSealedListener : public EventListener {
-private:
+ private:
   SequenceNumber latest_seq_number_;
-public:
+ public:
   MemTableSealedListener() {}
   void OnMemTableSealed(const MemTableInfo& info) override {
     latest_seq_number_ = info.first_seqno;
   }
 
   void OnFlushCompleted(DB* /*db*/,
-    const FlushJobInfo& flush_job_info) override {
+                        const FlushJobInfo& flush_job_info) override {
     ASSERT_LE(flush_job_info.smallest_seqno, latest_seq_number_);
   }
 };

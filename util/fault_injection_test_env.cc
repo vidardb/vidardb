@@ -92,7 +92,7 @@ Status FileState::DropRandomUnsyncedData(Env* env, Random* rand) const {
   assert(pos_ >= sync_pos);
   int range = static_cast<int>(pos_ - sync_pos);
   uint64_t truncated_size =
-      static_cast<uint64_t>(sync_pos) + rand->Uniform(range);
+    static_cast<uint64_t>(sync_pos) + rand->Uniform(range);
   return Truncate(env, filename_, truncated_size);
 }
 
@@ -104,10 +104,10 @@ Status TestDirectory::Fsync() {
 TestWritableFile::TestWritableFile(const std::string& fname,
                                    unique_ptr<WritableFile>&& f,
                                    FaultInjectionTestEnv* env)
-    : state_(fname),
-      target_(std::move(f)),
-      writable_file_opened_(true),
-      env_(env) {
+  : state_(fname),
+    target_(std::move(f)),
+    writable_file_opened_(true),
+    env_(env) {
   assert(target_ != nullptr);
   state_.pos_ = 0;
 }
@@ -156,7 +156,7 @@ Status TestWritableFile::Sync() {
 }
 
 Status FaultInjectionTestEnv::NewDirectory(const std::string& name,
-                                           unique_ptr<Directory>* result) {
+    unique_ptr<Directory>* result) {
   unique_ptr<Directory> r;
   Status s = target()->NewDirectory(name, &r);
   assert(s.ok());
@@ -168,8 +168,8 @@ Status FaultInjectionTestEnv::NewDirectory(const std::string& name,
 }
 
 Status FaultInjectionTestEnv::NewWritableFile(const std::string& fname,
-                                              unique_ptr<WritableFile>* result,
-                                              const EnvOptions& soptions) {
+    unique_ptr<WritableFile>* result,
+    const EnvOptions& soptions) {
   if (!IsFilesystemActive()) {
     return Status::Corruption("Not Active");
   }
@@ -213,7 +213,7 @@ Status FaultInjectionTestEnv::DeleteFile(const std::string& f) {
 }
 
 Status FaultInjectionTestEnv::RenameFile(const std::string& s,
-                                         const std::string& t) {
+    const std::string& t) {
   if (!IsFilesystemActive()) {
     return Status::Corruption("Not Active");
   }
@@ -249,11 +249,11 @@ void FaultInjectionTestEnv::WritableFileClosed(const FileState& state) {
 // For every file that is not fully synced, make a call to `func` with
 // FileState of the file as the parameter.
 Status FaultInjectionTestEnv::DropFileData(
-    std::function<Status(Env*, FileState)> func) {
+  std::function<Status(Env*, FileState)> func) {
   Status s;
   MutexLock l(&mutex_);
   for (std::map<std::string, FileState>::const_iterator it =
-           db_file_state_.begin();
+         db_file_state_.begin();
        s.ok() && it != db_file_state_.end(); ++it) {
     const FileState& state = it->second;
     if (!state.IsFullySynced()) {
@@ -305,7 +305,7 @@ void FaultInjectionTestEnv::UntrackFile(const std::string& f) {
   MutexLock l(&mutex_);
   auto dir_and_name = GetDirAndName(f);
   dir_to_new_files_since_last_sync_[dir_and_name.first].erase(
-      dir_and_name.second);
+    dir_and_name.second);
   db_file_state_.erase(f);
   open_files_.erase(f);
 }

@@ -33,17 +33,17 @@ namespace vidardb {
 class WalManager {
  public:
   WalManager(const DBOptions& db_options, const EnvOptions& env_options)
-      : db_options_(db_options),
-        env_options_(env_options),
-        env_(db_options.env),
-        purge_wal_files_last_run_(0) {}
+    : db_options_(db_options),
+      env_options_(env_options),
+      env_(db_options.env),
+      purge_wal_files_last_run_(0) {}
 
   Status GetSortedWalFiles(VectorLogPtr& files);
 
   Status GetUpdatesSince(
-      SequenceNumber seq_number, std::unique_ptr<TransactionLogIterator>* iter,
-      const TransactionLogIterator::ReadOptions& read_options,
-      VersionSet* version_set);
+    SequenceNumber seq_number, std::unique_ptr<TransactionLogIterator>* iter,
+    const TransactionLogIterator::ReadOptions& read_options,
+    VersionSet* version_set);
 
   void PurgeObsoleteWALFiles();
 

@@ -30,7 +30,8 @@ bool isSpecialChar(const char c) {
 
 char UnescapeChar(const char c) {
   static const std::unordered_map<char, char> convert_map = {{'r', '\r'},
-                                                             {'n', '\n'}};
+    {'n', '\n'}
+  };
 
   auto iter = convert_map.find(c);
   if (iter == convert_map.end()) {
@@ -41,7 +42,8 @@ char UnescapeChar(const char c) {
 
 char EscapeChar(const char c) {
   static const std::unordered_map<char, char> convert_map = {{'\n', 'n'},
-                                                             {'\r', 'r'}};
+    {'\r', 'r'}
+  };
 
   auto iter = convert_map.find(c);
   if (iter == convert_map.end()) {
@@ -222,8 +224,8 @@ double ParseDouble(const std::string& value) {
 }
 
 bool ParseVectorCompressionType(
-    const std::string& value,
-    std::vector<CompressionType>* compression_per_level) {
+  const std::string& value,
+  std::vector<CompressionType>* compression_per_level) {
   compression_per_level->clear();
   size_t start = 0;
   while (start < value.size()) {
@@ -240,7 +242,7 @@ bool ParseVectorCompressionType(
       break;
     } else {
       is_ok = ParseEnum<CompressionType>(
-          compression_type_string_map, value.substr(start, end - start), &type);
+                compression_type_string_map, value.substr(start, end - start), &type);
       if (!is_ok) {
         return false;
       }
@@ -254,55 +256,55 @@ bool ParseVectorCompressionType(
 bool ParseOptionHelper(char* opt_address, const OptionType& opt_type,
                        const std::string& value) {
   switch (opt_type) {
-    case OptionType::kBoolean:
-      *reinterpret_cast<bool*>(opt_address) = ParseBoolean("", value);
-      break;
-    case OptionType::kInt:
-      *reinterpret_cast<int*>(opt_address) = ParseInt(value);
-      break;
-    case OptionType::kUInt:
-      *reinterpret_cast<unsigned int*>(opt_address) = ParseUint32(value);
-      break;
-    case OptionType::kUInt32T:
-      *reinterpret_cast<uint32_t*>(opt_address) = ParseUint32(value);
-      break;
-    case OptionType::kUInt64T:
-      *reinterpret_cast<uint64_t*>(opt_address) = ParseUint64(value);
-      break;
-    case OptionType::kSizeT:
-      *reinterpret_cast<size_t*>(opt_address) = ParseSizeT(value);
-      break;
-    case OptionType::kString:
-      *reinterpret_cast<std::string*>(opt_address) = value;
-      break;
-    case OptionType::kDouble:
-      *reinterpret_cast<double*>(opt_address) = ParseDouble(value);
-      break;
-    case OptionType::kCompactionStyle:
-      return ParseEnum<CompactionStyle>(
-          compaction_style_string_map, value,
-          reinterpret_cast<CompactionStyle*>(opt_address));
-    case OptionType::kCompressionType:
-      return ParseEnum<CompressionType>(
-          compression_type_string_map, value,
-          reinterpret_cast<CompressionType*>(opt_address));
-    case OptionType::kVectorCompressionType:
-      return ParseVectorCompressionType(
-          value, reinterpret_cast<std::vector<CompressionType>*>(opt_address));
-    case OptionType::kWALRecoveryMode:
-      return ParseEnum<WALRecoveryMode>(
-          wal_recovery_mode_string_map, value,
-          reinterpret_cast<WALRecoveryMode*>(opt_address));
-    case OptionType::kAccessHint:
-      return ParseEnum<DBOptions::AccessHint>(
-          access_hint_string_map, value,
-          reinterpret_cast<DBOptions::AccessHint*>(opt_address));
-    case OptionType::kInfoLogLevel:
-      return ParseEnum<InfoLogLevel>(
-          info_log_level_string_map, value,
-          reinterpret_cast<InfoLogLevel*>(opt_address));
-    default:
-      return false;
+  case OptionType::kBoolean:
+    *reinterpret_cast<bool*>(opt_address) = ParseBoolean("", value);
+    break;
+  case OptionType::kInt:
+    *reinterpret_cast<int*>(opt_address) = ParseInt(value);
+    break;
+  case OptionType::kUInt:
+    *reinterpret_cast<unsigned int*>(opt_address) = ParseUint32(value);
+    break;
+  case OptionType::kUInt32T:
+    *reinterpret_cast<uint32_t*>(opt_address) = ParseUint32(value);
+    break;
+  case OptionType::kUInt64T:
+    *reinterpret_cast<uint64_t*>(opt_address) = ParseUint64(value);
+    break;
+  case OptionType::kSizeT:
+    *reinterpret_cast<size_t*>(opt_address) = ParseSizeT(value);
+    break;
+  case OptionType::kString:
+    *reinterpret_cast<std::string*>(opt_address) = value;
+    break;
+  case OptionType::kDouble:
+    *reinterpret_cast<double*>(opt_address) = ParseDouble(value);
+    break;
+  case OptionType::kCompactionStyle:
+    return ParseEnum<CompactionStyle>(
+             compaction_style_string_map, value,
+             reinterpret_cast<CompactionStyle*>(opt_address));
+  case OptionType::kCompressionType:
+    return ParseEnum<CompressionType>(
+             compression_type_string_map, value,
+             reinterpret_cast<CompressionType*>(opt_address));
+  case OptionType::kVectorCompressionType:
+    return ParseVectorCompressionType(
+             value, reinterpret_cast<std::vector<CompressionType>*>(opt_address));
+  case OptionType::kWALRecoveryMode:
+    return ParseEnum<WALRecoveryMode>(
+             wal_recovery_mode_string_map, value,
+             reinterpret_cast<WALRecoveryMode*>(opt_address));
+  case OptionType::kAccessHint:
+    return ParseEnum<DBOptions::AccessHint>(
+             access_hint_string_map, value,
+             reinterpret_cast<DBOptions::AccessHint*>(opt_address));
+  case OptionType::kInfoLogLevel:
+    return ParseEnum<InfoLogLevel>(
+             info_log_level_string_map, value,
+             reinterpret_cast<InfoLogLevel*>(opt_address));
+  default:
+    return false;
   }
   return true;
 }
@@ -315,95 +317,95 @@ bool SerializeSingleOptionHelper(const char* opt_address,
   static const std::string kNullptrString = "nullptr";
   assert(value);
   switch (opt_type) {
-    case OptionType::kBoolean:
-      *value = *(reinterpret_cast<const bool*>(opt_address)) ? "true" : "false";
-      break;
-    case OptionType::kInt:
-      *value = ToString(*(reinterpret_cast<const int*>(opt_address)));
-      break;
-    case OptionType::kUInt:
-      *value = ToString(*(reinterpret_cast<const unsigned int*>(opt_address)));
-      break;
-    case OptionType::kUInt32T:
-      *value = ToString(*(reinterpret_cast<const uint32_t*>(opt_address)));
-      break;
-    case OptionType::kUInt64T:
-      *value = ToString(*(reinterpret_cast<const uint64_t*>(opt_address)));
-      break;
-    case OptionType::kSizeT:
-      *value = ToString(*(reinterpret_cast<const size_t*>(opt_address)));
-      break;
-    case OptionType::kDouble:
-      *value = ToString(*(reinterpret_cast<const double*>(opt_address)));
-      break;
-    case OptionType::kString:
-      *value = EscapeOptionString(
-          *(reinterpret_cast<const std::string*>(opt_address)));
-      break;
-    case OptionType::kCompactionStyle:
-      return SerializeEnum<CompactionStyle>(
-          compaction_style_string_map,
-          *(reinterpret_cast<const CompactionStyle*>(opt_address)), value);
-    case OptionType::kCompressionType:
-      return SerializeEnum<CompressionType>(
-          compression_type_string_map,
-          *(reinterpret_cast<const CompressionType*>(opt_address)), value);
-    case OptionType::kVectorCompressionType:
-      return SerializeVectorCompressionType(
-          *(reinterpret_cast<const std::vector<CompressionType>*>(opt_address)),
-          value);
-      break;
-    case OptionType::kTableFactory: {
-      const auto* table_factory_ptr =
-          reinterpret_cast<const std::shared_ptr<const TableFactory>*>(
-              opt_address);
-      *value = table_factory_ptr->get() ? table_factory_ptr->get()->Name()
-                                        : kNullptrString;
-      break;
+  case OptionType::kBoolean:
+    *value = *(reinterpret_cast<const bool*>(opt_address)) ? "true" : "false";
+    break;
+  case OptionType::kInt:
+    *value = ToString(*(reinterpret_cast<const int*>(opt_address)));
+    break;
+  case OptionType::kUInt:
+    *value = ToString(*(reinterpret_cast<const unsigned int*>(opt_address)));
+    break;
+  case OptionType::kUInt32T:
+    *value = ToString(*(reinterpret_cast<const uint32_t*>(opt_address)));
+    break;
+  case OptionType::kUInt64T:
+    *value = ToString(*(reinterpret_cast<const uint64_t*>(opt_address)));
+    break;
+  case OptionType::kSizeT:
+    *value = ToString(*(reinterpret_cast<const size_t*>(opt_address)));
+    break;
+  case OptionType::kDouble:
+    *value = ToString(*(reinterpret_cast<const double*>(opt_address)));
+    break;
+  case OptionType::kString:
+    *value = EscapeOptionString(
+               *(reinterpret_cast<const std::string*>(opt_address)));
+    break;
+  case OptionType::kCompactionStyle:
+    return SerializeEnum<CompactionStyle>(
+             compaction_style_string_map,
+             *(reinterpret_cast<const CompactionStyle*>(opt_address)), value);
+  case OptionType::kCompressionType:
+    return SerializeEnum<CompressionType>(
+             compression_type_string_map,
+             *(reinterpret_cast<const CompressionType*>(opt_address)), value);
+  case OptionType::kVectorCompressionType:
+    return SerializeVectorCompressionType(
+             *(reinterpret_cast<const std::vector<CompressionType>*>(opt_address)),
+             value);
+    break;
+  case OptionType::kTableFactory: {
+    const auto* table_factory_ptr =
+      reinterpret_cast<const std::shared_ptr<const TableFactory>*>(
+        opt_address);
+    *value = table_factory_ptr->get() ? table_factory_ptr->get()->Name()
+             : kNullptrString;
+    break;
+  }
+  case OptionType::kComparator: {
+    // it's a const pointer of const Comparator*
+    const auto* ptr = reinterpret_cast<const Comparator* const*>(opt_address);
+    // Since the user-specified comparator will be wrapped by
+    // InternalKeyComparator, we should persist the user-specified one
+    // instead of InternalKeyComparator.
+    const auto* internal_comparator =
+      dynamic_cast<const InternalKeyComparator*>(*ptr);
+    if (internal_comparator != nullptr) {
+      *value = internal_comparator->user_comparator()->Name();
+    } else {
+      *value = *ptr ? (*ptr)->Name() : kNullptrString;
     }
-    case OptionType::kComparator: {
-      // it's a const pointer of const Comparator*
-      const auto* ptr = reinterpret_cast<const Comparator* const*>(opt_address);
-      // Since the user-specified comparator will be wrapped by
-      // InternalKeyComparator, we should persist the user-specified one
-      // instead of InternalKeyComparator.
-      const auto* internal_comparator =
-          dynamic_cast<const InternalKeyComparator*>(*ptr);
-      if (internal_comparator != nullptr) {
-        *value = internal_comparator->user_comparator()->Name();
-      } else {
-        *value = *ptr ? (*ptr)->Name() : kNullptrString;
-      }
-      break;
-    }
-    case OptionType::kMemTableRepFactory: {
-      const auto* ptr =
-          reinterpret_cast<const std::shared_ptr<MemTableRepFactory>*>(
-              opt_address);
-      *value = ptr->get() ? ptr->get()->Name() : kNullptrString;
-      break;
-    }
-    case OptionType::kFlushBlockPolicyFactory: {
-      const auto* ptr =
-          reinterpret_cast<const std::shared_ptr<FlushBlockPolicyFactory>*>(
-              opt_address);
-      *value = ptr->get() ? ptr->get()->Name() : kNullptrString;
-      break;
-    }
-    case OptionType::kWALRecoveryMode:
-      return SerializeEnum<WALRecoveryMode>(
-          wal_recovery_mode_string_map,
-          *reinterpret_cast<const WALRecoveryMode*>(opt_address), value);
-    case OptionType::kAccessHint:
-      return SerializeEnum<DBOptions::AccessHint>(
-          access_hint_string_map,
-          *reinterpret_cast<const DBOptions::AccessHint*>(opt_address), value);
-    case OptionType::kInfoLogLevel:
-      return SerializeEnum<InfoLogLevel>(
-          info_log_level_string_map,
-          *reinterpret_cast<const InfoLogLevel*>(opt_address), value);
-    default:
-      return false;
+    break;
+  }
+  case OptionType::kMemTableRepFactory: {
+    const auto* ptr =
+      reinterpret_cast<const std::shared_ptr<MemTableRepFactory>*>(
+        opt_address);
+    *value = ptr->get() ? ptr->get()->Name() : kNullptrString;
+    break;
+  }
+  case OptionType::kFlushBlockPolicyFactory: {
+    const auto* ptr =
+      reinterpret_cast<const std::shared_ptr<FlushBlockPolicyFactory>*>(
+        opt_address);
+    *value = ptr->get() ? ptr->get()->Name() : kNullptrString;
+    break;
+  }
+  case OptionType::kWALRecoveryMode:
+    return SerializeEnum<WALRecoveryMode>(
+             wal_recovery_mode_string_map,
+             *reinterpret_cast<const WALRecoveryMode*>(opt_address), value);
+  case OptionType::kAccessHint:
+    return SerializeEnum<DBOptions::AccessHint>(
+             access_hint_string_map,
+             *reinterpret_cast<const DBOptions::AccessHint*>(opt_address), value);
+  case OptionType::kInfoLogLevel:
+    return SerializeEnum<InfoLogLevel>(
+             info_log_level_string_map,
+             *reinterpret_cast<const InfoLogLevel*>(opt_address), value);
+  default:
+    return false;
   }
   return true;
 }
@@ -470,11 +472,11 @@ bool ParseCompactionOptions(const std::string& name, const std::string& value,
       size_t end = value.find(':', start);
       if (end == std::string::npos) {
         new_options->max_bytes_for_level_multiplier_additional.push_back(
-            ParseInt(value.substr(start)));
+          ParseInt(value.substr(start)));
         break;
       } else {
         new_options->max_bytes_for_level_multiplier_additional.push_back(
-            ParseInt(value.substr(start, end - start)));
+          ParseInt(value.substr(start, end - start)));
         start = end + 1;
       }
     }
@@ -510,9 +512,9 @@ bool ParseMiscOptions(const std::string& name, const std::string& value,
 }
 
 Status GetMutableOptionsFromStrings(
-    const MutableCFOptions& base_options,
-    const std::unordered_map<std::string, std::string>& options_map,
-    MutableCFOptions* new_options) {
+  const MutableCFOptions& base_options,
+  const std::unordered_map<std::string, std::string>& options_map,
+  MutableCFOptions* new_options) {
   assert(new_options);
   *new_options = base_options;
   for (const auto& o : options_map) {
@@ -522,7 +524,7 @@ Status GetMutableOptionsFromStrings(
       } else if (ParseMiscOptions(o.first, o.second, new_options)) {
       } else {
         return Status::InvalidArgument(
-            "unsupported dynamic option: " + o.first);
+                 "unsupported dynamic option: " + o.first);
       }
     } catch (std::exception& e) {
       return Status::InvalidArgument("error parsing " + o.first + ":" +
@@ -585,12 +587,12 @@ Status StringToMap(const std::string& opts_str,
         }
         if (pos < opts.size() && opts[pos] != ';') {
           return Status::InvalidArgument(
-              "Unexpected chars after nested options");
+                   "Unexpected chars after nested options");
         }
         ++pos;
       } else {
         return Status::InvalidArgument(
-            "Mismatched curly braces for nested options");
+                 "Mismatched curly braces for nested options");
       }
     } else {
       size_t sc_pos = opts.find(';', pos);
@@ -613,7 +615,7 @@ Status ParseColumnFamilyOption(const std::string& name,
                                ColumnFamilyOptions* new_options,
                                bool input_strings_escaped = false) {
   const std::string& value =
-      input_strings_escaped ? UnescapeOptionString(org_value) : org_value;
+    input_strings_escaped ? UnescapeOptionString(org_value) : org_value;
   try {
     if (name == "max_bytes_for_level_multiplier_additional") {
       new_options->max_bytes_for_level_multiplier_additional.clear();
@@ -622,11 +624,11 @@ Status ParseColumnFamilyOption(const std::string& name,
         size_t end = value.find(':', start);
         if (end == std::string::npos) {
           new_options->max_bytes_for_level_multiplier_additional.push_back(
-              ParseInt(value.substr(start)));
+            ParseInt(value.substr(start)));
           break;
         } else {
           new_options->max_bytes_for_level_multiplier_additional.push_back(
-              ParseInt(value.substr(start, end - start)));
+            ParseInt(value.substr(start, end - start)));
           start = end + 1;
         }
       }
@@ -634,24 +636,24 @@ Status ParseColumnFamilyOption(const std::string& name,
       // Nested options
       BlockBasedTableOptions table_opt, base_table_options;
       auto block_based_table_factory = dynamic_cast<BlockBasedTableFactory*>(
-          new_options->table_factory.get());
+                                         new_options->table_factory.get());
       if (block_based_table_factory != nullptr) {
         base_table_options = block_based_table_factory->table_options();
       }
       Status table_opt_s = GetBlockBasedTableOptionsFromString(
-          base_table_options, value, &table_opt);
+                             base_table_options, value, &table_opt);
       if (!table_opt_s.ok()) {
         return Status::InvalidArgument(
-            "unable to parse the specified CF option " + name);
+                 "unable to parse the specified CF option " + name);
       }
       new_options->table_factory.reset(NewBlockBasedTableFactory(table_opt));
     } else if (name == "memtable") {
       std::unique_ptr<MemTableRepFactory> new_mem_factory;
       Status mem_factory_s =
-          GetMemTableRepFactoryFromString(value, &new_mem_factory);
+        GetMemTableRepFactoryFromString(value, &new_mem_factory);
       if (!mem_factory_s.ok()) {
         return Status::InvalidArgument(
-            "unable to parse the specified CF option " + name);
+                 "unable to parse the specified CF option " + name);
       }
       new_options->memtable_factory.reset(new_mem_factory.release());
     } else if (name == "compression_opts") {
@@ -659,67 +661,67 @@ Status ParseColumnFamilyOption(const std::string& name,
       size_t end = value.find(':');
       if (end == std::string::npos) {
         return Status::InvalidArgument(
-            "unable to parse the specified CF option " + name);
+                 "unable to parse the specified CF option " + name);
       }
       new_options->compression_opts.window_bits =
-          ParseInt(value.substr(start, end - start));
+        ParseInt(value.substr(start, end - start));
       start = end + 1;
       end = value.find(':', start);
       if (end == std::string::npos) {
         return Status::InvalidArgument(
-            "unable to parse the specified CF option " + name);
+                 "unable to parse the specified CF option " + name);
       }
       new_options->compression_opts.level =
-          ParseInt(value.substr(start, end - start));
+        ParseInt(value.substr(start, end - start));
       start = end + 1;
       if (start >= value.size()) {
         return Status::InvalidArgument(
-            "unable to parse the specified CF option " + name);
+                 "unable to parse the specified CF option " + name);
       }
       end = value.find(':', start);
       new_options->compression_opts.strategy =
-          ParseInt(value.substr(start, value.size() - start));
+        ParseInt(value.substr(start, value.size() - start));
       // max_dict_bytes is optional for backwards compatibility
       if (end != std::string::npos) {
         start = end + 1;
         if (start >= value.size()) {
           return Status::InvalidArgument(
-              "unable to parse the specified CF option " + name);
+                   "unable to parse the specified CF option " + name);
         }
         new_options->compression_opts.max_dict_bytes =
-            ParseInt(value.substr(start, value.size() - start));
+          ParseInt(value.substr(start, value.size() - start));
       }
     } else if (name == "compaction_options_fifo") {
       new_options->compaction_options_fifo.max_table_files_size =
-          ParseUint64(value);
+        ParseUint64(value);
     } else {
       auto iter = cf_options_type_info.find(name);
       if (iter == cf_options_type_info.end()) {
         return Status::InvalidArgument(
-            "Unable to parse the specified CF option " + name);
+                 "Unable to parse the specified CF option " + name);
       }
       const auto& opt_info = iter->second;
       if (ParseOptionHelper(
-              reinterpret_cast<char*>(new_options) + opt_info.offset,
-              opt_info.type, value)) {
+            reinterpret_cast<char*>(new_options) + opt_info.offset,
+            opt_info.type, value)) {
         return Status::OK();
       }
       switch (opt_info.verification) {
-        case OptionVerificationType::kByName:
-        case OptionVerificationType::kByNameAllowNull:
-          return Status::NotSupported(
-              "Deserializing the specified CF option " + name +
-                  " is not supported");
-        case OptionVerificationType::kDeprecated:
-          return Status::OK();
-        default:
-          return Status::InvalidArgument(
-              "Unable to parse the specified CF option " + name);
+      case OptionVerificationType::kByName:
+      case OptionVerificationType::kByNameAllowNull:
+        return Status::NotSupported(
+                 "Deserializing the specified CF option " + name +
+                 " is not supported");
+      case OptionVerificationType::kDeprecated:
+        return Status::OK();
+      default:
+        return Status::InvalidArgument(
+                 "Unable to parse the specified CF option " + name);
       }
     }
   } catch (const std::exception&) {
     return Status::InvalidArgument(
-        "unable to parse the specified option " + name);
+             "unable to parse the specified option " + name);
   }
   return Status::OK();
 }
@@ -734,7 +736,7 @@ bool SerializeSingleDBOption(std::string* opt_string,
   }
   auto& opt_info = iter->second;
   const char* opt_address =
-      reinterpret_cast<const char*>(&db_options) + opt_info.offset;
+    reinterpret_cast<const char*>(&db_options) + opt_info.offset;
   std::string value;
   bool result = SerializeSingleOptionHelper(opt_address, opt_info.type, &value);
   if (result) {
@@ -776,7 +778,7 @@ bool SerializeSingleColumnFamilyOption(std::string* opt_string,
   }
   auto& opt_info = iter->second;
   const char* opt_address =
-      reinterpret_cast<const char*>(&cf_options) + opt_info.offset;
+    reinterpret_cast<const char*>(&cf_options) + opt_info.offset;
   std::string value;
   bool result = SerializeSingleOptionHelper(opt_address, opt_info.type, &value);
   if (result) {
@@ -799,7 +801,7 @@ Status GetStringFromColumnFamilyOptions(std::string* opt_string,
     }
     std::string single_output;
     bool result = SerializeSingleColumnFamilyOption(&single_output, cf_options,
-                                                    iter->first, delimiter);
+                  iter->first, delimiter);
     if (result) {
       opt_string->append(single_output);
     } else {
@@ -814,7 +816,7 @@ Status GetStringFromColumnFamilyOptions(std::string* opt_string,
 Status GetStringFromCompressionType(std::string* compression_str,
                                     CompressionType compression_type) {
   bool ok = SerializeEnum<CompressionType>(compression_type_string_map,
-                                           compression_type, compression_str);
+            compression_type, compression_str);
   if (ok) {
     return Status::OK();
   } else {
@@ -823,15 +825,15 @@ Status GetStringFromCompressionType(std::string* compression_str,
 }
 
 bool SerializeSingleBlockBasedTableOption(
-    std::string* opt_string, const BlockBasedTableOptions& bbt_options,
-    const std::string& name, const std::string& delimiter) {
+  std::string* opt_string, const BlockBasedTableOptions& bbt_options,
+  const std::string& name, const std::string& delimiter) {
   auto iter = block_based_table_type_info.find(name);
   if (iter == block_based_table_type_info.end()) {
     return false;
   }
   auto& opt_info = iter->second;
   const char* opt_address =
-      reinterpret_cast<const char*>(&bbt_options) + opt_info.offset;
+    reinterpret_cast<const char*>(&bbt_options) + opt_info.offset;
   std::string value;
   bool result = SerializeSingleOptionHelper(opt_address, opt_info.type, &value);
   if (result) {
@@ -841,8 +843,8 @@ bool SerializeSingleBlockBasedTableOption(
 }
 
 Status GetStringFromBlockBasedTableOptions(
-    std::string* opt_string, const BlockBasedTableOptions& bbt_options,
-    const std::string& delimiter) {
+  std::string* opt_string, const BlockBasedTableOptions& bbt_options,
+  const std::string& delimiter) {
   assert(opt_string);
   opt_string->clear();
   for (auto iter = block_based_table_type_info.begin();
@@ -854,7 +856,7 @@ Status GetStringFromBlockBasedTableOptions(
     }
     std::string single_output;
     bool result = SerializeSingleBlockBasedTableOption(
-        &single_output, bbt_options, iter->first, delimiter);
+                    &single_output, bbt_options, iter->first, delimiter);
     assert(result);
     if (result) {
       opt_string->append(single_output);
@@ -869,7 +871,7 @@ Status GetStringFromTableFactory(std::string* opts_str, const TableFactory* tf,
   opts_str->clear();
   if (bbtf != nullptr) {
     return GetStringFromBlockBasedTableOptions(opts_str, bbtf->table_options(),
-                                               delimiter);
+           delimiter);
   }
 
   return Status::OK();
@@ -880,31 +882,31 @@ Status ParseDBOption(const std::string& name,
                      DBOptions* new_options,
                      bool input_strings_escaped = false) {
   const std::string& value =
-      input_strings_escaped ? UnescapeOptionString(org_value) : org_value;
+    input_strings_escaped ? UnescapeOptionString(org_value) : org_value;
   try {
 
-      auto iter = db_options_type_info.find(name);
-      if (iter == db_options_type_info.end()) {
-        return Status::InvalidArgument("Unrecognized option DBOptions:", name);
-      }
-      const auto& opt_info = iter->second;
-      if (ParseOptionHelper(
-              reinterpret_cast<char*>(new_options) + opt_info.offset,
-              opt_info.type, value)) {
-        return Status::OK();
-      }
-      switch (opt_info.verification) {
-        case OptionVerificationType::kByName:
-        case OptionVerificationType::kByNameAllowNull:
-          return Status::NotSupported(
-              "Deserializing the specified DB option " + name +
-                  " is not supported");
-        case OptionVerificationType::kDeprecated:
-          return Status::OK();
-        default:
-          return Status::InvalidArgument(
-              "Unable to parse the specified DB option " + name);
-      }
+    auto iter = db_options_type_info.find(name);
+    if (iter == db_options_type_info.end()) {
+      return Status::InvalidArgument("Unrecognized option DBOptions:", name);
+    }
+    const auto& opt_info = iter->second;
+    if (ParseOptionHelper(
+          reinterpret_cast<char*>(new_options) + opt_info.offset,
+          opt_info.type, value)) {
+      return Status::OK();
+    }
+    switch (opt_info.verification) {
+    case OptionVerificationType::kByName:
+    case OptionVerificationType::kByNameAllowNull:
+      return Status::NotSupported(
+               "Deserializing the specified DB option " + name +
+               " is not supported");
+    case OptionVerificationType::kDeprecated:
+      return Status::OK();
+    default:
+      return Status::InvalidArgument(
+               "Unable to parse the specified DB option " + name);
+    }
 
   } catch (const std::exception&) {
     return Status::InvalidArgument("Unable to parse DBOptions:", name);
@@ -917,7 +919,7 @@ std::string ParseBlockBasedTableOption(const std::string& name,
                                        BlockBasedTableOptions* new_options,
                                        bool input_strings_escaped = false) {
   const std::string& value =
-      input_strings_escaped ? UnescapeOptionString(org_value) : org_value;
+    input_strings_escaped ? UnescapeOptionString(org_value) : org_value;
   if (!input_strings_escaped) {
     // if the input string is not escaped, it means this function is
     // invoked from SetOptions, which takes the old format.
@@ -939,23 +941,23 @@ std::string ParseBlockBasedTableOption(const std::string& name,
 }
 
 Status GetBlockBasedTableOptionsFromMap(
-    const BlockBasedTableOptions& table_options,
-    const std::unordered_map<std::string, std::string>& opts_map,
-    BlockBasedTableOptions* new_table_options, bool input_strings_escaped) {
+  const BlockBasedTableOptions& table_options,
+  const std::unordered_map<std::string, std::string>& opts_map,
+  BlockBasedTableOptions* new_table_options, bool input_strings_escaped) {
   assert(new_table_options);
   *new_table_options = table_options;
   for (const auto& o : opts_map) {
     auto error_message = ParseBlockBasedTableOption(
-        o.first, o.second, new_table_options, input_strings_escaped);
+                           o.first, o.second, new_table_options, input_strings_escaped);
     if (error_message != "") {
       const auto iter = block_based_table_type_info.find(o.first);
       if (iter == block_based_table_type_info.end() ||
           !input_strings_escaped ||  // !input_strings_escaped indicates
-                                     // the old API, where everything is
-                                     // parsable.
+          // the old API, where everything is
+          // parsable.
           (iter->second.verification != OptionVerificationType::kByName &&
            iter->second.verification !=
-               OptionVerificationType::kByNameAllowNull &&
+           OptionVerificationType::kByNameAllowNull &&
            iter->second.verification != OptionVerificationType::kDeprecated)) {
         return Status::InvalidArgument("Can't parse BlockBasedTableOptions:",
                                        o.first + " " + error_message);
@@ -966,9 +968,9 @@ Status GetBlockBasedTableOptionsFromMap(
 }
 
 Status GetBlockBasedTableOptionsFromString(
-    const BlockBasedTableOptions& table_options,
-    const std::string& opts_str,
-    BlockBasedTableOptions* new_table_options) {
+  const BlockBasedTableOptions& table_options,
+  const std::string& opts_str,
+  BlockBasedTableOptions* new_table_options) {
   std::unordered_map<std::string, std::string> opts_map;
   Status s = StringToMap(opts_str, &opts_map);
   if (!s.ok()) {
@@ -979,13 +981,13 @@ Status GetBlockBasedTableOptionsFromString(
 }
 
 Status GetMemTableRepFactoryFromString(const std::string& opts_str,
-    std::unique_ptr<MemTableRepFactory>* new_mem_factory) {
+                                       std::unique_ptr<MemTableRepFactory>* new_mem_factory) {
   std::vector<std::string> opts_list = StringSplit(opts_str, ':');
   size_t len = opts_list.size();
 
   if (opts_list.size() <= 0 || opts_list.size() > 2) {
     return Status::InvalidArgument("Can't parse memtable_factory option ",
-                                     opts_str);
+                                   opts_str);
   }
 
   MemTableRepFactory* mem_factory = nullptr;
@@ -1004,7 +1006,7 @@ Status GetMemTableRepFactoryFromString(const std::string& opts_str,
                                    opts_str);
   }
 
-  if (mem_factory != nullptr){
+  if (mem_factory != nullptr) {
     new_mem_factory->reset(mem_factory);
   }
 
@@ -1012,18 +1014,18 @@ Status GetMemTableRepFactoryFromString(const std::string& opts_str,
 }
 
 Status GetColumnFamilyOptionsFromMap(
-    const ColumnFamilyOptions& base_options,
-    const std::unordered_map<std::string, std::string>& opts_map,
-    ColumnFamilyOptions* new_options, bool input_strings_escaped) {
+  const ColumnFamilyOptions& base_options,
+  const std::unordered_map<std::string, std::string>& opts_map,
+  ColumnFamilyOptions* new_options, bool input_strings_escaped) {
   return GetColumnFamilyOptionsFromMapInternal(
-      base_options, opts_map, new_options, input_strings_escaped);
+           base_options, opts_map, new_options, input_strings_escaped);
 }
 
 Status GetColumnFamilyOptionsFromMapInternal(
-    const ColumnFamilyOptions& base_options,
-    const std::unordered_map<std::string, std::string>& opts_map,
-    ColumnFamilyOptions* new_options, bool input_strings_escaped,
-    std::vector<std::string>* unsupported_options_names) {
+  const ColumnFamilyOptions& base_options,
+  const std::unordered_map<std::string, std::string>& opts_map,
+  ColumnFamilyOptions* new_options, bool input_strings_escaped,
+  std::vector<std::string>* unsupported_options_names) {
   assert(new_options);
   *new_options = base_options;
   if (unsupported_options_names) {
@@ -1031,7 +1033,7 @@ Status GetColumnFamilyOptionsFromMapInternal(
   }
   for (const auto& o : opts_map) {
     auto s = ParseColumnFamilyOption(o.first, o.second, new_options,
-                                 input_strings_escaped);
+                                     input_strings_escaped);
     if (!s.ok()) {
       if (s.IsNotSupported()) {
         // If the deserialization of the specified option is not supported
@@ -1052,9 +1054,9 @@ Status GetColumnFamilyOptionsFromMapInternal(
 }
 
 Status GetColumnFamilyOptionsFromString(
-    const ColumnFamilyOptions& base_options,
-    const std::string& opts_str,
-    ColumnFamilyOptions* new_options) {
+  const ColumnFamilyOptions& base_options,
+  const std::string& opts_str,
+  ColumnFamilyOptions* new_options) {
   std::unordered_map<std::string, std::string> opts_map;
   Status s = StringToMap(opts_str, &opts_map);
   if (!s.ok()) {
@@ -1064,18 +1066,18 @@ Status GetColumnFamilyOptionsFromString(
 }
 
 Status GetDBOptionsFromMap(
-    const DBOptions& base_options,
-    const std::unordered_map<std::string, std::string>& opts_map,
-    DBOptions* new_options, bool input_strings_escaped) {
+  const DBOptions& base_options,
+  const std::unordered_map<std::string, std::string>& opts_map,
+  DBOptions* new_options, bool input_strings_escaped) {
   return GetDBOptionsFromMapInternal(
-      base_options, opts_map, new_options, input_strings_escaped);
+           base_options, opts_map, new_options, input_strings_escaped);
 }
 
 Status GetDBOptionsFromMapInternal(
-    const DBOptions& base_options,
-    const std::unordered_map<std::string, std::string>& opts_map,
-    DBOptions* new_options, bool input_strings_escaped,
-    std::vector<std::string>* unsupported_options_names) {
+  const DBOptions& base_options,
+  const std::unordered_map<std::string, std::string>& opts_map,
+  DBOptions* new_options, bool input_strings_escaped,
+  std::vector<std::string>* unsupported_options_names) {
   assert(new_options);
   *new_options = base_options;
   if (unsupported_options_names) {
@@ -1104,9 +1106,9 @@ Status GetDBOptionsFromMapInternal(
 }
 
 Status GetDBOptionsFromString(
-    const DBOptions& base_options,
-    const std::string& opts_str,
-    DBOptions* new_options) {
+  const DBOptions& base_options,
+  const std::string& opts_str,
+  DBOptions* new_options) {
   std::unordered_map<std::string, std::string> opts_map;
   Status s = StringToMap(opts_str, &opts_map);
   if (!s.ok()) {
@@ -1127,7 +1129,7 @@ Status GetOptionsFromString(const Options& base_options,
   for (const auto& o : opts_map) {
     if (ParseDBOption(o.first, o.second, &new_db_options).ok()) {
     } else if (ParseColumnFamilyOption(
-        o.first, o.second, &new_cf_options).ok()) {
+                 o.first, o.second, &new_cf_options).ok()) {
     } else {
       return Status::InvalidArgument("Can't parse option " + o.first);
     }
@@ -1137,9 +1139,9 @@ Status GetOptionsFromString(const Options& base_options,
 }
 
 Status GetTableFactoryFromMap(
-    const std::string& factory_name,
-    const std::unordered_map<std::string, std::string>& opt_map,
-    std::shared_ptr<TableFactory>* table_factory) {
+  const std::string& factory_name,
+  const std::unordered_map<std::string, std::string>& opt_map,
+  std::shared_ptr<TableFactory>* table_factory) {
   Status s;
   if (factory_name == BlockBasedTableFactory().Name()) {
     BlockBasedTableOptions bbt_opt;
@@ -1158,7 +1160,7 @@ Status GetTableFactoryFromMap(
 }
 
 ColumnFamilyOptions BuildColumnFamilyOptions(
-    const Options& options, const MutableCFOptions& mutable_cf_options) {
+  const Options& options, const MutableCFOptions& mutable_cf_options) {
   ColumnFamilyOptions cf_opts(options);
 
   // Memtable related options
@@ -1170,26 +1172,26 @@ ColumnFamilyOptions BuildColumnFamilyOptions(
 
   // Compaction related options
   cf_opts.disable_auto_compactions =
-      mutable_cf_options.disable_auto_compactions;
+    mutable_cf_options.disable_auto_compactions;
   cf_opts.level0_file_num_compaction_trigger =
-      mutable_cf_options.level0_file_num_compaction_trigger;
+    mutable_cf_options.level0_file_num_compaction_trigger;
   cf_opts.level0_slowdown_writes_trigger =
-      mutable_cf_options.level0_slowdown_writes_trigger;
+    mutable_cf_options.level0_slowdown_writes_trigger;
   cf_opts.level0_stop_writes_trigger =
-      mutable_cf_options.level0_stop_writes_trigger;
+    mutable_cf_options.level0_stop_writes_trigger;
   cf_opts.max_grandparent_overlap_factor =
-      mutable_cf_options.max_grandparent_overlap_factor;
+    mutable_cf_options.max_grandparent_overlap_factor;
   cf_opts.expanded_compaction_factor =
-      mutable_cf_options.expanded_compaction_factor;
+    mutable_cf_options.expanded_compaction_factor;
   cf_opts.source_compaction_factor =
-      mutable_cf_options.source_compaction_factor;
+    mutable_cf_options.source_compaction_factor;
   cf_opts.target_file_size_base = mutable_cf_options.target_file_size_base;
   cf_opts.target_file_size_multiplier =
-      mutable_cf_options.target_file_size_multiplier;
+    mutable_cf_options.target_file_size_multiplier;
   cf_opts.max_bytes_for_level_base =
-      mutable_cf_options.max_bytes_for_level_base;
+    mutable_cf_options.max_bytes_for_level_base;
   cf_opts.max_bytes_for_level_multiplier =
-      mutable_cf_options.max_bytes_for_level_multiplier;
+    mutable_cf_options.max_bytes_for_level_multiplier;
 
   cf_opts.max_bytes_for_level_multiplier_additional.clear();
   for (auto value :
@@ -1198,11 +1200,11 @@ ColumnFamilyOptions BuildColumnFamilyOptions(
   }
 
   cf_opts.verify_checksums_in_compaction =
-      mutable_cf_options.verify_checksums_in_compaction;
+    mutable_cf_options.verify_checksums_in_compaction;
 
   // Misc options
   cf_opts.max_sequential_skip_in_iterations =
-      mutable_cf_options.max_sequential_skip_in_iterations;
+    mutable_cf_options.max_sequential_skip_in_iterations;
   cf_opts.paranoid_file_checks = mutable_cf_options.paranoid_file_checks;
   cf_opts.report_bg_io_stats = mutable_cf_options.report_bg_io_stats;
 

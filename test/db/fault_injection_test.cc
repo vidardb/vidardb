@@ -35,7 +35,7 @@ static const int kMaxNumValues = 2000;
 static const size_t kNumIterations = 3;
 
 class FaultInjectionTest : public testing::Test,
-                           public testing::WithParamInterface<bool> {
+  public testing::WithParamInterface<bool> {
  protected:
   enum OptionConfig {
     kDefault,
@@ -72,12 +72,12 @@ class FaultInjectionTest : public testing::Test,
   DB* db_;
 
   FaultInjectionTest()
-      : option_config_(kDefault),
-        sync_use_wal_(false),
-        sync_use_compact_(true),
-        base_env_(nullptr),
-        env_(NULL),
-        db_(NULL) {
+    : option_config_(kDefault),
+      sync_use_wal_(false),
+      sync_use_compact_(true),
+      base_env_(nullptr),
+      env_(NULL),
+      db_(NULL) {
   }
 
   ~FaultInjectionTest() {
@@ -103,37 +103,37 @@ class FaultInjectionTest : public testing::Test,
     sync_use_compact_ = true;
     Options options;
     switch (option_config_) {
-      case kWalDir:
-        options.wal_dir = test::TmpDir(env_) + "/fault_test_wal";
-        break;
-      case kDifferentDataDir:
-        options.db_paths.emplace_back(test::TmpDir(env_) + "/fault_test_data",
-                                      1000000U);
-        break;
-      case kSyncWal:
-        sync_use_wal_ = true;
-        sync_use_compact_ = false;
-        break;
-      case kWalDirSyncWal:
-        options.wal_dir = test::TmpDir(env_) + "/fault_test_wal";
-        sync_use_wal_ = true;
-        sync_use_compact_ = false;
-        break;
-      case kMultiLevels:
-        options.write_buffer_size = 64 * 1024;
-        options.target_file_size_base = 64 * 1024;
-        options.level0_file_num_compaction_trigger = 2;
-        options.level0_slowdown_writes_trigger = 2;
-        options.level0_stop_writes_trigger = 4;
-        options.max_bytes_for_level_base = 128 * 1024;
-        options.max_write_buffer_number = 2;
-        options.max_background_compactions = 8;
-        options.max_background_flushes = 8;
-        sync_use_wal_ = true;
-        sync_use_compact_ = false;
-        break;
-      default:
-        break;
+    case kWalDir:
+      options.wal_dir = test::TmpDir(env_) + "/fault_test_wal";
+      break;
+    case kDifferentDataDir:
+      options.db_paths.emplace_back(test::TmpDir(env_) + "/fault_test_data",
+                                    1000000U);
+      break;
+    case kSyncWal:
+      sync_use_wal_ = true;
+      sync_use_compact_ = false;
+      break;
+    case kWalDirSyncWal:
+      options.wal_dir = test::TmpDir(env_) + "/fault_test_wal";
+      sync_use_wal_ = true;
+      sync_use_compact_ = false;
+      break;
+    case kMultiLevels:
+      options.write_buffer_size = 64 * 1024;
+      options.target_file_size_base = 64 * 1024;
+      options.level0_file_num_compaction_trigger = 2;
+      options.level0_slowdown_writes_trigger = 2;
+      options.level0_stop_writes_trigger = 4;
+      options.max_bytes_for_level_base = 128 * 1024;
+      options.max_write_buffer_number = 2;
+      options.max_background_compactions = 8;
+      options.max_background_flushes = 8;
+      sync_use_wal_ = true;
+      sync_use_compact_ = false;
+      break;
+    default:
+      break;
     }
     return options;
   }
@@ -144,7 +144,7 @@ class FaultInjectionTest : public testing::Test,
     assert(env_ == NULL);
 
     env_ =
-        new FaultInjectionTestEnv(base_env_ ? base_env_.get() : Env::Default());
+      new FaultInjectionTestEnv(base_env_ ? base_env_.get() : Env::Default());
 
     options_ = CurrentOptions();
     options_.env = env_;
@@ -278,21 +278,21 @@ class FaultInjectionTest : public testing::Test,
   void ResetDBState(ResetMethod reset_method, Random* rnd = nullptr) {
     env_->AssertNoOpenFile();
     switch (reset_method) {
-      case kResetDropUnsyncedData:
-        ASSERT_OK(env_->DropUnsyncedFileData());
-        break;
-      case kResetDropRandomUnsyncedData:
-        ASSERT_OK(env_->DropRandomUnsyncedFileData(rnd));
-        break;
-      case kResetDeleteUnsyncedFiles:
-        ASSERT_OK(env_->DeleteFilesCreatedAfterLastDirSync());
-        break;
-      case kResetDropAndDeleteUnsynced:
-        ASSERT_OK(env_->DropUnsyncedFileData());
-        ASSERT_OK(env_->DeleteFilesCreatedAfterLastDirSync());
-        break;
-      default:
-        assert(false);
+    case kResetDropUnsyncedData:
+      ASSERT_OK(env_->DropUnsyncedFileData());
+      break;
+    case kResetDropRandomUnsyncedData:
+      ASSERT_OK(env_->DropRandomUnsyncedFileData(rnd));
+      break;
+    case kResetDeleteUnsyncedFiles:
+      ASSERT_OK(env_->DeleteFilesCreatedAfterLastDirSync());
+      break;
+    case kResetDropAndDeleteUnsynced:
+      ASSERT_OK(env_->DropUnsyncedFileData());
+      ASSERT_OK(env_->DeleteFilesCreatedAfterLastDirSync());
+      break;
+    default:
+      assert(false);
     }
   }
 
@@ -394,13 +394,13 @@ TEST_P(FaultInjectionTest, WriteOptionSyncTest) {
 
   std::string key_space, value_space;
   ASSERT_OK(
-      db_->Put(write_options, Key(1, &key_space), Value(1, &value_space)));
+    db_->Put(write_options, Key(1, &key_space), Value(1, &value_space)));
   FlushOptions flush_options;
   flush_options.wait = false;
   ASSERT_OK(db_->Flush(flush_options));
   write_options.sync = true;
   ASSERT_OK(
-      db_->Put(write_options, Key(2, &key_space), Value(2, &value_space)));
+    db_->Put(write_options, Key(2, &key_space), Value(2, &value_space)));
 
   env_->SetFilesystemActive(false);
   NoWriteTestReopenWithFault(kResetDropAndDeleteUnsynced);
@@ -428,10 +428,12 @@ TEST_P(FaultInjectionTest, UninstalledCompaction) {
 
   if (!sequential_order_) {
     vidardb::SyncPoint::GetInstance()->LoadDependency({
-        {"FaultInjectionTest::FaultTest:0", "DBImpl::BGWorkCompaction"},
-        {"CompactionJob::Run():End", "FaultInjectionTest::FaultTest:1"},
-        {"FaultInjectionTest::FaultTest:2",
-         "DBImpl::BackgroundCompaction:NonTrivial:AfterRun"},
+      {"FaultInjectionTest::FaultTest:0", "DBImpl::BGWorkCompaction"},
+      {"CompactionJob::Run():End", "FaultInjectionTest::FaultTest:1"},
+      {
+        "FaultInjectionTest::FaultTest:2",
+        "DBImpl::BackgroundCompaction:NonTrivial:AfterRun"
+      },
     });
   }
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
@@ -452,10 +454,14 @@ TEST_P(FaultInjectionTest, UninstalledCompaction) {
 
   std::atomic<bool> opened(false);
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::Open:Opened", [&](void* arg) { opened.store(true); });
+  "DBImpl::Open:Opened", [&](void* arg) {
+    opened.store(true);
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BGWorkCompaction",
-      [&](void* arg) { ASSERT_TRUE(opened.load()); });
+    "DBImpl::BGWorkCompaction",
+  [&](void* arg) {
+    ASSERT_TRUE(opened.load());
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
   ASSERT_OK(OpenDB());
   ASSERT_OK(Verify(0, kNumKeys, FaultInjectionTest::kValExpectFound));
@@ -478,12 +484,12 @@ TEST_P(FaultInjectionTest, ManualLogSyncTest) {
 
   std::string key_space, value_space;
   ASSERT_OK(
-      db_->Put(write_options, Key(1, &key_space), Value(1, &value_space)));
+    db_->Put(write_options, Key(1, &key_space), Value(1, &value_space)));
   FlushOptions flush_options;
   flush_options.wait = false;
   ASSERT_OK(db_->Flush(flush_options));
   ASSERT_OK(
-      db_->Put(write_options, Key(2, &key_space), Value(2, &value_space)));
+    db_->Put(write_options, Key(2, &key_space), Value(2, &value_space)));
   ASSERT_OK(db_->SyncWAL());
 
   env_->SetFilesystemActive(false);

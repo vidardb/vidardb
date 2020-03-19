@@ -37,8 +37,8 @@
 namespace vidardb {
 
 MemTableOptions::MemTableOptions(
-    const ImmutableCFOptions& ioptions,
-    const MutableCFOptions& mutable_cf_options)
+  const ImmutableCFOptions& ioptions,
+  const MutableCFOptions& mutable_cf_options)
   : write_buffer_size(mutable_cf_options.write_buffer_size),
     arena_block_size(mutable_cf_options.arena_block_size),
     max_successive_merges(mutable_cf_options.max_successive_merges),
@@ -50,32 +50,34 @@ MemTable::MemTable(const InternalKeyComparator& cmp,
                    const ImmutableCFOptions& ioptions,
                    const MutableCFOptions& mutable_cf_options,
                    WriteBuffer* write_buffer, SequenceNumber earliest_seq)
-    : comparator_(cmp),
-      moptions_(ioptions, mutable_cf_options),
-      refs_(0),
-      kArenaBlockSize(OptimizeBlockSize(moptions_.arena_block_size)),
-      arena_(moptions_.arena_block_size, 0),
-      allocator_(&arena_, write_buffer),
-      table_(ioptions.memtable_factory->CreateMemTableRep(
-          comparator_, &allocator_, ioptions.info_log)),
-      data_size_(0),
-      num_entries_(0),
-      num_deletes_(0),
-      flush_in_progress_(false),
-      flush_completed_(false),
-      file_number_(0),
-      first_seqno_(0),
-      earliest_seqno_(earliest_seq),
-      mem_next_logfile_number_(0),
-      min_prep_log_referenced_(0),
-      flush_state_(FLUSH_NOT_REQUESTED),
-      env_(ioptions.env) {
+  : comparator_(cmp),
+    moptions_(ioptions, mutable_cf_options),
+    refs_(0),
+    kArenaBlockSize(OptimizeBlockSize(moptions_.arena_block_size)),
+    arena_(moptions_.arena_block_size, 0),
+    allocator_(&arena_, write_buffer),
+    table_(ioptions.memtable_factory->CreateMemTableRep(
+             comparator_, &allocator_, ioptions.info_log)),
+    data_size_(0),
+    num_entries_(0),
+    num_deletes_(0),
+    flush_in_progress_(false),
+    flush_completed_(false),
+    file_number_(0),
+    first_seqno_(0),
+    earliest_seqno_(earliest_seq),
+    mem_next_logfile_number_(0),
+    min_prep_log_referenced_(0),
+    flush_state_(FLUSH_NOT_REQUESTED),
+    env_(ioptions.env) {
   UpdateFlushState();
   // something went wrong if we need to flush before inserting anything
   assert(!ShouldScheduleFlush());
 }
 
-MemTable::~MemTable() { assert(refs_ == 0); }
+MemTable::~MemTable() {
+  assert(refs_ == 0);
+}
 
 size_t MemTable::ApproximateMemoryUsage() {
   size_t arena_usage = arena_.ApproximateMemoryUsage();
@@ -102,7 +104,7 @@ bool MemTable::ShouldFlushNow() const {
   // If arena still have room for new block allocation, we can safely say it
   // shouldn't flush.
   auto allocated_memory =
-      table_->ApproximateMemoryUsage() + arena_.MemoryAllocatedBytes();
+    table_->ApproximateMemoryUsage() + arena_.MemoryAllocatedBytes();
 
   // if we can still allocate one more block without exceeding the
   // over-allocation ratio, then we should not flush.
@@ -169,7 +171,7 @@ int MemTable::KeyComparator::operator()(const char* prefix_len_key1,
 
 int MemTable::KeyComparator::operator()(const char* prefix_len_key,
                                         const Slice& key)
-    const {
+const {
   // Internal keys are encoded as length-prefixed strings.
   Slice a = GetLengthPrefixedSlice(prefix_len_key);
   return comparator.Compare(a, key);
@@ -198,9 +200,9 @@ const char* EncodeKey(std::string* scratch, const Slice& target) {
 class MemTableIterator : public InternalIterator {
  public:
   MemTableIterator(
-      const MemTable& mem, const ReadOptions& read_options, Arena* arena)
-      : valid_(false),
-        arena_mode_(arena != nullptr) {
+    const MemTable& mem, const ReadOptions& read_options, Arena* arena)
+    : valid_(false),
+      arena_mode_(arena != nullptr) {
     iter_ = mem.table_->GetIterator(arena);
   }
 
@@ -220,13 +222,15 @@ class MemTableIterator : public InternalIterator {
 
 #ifndef NDEBUG
   virtual void SetPinnedItersMgr(
-      PinnedIteratorsManager* pinned_iters_mgr) override {
+    PinnedIteratorsManager* pinned_iters_mgr) override {
     pinned_iters_mgr_ = pinned_iters_mgr;
   }
   PinnedIteratorsManager* pinned_iters_mgr_ = nullptr;
 #endif
 
-  virtual bool Valid() const override { return valid_; }
+  virtual bool Valid() const override {
+    return valid_;
+  }
   virtual void Seek(const Slice& k) override {
     PERF_TIMER_GUARD(seek_on_memtable_time);
     PERF_COUNTER_ADD(seek_on_memtable_count, 1);
@@ -261,7 +265,9 @@ class MemTableIterator : public InternalIterator {
     return GetLengthPrefixedSlice(key_slice.data() + key_slice.size());
   }
 
-  virtual Status status() const override { return Status::OK(); }
+  virtual Status status() const override {
+    return Status::OK();
+  }
 
   virtual bool IsKeyPinned() const override {
     // memtable data is always pinned
@@ -371,10 +377,10 @@ void MemTable::Add(SequenceNumber s, ValueType type,
            !first_seqno_.compare_exchange_weak(cur_seq_num, s)) {
     }
     uint64_t cur_earliest_seqno =
-        earliest_seqno_.load(std::memory_order_relaxed);
+      earliest_seqno_.load(std::memory_order_relaxed);
     while (
-        (cur_earliest_seqno == kMaxSequenceNumber || s < cur_earliest_seqno) &&
-        !first_seqno_.compare_exchange_weak(cur_earliest_seqno, s)) {
+      (cur_earliest_seqno == kMaxSequenceNumber || s < cur_earliest_seqno) &&
+      !first_seqno_.compare_exchange_weak(cur_earliest_seqno, s)) {
     }
   }
 
@@ -418,31 +424,31 @@ static bool SaveValue(void* arg, const char* entry) {
   uint32_t key_length;
   const char* key_ptr = GetVarint32Ptr(entry, entry + 5, &key_length);
   if (s->mem->GetInternalKeyComparator().user_comparator()->Equal(
-          Slice(key_ptr, key_length - 8), s->key->user_key())) {
+        Slice(key_ptr, key_length - 8), s->key->user_key())) {
     // Correct user key
     const uint64_t tag = DecodeFixed64(key_ptr + key_length - 8);
     ValueType type;
     UnPackSequenceAndType(tag, &s->seq, &type);
 
     switch (type) {
-      case kTypeValue: {
-        Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
-        *(s->status) = Status::OK();
-        if (s->value != nullptr) {
-          s->value->assign(v.data(), v.size());
-        }
-        *(s->found_final_value) = true;
-        return false;
+    case kTypeValue: {
+      Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
+      *(s->status) = Status::OK();
+      if (s->value != nullptr) {
+        s->value->assign(v.data(), v.size());
       }
-      case kTypeDeletion:
-      case kTypeSingleDeletion: {
-        *(s->status) = Status::NotFound();
-        *(s->found_final_value) = true;
-        return false;
-      }
-      default:
-        assert(false);
-        return true;
+      *(s->found_final_value) = true;
+      return false;
+    }
+    case kTypeDeletion:
+    case kTypeSingleDeletion: {
+      *(s->status) = Status::NotFound();
+      *(s->found_final_value) = true;
+      return false;
+    }
+    default:
+      assert(false);
+      return true;
     }
   }
 
@@ -460,7 +466,7 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
   Slice internal_key = Slice(key_ptr, key_length);
 
   RangeQueryMeta* meta =
-      static_cast<RangeQueryMeta*>(s->read_options->range_query_meta);
+    static_cast<RangeQueryMeta*>(s->read_options->range_query_meta);
   if (CompareRangeLimit(s->mem->GetInternalKeyComparator(), internal_key,
                         meta->current_limit_key) > 0) {
     *(s->status) = Status::OK();
@@ -472,66 +478,66 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
   UnPackSequenceAndType(tag, &s->seq, &type);
   SequenceNumber sequence_num = s->range->SequenceNum();
   switch (type) {
-    case kTypeValue:
-    case kTypeDeletion:
-    case kTypeSingleDeletion: {
-      if (s->seq <= sequence_num) {
-        std::string user_key(internal_key.data(), internal_key.size() - 8);
-        SeqTypeVal stv(s->seq, type, s->res->end());
+  case kTypeValue:
+  case kTypeDeletion:
+  case kTypeSingleDeletion: {
+    if (s->seq <= sequence_num) {
+      std::string user_key(internal_key.data(), internal_key.size() - 8);
+      SeqTypeVal stv(s->seq, type, s->res->end());
 
-        auto it = s->prev_iter;
-        if (it != meta->map_res.end()) {
-          it++;
-        }
-        it = meta->map_res.emplace_hint(it, user_key, std::move(stv));
-        s->prev_iter = it;
+      auto it = s->prev_iter;
+      if (it != meta->map_res.end()) {
+        it++;
+      }
+      it = meta->map_res.emplace_hint(it, user_key, std::move(stv));
+      s->prev_iter = it;
 
-        if (it->second.seq_ <= s->seq) {
-          // TODO: might leverage move semantic later
-          std::string user_full_val(
-              GetLengthPrefixedSlice(key_ptr + key_length).ToString());
-          std::string user_val = s->mem->ReformatUserValue(user_full_val,
-              s->read_options->columns, s->read_options->splitter);
+      if (it->second.seq_ <= s->seq) {
+        // TODO: might leverage move semantic later
+        std::string user_full_val(
+          GetLengthPrefixedSlice(key_ptr + key_length).ToString());
+        std::string user_val = s->mem->ReformatUserValue(user_full_val,
+                               s->read_options->columns, s->read_options->splitter);
 
-          if (it->second.seq_ < s->seq) {
-            // replaced
-            if (it->second.type_ == kTypeDeletion) {
-              meta->del_keys.erase(it->second.seq_);
-            }
-            assert(s->read_options->result_size >=
-                it->second.iter_->user_val.size());
-            s->read_options->result_size -= it->second.iter_->user_val.size();
-            it->second.seq_ = s->seq;
-            it->second.type_ = type;
-            it->second.iter_->user_val = std::move(user_val);
-            s->read_options->result_size += it->second.iter_->user_val.size();
-            if (type == kTypeDeletion) {
-              meta->del_keys.insert({s->seq, it->second.iter_});
-            }
-          } else {
-            // inserted
-            size_t delta_size = user_key.size() + user_val.size();
-            s->res->emplace_back(user_key, std::move(user_val));
-            s->read_options->result_size += delta_size;
-            it->second.iter_ = --(s->res->end());
-            if (type == kTypeDeletion) {
-              meta->del_keys.insert({s->seq, it->second.iter_});
-            }
+        if (it->second.seq_ < s->seq) {
+          // replaced
+          if (it->second.type_ == kTypeDeletion) {
+            meta->del_keys.erase(it->second.seq_);
+          }
+          assert(s->read_options->result_size >=
+                 it->second.iter_->user_val.size());
+          s->read_options->result_size -= it->second.iter_->user_val.size();
+          it->second.seq_ = s->seq;
+          it->second.type_ = type;
+          it->second.iter_->user_val = std::move(user_val);
+          s->read_options->result_size += it->second.iter_->user_val.size();
+          if (type == kTypeDeletion) {
+            meta->del_keys.insert({s->seq, it->second.iter_});
+          }
+        } else {
+          // inserted
+          size_t delta_size = user_key.size() + user_val.size();
+          s->res->emplace_back(user_key, std::move(user_val));
+          s->read_options->result_size += delta_size;
+          it->second.iter_ = --(s->res->end());
+          if (type == kTypeDeletion) {
+            meta->del_keys.insert({s->seq, it->second.iter_});
+          }
 
-            if (CompressResultList(s->res, *(s->read_options))
-                && meta->map_res.rbegin()->first <= user_key) {
-              *(s->status) = Status::OK();
-              return false;  // Reach the batch capacity
-            }
+          if (CompressResultList(s->res, *(s->read_options))
+              && meta->map_res.rbegin()->first <= user_key) {
+            *(s->status) = Status::OK();
+            return false;  // Reach the batch capacity
           }
         }
       }
-      *(s->status) = Status::OK();
-      return true;
     }
-    default:
-      *(s->status) = Status::Corruption(Slice());
-      return false;
+    *(s->status) = Status::OK();
+    return true;
+  }
+  default:
+    *(s->status) = Status::Corruption(Slice());
+    return false;
   }
 }
 /***************************** Shichao *****************************/
@@ -548,19 +554,19 @@ bool MemTable::Get(const LookupKey& key, std::string* value, Status* s,
   bool found_final_value = false;
   bool merge_in_progress = s->IsMergeInProgress();
 
-    Saver saver;
-    saver.status = s;
-    saver.found_final_value = &found_final_value;
-    saver.key = &key;
-    saver.value = value;
-    saver.seq = kMaxSequenceNumber;
-    saver.mem = this;
-    saver.logger = moptions_.info_log;
-    saver.statistics = moptions_.statistics;
-    saver.env_ = env_;
-    table_->Get(key, &saver, SaveValue);
+  Saver saver;
+  saver.status = s;
+  saver.found_final_value = &found_final_value;
+  saver.key = &key;
+  saver.value = value;
+  saver.seq = kMaxSequenceNumber;
+  saver.mem = this;
+  saver.logger = moptions_.info_log;
+  saver.statistics = moptions_.statistics;
+  saver.env_ = env_;
+  table_->Get(key, &saver, SaveValue);
 
-    *seq = saver.seq;
+  *seq = saver.seq;
 
   // No change to value, since we have not yet found a Put/Delete
   if (!found_final_value && merge_in_progress) {
@@ -579,7 +585,7 @@ bool MemTable::RangeQuery(ReadOptions& read_options, const LookupRange& range,
   }
 
   RangeQueryMeta* meta =
-      static_cast<RangeQueryMeta*>(read_options.range_query_meta);
+    static_cast<RangeQueryMeta*>(read_options.range_query_meta);
   Saver saver;
   saver.status = s;
   saver.range = &range;
@@ -608,7 +614,7 @@ void MemTable::Update(SequenceNumber seq, const Slice& key,
   Slice mem_key = lkey.memtable_key();
 
   std::unique_ptr<MemTableRep::Iterator> iter(
-      table_->GetDynamicPrefixIterator());
+    table_->GetDynamicPrefixIterator());
   iter->Seek(lkey.internal_key(), mem_key.data());
 
   if (iter->Valid()) {
@@ -625,22 +631,22 @@ void MemTable::Update(SequenceNumber seq, const Slice& key,
     uint32_t key_length = 0;
     const char* key_ptr = GetVarint32Ptr(entry, entry + 5, &key_length);
     if (comparator_.comparator.user_comparator()->Equal(
-            Slice(key_ptr, key_length - 8), lkey.user_key())) {
+          Slice(key_ptr, key_length - 8), lkey.user_key())) {
       // Correct user key
       const uint64_t tag = DecodeFixed64(key_ptr + key_length - 8);
       ValueType type;
       SequenceNumber unused;
       UnPackSequenceAndType(tag, &unused, &type);
       switch (type) {
-        case kTypeValue: {
-          // Update value, if new value size  <= previous value size
-          [[gnu::fallthrough]];
-        }
-        default:
-          // If the latest value is kTypeDeletion, kTypeMerge or kTypeLogData
-          // we don't have enough space for update inplace
-            Add(seq, kTypeValue, key, value);
-            return;
+      case kTypeValue: {
+        // Update value, if new value size  <= previous value size
+        [[gnu::fallthrough]];
+      }
+      default:
+        // If the latest value is kTypeDeletion, kTypeMerge or kTypeLogData
+        // we don't have enough space for update inplace
+        Add(seq, kTypeValue, key, value);
+        return;
       }
     }
   }

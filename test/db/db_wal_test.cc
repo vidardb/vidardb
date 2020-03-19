@@ -77,14 +77,20 @@ TEST_F(DBWALTest, SyncWALNotBlockWrite) {
   ASSERT_OK(Put("foo5", "bar5"));
 
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      {"WritableFileWriter::SyncWithoutFlush:1",
-       "DBWALTest::SyncWALNotBlockWrite:1"},
-      {"DBWALTest::SyncWALNotBlockWrite:2",
-       "WritableFileWriter::SyncWithoutFlush:2"},
+    {
+      "WritableFileWriter::SyncWithoutFlush:1",
+      "DBWALTest::SyncWALNotBlockWrite:1"
+    },
+    {
+      "DBWALTest::SyncWALNotBlockWrite:2",
+      "WritableFileWriter::SyncWithoutFlush:2"
+    },
   });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
-  std::thread thread([&]() { ASSERT_OK(db_->SyncWAL()); });
+  std::thread thread([&]() {
+    ASSERT_OK(db_->SyncWAL());
+  });
 
   TEST_SYNC_POINT("DBWALTest::SyncWALNotBlockWrite:1");
   ASSERT_OK(Put("foo2", "bar2"));
@@ -111,12 +117,14 @@ TEST_F(DBWALTest, SyncWALNotWaitWrite) {
   ASSERT_OK(Put("foo3", "bar3"));
 
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      {"SpecialEnv::WalFile::Append:1", "DBWALTest::SyncWALNotWaitWrite:1"},
-      {"DBWALTest::SyncWALNotWaitWrite:2", "SpecialEnv::WalFile::Append:2"},
+    {"SpecialEnv::WalFile::Append:1", "DBWALTest::SyncWALNotWaitWrite:1"},
+    {"DBWALTest::SyncWALNotWaitWrite:2", "SpecialEnv::WalFile::Append:2"},
   });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
-  std::thread thread([&]() { ASSERT_OK(Put("foo2", "bar2")); });
+  std::thread thread([&]() {
+    ASSERT_OK(Put("foo2", "bar2"));
+  });
   TEST_SYNC_POINT("DBWALTest::SyncWALNotWaitWrite:1");
   ASSERT_OK(db_->SyncWAL());
   TEST_SYNC_POINT("DBWALTest::SyncWALNotWaitWrite:2");
@@ -422,10 +430,10 @@ class RecoveryTestHelper {
       unique_ptr<WritableFile> file;
       ASSERT_OK(db_options.env->NewWritableFile(fname, &file, env_options));
       unique_ptr<WritableFileWriter> file_writer(
-          new WritableFileWriter(std::move(file), env_options));
+        new WritableFileWriter(std::move(file), env_options));
       current_log_writer.reset(
-          new log::Writer(std::move(file_writer), current_log_number,
-                          db_options.recycle_log_file_num > 0));
+        new log::Writer(std::move(file_writer), current_log_number,
+                        db_options.recycle_log_file_num > 0));
 
       for (int i = 0; i < kKeysPerWALFile; i++) {
         std::string key = "key" + ToString((*count)++);
@@ -517,7 +525,9 @@ TEST_F(DBWALTest, kTolerateCorruptedTailRecords) {
   const int jstart = RecoveryTestHelper::kWALFileOffset;
   const int jend = jstart + RecoveryTestHelper::kWALFilesCount;
 
-  for (auto trunc : {true, false}) {        /* Corruption style */
+  for (auto trunc : {
+         true, false
+       }) {        /* Corruption style */
     for (int i = 0; i < 4; i++) {           /* Corruption offset position */
       for (int j = jstart; j < jend; j++) { /* WAL file */
         // Fill data for testing
@@ -529,7 +539,7 @@ TEST_F(DBWALTest, kTolerateCorruptedTailRecords) {
 
         if (trunc) {
           options.wal_recovery_mode =
-              WALRecoveryMode::kTolerateCorruptedTailRecords;
+            WALRecoveryMode::kTolerateCorruptedTailRecords;
           options.create_if_missing = false;
           ASSERT_OK(TryReopen(options));
           const size_t recovered_row_count = RecoveryTestHelper::GetData(this);
@@ -537,7 +547,7 @@ TEST_F(DBWALTest, kTolerateCorruptedTailRecords) {
           ASSERT_LT(recovered_row_count, row_count);
         } else {
           options.wal_recovery_mode =
-              WALRecoveryMode::kTolerateCorruptedTailRecords;
+            WALRecoveryMode::kTolerateCorruptedTailRecords;
           ASSERT_NOK(TryReopen(options));
         }
       }
@@ -560,7 +570,9 @@ TEST_F(DBWALTest, kAbsoluteConsistency) {
   ASSERT_OK(TryReopen(options));
   ASSERT_EQ(RecoveryTestHelper::GetData(this), row_count);
 
-  for (auto trunc : {true, false}) { /* Corruption style */
+  for (auto trunc : {
+         true, false
+       }) { /* Corruption style */
     for (int i = 0; i < 4; i++) {    /* Corruption offset position */
       if (trunc && i == 0) {
         continue;
@@ -588,9 +600,11 @@ TEST_F(DBWALTest, kPointInTimeRecovery) {
   const int jstart = RecoveryTestHelper::kWALFileOffset;
   const int jend = jstart + RecoveryTestHelper::kWALFilesCount;
   const int maxkeys =
-      RecoveryTestHelper::kWALFilesCount * RecoveryTestHelper::kKeysPerWALFile;
+    RecoveryTestHelper::kWALFilesCount * RecoveryTestHelper::kKeysPerWALFile;
 
-  for (auto trunc : {true, false}) {        /* Corruption style */
+  for (auto trunc : {
+         true, false
+       }) {        /* Corruption style */
     for (int i = 0; i < 4; i++) {           /* Offset of corruption */
       for (int j = jstart; j < jend; j++) { /* WAL file */
         // Fill data for testing
@@ -639,7 +653,9 @@ TEST_F(DBWALTest, kSkipAnyCorruptedRecords) {
   const int jstart = RecoveryTestHelper::kWALFileOffset;
   const int jend = jstart + RecoveryTestHelper::kWALFilesCount;
 
-  for (auto trunc : {true, false}) {        /* Corruption style */
+  for (auto trunc : {
+         true, false
+       }) {        /* Corruption style */
     for (int i = 0; i < 4; i++) {           /* Corruption offset */
       for (int j = jstart; j < jend; j++) { /* wal files */
         // Fill data for testing

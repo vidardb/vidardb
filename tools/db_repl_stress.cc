@@ -78,7 +78,7 @@ static void ReplicationThreadBody(void* arg) {
       }
     }
     fprintf(stderr, "Refreshing iterator\n");
-    for(;iter->Valid(); iter->Next(), t->no_read++, currentSeqNum++) {
+    for(; iter->Valid(); iter->Next(), t->no_read++, currentSeqNum++) {
       BatchResult res = iter->GetBatch();
       if (res.sequence != currentSeqNum) {
         fprintf(stderr,
@@ -99,9 +99,9 @@ DEFINE_uint64(wal_size_limit_MB, 10, "the wal size limit for the run"
 
 int main(int argc, const char** argv) {
   SetUsageMessage(
-      std::string("\nUSAGE:\n") + std::string(argv[0]) +
-      " --num_inserts=<num_inserts> --wal_ttl_seconds=<WAL_ttl_seconds>" +
-      " --wal_size_limit_MB=<WAL_size_limit_MB>");
+    std::string("\nUSAGE:\n") + std::string(argv[0]) +
+    " --num_inserts=<num_inserts> --wal_ttl_seconds=<WAL_ttl_seconds>" +
+    " --wal_size_limit_MB=<WAL_size_limit_MB>");
   ParseCommandLineFlags(&argc, const_cast<char***>(&argv), true);
 
   Env* env = Env::Default();

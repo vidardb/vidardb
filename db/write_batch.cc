@@ -115,26 +115,26 @@ struct SavePoints {
 };
 
 WriteBatch::WriteBatch(size_t reserved_bytes)
-    : save_points_(nullptr), content_flags_(0), rep_() {
+  : save_points_(nullptr), content_flags_(0), rep_() {
   rep_.reserve((reserved_bytes > WriteBatchInternal::kHeader) ?
-    reserved_bytes : WriteBatchInternal::kHeader);
+               reserved_bytes : WriteBatchInternal::kHeader);
   rep_.resize(WriteBatchInternal::kHeader);
 }
 
 WriteBatch::WriteBatch(const std::string& rep)
-    : save_points_(nullptr),
-      content_flags_(ContentFlags::DEFERRED),
-      rep_(rep) {}
+  : save_points_(nullptr),
+    content_flags_(ContentFlags::DEFERRED),
+    rep_(rep) {}
 
 WriteBatch::WriteBatch(const WriteBatch& src)
-    : save_points_(src.save_points_),
-      content_flags_(src.content_flags_.load(std::memory_order_relaxed)),
-      rep_(src.rep_) {}
+  : save_points_(src.save_points_),
+    content_flags_(src.content_flags_.load(std::memory_order_relaxed)),
+    rep_(src.rep_) {}
 
 WriteBatch::WriteBatch(WriteBatch&& src)
-    : save_points_(std::move(src.save_points_)),
-      content_flags_(src.content_flags_.load(std::memory_order_relaxed)),
-      rep_(std::move(src.rep_)) {}
+  : save_points_(std::move(src.save_points_)),
+    content_flags_(src.content_flags_.load(std::memory_order_relaxed)),
+    rep_(std::move(src.rep_)) {}
 
 WriteBatch& WriteBatch::operator=(const WriteBatch& src) {
   if (&src != this) {
@@ -152,7 +152,9 @@ WriteBatch& WriteBatch::operator=(WriteBatch&& src) {
   return *this;
 }
 
-WriteBatch::~WriteBatch() { delete save_points_; }
+WriteBatch::~WriteBatch() {
+  delete save_points_;
+}
 
 WriteBatch::Handler::~Handler() { }
 
@@ -251,50 +253,50 @@ Status ReadRecordFromWriteBatch(Slice* input, char* tag,
   input->remove_prefix(1);
   *column_family = 0;  // default
   switch (*tag) {
-    case kTypeColumnFamilyValue:
-      if (!GetVarint32(input, column_family)) {
-        return Status::Corruption("bad WriteBatch Put");
-      }
-    // intentional fallthrough
-    case kTypeValue:
-      if (!GetLengthPrefixedSlice(input, key) ||
-          !GetLengthPrefixedSlice(input, value)) {
-        return Status::Corruption("bad WriteBatch Put");
-      }
-      break;
-    case kTypeColumnFamilyDeletion:
-    // intentional fallthrough
-    case kTypeDeletion:
-      if (!GetLengthPrefixedSlice(input, key)) {
-        return Status::Corruption("bad WriteBatch Delete");
-      }
-      break;
-    case kTypeLogData:
-      assert(blob != nullptr);
-      if (!GetLengthPrefixedSlice(input, blob)) {
-        return Status::Corruption("bad WriteBatch Blob");
-      }
-      break;
-    case kTypeNoop:
-    case kTypeBeginPrepareXID:
-      break;
-    case kTypeEndPrepareXID:
-      if (!GetLengthPrefixedSlice(input, xid)) {
-        return Status::Corruption("bad EndPrepare XID");
-      }
-      break;
-    case kTypeCommitXID:
-      if (!GetLengthPrefixedSlice(input, xid)) {
-        return Status::Corruption("bad Commit XID");
-      }
-      break;
-    case kTypeRollbackXID:
-      if (!GetLengthPrefixedSlice(input, xid)) {
-        return Status::Corruption("bad Rollback XID");
-      }
-      break;
-    default:
-      return Status::Corruption("unknown WriteBatch tag");
+  case kTypeColumnFamilyValue:
+    if (!GetVarint32(input, column_family)) {
+      return Status::Corruption("bad WriteBatch Put");
+    }
+  // intentional fallthrough
+  case kTypeValue:
+    if (!GetLengthPrefixedSlice(input, key) ||
+        !GetLengthPrefixedSlice(input, value)) {
+      return Status::Corruption("bad WriteBatch Put");
+    }
+    break;
+  case kTypeColumnFamilyDeletion:
+  // intentional fallthrough
+  case kTypeDeletion:
+    if (!GetLengthPrefixedSlice(input, key)) {
+      return Status::Corruption("bad WriteBatch Delete");
+    }
+    break;
+  case kTypeLogData:
+    assert(blob != nullptr);
+    if (!GetLengthPrefixedSlice(input, blob)) {
+      return Status::Corruption("bad WriteBatch Blob");
+    }
+    break;
+  case kTypeNoop:
+  case kTypeBeginPrepareXID:
+    break;
+  case kTypeEndPrepareXID:
+    if (!GetLengthPrefixedSlice(input, xid)) {
+      return Status::Corruption("bad EndPrepare XID");
+    }
+    break;
+  case kTypeCommitXID:
+    if (!GetLengthPrefixedSlice(input, xid)) {
+      return Status::Corruption("bad Commit XID");
+    }
+    break;
+  case kTypeRollbackXID:
+    if (!GetLengthPrefixedSlice(input, xid)) {
+      return Status::Corruption("bad Rollback XID");
+    }
+    break;
+  default:
+    return Status::Corruption("unknown WriteBatch tag");
   }
   return Status::OK();
 }
@@ -320,47 +322,47 @@ Status WriteBatch::Iterate(Handler* handler) const {
     }
 
     switch (tag) {
-      case kTypeColumnFamilyValue:
-      case kTypeValue:
-        assert(content_flags_.load(std::memory_order_relaxed) &
-               (ContentFlags::DEFERRED | ContentFlags::HAS_PUT));
-        s = handler->PutCF(column_family, key, value);
-        found++;
-        break;
-      case kTypeColumnFamilyDeletion:
-      case kTypeDeletion:
-        assert(content_flags_.load(std::memory_order_relaxed) &
-               (ContentFlags::DEFERRED | ContentFlags::HAS_DELETE));
-        s = handler->DeleteCF(column_family, key);
-        found++;
-        break;
-      case kTypeLogData:
-        handler->LogData(blob);
-        break;
-      case kTypeBeginPrepareXID:
-        assert(content_flags_.load(std::memory_order_relaxed) &
-               (ContentFlags::DEFERRED | ContentFlags::HAS_BEGIN_PREPARE));
-        handler->MarkBeginPrepare();
-        break;
-      case kTypeEndPrepareXID:
-        assert(content_flags_.load(std::memory_order_relaxed) &
-               (ContentFlags::DEFERRED | ContentFlags::HAS_END_PREPARE));
-        handler->MarkEndPrepare(xid);
-        break;
-      case kTypeCommitXID:
-        assert(content_flags_.load(std::memory_order_relaxed) &
-               (ContentFlags::DEFERRED | ContentFlags::HAS_COMMIT));
-        handler->MarkCommit(xid);
-        break;
-      case kTypeRollbackXID:
-        assert(content_flags_.load(std::memory_order_relaxed) &
-               (ContentFlags::DEFERRED | ContentFlags::HAS_ROLLBACK));
-        handler->MarkRollback(xid);
-        break;
-      case kTypeNoop:
-        break;
-      default:
-        return Status::Corruption("unknown WriteBatch tag");
+    case kTypeColumnFamilyValue:
+    case kTypeValue:
+      assert(content_flags_.load(std::memory_order_relaxed) &
+             (ContentFlags::DEFERRED | ContentFlags::HAS_PUT));
+      s = handler->PutCF(column_family, key, value);
+      found++;
+      break;
+    case kTypeColumnFamilyDeletion:
+    case kTypeDeletion:
+      assert(content_flags_.load(std::memory_order_relaxed) &
+             (ContentFlags::DEFERRED | ContentFlags::HAS_DELETE));
+      s = handler->DeleteCF(column_family, key);
+      found++;
+      break;
+    case kTypeLogData:
+      handler->LogData(blob);
+      break;
+    case kTypeBeginPrepareXID:
+      assert(content_flags_.load(std::memory_order_relaxed) &
+             (ContentFlags::DEFERRED | ContentFlags::HAS_BEGIN_PREPARE));
+      handler->MarkBeginPrepare();
+      break;
+    case kTypeEndPrepareXID:
+      assert(content_flags_.load(std::memory_order_relaxed) &
+             (ContentFlags::DEFERRED | ContentFlags::HAS_END_PREPARE));
+      handler->MarkEndPrepare(xid);
+      break;
+    case kTypeCommitXID:
+      assert(content_flags_.load(std::memory_order_relaxed) &
+             (ContentFlags::DEFERRED | ContentFlags::HAS_COMMIT));
+      handler->MarkCommit(xid);
+      break;
+    case kTypeRollbackXID:
+      assert(content_flags_.load(std::memory_order_relaxed) &
+             (ContentFlags::DEFERRED | ContentFlags::HAS_ROLLBACK));
+      handler->MarkRollback(xid);
+      break;
+    case kTypeNoop:
+      break;
+    default:
+      return Status::Corruption("unknown WriteBatch tag");
     }
   }
   if (!s.ok()) {
@@ -405,8 +407,8 @@ void WriteBatchInternal::Put(WriteBatch* b, uint32_t column_family_id,
   PutLengthPrefixedSlice(&b->rep_, key);
   PutLengthPrefixedSlice(&b->rep_, value);
   b->content_flags_.store(
-      b->content_flags_.load(std::memory_order_relaxed) | ContentFlags::HAS_PUT,
-      std::memory_order_relaxed);
+    b->content_flags_.load(std::memory_order_relaxed) | ContentFlags::HAS_PUT,
+    std::memory_order_relaxed);
 }
 
 void WriteBatch::Put(ColumnFamilyHandle* column_family, const Slice& key,
@@ -426,8 +428,8 @@ void WriteBatchInternal::Put(WriteBatch* b, uint32_t column_family_id,
   PutLengthPrefixedSliceParts(&b->rep_, key);
   PutLengthPrefixedSliceParts(&b->rep_, value);
   b->content_flags_.store(
-      b->content_flags_.load(std::memory_order_relaxed) | ContentFlags::HAS_PUT,
-      std::memory_order_relaxed);
+    b->content_flags_.load(std::memory_order_relaxed) | ContentFlags::HAS_PUT,
+    std::memory_order_relaxed);
 }
 
 void WriteBatch::Put(ColumnFamilyHandle* column_family, const SliceParts& key,
@@ -455,8 +457,8 @@ void WriteBatchInternal::MarkEndPrepare(WriteBatch* b, const Slice& xid) {
   b->rep_.push_back(static_cast<char>(kTypeEndPrepareXID));
   PutLengthPrefixedSlice(&b->rep_, xid);
   b->content_flags_.store(b->content_flags_.load(std::memory_order_relaxed) |
-                              ContentFlags::HAS_END_PREPARE |
-                              ContentFlags::HAS_BEGIN_PREPARE,
+                          ContentFlags::HAS_END_PREPARE |
+                          ContentFlags::HAS_BEGIN_PREPARE,
                           std::memory_order_relaxed);
 }
 
@@ -464,7 +466,7 @@ void WriteBatchInternal::MarkCommit(WriteBatch* b, const Slice& xid) {
   b->rep_.push_back(static_cast<char>(kTypeCommitXID));
   PutLengthPrefixedSlice(&b->rep_, xid);
   b->content_flags_.store(b->content_flags_.load(std::memory_order_relaxed) |
-                              ContentFlags::HAS_COMMIT,
+                          ContentFlags::HAS_COMMIT,
                           std::memory_order_relaxed);
 }
 
@@ -472,7 +474,7 @@ void WriteBatchInternal::MarkRollback(WriteBatch* b, const Slice& xid) {
   b->rep_.push_back(static_cast<char>(kTypeRollbackXID));
   PutLengthPrefixedSlice(&b->rep_, xid);
   b->content_flags_.store(b->content_flags_.load(std::memory_order_relaxed) |
-                              ContentFlags::HAS_ROLLBACK,
+                          ContentFlags::HAS_ROLLBACK,
                           std::memory_order_relaxed);
 }
 
@@ -487,7 +489,7 @@ void WriteBatchInternal::Delete(WriteBatch* b, uint32_t column_family_id,
   }
   PutLengthPrefixedSlice(&b->rep_, key);
   b->content_flags_.store(b->content_flags_.load(std::memory_order_relaxed) |
-                              ContentFlags::HAS_DELETE,
+                          ContentFlags::HAS_DELETE,
                           std::memory_order_relaxed);
 }
 
@@ -506,7 +508,7 @@ void WriteBatchInternal::Delete(WriteBatch* b, uint32_t column_family_id,
   }
   PutLengthPrefixedSliceParts(&b->rep_, key);
   b->content_flags_.store(b->content_flags_.load(std::memory_order_relaxed) |
-                              ContentFlags::HAS_DELETE,
+                          ContentFlags::HAS_DELETE,
                           std::memory_order_relaxed);
 }
 
@@ -526,7 +528,7 @@ void WriteBatch::SetSavePoint() {
   }
   // Record length and count of current batch of writes.
   save_points_->stack.push(SavePoint{
-      GetDataSize(), Count(), content_flags_.load(std::memory_order_relaxed)});
+    GetDataSize(), Count(), content_flags_.load(std::memory_order_relaxed)});
 }
 
 Status WriteBatch::RollbackToSavePoint() {
@@ -577,25 +579,29 @@ class MemTableInserter : public WriteBatch::Handler {
                    uint64_t recovering_log_number, DB* db,
                    const bool dont_filter_deletes,
                    bool concurrent_memtable_writes)
-      : sequence_(sequence),
-        cf_mems_(cf_mems),
-        flush_scheduler_(flush_scheduler),
-        ignore_missing_column_families_(ignore_missing_column_families),
-        recovering_log_number_(recovering_log_number),
-        log_number_ref_(0),
-        db_(reinterpret_cast<DBImpl*>(db)),
-        dont_filter_deletes_(dont_filter_deletes),
-        concurrent_memtable_writes_(concurrent_memtable_writes),
-        rebuilding_trx_(nullptr) {
+    : sequence_(sequence),
+      cf_mems_(cf_mems),
+      flush_scheduler_(flush_scheduler),
+      ignore_missing_column_families_(ignore_missing_column_families),
+      recovering_log_number_(recovering_log_number),
+      log_number_ref_(0),
+      db_(reinterpret_cast<DBImpl*>(db)),
+      dont_filter_deletes_(dont_filter_deletes),
+      concurrent_memtable_writes_(concurrent_memtable_writes),
+      rebuilding_trx_(nullptr) {
     assert(cf_mems_);
     if (!dont_filter_deletes_) {
       assert(db_);
     }
   }
 
-  void set_log_number_ref(uint64_t log) { log_number_ref_ = log; }
+  void set_log_number_ref(uint64_t log) {
+    log_number_ref_ = log;
+  }
 
-  SequenceNumber get_final_sequence() { return sequence_; }
+  SequenceNumber get_final_sequence() {
+    return sequence_;
+  }
 
   bool SeekToColumnFamily(uint32_t column_family_id, Status* s) {
     // If we are in a concurrent mode, it is the caller's responsibility
@@ -608,7 +614,7 @@ class MemTableInserter : public WriteBatch::Handler {
         *s = Status::OK();
       } else {
         *s = Status::InvalidArgument(
-            "Invalid column family specified in write batch");
+               "Invalid column family specified in write batch");
       }
       return false;
     }
@@ -648,7 +654,7 @@ class MemTableInserter : public WriteBatch::Handler {
 
     MemTable* mem = cf_mems_->GetMemTable();
 
-      mem->Add(sequence_, kTypeValue, key, value, concurrent_memtable_writes_);
+    mem->Add(sequence_, kTypeValue, key, value, concurrent_memtable_writes_);
 
     // Since all Puts are logged in transaction logs (if enabled), always bump
     // sequence number. Even if the update eventually fails and does not result
@@ -718,8 +724,8 @@ class MemTableInserter : public WriteBatch::Handler {
       // from all encountered prepare sections of the wal
       if (db_->allow_2pc() == false) {
         return Status::NotSupported(
-            "WAL contains prepared transactions. Open with "
-            "TransactionDB::Open().");
+                 "WAL contains prepared transactions. Open with "
+                 "TransactionDB::Open().");
       }
 
       // we are now iterating through a prepared section
@@ -811,10 +817,10 @@ class MemTableInserter : public WriteBatch::Handler {
 // 3) During Write(), in a concurrent context where memtables has been cloned
 // The reason is that it calls memtables->Seek(), which has a stateful cache
 Status WriteBatchInternal::InsertInto(
-    const std::vector<WriteThread::Writer*>& writers, SequenceNumber sequence,
-    ColumnFamilyMemTables* memtables, FlushScheduler* flush_scheduler,
-    bool ignore_missing_column_families, uint64_t log_number, DB* db,
-    const bool dont_filter_deletes, bool concurrent_memtable_writes) {
+  const std::vector<WriteThread::Writer*>& writers, SequenceNumber sequence,
+  ColumnFamilyMemTables* memtables, FlushScheduler* flush_scheduler,
+  bool ignore_missing_column_families, uint64_t log_number, DB* db,
+  const bool dont_filter_deletes, bool concurrent_memtable_writes) {
   MemTableInserter inserter(sequence, memtables, flush_scheduler,
                             ignore_missing_column_families, log_number, db,
                             dont_filter_deletes, concurrent_memtable_writes);
@@ -849,10 +855,10 @@ Status WriteBatchInternal::InsertInto(WriteThread::Writer* writer,
 }
 
 Status WriteBatchInternal::InsertInto(
-    const WriteBatch* batch, ColumnFamilyMemTables* memtables,
-    FlushScheduler* flush_scheduler, bool ignore_missing_column_families,
-    uint64_t log_number, DB* db, const bool dont_filter_deletes,
-    bool concurrent_memtable_writes, SequenceNumber* last_seq_used) {
+  const WriteBatch* batch, ColumnFamilyMemTables* memtables,
+  FlushScheduler* flush_scheduler, bool ignore_missing_column_families,
+  uint64_t log_number, DB* db, const bool dont_filter_deletes,
+  bool concurrent_memtable_writes, SequenceNumber* last_seq_used) {
   MemTableInserter inserter(WriteBatchInternal::Sequence(batch), memtables,
                             flush_scheduler, ignore_missing_column_families,
                             log_number, db, dont_filter_deletes,
@@ -874,15 +880,15 @@ void WriteBatchInternal::Append(WriteBatch* dst, const WriteBatch* src) {
   SetCount(dst, Count(dst) + Count(src));
   assert(src->rep_.size() >= WriteBatchInternal::kHeader);
   dst->rep_.append(src->rep_.data() + WriteBatchInternal::kHeader,
-    src->rep_.size() - WriteBatchInternal::kHeader);
+                   src->rep_.size() - WriteBatchInternal::kHeader);
   dst->content_flags_.store(
-      dst->content_flags_.load(std::memory_order_relaxed) |
-          src->content_flags_.load(std::memory_order_relaxed),
-      std::memory_order_relaxed);
+    dst->content_flags_.load(std::memory_order_relaxed) |
+    src->content_flags_.load(std::memory_order_relaxed),
+    std::memory_order_relaxed);
 }
 
 size_t WriteBatchInternal::AppendedByteSize(size_t leftByteSize,
-                                            size_t rightByteSize) {
+    size_t rightByteSize) {
   if (leftByteSize == 0 || rightByteSize == 0) {
     return leftByteSize + rightByteSize;
   } else {

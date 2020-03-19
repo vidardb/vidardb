@@ -95,7 +95,8 @@ void Log(Logger* info_log, const char* format, ...) {
 
 void Logger::Logv(const InfoLogLevel log_level, const char* format, va_list ap) {
   static const char* kInfoLogLevelNames[5] = { "DEBUG", "INFO", "WARN",
-    "ERROR", "FATAL" };
+                                               "ERROR", "FATAL"
+                                             };
   if (log_level < log_level_) {
     return;
   }
@@ -110,7 +111,7 @@ void Logger::Logv(const InfoLogLevel log_level, const char* format, va_list ap) 
   } else {
     char new_format[500];
     snprintf(new_format, sizeof(new_format) - 1, "[%s] %s",
-      kInfoLogLevelNames[log_level], format);
+             kInfoLogLevelNames[log_level], format);
     Logv(new_format, ap);
   }
 }
@@ -319,9 +320,9 @@ void AssignEnvOptions(EnvOptions* env_options, const DBOptions& options) {
   env_options->bytes_per_sync = options.bytes_per_sync;
   env_options->compaction_readahead_size = options.compaction_readahead_size;
   env_options->random_access_max_buffer_size =
-      options.random_access_max_buffer_size;
+    options.random_access_max_buffer_size;
   env_options->writable_file_max_buffer_size =
-      options.writable_file_max_buffer_size;
+    options.writable_file_max_buffer_size;
   env_options->allow_fallocate = options.allow_fallocate;
 }
 

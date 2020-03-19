@@ -31,7 +31,9 @@ namespace {
 // 4.4.3's builtin hashtable.
 class HandleTable {
  public:
-  HandleTable() : length_(0), elems_(0), list_(nullptr) { Resize(); }
+  HandleTable() : length_(0), elems_(0), list_(nullptr) {
+    Resize();
+  }
 
   template <typename T>
   void ApplyToAllCacheEntries(T func) {
@@ -255,7 +257,9 @@ void LRUCache::ApplyToAllCacheEntries(void (*callback)(void*, size_t),
     mutex_.Lock();
   }
   table_.ApplyToAllCacheEntries(
-      [callback](LRUHandle* h) { callback(h->value, h->charge); });
+  [callback](LRUHandle* h) {
+    callback(h->value, h->charge);
+  });
   if (thread_safe) {
     mutex_.Unlock();
   }
@@ -372,7 +376,7 @@ Status LRUCache::Insert(const Slice& key, uint32_t hash, void* value,
   // If the cache is full, we'll have to release it
   // It shouldn't happen very often though.
   LRUHandle* e = reinterpret_cast<LRUHandle*>(
-      new char[sizeof(LRUHandle) - 1 + key.size()]);
+                   new char[sizeof(LRUHandle) - 1 + key.size()]);
   Status s;
   std::vector<LRUHandle*> last_reference_list;
 
@@ -382,8 +386,8 @@ Status LRUCache::Insert(const Slice& key, uint32_t hash, void* value,
   e->key_length = key.size();
   e->hash = hash;
   e->refs = (handle == nullptr
-                 ? 1
-                 : 2);  // One from LRUCache, one for the returned handle
+             ? 1
+             : 2);  // One from LRUCache, one for the returned handle
   e->next = e->prev = nullptr;
   e->in_cache = true;
   memcpy(e->key_data, key.data(), key.size());
@@ -486,10 +490,10 @@ class ShardedLRUCache : public Cache {
  public:
   ShardedLRUCache(size_t capacity, int num_shard_bits,
                   bool strict_capacity_limit)
-      : last_id_(0),
-        num_shard_bits_(num_shard_bits),
-        capacity_(capacity),
-        strict_capacity_limit_(strict_capacity_limit) {
+    : last_id_(0),
+      num_shard_bits_(num_shard_bits),
+      capacity_(capacity),
+      strict_capacity_limit_(strict_capacity_limit) {
     int num_shards = 1 << num_shard_bits_;
     shards_ = new LRUCache[num_shards];
     const size_t per_shard = (capacity + (num_shards - 1)) / num_shards;
@@ -498,7 +502,9 @@ class ShardedLRUCache : public Cache {
       shards_[s].SetStrictCapacityLimit(strict_capacity_limit);
     }
   }
-  virtual ~ShardedLRUCache() { delete[] shards_; }
+  virtual ~ShardedLRUCache() {
+    delete[] shards_;
+  }
   virtual void SetCapacity(size_t capacity) override {
     int num_shards = 1 << num_shard_bits_;
     const size_t per_shard = (capacity + (num_shards - 1)) / num_shards;
@@ -541,7 +547,9 @@ class ShardedLRUCache : public Cache {
     MutexLock l(&id_mutex_);
     return ++(last_id_);
   }
-  virtual size_t GetCapacity() const override { return capacity_; }
+  virtual size_t GetCapacity() const override {
+    return capacity_;
+  }
 
   virtual bool HasStrictCapacityLimit() const override {
     return strict_capacity_limit_;
@@ -571,7 +579,9 @@ class ShardedLRUCache : public Cache {
     return usage;
   }
 
-  virtual void DisownData() override { shards_ = nullptr; }
+  virtual void DisownData() override {
+    shards_ = nullptr;
+  }
 
   virtual void ApplyToAllCacheEntries(void (*callback)(void*, size_t),
                                       bool thread_safe) override {
@@ -605,7 +615,7 @@ std::shared_ptr<Cache> NewLRUCache(size_t capacity, int num_shard_bits,
     return nullptr;  // the cache cannot be sharded into too many fine pieces
   }
   return std::make_shared<ShardedLRUCache>(capacity, num_shard_bits,
-                                           strict_capacity_limit);
+         strict_capacity_limit);
 }
 
 }  // namespace vidardb

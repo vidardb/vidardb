@@ -19,7 +19,7 @@ class LockTest : public testing::Test {
   vidardb::Env* env_;
 
   LockTest() : file_(test::TmpDir() + "/db_testlock_file"),
-               env_(vidardb::Env::Default()) {
+    env_(vidardb::Env::Default()) {
     current_ = this;
   }
 

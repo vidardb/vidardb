@@ -59,10 +59,10 @@ namespace {
 // Find File in LevelFilesBrief data structure
 // Within an index range defined by left and right
 int FindFileInRange(const InternalKeyComparator& icmp,
-    const LevelFilesBrief& file_level,
-    const Slice& key,
-    uint32_t left,
-    uint32_t right) {
+                    const LevelFilesBrief& file_level,
+                    const Slice& key,
+                    uint32_t left,
+                    uint32_t right) {
   while (left < right) {
     uint32_t mid = (left + right) / 2;
     const FdWithKeyRange& f = file_level.files[mid];
@@ -92,22 +92,22 @@ class FilePicker {
              unsigned int num_levels, FileIndexer* file_indexer,
              const Comparator* user_comparator,
              const InternalKeyComparator* internal_comparator)
-      : num_levels_(num_levels),
-        curr_level_(static_cast<unsigned int>(-1)),
-        returned_file_level_(static_cast<unsigned int>(-1)),
-        hit_file_level_(static_cast<unsigned int>(-1)),
-        search_left_bound_(0),
-        search_right_bound_(FileIndexer::kLevelMaxIndex),
+    : num_levels_(num_levels),
+      curr_level_(static_cast<unsigned int>(-1)),
+      returned_file_level_(static_cast<unsigned int>(-1)),
+      hit_file_level_(static_cast<unsigned int>(-1)),
+      search_left_bound_(0),
+      search_right_bound_(FileIndexer::kLevelMaxIndex),
 #ifndef NDEBUG
-        files_(files),
+      files_(files),
 #endif
-        level_files_brief_(file_levels),
-        is_hit_file_last_in_level_(false),
-        start_(start),
-        limit_(limit),
-        file_indexer_(file_indexer),
-        user_comparator_(user_comparator),
-        internal_comparator_(internal_comparator) {
+      level_files_brief_(file_levels),
+      is_hit_file_last_in_level_(false),
+      start_(start),
+      limit_(limit),
+      file_indexer_(file_indexer),
+      user_comparator_(user_comparator),
+      internal_comparator_(internal_comparator) {
     // Setup member variables to search first level.
     search_ended_ = !PrepareNextLevel();
     if (!search_ended_) {
@@ -121,7 +121,9 @@ class FilePicker {
     }
   }
 
-  int GetCurrentLevel() { return returned_file_level_; }
+  int GetCurrentLevel() {
+    return returned_file_level_;
+  }
 
   FdWithKeyRange* GetNextFile() {
     while (!search_ended_) {  // Loops over different levels.
@@ -130,7 +132,7 @@ class FilePicker {
         FdWithKeyRange* f = &curr_file_level_->files[curr_index_in_curr_level_];
         hit_file_level_ = curr_level_;
         is_hit_file_last_in_level_ =
-            curr_index_in_curr_level_ == curr_file_level_->num_files - 1;
+          curr_index_in_curr_level_ == curr_file_level_->num_files - 1;
         int cmp_largest = -1;
 
         // Do key range filtering of files or/and fractional cascading if:
@@ -146,26 +148,26 @@ class FilePicker {
           // right bound point to the same find, we are sure key falls in
           // range.
           assert(
-              curr_level_ == 0 ||
-              curr_index_in_curr_level_ == start_index_in_curr_level_ ||
-              user_comparator_->Compare(limit_.user_key(),
-                ExtractUserKey(f->smallest_key)) <= 0);
+            curr_level_ == 0 ||
+            curr_index_in_curr_level_ == start_index_in_curr_level_ ||
+            user_comparator_->Compare(limit_.user_key(),
+                                      ExtractUserKey(f->smallest_key)) <= 0);
 
           int cmp_smallest = user_comparator_->Compare(limit_.user_key(),
-              ExtractUserKey(f->smallest_key));
+                             ExtractUserKey(f->smallest_key));
           if (cmp_smallest >= 0) {
             cmp_largest = user_comparator_->Compare(limit_.user_key(),
-                ExtractUserKey(f->largest_key));
+                                                    ExtractUserKey(f->largest_key));
           }
 
           // Setup file search bound for the next level based on the
           // comparison results
           if (curr_level_ > 0) {
             file_indexer_->GetNextLevelIndex(curr_level_,
-                                            curr_index_in_curr_level_,
-                                            cmp_smallest, cmp_largest,
-                                            &search_left_bound_,
-                                            &search_right_bound_);
+                                             curr_index_in_curr_level_,
+                                             cmp_smallest, cmp_largest,
+                                             &search_left_bound_,
+                                             &search_right_bound_);
           }
           // Key falls out of current file's range
           if (cmp_smallest < 0 || cmp_largest > 0) {
@@ -183,14 +185,14 @@ class FilePicker {
         if (prev_file_) {
           if (curr_level_ != 0) {
             int comp_sign = internal_comparator_->Compare(
-                prev_file_->largest_key, f->smallest_key);
+                              prev_file_->largest_key, f->smallest_key);
             assert(comp_sign < 0);
           } else {
             // level == 0, the current file cannot be newer than the previous
             // one. Use compressed data structure, has no attribute seqNo
             assert(curr_index_in_curr_level_ > 0);
             assert(!NewestFirstBySeqNo(files_[0][curr_index_in_curr_level_],
-                  files_[0][curr_index_in_curr_level_-1]));
+                                       files_[0][curr_index_in_curr_level_-1]));
           }
         }
         prev_file_ = f;
@@ -218,11 +220,11 @@ class FilePicker {
         FdWithKeyRange* f = &curr_file_level_->files[curr_index_in_curr_level_];
         hit_file_level_ = curr_level_;
         is_hit_file_last_in_level_ =
-            curr_index_in_curr_level_ == curr_file_level_->num_files - 1;
+          curr_index_in_curr_level_ == curr_file_level_->num_files - 1;
 
         bool valid = (start_.user_key().compare(kRangeQueryMin) == 0) ? false :
                      (internal_comparator_->InternalKeyComparator::Compare(
-                         f->largest_key, start_.internal_key()) < 0);
+                        f->largest_key, start_.internal_key()) < 0);
         if (is_hit_file_last_in_level_ && valid) {
           break;
         }
@@ -230,12 +232,12 @@ class FilePicker {
         int cmp_largest = -1;
         if (num_levels_ > 1 || curr_file_level_->num_files > 3) {
           int cmp_smallest = (limit_.user_key().compare(kRangeQueryMax) == 0) ?
-              1 : user_comparator_->Compare(limit_.user_key(),
-                                            ExtractUserKey(f->smallest_key));
+                             1 : user_comparator_->Compare(limit_.user_key(),
+                                 ExtractUserKey(f->smallest_key));
           if (cmp_smallest > 0) {
             cmp_largest = (limit_.user_key().compare(kRangeQueryMax) == 0) ?
-                1 : user_comparator_->Compare(limit_.user_key(),
-                                              ExtractUserKey(f->largest_key));
+                          1 : user_comparator_->Compare(limit_.user_key(),
+                              ExtractUserKey(f->largest_key));
           } else {
             if (curr_level_ == 0) {
               ++curr_index_in_curr_level_;
@@ -266,11 +268,15 @@ class FilePicker {
 
   // getter for current file level
   // for GET_HIT_L0, GET_HIT_L1 & GET_HIT_L2_AND_UP counts
-  unsigned int GetHitFileLevel() { return hit_file_level_; }
+  unsigned int GetHitFileLevel() {
+    return hit_file_level_;
+  }
 
   // Returns true if the most recent "hit file" (i.e., one returned by
   // GetNextFile()) is at the last index in its level.
-  bool IsHitFileLastInLevel() { return is_hit_file_last_in_level_; }
+  bool IsHitFileLastInLevel() {
+    return is_hit_file_last_in_level_;
+  }
 
  private:
   unsigned int num_levels_;
@@ -336,13 +342,13 @@ class FilePicker {
         } else if (search_left_bound_ < search_right_bound_) {
           if (search_right_bound_ == FileIndexer::kLevelMaxIndex) {
             search_right_bound_ =
-                static_cast<int32_t>(curr_file_level_->num_files) - 1;
+              static_cast<int32_t>(curr_file_level_->num_files) - 1;
           }
           start_index =
-              FindFileInRange(*internal_comparator_, *curr_file_level_,
-                              start_.internal_key(),
-                              static_cast<uint32_t>(search_left_bound_),
-                              static_cast<uint32_t>(search_right_bound_));
+            FindFileInRange(*internal_comparator_, *curr_file_level_,
+                            start_.internal_key(),
+                            static_cast<uint32_t>(search_left_bound_),
+                            static_cast<uint32_t>(search_right_bound_));
         } else {
           // search_left_bound > search_right_bound, key does not exist in
           // this level. Since no comparison is done in this level, it will
@@ -366,7 +372,9 @@ class FilePicker {
 };
 }  // anonymous namespace
 
-VersionStorageInfo::~VersionStorageInfo() { delete[] files_; }
+VersionStorageInfo::~VersionStorageInfo() {
+  delete[] files_;
+}
 
 Version::~Version() {
   assert(refs_ == 0);
@@ -400,8 +408,8 @@ int FindFile(const InternalKeyComparator& icmp,
 }
 
 void DoGenerateLevelFilesBrief(LevelFilesBrief* file_level,
-        const std::vector<FileMetaData*>& files,
-        Arena* arena) {
+                               const std::vector<FileMetaData*>& files,
+                               Arena* arena) {
   assert(file_level);
   assert(arena);
 
@@ -443,11 +451,11 @@ static bool BeforeFile(const Comparator* ucmp,
 }
 
 bool SomeFileOverlapsRange(
-    const InternalKeyComparator& icmp,
-    bool disjoint_sorted_files,
-    const LevelFilesBrief& file_level,
-    const Slice* smallest_user_key,
-    const Slice* largest_user_key) {
+  const InternalKeyComparator& icmp,
+  bool disjoint_sorted_files,
+  const LevelFilesBrief& file_level,
+  const Slice* smallest_user_key,
+  const Slice* largest_user_key) {
   const Comparator* ucmp = icmp.user_comparator();
   if (!disjoint_sorted_files) {
     // Need to check against all files
@@ -491,20 +499,24 @@ class LevelFileNumIterator : public InternalIterator {
  public:
   LevelFileNumIterator(const InternalKeyComparator& icmp,
                        const LevelFilesBrief* flevel)
-      : icmp_(icmp),
-        flevel_(flevel),
-        index_(static_cast<uint32_t>(flevel->num_files)),
-        current_value_(0, 0, 0, 0) {  // Marks as invalid  // Shichao
+    : icmp_(icmp),
+      flevel_(flevel),
+      index_(static_cast<uint32_t>(flevel->num_files)),
+      current_value_(0, 0, 0, 0) {  // Marks as invalid  // Shichao
   }
-  virtual bool Valid() const override { return index_ < flevel_->num_files; }
+  virtual bool Valid() const override {
+    return index_ < flevel_->num_files;
+  }
   virtual void Seek(const Slice& target) override {
     index_ = FindFile(icmp_, *flevel_, target);
   }
-  virtual void SeekToFirst() override { index_ = 0; }
+  virtual void SeekToFirst() override {
+    index_ = 0;
+  }
   virtual void SeekToLast() override {
     index_ = (flevel_->num_files == 0)
-                 ? 0
-                 : static_cast<uint32_t>(flevel_->num_files) - 1;
+             ? 0
+             : static_cast<uint32_t>(flevel_->num_files) - 1;
   }
   virtual void Next() override {
     assert(Valid());
@@ -530,7 +542,9 @@ class LevelFileNumIterator : public InternalIterator {
     return Slice(reinterpret_cast<const char*>(&current_value_),
                  sizeof(FileDescriptor));
   }
-  virtual Status status() const override { return Status::OK(); }
+  virtual Status status() const override {
+    return Status::OK();
+  }
 
  private:
   const InternalKeyComparator icmp_;
@@ -548,26 +562,26 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
                          const InternalKeyComparator& icomparator,
                          HistogramImpl* file_read_hist, bool for_compaction,
                          int level)
-      : TwoLevelIteratorState(),
-        table_cache_(table_cache),
-        read_options_(read_options),
-        env_options_(env_options),
-        icomparator_(icomparator),
-        file_read_hist_(file_read_hist),
-        for_compaction_(for_compaction),
-        level_(level) {}
+    : TwoLevelIteratorState(),
+      table_cache_(table_cache),
+      read_options_(read_options),
+      env_options_(env_options),
+      icomparator_(icomparator),
+      file_read_hist_(file_read_hist),
+      for_compaction_(for_compaction),
+      level_(level) {}
 
   InternalIterator* NewSecondaryIterator(const Slice& meta_handle) override {
     if (meta_handle.size() != sizeof(FileDescriptor)) {
       return NewErrorInternalIterator(
-          Status::Corruption("FileReader invoked with unexpected value"));
+               Status::Corruption("FileReader invoked with unexpected value"));
     } else {
       const FileDescriptor* fd =
-          reinterpret_cast<const FileDescriptor*>(meta_handle.data());
+        reinterpret_cast<const FileDescriptor*>(meta_handle.data());
       return table_cache_->NewIterator(
-          read_options_, env_options_, icomparator_, *fd,
-          nullptr /* don't need reference to table*/, file_read_hist_,
-          for_compaction_, nullptr /* arena */, level_);
+               read_options_, env_options_, icomparator_, *fd,
+               nullptr /* don't need reference to table*/, file_read_hist_,
+               for_compaction_, nullptr /* arena */, level_);
     }
   }
 
@@ -587,17 +601,19 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
 class BaseReferencedVersionBuilder {
  public:
   explicit BaseReferencedVersionBuilder(ColumnFamilyData* cfd)
-      : version_builder_(new VersionBuilder(
-            cfd->current()->version_set()->env_options(), cfd->table_cache(),
-            cfd->current()->storage_info(), cfd->ioptions()->info_log)),
-        version_(cfd->current()) {
+    : version_builder_(new VersionBuilder(
+                         cfd->current()->version_set()->env_options(), cfd->table_cache(),
+                         cfd->current()->storage_info(), cfd->ioptions()->info_log)),
+      version_(cfd->current()) {
     version_->Ref();
   }
   ~BaseReferencedVersionBuilder() {
     delete version_builder_;
     version_->Unref();
   }
-  VersionBuilder* version_builder() { return version_builder_; }
+  VersionBuilder* version_builder() {
+    return version_builder_;
+  }
 
  private:
   VersionBuilder* version_builder_;
@@ -611,8 +627,8 @@ Status Version::GetTableProperties(std::shared_ptr<const TableProperties>* tp,
   auto table_cache = cfd_->table_cache();
   auto ioptions = cfd_->ioptions();
   Status s = table_cache->GetTableProperties(
-      vset_->env_options_, cfd_->internal_comparator(), file_meta->fd,
-      tp, true /* no io */);
+               vset_->env_options_, cfd_->internal_comparator(), file_meta->fd,
+               tp, true /* no io */);
   if (s.ok()) {
     return s;
   }
@@ -628,12 +644,12 @@ Status Version::GetTableProperties(std::shared_ptr<const TableProperties>* tp,
   std::unique_ptr<RandomAccessFile> file;
   if (fname != nullptr) {
     s = ioptions->env->NewRandomAccessFile(
-        *fname, &file, vset_->env_options_);
+          *fname, &file, vset_->env_options_);
   } else {
     s = ioptions->env->NewRandomAccessFile(
-        TableFileName(vset_->db_options_->db_paths, file_meta->fd.GetNumber(),
-                      file_meta->fd.GetPathId()),
-        &file, vset_->env_options_);
+          TableFileName(vset_->db_options_->db_paths, file_meta->fd.GetNumber(),
+                        file_meta->fd.GetPathId()),
+          &file, vset_->env_options_);
   }
   if (!s.ok()) {
     return s;
@@ -643,11 +659,11 @@ Status Version::GetTableProperties(std::shared_ptr<const TableProperties>* tp,
   // By setting the magic number to kInvalidTableMagicNumber, we can by
   // pass the magic number check in the footer.
   std::unique_ptr<RandomAccessFileReader> file_reader(
-      new RandomAccessFileReader(std::move(file)));
+    new RandomAccessFileReader(std::move(file)));
   s = ReadTableProperties(
-      file_reader.get(), file_meta->fd.GetFileSize(),
-      Footer::kInvalidTableMagicNumber /* table's magic number */, vset_->env_,
-      ioptions->info_log, &raw_table_properties);
+        file_reader.get(), file_meta->fd.GetFileSize(),
+        Footer::kInvalidTableMagicNumber /* table's magic number */, vset_->env_,
+        ioptions->info_log, &raw_table_properties);
   if (!s.ok()) {
     return s;
   }
@@ -670,11 +686,11 @@ Status Version::GetPropertiesOfAllTables(TablePropertiesCollection* props) {
 }
 
 Status Version::GetPropertiesOfAllTables(TablePropertiesCollection* props,
-                                         int level) {
+    int level) {
   for (const auto& file_meta : storage_info_.files_[level]) {
     auto fname =
-        TableFileName(vset_->db_options_->db_paths, file_meta->fd.GetNumber(),
-                      file_meta->fd.GetPathId());
+      TableFileName(vset_->db_options_->db_paths, file_meta->fd.GetNumber(),
+                    file_meta->fd.GetPathId());
     // 1. If the table is already present in table cache, load table
     // properties from there.
     std::shared_ptr<const TableProperties> table_properties;
@@ -690,7 +706,7 @@ Status Version::GetPropertiesOfAllTables(TablePropertiesCollection* props,
 }
 
 Status Version::GetPropertiesOfTablesInRange(
-    const Range* range, std::size_t n, TablePropertiesCollection* props) const {
+  const Range* range, std::size_t n, TablePropertiesCollection* props) const {
   for (int level = 0; level < storage_info_.num_non_empty_levels(); level++) {
     for (decltype(n) i = 0; i < n; i++) {
       // Convert user_key into a corresponding internal key.
@@ -701,8 +717,8 @@ Status Version::GetPropertiesOfTablesInRange(
                                          false);
       for (const auto& file_meta : files) {
         auto fname =
-            TableFileName(vset_->db_options_->db_paths,
-                          file_meta->fd.GetNumber(), file_meta->fd.GetPathId());
+          TableFileName(vset_->db_options_->db_paths,
+                        file_meta->fd.GetNumber(), file_meta->fd.GetPathId());
         if (props->count(fname) == 0) {
           // 1. If the table is already present in table cache, load table
           // properties from there.
@@ -722,7 +738,7 @@ Status Version::GetPropertiesOfTablesInRange(
 }
 
 Status Version::GetAggregatedTableProperties(
-    std::shared_ptr<const TableProperties>* tp, int level) {
+  std::shared_ptr<const TableProperties>* tp, int level) {
   TablePropertiesCollection props;
   Status s;
   if (level < 0) {
@@ -747,8 +763,8 @@ size_t Version::GetMemoryUsageByTableReaders() {
   for (auto& file_level : storage_info_.level_files_brief_) {
     for (size_t i = 0; i < file_level.num_files; i++) {
       total_usage += cfd_->table_cache()->GetMemoryUsageByTableReader(
-          vset_->env_options_, cfd_->internal_comparator(),
-          file_level.files[i].fd);
+                       vset_->env_options_, cfd_->internal_comparator(),
+                       file_level.files[i].fd);
     }
   }
   return total_usage;
@@ -780,18 +796,18 @@ void Version::GetColumnFamilyMetaData(ColumnFamilyMetaData* cf_meta) {
         file_path = ioptions->db_paths.back().path;
       }
       files.emplace_back(
-          MakeTableFileName("", file->fd.GetNumber()),
-          file_path,
-          file->fd.GetFileSize(),
-          file->smallest_seqno,
-          file->largest_seqno,
-          file->smallest.user_key().ToString(),
-          file->largest.user_key().ToString(),
-          file->being_compacted);
+        MakeTableFileName("", file->fd.GetNumber()),
+        file_path,
+        file->fd.GetFileSize(),
+        file->smallest_seqno,
+        file->largest_seqno,
+        file->smallest.user_key().ToString(),
+        file->largest.user_key().ToString(),
+        file->being_compacted);
       level_size += file->fd.GetFileSize();
     }
     cf_meta->levels.emplace_back(
-        level, level_size, std::move(files));
+      level, level_size, std::move(files));
     cf_meta->size += level_size;
   }
 }
@@ -829,7 +845,7 @@ uint64_t VersionStorageInfo::GetEstimatedActiveKeys() const {
 }
 
 double VersionStorageInfo::GetEstimatedCompressionRatioAtLevel(
-    int level) const {
+  int level) const {
   assert(level < num_levels_);
   uint64_t sum_file_size_bytes = 0;
   uint64_t sum_data_size_bytes = 0;
@@ -859,9 +875,9 @@ void Version::AddIterators(const ReadOptions& read_options,
   for (size_t i = 0; i < storage_info_.LevelFilesBrief(0).num_files; i++) {
     const auto& file = storage_info_.LevelFilesBrief(0).files[i];
     merge_iter_builder->AddIterator(cfd_->table_cache()->NewIterator(
-        read_options, soptions, cfd_->internal_comparator(), file.fd, nullptr,
-        cfd_->internal_stats()->GetFileReadHist(0), false, arena,
-        false /* skip_filters */, 0 /* level */));
+                                      read_options, soptions, cfd_->internal_comparator(), file.fd, nullptr,
+                                      cfd_->internal_stats()->GetFileReadHist(0), false, arena,
+                                      false /* skip_filters */, 0 /* level */));
   }
 
   // For levels > 0, we can use a concatenating iterator that sequentially
@@ -871,54 +887,54 @@ void Version::AddIterators(const ReadOptions& read_options,
     if (storage_info_.LevelFilesBrief(level).num_files != 0) {
       auto* mem = arena->AllocateAligned(sizeof(LevelFileIteratorState));
       auto* state = new (mem)
-          LevelFileIteratorState(cfd_->table_cache(), read_options, soptions,
-                                 cfd_->internal_comparator(),
-                                 cfd_->internal_stats()->GetFileReadHist(level),
-                                 false /* for_compaction */, level);
+      LevelFileIteratorState(cfd_->table_cache(), read_options, soptions,
+                             cfd_->internal_comparator(),
+                             cfd_->internal_stats()->GetFileReadHist(level),
+                             false /* for_compaction */, level);
       mem = arena->AllocateAligned(sizeof(LevelFileNumIterator));
       auto* first_level_iter = new (mem) LevelFileNumIterator(
-          cfd_->internal_comparator(), &storage_info_.LevelFilesBrief(level));
+        cfd_->internal_comparator(), &storage_info_.LevelFilesBrief(level));
       merge_iter_builder->AddIterator(
-          NewTwoLevelIterator(state, first_level_iter, arena, false));
+        NewTwoLevelIterator(state, first_level_iter, arena, false));
     }
   }
 }
 
 VersionStorageInfo::VersionStorageInfo(
-    const InternalKeyComparator* internal_comparator,
-    const Comparator* user_comparator, int levels,
-    CompactionStyle compaction_style, VersionStorageInfo* ref_vstorage)
-    : internal_comparator_(internal_comparator),
-      user_comparator_(user_comparator),
-      // cfd is nullptr if Version is dummy
-      num_levels_(levels),
-      num_non_empty_levels_(0),
-      file_indexer_(user_comparator),
-      compaction_style_(compaction_style),
-      files_(new std::vector<FileMetaData*>[num_levels_]),
-      base_level_(num_levels_ == 1 ? -1 : 1),
-      files_by_compaction_pri_(num_levels_),
-      level0_non_overlapping_(false),
-      next_file_to_compact_by_size_(num_levels_),
-      compaction_score_(num_levels_),
-      compaction_level_(num_levels_),
-      l0_delay_trigger_count_(0),
-      accumulated_file_size_(0),
-      accumulated_raw_key_size_(0),
-      accumulated_raw_value_size_(0),
-      accumulated_num_non_deletions_(0),
-      accumulated_num_deletions_(0),
-      current_num_non_deletions_(0),
-      current_num_deletions_(0),
-      current_num_samples_(0),
-      estimated_compaction_needed_bytes_(0),
-      finalized_(false) {
+  const InternalKeyComparator* internal_comparator,
+  const Comparator* user_comparator, int levels,
+  CompactionStyle compaction_style, VersionStorageInfo* ref_vstorage)
+  : internal_comparator_(internal_comparator),
+    user_comparator_(user_comparator),
+    // cfd is nullptr if Version is dummy
+    num_levels_(levels),
+    num_non_empty_levels_(0),
+    file_indexer_(user_comparator),
+    compaction_style_(compaction_style),
+    files_(new std::vector<FileMetaData*>[num_levels_]),
+    base_level_(num_levels_ == 1 ? -1 : 1),
+    files_by_compaction_pri_(num_levels_),
+    level0_non_overlapping_(false),
+    next_file_to_compact_by_size_(num_levels_),
+    compaction_score_(num_levels_),
+    compaction_level_(num_levels_),
+    l0_delay_trigger_count_(0),
+    accumulated_file_size_(0),
+    accumulated_raw_key_size_(0),
+    accumulated_raw_value_size_(0),
+    accumulated_num_non_deletions_(0),
+    accumulated_num_deletions_(0),
+    current_num_non_deletions_(0),
+    current_num_deletions_(0),
+    current_num_samples_(0),
+    estimated_compaction_needed_bytes_(0),
+    finalized_(false) {
   if (ref_vstorage != nullptr) {
     accumulated_file_size_ = ref_vstorage->accumulated_file_size_;
     accumulated_raw_key_size_ = ref_vstorage->accumulated_raw_key_size_;
     accumulated_raw_value_size_ = ref_vstorage->accumulated_raw_value_size_;
     accumulated_num_non_deletions_ =
-        ref_vstorage->accumulated_num_non_deletions_;
+      ref_vstorage->accumulated_num_non_deletions_;
     accumulated_num_deletions_ = ref_vstorage->accumulated_num_deletions_;
     current_num_non_deletions_ = ref_vstorage->current_num_non_deletions_;
     current_num_deletions_ = ref_vstorage->current_num_deletions_;
@@ -928,25 +944,25 @@ VersionStorageInfo::VersionStorageInfo(
 
 Version::Version(ColumnFamilyData* column_family_data, VersionSet* vset,
                  uint64_t version_number)
-    : env_(vset->env_),
-      cfd_(column_family_data),
-      info_log_((cfd_ == nullptr) ? nullptr : cfd_->ioptions()->info_log),
-      db_statistics_((cfd_ == nullptr) ? nullptr
-                                       : cfd_->ioptions()->statistics),
-      table_cache_((cfd_ == nullptr) ? nullptr : cfd_->table_cache()),
-      storage_info_((cfd_ == nullptr) ? nullptr : &cfd_->internal_comparator(),
-                    (cfd_ == nullptr) ? nullptr : cfd_->user_comparator(),
-                    cfd_ == nullptr ? 0 : cfd_->NumberLevels(),
-                    cfd_ == nullptr ? kCompactionStyleLevel
-                                    : cfd_->ioptions()->compaction_style,
-                    (cfd_ == nullptr || cfd_->current() == nullptr)
-                        ? nullptr
-                        : cfd_->current()->storage_info()),
-      vset_(vset),
-      next_(this),
-      prev_(this),
-      refs_(0),
-      version_number_(version_number) {}
+  : env_(vset->env_),
+    cfd_(column_family_data),
+    info_log_((cfd_ == nullptr) ? nullptr : cfd_->ioptions()->info_log),
+    db_statistics_((cfd_ == nullptr) ? nullptr
+                   : cfd_->ioptions()->statistics),
+    table_cache_((cfd_ == nullptr) ? nullptr : cfd_->table_cache()),
+    storage_info_((cfd_ == nullptr) ? nullptr : &cfd_->internal_comparator(),
+                  (cfd_ == nullptr) ? nullptr : cfd_->user_comparator(),
+                  cfd_ == nullptr ? 0 : cfd_->NumberLevels(),
+                  cfd_ == nullptr ? kCompactionStyleLevel
+                  : cfd_->ioptions()->compaction_style,
+                  (cfd_ == nullptr || cfd_->current() == nullptr)
+                  ? nullptr
+                  : cfd_->current()->storage_info()),
+    vset_(vset),
+    next_(this),
+    prev_(this),
+    refs_(0),
+    version_number_(version_number) {}
 
 void Version::Get(const ReadOptions& read_options, const LookupKey& k,
                   std::string* value, Status* status, bool* value_found,
@@ -962,9 +978,9 @@ void Version::Get(const ReadOptions& read_options, const LookupKey& k,
   }
 
   GetContext get_context(
-      user_comparator(), info_log_, db_statistics_,
-      GetContext::kNotFound, user_key,
-      value, value_found, this->env_, seq);
+    user_comparator(), info_log_, db_statistics_,
+    GetContext::kNotFound, user_key,
+    value, value_found, this->env_, seq);
 
   FilePicker fp(storage_info_.files_, k, k, &storage_info_.level_files_brief_,
                 storage_info_.num_non_empty_levels_,
@@ -973,34 +989,34 @@ void Version::Get(const ReadOptions& read_options, const LookupKey& k,
   FdWithKeyRange* f = fp.GetNextFile();
   while (f != nullptr) {
     *status = table_cache_->Get(
-        read_options, *internal_comparator(), f->fd, ikey, &get_context,
-        cfd_->internal_stats()->GetFileReadHist(fp.GetHitFileLevel()),
-        fp.GetCurrentLevel());
+                read_options, *internal_comparator(), f->fd, ikey, &get_context,
+                cfd_->internal_stats()->GetFileReadHist(fp.GetHitFileLevel()),
+                fp.GetCurrentLevel());
     // TODO: examine the behavior for corrupted key
     if (!status->ok()) {
       return;
     }
 
     switch (get_context.State()) {
-      case GetContext::kNotFound:
-        // Keep searching in other files
-        break;
-      case GetContext::kFound:
-        if (fp.GetHitFileLevel() == 0) {
-          RecordTick(db_statistics_, GET_HIT_L0);
-        } else if (fp.GetHitFileLevel() == 1) {
-          RecordTick(db_statistics_, GET_HIT_L1);
-        } else if (fp.GetHitFileLevel() >= 2) {
-          RecordTick(db_statistics_, GET_HIT_L2_AND_UP);
-        }
-        return;
-      case GetContext::kDeleted:
-        // Use empty error message for speed
-        *status = Status::NotFound();
-        return;
-      case GetContext::kCorrupt:
-        *status = Status::Corruption("corrupted key for ", user_key);
-        return;
+    case GetContext::kNotFound:
+      // Keep searching in other files
+      break;
+    case GetContext::kFound:
+      if (fp.GetHitFileLevel() == 0) {
+        RecordTick(db_statistics_, GET_HIT_L0);
+      } else if (fp.GetHitFileLevel() == 1) {
+        RecordTick(db_statistics_, GET_HIT_L1);
+      } else if (fp.GetHitFileLevel() >= 2) {
+        RecordTick(db_statistics_, GET_HIT_L2_AND_UP);
+      }
+      return;
+    case GetContext::kDeleted:
+      // Use empty error message for speed
+      *status = Status::NotFound();
+      return;
+    case GetContext::kCorrupt:
+      *status = Status::Corruption("corrupted key for ", user_key);
+      return;
     }
     f = fp.GetNextFile();
   }
@@ -1027,9 +1043,9 @@ void Version::RangeQuery(ReadOptions& read_options,
   FdWithKeyRange* f = fp.GetNextFileForRangeQuery();
   while (f != nullptr) {
     std::unique_ptr<InternalIterator> iter(
-       table_cache_->NewIterator(read_options, vset_->env_options_,
-                                 *internal_comparator(), f->fd, nullptr,
-                                 nullptr, true, nullptr, -1, false));
+      table_cache_->NewIterator(read_options, vset_->env_options_,
+                                *internal_comparator(), f->fd, nullptr,
+                                nullptr, true, nullptr, -1, false));
     *status = iter->status();
     if (!status->ok()) {
       return;
@@ -1058,13 +1074,13 @@ void VersionStorageInfo::GenerateLevelFilesBrief() {
   level_files_brief_.resize(num_non_empty_levels_);
   for (int level = 0; level < num_non_empty_levels_; level++) {
     DoGenerateLevelFilesBrief(
-        &level_files_brief_[level], files_[level], &arena_);
+      &level_files_brief_[level], files_[level], &arena_);
   }
 }
 
 void Version::PrepareApply(
-    const MutableCFOptions& mutable_cf_options,
-    bool update_stats) {
+  const MutableCFOptions& mutable_cf_options,
+  bool update_stats) {
   UpdateAccumulatedStats(update_stats);
   storage_info_.UpdateNumNonEmptyLevels();
   storage_info_.CalculateBaseBytes(*cfd_->ioptions(), mutable_cf_options);
@@ -1103,11 +1119,11 @@ void VersionStorageInfo::UpdateAccumulatedStats(FileMetaData* file_meta) {
   accumulated_raw_key_size_ += file_meta->raw_key_size;
   accumulated_raw_value_size_ += file_meta->raw_value_size;
   accumulated_num_non_deletions_ +=
-      file_meta->num_entries - file_meta->num_deletions;
+    file_meta->num_entries - file_meta->num_deletions;
   accumulated_num_deletions_ += file_meta->num_deletions;
 
   current_num_non_deletions_ +=
-      file_meta->num_entries - file_meta->num_deletions;
+    file_meta->num_entries - file_meta->num_deletions;
   current_num_deletions_ += file_meta->num_deletions;
   current_num_samples_++;
 }
@@ -1115,7 +1131,7 @@ void VersionStorageInfo::UpdateAccumulatedStats(FileMetaData* file_meta) {
 void VersionStorageInfo::RemoveCurrentStats(FileMetaData* file_meta) {
   if (file_meta->init_stats_from_file) {
     current_num_non_deletions_ -=
-        file_meta->num_entries - file_meta->num_deletions;
+      file_meta->num_entries - file_meta->num_deletions;
     current_num_deletions_ -= file_meta->num_deletions;
     current_num_samples_--;
   }
@@ -1188,8 +1204,8 @@ void VersionStorageInfo::ComputeCompensatedSizes() {
         /**************************** Shichao ******************************/
 //        file_meta->compensated_file_size = file_meta->fd.GetFileSize();
         file_meta->compensated_file_size =
-            compaction_style_ == kCompactionStyleLevel ?
-                file_meta->fd.GetFileSizeTotal(): file_meta->fd.GetFileSize();
+          compaction_style_ == kCompactionStyleLevel ?
+          file_meta->fd.GetFileSizeTotal(): file_meta->fd.GetFileSize();
         /**************************** Shichao ******************************/
         // Here we only boost the size of deletion entries of a file only
         // when the number of deletion entries is greater than the number of
@@ -1201,8 +1217,8 @@ void VersionStorageInfo::ComputeCompensatedSizes() {
         // shape of LSM tree.
         if (file_meta->num_deletions * 2 >= file_meta->num_entries) {
           file_meta->compensated_file_size +=
-              (file_meta->num_deletions * 2 - file_meta->num_entries) *
-              average_value_size * kDeletionWeightOnCompaction;
+            (file_meta->num_deletions * 2 - file_meta->num_entries) *
+            average_value_size * kDeletionWeightOnCompaction;
         }
       }
     }
@@ -1217,7 +1233,7 @@ int VersionStorageInfo::MaxInputLevel() const {
 }
 
 void VersionStorageInfo::EstimateCompactionBytesNeeded(
-    const MutableCFOptions& mutable_cf_options) {
+  const MutableCFOptions& mutable_cf_options) {
   // Only implemented for level-based compaction
   if (compaction_style_ != kCompactionStyleLevel) {
     estimated_compaction_needed_bytes_ = 0;
@@ -1289,17 +1305,17 @@ void VersionStorageInfo::EstimateCompactionBytesNeeded(
       if (bytes_next_level > 0) {
         assert(level_size > 0);
         estimated_compaction_needed_bytes_ += static_cast<uint64_t>(
-            static_cast<double>(bytes_compact_to_next_level) *
-            (static_cast<double>(bytes_next_level) /
-                 static_cast<double>(level_size) +
-             1));
+                                                static_cast<double>(bytes_compact_to_next_level) *
+                                                (static_cast<double>(bytes_next_level) /
+                                                    static_cast<double>(level_size) +
+                                                    1));
       }
     }
   }
 }
 
 void VersionStorageInfo::ComputeCompactionScore(
-    const MutableCFOptions& mutable_cf_options) {
+  const MutableCFOptions& mutable_cf_options) {
   for (int level = 0; level <= MaxInputLevel(); level++) {
     double score;
     if (level == 0) {
@@ -1408,7 +1424,7 @@ struct Fsize {
 // In normal mode: descending size
 bool CompareCompensatedSizeDescending(const Fsize& first, const Fsize& second) {
   return (first.file->compensated_file_size >
-      second.file->compensated_file_size);
+          second.file->compensated_file_size);
 }
 } // anonymous namespace
 
@@ -1418,12 +1434,12 @@ void VersionStorageInfo::AddFile(int level, FileMetaData* f, Logger* info_log) {
 #ifndef NDEBUG
   if (level > 0 && !level_files->empty() &&
       internal_comparator_->Compare(
-          (*level_files)[level_files->size() - 1]->largest, f->smallest) >= 0) {
+        (*level_files)[level_files->size() - 1]->largest, f->smallest) >= 0) {
     auto* f2 = (*level_files)[level_files->size() - 1];
     if (info_log != nullptr) {
       Error(info_log, "Adding new file %" PRIu64
-                      " range (%s, %s) to level %d but overlapping "
-                      "with existing file %" PRIu64 " %s %s",
+            " range (%s, %s) to level %d but overlapping "
+            "with existing file %" PRIu64 " %s %s",
             f->fd.GetNumber(), f->smallest.DebugString(true).c_str(),
             f->largest.DebugString(true).c_str(), level, f2->fd.GetNumber(),
             f2->smallest.DebugString(true).c_str(),
@@ -1496,9 +1512,9 @@ void VersionStorageInfo::UpdateNumNonEmptyLevels() {
 namespace {
 // Sort `temp` based on ratio of overlapping size over file size
 void SortFileByOverlappingRatio(
-    const InternalKeyComparator& icmp, const std::vector<FileMetaData*>& files,
-    const std::vector<FileMetaData*>& next_level_files,
-    std::vector<Fsize>* temp) {
+  const InternalKeyComparator& icmp, const std::vector<FileMetaData*>& files,
+  const std::vector<FileMetaData*>& next_level_files,
+  std::vector<Fsize>* temp) {
   std::unordered_map<uint64_t, uint64_t> file_to_order;
   auto next_level_it = next_level_files.begin();
 
@@ -1523,19 +1539,19 @@ void SortFileByOverlappingRatio(
 
     assert(file->fd.file_size_total != 0);  // Shichao
     file_to_order[file->fd.GetNumber()] =
-        overlapping_bytes * 1024u / file->fd.file_size_total;  // Shichao
+      overlapping_bytes * 1024u / file->fd.file_size_total;  // Shichao
   }
 
   std::sort(temp->begin(), temp->end(),
-            [&](const Fsize& f1, const Fsize& f2) -> bool {
-              return file_to_order[f1.file->fd.GetNumber()] <
-                     file_to_order[f2.file->fd.GetNumber()];
-            });
+  [&](const Fsize& f1, const Fsize& f2) -> bool {
+    return file_to_order[f1.file->fd.GetNumber()] <
+    file_to_order[f2.file->fd.GetNumber()];
+  });
 }
 }  // namespace
 
 void VersionStorageInfo::UpdateFilesByCompactionPri(
-    const MutableCFOptions& mutable_cf_options) {
+  const MutableCFOptions& mutable_cf_options) {
   if (compaction_style_ == kCompactionStyleFIFO ||
       compaction_style_ == kCompactionStyleUniversal) {
     // don't need this
@@ -1560,28 +1576,28 @@ void VersionStorageInfo::UpdateFilesByCompactionPri(
       num = temp.size();
     }
     switch (mutable_cf_options.compaction_pri) {
-      case kByCompensatedSize:
-        std::partial_sort(temp.begin(), temp.begin() + num, temp.end(),
-                          CompareCompensatedSizeDescending);
-        break;
-      case kOldestLargestSeqFirst:
-        std::sort(temp.begin(), temp.end(),
-                  [this](const Fsize& f1, const Fsize& f2) -> bool {
-                    return f1.file->largest_seqno < f2.file->largest_seqno;
-                  });
-        break;
-      case kOldestSmallestSeqFirst:
-        std::sort(temp.begin(), temp.end(),
-                  [this](const Fsize& f1, const Fsize& f2) -> bool {
-                    return f1.file->smallest_seqno < f2.file->smallest_seqno;
-                  });
-        break;
-      case kMinOverlappingRatio:
-        SortFileByOverlappingRatio(*internal_comparator_, files_[level],
-                                   files_[level + 1], &temp);
-        break;
-      default:
-        assert(false);
+    case kByCompensatedSize:
+      std::partial_sort(temp.begin(), temp.begin() + num, temp.end(),
+                        CompareCompensatedSizeDescending);
+      break;
+    case kOldestLargestSeqFirst:
+      std::sort(temp.begin(), temp.end(),
+      [this](const Fsize& f1, const Fsize& f2) -> bool {
+        return f1.file->largest_seqno < f2.file->largest_seqno;
+      });
+      break;
+    case kOldestSmallestSeqFirst:
+      std::sort(temp.begin(), temp.end(),
+      [this](const Fsize& f1, const Fsize& f2) -> bool {
+        return f1.file->smallest_seqno < f2.file->smallest_seqno;
+      });
+      break;
+    case kMinOverlappingRatio:
+      SortFileByOverlappingRatio(*internal_comparator_, files_[level],
+                                 files_[level + 1], &temp);
+      break;
+    default:
+      assert(false);
     }
     assert(temp.size() == files.size());
 
@@ -1603,13 +1619,13 @@ void VersionStorageInfo::GenerateLevel0NonOverlapping() {
 
   // A copy of L0 files sorted by smallest key
   std::vector<FdWithKeyRange> level0_sorted_file(
-      level_files_brief_[0].files,
-      level_files_brief_[0].files + level_files_brief_[0].num_files);
+    level_files_brief_[0].files,
+    level_files_brief_[0].files + level_files_brief_[0].num_files);
   std::sort(level0_sorted_file.begin(), level0_sorted_file.end(),
-            [this](const FdWithKeyRange& f1, const FdWithKeyRange& f2) -> bool {
-              return (internal_comparator_->Compare(f1.smallest_key,
-                                                    f2.smallest_key) < 0);
-            });
+  [this](const FdWithKeyRange& f1, const FdWithKeyRange& f2) -> bool {
+    return (internal_comparator_->Compare(f1.smallest_key,
+    f2.smallest_key) < 0);
+  });
 
   for (size_t i = 1; i < level0_sorted_file.size(); ++i) {
     FdWithKeyRange& f = level0_sorted_file[i];
@@ -1652,9 +1668,9 @@ bool VersionStorageInfo::OverlapInLevel(int level,
 // overlapping range.
 // The file_index returns a pointer to any file in an overlapping range.
 void VersionStorageInfo::GetOverlappingInputs(
-    int level, const InternalKey* begin, const InternalKey* end,
-    std::vector<FileMetaData*>* inputs, int hint_index, int* file_index,
-    bool expand_range) const {
+  int level, const InternalKey* begin, const InternalKey* end,
+  std::vector<FileMetaData*>* inputs, int hint_index, int* file_index,
+  bool expand_range) const {
   if (level >= num_non_empty_levels_) {
     // this level is empty, no overlapping inputs
     return;
@@ -1674,7 +1690,7 @@ void VersionStorageInfo::GetOverlappingInputs(
   const Comparator* user_cmp = user_comparator_;
   if (begin != nullptr && end != nullptr && level > 0) {
     GetOverlappingInputsBinarySearch(level, user_begin, user_end, inputs,
-      hint_index, file_index);
+                                     hint_index, file_index);
     return;
   }
   for (size_t i = 0; i < level_files_brief_[level].num_files; ) {
@@ -1695,7 +1711,7 @@ void VersionStorageInfo::GetOverlappingInputs(
           inputs->clear();
           i = 0;
         } else if (end != nullptr
-            && user_cmp->Compare(file_limit, user_end) > 0) {
+                   && user_cmp->Compare(file_limit, user_end) > 0) {
           user_end = file_limit;
           inputs->clear();
           i = 0;
@@ -1712,8 +1728,8 @@ void VersionStorageInfo::GetOverlappingInputs(
 // specified range. From that file, iterate backwards and
 // forwards to find all overlapping files.
 void VersionStorageInfo::GetOverlappingInputsBinarySearch(
-    int level, const Slice& user_begin, const Slice& user_end,
-    std::vector<FileMetaData*>* inputs, int hint_index, int* file_index) const {
+  int level, const Slice& user_begin, const Slice& user_end,
+  std::vector<FileMetaData*>* inputs, int hint_index, int* file_index) const {
   assert(level > 0);
   int min = 0;
   int mid = 0;
@@ -1760,8 +1776,8 @@ void VersionStorageInfo::GetOverlappingInputsBinarySearch(
 // and forward to find all overlapping files.
 // Use FileLevel in searching, make it faster
 void VersionStorageInfo::ExtendOverlappingInputs(
-    int level, const Slice& user_begin, const Slice& user_end,
-    std::vector<FileMetaData*>* inputs, unsigned int midIndex) const {
+  int level, const Slice& user_begin, const Slice& user_end,
+  std::vector<FileMetaData*>* inputs, unsigned int midIndex) const {
   const Comparator* user_cmp = user_comparator_;
   const FdWithKeyRange* files = level_files_brief_[level].files;
 #ifndef NDEBUG
@@ -1819,11 +1835,11 @@ void VersionStorageInfo::ExtendOverlappingInputs(
 // just after the last file, or just before the first file)
 // REQUIRES: "*inputs" is a sorted list of non-overlapping files
 bool VersionStorageInfo::HasOverlappingUserKey(
-    const std::vector<FileMetaData*>* inputs, int level) {
+  const std::vector<FileMetaData*>* inputs, int level) {
 
   // If inputs empty, there is no overlap.
   // If level == 0, it is assumed that all needed files were already included.
-  if (inputs->empty() || level == 0){
+  if (inputs->empty() || level == 0) {
     return false;
   }
 
@@ -1838,9 +1854,9 @@ bool VersionStorageInfo::HasOverlappingUserKey(
   assert(last_file < kNumFiles);  // File should exist!
   if (last_file < kNumFiles-1) {                    // If not the last file
     const Slice last_key_in_input = ExtractUserKey(
-        files[last_file].largest_key);
+                                      files[last_file].largest_key);
     const Slice first_key_after = ExtractUserKey(
-        files[last_file+1].smallest_key);
+                                    files[last_file+1].smallest_key);
     if (user_cmp->Equal(last_key_in_input, first_key_after)) {
       // The last user key in input overlaps with the next file's first key
       return true;
@@ -1853,9 +1869,9 @@ bool VersionStorageInfo::HasOverlappingUserKey(
   assert(first_file <= last_file);   // File should exist!
   if (first_file > 0) {                                 // If not first file
     const Slice& first_key_in_input = ExtractUserKey(
-        files[first_file].smallest_key);
+                                        files[first_file].smallest_key);
     const Slice& last_key_before = ExtractUserKey(
-        files[first_file-1].largest_key);
+                                     files[first_file-1].largest_key);
     if (user_cmp->Equal(first_key_in_input, last_key_before)) {
       // The first user key in input overlaps with the previous file's last key
       return true;
@@ -1872,7 +1888,7 @@ uint64_t VersionStorageInfo::NumLevelBytes(int level) const {
 }
 
 const char* VersionStorageInfo::LevelSummary(
-    LevelSummaryStorage* scratch) const {
+  LevelSummaryStorage* scratch) const {
   int len = 0;
   if (compaction_style_ == kCompactionStyleLevel && num_levels() > 1) {
     assert(base_level_ < static_cast<int>(level_max_bytes_.size()));
@@ -1881,7 +1897,7 @@ const char* VersionStorageInfo::LevelSummary(
                    level_max_bytes_[base_level_]);
   }
   len +=
-      snprintf(scratch->buffer + len, sizeof(scratch->buffer) - len, "files[");
+    snprintf(scratch->buffer + len, sizeof(scratch->buffer) - len, "files[");
   for (int i = 0; i < num_levels(); i++) {
     int sz = sizeof(scratch->buffer) - len;
     int ret = snprintf(scratch->buffer + len, sz, "%d ", int(files_[i].size()));
@@ -1905,7 +1921,7 @@ const char* VersionStorageInfo::LevelSummary(
 }
 
 const char* VersionStorageInfo::LevelFileSummary(FileSummaryStorage* scratch,
-                                                 int level) const {
+    int level) const {
   int len = snprintf(scratch->buffer, sizeof(scratch->buffer), "files_size[");
   for (const auto& f : files_[level]) {
     int sz = sizeof(scratch->buffer) - len;
@@ -1951,7 +1967,7 @@ uint64_t VersionStorageInfo::MaxBytesForLevel(int level) const {
 }
 
 void VersionStorageInfo::CalculateBaseBytes(const ImmutableCFOptions& ioptions,
-                                            const MutableCFOptions& options) {
+    const MutableCFOptions& options) {
   // Special logic to set number of sorted runs.
   // It is to match the previous behavior when all files are in L0.
   int num_l0_count = static_cast<int>(files_[0].size());
@@ -1977,9 +1993,9 @@ void VersionStorageInfo::CalculateBaseBytes(const ImmutableCFOptions& ioptions,
         level_max_bytes_[i] = options.max_bytes_for_level_base;
       } else if (i > 1) {
         level_max_bytes_[i] = MultiplyCheckOverflow(
-            MultiplyCheckOverflow(level_max_bytes_[i - 1],
-                                  options.max_bytes_for_level_multiplier),
-            options.MaxBytesMultiplerAdditional(i - 1));
+                                MultiplyCheckOverflow(level_max_bytes_[i - 1],
+                                    options.max_bytes_for_level_multiplier),
+                                options.MaxBytesMultiplerAdditional(i - 1));
       } else {
         level_max_bytes_[i] = options.max_bytes_for_level_base;
       }
@@ -2016,7 +2032,7 @@ void VersionStorageInfo::CalculateBaseBytes(const ImmutableCFOptions& ioptions,
     } else {
       uint64_t base_bytes_max = options.max_bytes_for_level_base;
       uint64_t base_bytes_min =
-          base_bytes_max / options.max_bytes_for_level_multiplier;
+        base_bytes_max / options.max_bytes_for_level_multiplier;
 
       // Try whether we can make last level's target size to be max_level_size
       uint64_t cur_level_size = max_level_size;
@@ -2042,7 +2058,7 @@ void VersionStorageInfo::CalculateBaseBytes(const ImmutableCFOptions& ioptions,
         while (base_level_ > 1 && cur_level_size > base_bytes_max) {
           --base_level_;
           cur_level_size =
-              cur_level_size / options.max_bytes_for_level_multiplier;
+            cur_level_size / options.max_bytes_for_level_multiplier;
         }
         if (cur_level_size > base_bytes_max) {
           // Even L1 will be too large
@@ -2057,7 +2073,7 @@ void VersionStorageInfo::CalculateBaseBytes(const ImmutableCFOptions& ioptions,
       for (int i = base_level_; i < num_levels_; i++) {
         if (i > base_level_) {
           level_size = MultiplyCheckOverflow(
-              level_size, options.max_bytes_for_level_multiplier);
+                         level_size, options.max_bytes_for_level_multiplier);
         }
         level_max_bytes_[i] = level_size;
       }
@@ -2087,12 +2103,12 @@ uint64_t VersionStorageInfo::EstimateLiveDataSize() const {
       // (if the level is not 0) into the map without checking again because
       // the elements in the level are sorted and non-overlapping.
       auto lb = (found_end && l != 0) ?
-        ranges.end() : ranges.lower_bound(&file->smallest);
+                ranges.end() : ranges.lower_bound(&file->smallest);
       found_end = (lb == ranges.end());
       if (found_end || internal_comparator_->Compare(
             file->largest, (*lb).second->smallest) < 0) {
-          ranges.emplace_hint(lb, &file->largest, file);
-          size += file->fd.file_size_total;  // Shichao
+        ranges.emplace_hint(lb, &file->largest, file);
+        size += file->fd.file_size_total;  // Shichao
       }
     }
   }
@@ -2147,28 +2163,28 @@ struct VersionSet::ManifestWriter {
 
   explicit ManifestWriter(InstrumentedMutex* mu, ColumnFamilyData* _cfd,
                           VersionEdit* e)
-      : done(false), cv(mu), cfd(_cfd), edit(e) {}
+    : done(false), cv(mu), cfd(_cfd), edit(e) {}
 };
 
 VersionSet::VersionSet(const std::string& dbname, const DBOptions* db_options,
                        const EnvOptions& storage_options, Cache* table_cache,
                        WriteBuffer* write_buffer,
                        WriteController* write_controller)
-    : column_family_set_(new ColumnFamilySet(
-          dbname, db_options, storage_options, table_cache,
-          write_buffer, write_controller)),
-      env_(db_options->env),
-      dbname_(dbname),
-      db_options_(db_options),
-      next_file_number_(2),
-      manifest_file_number_(0),  // Filled by Recover()
-      pending_manifest_file_number_(0),
-      last_sequence_(0),
-      prev_log_number_(0),
-      current_version_number_(0),
-      manifest_file_size_(0),
-      env_options_(storage_options),
-      env_options_compactions_(env_options_) {}
+  : column_family_set_(new ColumnFamilySet(
+                         dbname, db_options, storage_options, table_cache,
+                         write_buffer, write_controller)),
+    env_(db_options->env),
+    dbname_(dbname),
+    db_options_(db_options),
+    next_file_number_(2),
+    manifest_file_number_(0),  // Filled by Recover()
+    pending_manifest_file_number_(0),
+    last_sequence_(0),
+    prev_log_number_(0),
+    current_version_number_(0),
+    manifest_file_size_(0),
+    env_options_(storage_options),
+    env_options_compactions_(env_options_) {}
 
 void CloseTables(void* ptr, size_t) {
   TableReader* table_reader = reinterpret_cast<TableReader*>(ptr);
@@ -2179,7 +2195,7 @@ VersionSet::~VersionSet() {
   // we need to delete column_family_set_ because its destructor depends on
   // VersionSet
   column_family_set_->get_table_cache()->ApplyToAllCacheEntries(&CloseTables,
-                                                                false);
+      false);
   column_family_set_.reset();
   for (auto file : obsolete_files_) {
     delete file;
@@ -2191,7 +2207,7 @@ void VersionSet::AppendVersion(ColumnFamilyData* column_family_data,
                                Version* v) {
   // compute new compaction score
   v->storage_info()->ComputeCompactionScore(
-      *column_family_data->GetLatestMutableCFOptions());
+    *column_family_data->GetLatestMutableCFOptions());
 
   // Mark v finalized
   v->storage_info_.SetFinalized();
@@ -2313,8 +2329,8 @@ Status VersionSet::LogAndApply(ColumnFamilyData* column_family_data,
       // unlimited table cache. Pre-load table handle now.
       // Need to do it out of the mutex.
       builder_guard->version_builder()->LoadTableHandlers(
-          column_family_data->internal_stats(),
-          column_family_data->ioptions()->optimize_filters_for_hits);
+        column_family_data->internal_stats(),
+        column_family_data->ioptions()->optimize_filters_for_hits);
     }
 
     // This is fine because everything inside of this block is serialized --
@@ -2326,14 +2342,14 @@ Status VersionSet::LogAndApply(ColumnFamilyData* column_family_data,
       unique_ptr<WritableFile> descriptor_file;
       EnvOptions opt_env_opts = env_->OptimizeForManifestWrite(env_options_);
       s = NewWritableFile(
-          env_, DescriptorFileName(dbname_, pending_manifest_file_number_),
-          &descriptor_file, opt_env_opts);
+            env_, DescriptorFileName(dbname_, pending_manifest_file_number_),
+            &descriptor_file, opt_env_opts);
       if (s.ok()) {
         descriptor_file->SetPreallocationBlockSize(
-            db_options_->manifest_preallocation_size);
+          db_options_->manifest_preallocation_size);
 
         unique_ptr<WritableFileWriter> file_writer(
-            new WritableFileWriter(std::move(descriptor_file), opt_env_opts));
+          new WritableFileWriter(std::move(descriptor_file), opt_env_opts));
         descriptor_log_.reset(new log::Writer(std::move(file_writer), 0, false));
         s = WriteSnapshot(descriptor_log_.get());
       }
@@ -2350,7 +2366,7 @@ Status VersionSet::LogAndApply(ColumnFamilyData* column_family_data,
         std::string record;
         if (!e->EncodeTo(&record)) {
           s = Status::Corruption(
-              "Unable to Encode VersionEdit:" + e->DebugString(true));
+                "Unable to Encode VersionEdit:" + e->DebugString(true));
           break;
         }
         TEST_KILL_RANDOM("VersionSet::LogAndApply:BeforeAddRecord",
@@ -2396,7 +2412,7 @@ Status VersionSet::LogAndApply(ColumnFamilyData* column_family_data,
   // by PurgeObsoleteFiles later.
   if (s.ok() && new_descriptor_log) {
     obsolete_manifests_.emplace_back(
-        DescriptorFileName("", manifest_file_number_));
+      DescriptorFileName("", manifest_file_number_));
   }
 
   // Install the new version
@@ -2417,7 +2433,7 @@ Status VersionSet::LogAndApply(ColumnFamilyData* column_family_data,
       for (auto& e : batch_edits) {
         if (e->has_log_number_) {
           max_log_number_in_batch =
-              std::max(max_log_number_in_batch, e->log_number_);
+            std::max(max_log_number_in_batch, e->log_number_);
         }
       }
       if (max_log_number_in_batch != 0) {
@@ -2442,11 +2458,11 @@ Status VersionSet::LogAndApply(ColumnFamilyData* column_family_data,
     delete v;
     if (new_descriptor_log) {
       Log(InfoLogLevel::INFO_LEVEL, db_options_->info_log,
-        "Deleting manifest %" PRIu64 " current manifest %" PRIu64 "\n",
-        manifest_file_number_, pending_manifest_file_number_);
+          "Deleting manifest %" PRIu64 " current manifest %" PRIu64 "\n",
+          manifest_file_number_, pending_manifest_file_number_);
       descriptor_log_.reset();
       env_->DeleteFile(
-          DescriptorFileName(dbname_, pending_manifest_file_number_));
+        DescriptorFileName(dbname_, pending_manifest_file_number_));
     }
   }
   pending_manifest_file_number_ = 0;
@@ -2501,8 +2517,8 @@ void VersionSet::LogAndApplyHelper(ColumnFamilyData* cfd,
 }
 
 Status VersionSet::Recover(
-    const std::vector<ColumnFamilyDescriptor>& column_families,
-    bool read_only) {
+  const std::vector<ColumnFamilyDescriptor>& column_families,
+  bool read_only) {
   std::unordered_map<std::string, ColumnFamilyOptions> cf_name_to_options;
   for (auto cf : column_families) {
     cf_name_to_options.insert({cf.name, cf.options});
@@ -2515,8 +2531,8 @@ Status VersionSet::Recover(
   // Read "CURRENT" file, which contains a pointer to the current manifest file
   std::string manifest_filename;
   Status s = ReadFileToString(
-      env_, CurrentFileName(dbname_), &manifest_filename
-  );
+               env_, CurrentFileName(dbname_), &manifest_filename
+             );
   if (!s.ok()) {
     return s;
   }
@@ -2528,7 +2544,7 @@ Status VersionSet::Recover(
   manifest_filename.resize(manifest_filename.size() - 1);
   FileType type;
   bool parse_ok =
-      ParseFileName(manifest_filename, &manifest_file_number_, &type);
+    ParseFileName(manifest_filename, &manifest_file_number_, &type);
   if (!parse_ok || type != kDescriptorFile) {
     return Status::Corruption("CURRENT file corrupted");
   }
@@ -2547,7 +2563,7 @@ Status VersionSet::Recover(
       return s;
     }
     manifest_file_reader.reset(
-        new SequentialFileReader(std::move(manifest_file)));
+      new SequentialFileReader(std::move(manifest_file)));
   }
   uint64_t current_manifest_file_size;
   s = env_->GetFileSize(manifest_filename, &current_manifest_file_size);
@@ -2575,7 +2591,7 @@ Status VersionSet::Recover(
   default_cf_edit.AddColumnFamily(kDefaultColumnFamilyName);
   default_cf_edit.SetColumnFamily(0);
   ColumnFamilyData* default_cfd =
-      CreateColumnFamily(default_cf_iter->second, &default_cf_edit);
+    CreateColumnFamily(default_cf_iter->second, &default_cf_edit);
   builders.insert({0, new BaseReferencedVersionBuilder(default_cfd)});
 
   {
@@ -2598,12 +2614,12 @@ Status VersionSet::Recover(
       // we will delete the column family from
       // column_families_not_found.
       bool cf_in_not_found =
-          column_families_not_found.find(edit.column_family_) !=
-          column_families_not_found.end();
+        column_families_not_found.find(edit.column_family_) !=
+        column_families_not_found.end();
       // in builders means that user supplied that column family
       // option AND that we encountered column family add record
       bool cf_in_builders =
-          builders.find(edit.column_family_) != builders.end();
+        builders.find(edit.column_family_) != builders.end();
 
       // they can't both be true
       assert(!(cf_in_not_found && cf_in_builders));
@@ -2613,17 +2629,17 @@ Status VersionSet::Recover(
       if (edit.is_column_family_add_) {
         if (cf_in_builders || cf_in_not_found) {
           s = Status::Corruption(
-              "Manifest adding the same column family twice");
+                "Manifest adding the same column family twice");
           break;
         }
         auto cf_options = cf_name_to_options.find(edit.column_family_name_);
         if (cf_options == cf_name_to_options.end()) {
           column_families_not_found.insert(
-              {edit.column_family_, edit.column_family_name_});
+          {edit.column_family_, edit.column_family_name_});
         } else {
           cfd = CreateColumnFamily(cf_options->second, &edit);
           builders.insert(
-              {edit.column_family_, new BaseReferencedVersionBuilder(cfd)});
+          {edit.column_family_, new BaseReferencedVersionBuilder(cfd)});
         }
       } else if (edit.is_column_family_drop_) {
         if (cf_in_builders) {
@@ -2643,13 +2659,13 @@ Status VersionSet::Recover(
           column_families_not_found.erase(edit.column_family_);
         } else {
           s = Status::Corruption(
-              "Manifest - dropping non-existing column family");
+                "Manifest - dropping non-existing column family");
           break;
         }
       } else if (!cf_in_not_found) {
         if (!cf_in_builders) {
           s = Status::Corruption(
-              "Manifest record referencing unknown column family");
+                "Manifest record referencing unknown column family");
           break;
         }
 
@@ -2658,7 +2674,7 @@ Status VersionSet::Recover(
         assert(cfd != nullptr);
         if (edit.max_level_ >= cfd->current()->storage_info()->num_levels()) {
           s = Status::InvalidArgument(
-              "db has more levels than options.num_levels");
+                "db has more levels than options.num_levels");
           break;
         }
 
@@ -2684,8 +2700,8 @@ Status VersionSet::Recover(
         if (edit.has_comparator_ &&
             edit.comparator_ != cfd->user_comparator()->Name()) {
           s = Status::InvalidArgument(
-              cfd->user_comparator()->Name(),
-              "does not match existing comparator " + edit.comparator_);
+                cfd->user_comparator()->Name(),
+                "does not match existing comparator " + edit.comparator_);
           break;
         }
       }
@@ -2739,8 +2755,8 @@ Status VersionSet::Recover(
     }
     list_of_not_found = list_of_not_found.substr(2);
     s = Status::InvalidArgument(
-        "You have to open all column families. Column families not opened: " +
-        list_of_not_found);
+          "You have to open all column families. Column families not opened: " +
+          list_of_not_found);
   }
 
   if (s.ok()) {
@@ -2764,7 +2780,7 @@ Status VersionSet::Recover(
 
       // Install recovered version
       v->PrepareApply(*cfd->GetLatestMutableCFOptions(),
-          !(db_options_->skip_stats_update_on_db_open));
+                      !(db_options_->skip_stats_update_on_db_open));
       AppendVersion(cfd, v);
     }
 
@@ -2821,12 +2837,12 @@ Status VersionSet::ListColumnFamilies(std::vector<std::string>* column_families,
 
   unique_ptr<SequentialFileReader> file_reader;
   {
-  unique_ptr<SequentialFile> file;
-  s = env->NewSequentialFile(dscname, &file, soptions);
-  if (!s.ok()) {
-    return s;
-  }
-  file_reader.reset(new SequentialFileReader(std::move(file)));
+    unique_ptr<SequentialFile> file;
+    s = env->NewSequentialFile(dscname, &file, soptions);
+    if (!s.ok()) {
+      return s;
+    }
+    file_reader.reset(new SequentialFileReader(std::move(file)));
   }
 
   std::map<uint32_t, std::string> column_family_names;
@@ -2851,12 +2867,12 @@ Status VersionSet::ListColumnFamilies(std::vector<std::string>* column_families,
         break;
       }
       column_family_names.insert(
-          {edit.column_family_, edit.column_family_name_});
+      {edit.column_family_, edit.column_family_name_});
     } else if (edit.is_column_family_drop_) {
       if (column_family_names.find(edit.column_family_) ==
           column_family_names.end()) {
         s = Status::Corruption(
-            "Manifest - dropping non-existing column family");
+              "Manifest - dropping non-existing column family");
         break;
       }
       column_family_names.erase(edit.column_family_);
@@ -2880,7 +2896,7 @@ Status VersionSet::ReduceNumberOfLevels(const std::string& dbname,
                                         int new_levels) {
   if (new_levels <= 1) {
     return Status::InvalidArgument(
-        "Number of levels needs to be bigger than 1");
+             "Number of levels needs to be bigger than 1");
   }
 
   ColumnFamilyOptions cf_options(*options);
@@ -2901,7 +2917,7 @@ Status VersionSet::ReduceNumberOfLevels(const std::string& dbname,
   }
 
   Version* current_version =
-      versions.GetColumnFamilySet()->GetDefault()->current();
+    versions.GetColumnFamilySet()->GetDefault()->current();
   auto* vstorage = current_version->storage_info();
   int current_levels = vstorage->num_levels();
 
@@ -2935,7 +2951,7 @@ Status VersionSet::ReduceNumberOfLevels(const std::string& dbname,
   // avoid SIGSEGV in WriteSnapshot()
   // however, all levels bigger or equal to new_levels will be empty
   std::vector<FileMetaData*>* new_files_list =
-      new std::vector<FileMetaData*>[current_levels];
+    new std::vector<FileMetaData*>[current_levels];
   for (int i = 0; i < new_levels - 1; i++) {
     new_files_list[i] = vstorage->LevelFiles(i);
   }
@@ -2953,8 +2969,8 @@ Status VersionSet::ReduceNumberOfLevels(const std::string& dbname,
   InstrumentedMutex dummy_mutex;
   InstrumentedMutexLock l(&dummy_mutex);
   return versions.LogAndApply(
-      versions.GetColumnFamilySet()->GetDefault(),
-      mutable_cf_options, &ve, &dummy_mutex, nullptr, true);
+           versions.GetColumnFamilySet()->GetDefault(),
+           mutable_cf_options, &ve, &dummy_mutex, nullptr, true);
 }
 
 Status VersionSet::DumpManifest(Options& options, std::string& dscname,
@@ -2986,7 +3002,7 @@ Status VersionSet::DumpManifest(Options& options, std::string& dscname,
   default_cf_edit.AddColumnFamily(kDefaultColumnFamilyName);
   default_cf_edit.SetColumnFamily(0);
   ColumnFamilyData* default_cfd =
-      CreateColumnFamily(ColumnFamilyOptions(options), &default_cf_edit);
+    CreateColumnFamily(ColumnFamilyOptions(options), &default_cf_edit);
   builders.insert({0, new BaseReferencedVersionBuilder(default_cfd)});
 
   {
@@ -3012,7 +3028,7 @@ Status VersionSet::DumpManifest(Options& options, std::string& dscname,
       count++;
 
       bool cf_in_builders =
-          builders.find(edit.column_family_) != builders.end();
+        builders.find(edit.column_family_) != builders.end();
 
       if (edit.has_comparator_) {
         comparators.insert({edit.column_family_, edit.comparator_});
@@ -3023,16 +3039,16 @@ Status VersionSet::DumpManifest(Options& options, std::string& dscname,
       if (edit.is_column_family_add_) {
         if (cf_in_builders) {
           s = Status::Corruption(
-              "Manifest adding the same column family twice");
+                "Manifest adding the same column family twice");
           break;
         }
         cfd = CreateColumnFamily(ColumnFamilyOptions(options), &edit);
         builders.insert(
-            {edit.column_family_, new BaseReferencedVersionBuilder(cfd)});
+        {edit.column_family_, new BaseReferencedVersionBuilder(cfd)});
       } else if (edit.is_column_family_drop_) {
         if (!cf_in_builders) {
           s = Status::Corruption(
-              "Manifest - dropping non-existing column family");
+                "Manifest - dropping non-existing column family");
           break;
         }
         auto builder_iter = builders.find(edit.column_family_);
@@ -3047,7 +3063,7 @@ Status VersionSet::DumpManifest(Options& options, std::string& dscname,
       } else {
         if (!cf_in_builders) {
           s = Status::Corruption(
-              "Manifest record referencing unknown column family");
+                "Manifest record referencing unknown column family");
           break;
         }
 
@@ -3139,11 +3155,11 @@ Status VersionSet::DumpManifest(Options& options, std::string& dscname,
     prev_log_number_ = previous_log_number;
 
     printf(
-        "next_file_number %lu last_sequence "
-        "%lu  prev_log_number %lu max_column_family %u\n",
-        (unsigned long)next_file_number_.load(), (unsigned long)last_sequence,
-        (unsigned long)previous_log_number,
-        column_family_set_->GetMaxColumnFamily());
+      "next_file_number %lu last_sequence "
+      "%lu  prev_log_number %lu max_column_family %u\n",
+      (unsigned long)next_file_number_.load(), (unsigned long)last_sequence,
+      (unsigned long)previous_log_number,
+      column_family_set_->GetMaxColumnFamily());
   }
 
   return s;
@@ -3180,11 +3196,11 @@ Status VersionSet::WriteSnapshot(log::Writer* log) {
         edit.SetColumnFamily(cfd->GetID());
       }
       edit.SetComparatorName(
-          cfd->internal_comparator().user_comparator()->Name());
+        cfd->internal_comparator().user_comparator()->Name());
       std::string record;
       if (!edit.EncodeTo(&record)) {
         return Status::Corruption(
-            "Unable to Encode VersionEdit:" + edit.DebugString(true));
+                 "Unable to Encode VersionEdit:" + edit.DebugString(true));
       }
       Status s = log->AddRecord(record);
       if (!s.ok()) {
@@ -3210,7 +3226,7 @@ Status VersionSet::WriteSnapshot(log::Writer* log) {
       std::string record;
       if (!edit.EncodeTo(&record)) {
         return Status::Corruption(
-            "Unable to Encode VersionEdit:" + edit.DebugString(true));
+                 "Unable to Encode VersionEdit:" + edit.DebugString(true));
       }
       Status s = log->AddRecord(record);
       if (!s.ok()) {
@@ -3237,8 +3253,8 @@ uint64_t VersionSet::ApproximateSize(Version* v, const Slice& start,
   uint64_t size = 0;
   const auto* vstorage = v->storage_info();
   end_level = end_level == -1
-                  ? vstorage->num_non_empty_levels()
-                  : std::min(end_level, vstorage->num_non_empty_levels());
+              ? vstorage->num_non_empty_levels()
+              : std::min(end_level, vstorage->num_non_empty_levels());
 
   assert(start_level <= end_level);
 
@@ -3260,8 +3276,8 @@ uint64_t VersionSet::ApproximateSize(Version* v, const Slice& start,
 
     // identify the file position for starting key
     const uint64_t idx_start = FindFileInRange(
-        v->cfd_->internal_comparator(), files_brief, start,
-        /*start=*/0, static_cast<uint32_t>(files_brief.num_files - 1));
+                                 v->cfd_->internal_comparator(), files_brief, start,
+                                 /*start=*/0, static_cast<uint32_t>(files_brief.num_files - 1));
     assert(idx_start < files_brief.num_files);
 
     // scan all files from the starting position until the ending position
@@ -3290,9 +3306,9 @@ uint64_t VersionSet::ApproximateSize(Version* v, const Slice& start,
 }
 
 uint64_t VersionSet::ApproximateSizeLevel0(Version* v,
-                                           const LevelFilesBrief& files_brief,
-                                           const Slice& key_start,
-                                           const Slice& key_end) {
+    const LevelFilesBrief& files_brief,
+    const Slice& key_start,
+    const Slice& key_end) {
   // level 0 files are not in sorted order, we need to iterate through
   // the list to compute the total bytes that require scanning
   uint64_t size = 0;
@@ -3322,8 +3338,8 @@ uint64_t VersionSet::ApproximateSize(Version* v, const FdWithKeyRange& f,
     // approximate offset of "key" within the table.
     TableReader* table_reader_ptr;
     InternalIterator* iter = v->cfd_->table_cache()->NewIterator(
-        ReadOptions(), env_options_, v->cfd_->internal_comparator(), f.fd,
-        &table_reader_ptr);
+                               ReadOptions(), env_options_, v->cfd_->internal_comparator(), f.fd,
+                               &table_reader_ptr);
     if (table_reader_ptr != nullptr) {
       result = table_reader_ptr->ApproximateOffsetOf(key);
     }
@@ -3382,8 +3398,8 @@ InternalIterator* VersionSet::MakeInputIterator(const Compaction* c) {
   // we will make a concatenating iterator per level.
   // TODO(opt): use concatenating iterator for level-0 if there is no overlap
   const size_t space = (c->level() == 0 ? c->input_levels(0)->num_files +
-                                              c->num_input_levels() - 1
-                                        : c->num_input_levels());
+                        c->num_input_levels() - 1
+                        : c->num_input_levels());
   InternalIterator** list = new InternalIterator* [space];
   size_t num = 0;
   for (size_t which = 0; which < c->num_input_levels(); which++) {
@@ -3392,29 +3408,29 @@ InternalIterator* VersionSet::MakeInputIterator(const Compaction* c) {
         const LevelFilesBrief* flevel = c->input_levels(which);
         for (size_t i = 0; i < flevel->num_files; i++) {
           list[num++] = cfd->table_cache()->NewIterator(
-              read_options, env_options_compactions_,
-              cfd->internal_comparator(), flevel->files[i].fd, nullptr,
-              nullptr, /* no per level latency histogram*/
-              true /* for_compaction */, nullptr /* arena */,
-              false /* skip_filters */, (int)which /* level */);
+                          read_options, env_options_compactions_,
+                          cfd->internal_comparator(), flevel->files[i].fd, nullptr,
+                          nullptr, /* no per level latency histogram*/
+                          true /* for_compaction */, nullptr /* arena */,
+                          false /* skip_filters */, (int)which /* level */);
         }
       } else {
         // Create concatenating iterator for the files from this level
         list[num++] = NewTwoLevelIterator(
-            new LevelFileIteratorState(
-                cfd->table_cache(), read_options, env_options_,
-                cfd->internal_comparator(),
-                nullptr /* no per level latency histogram */,
-                true /* for_compaction */, (int)which /* level */),
-            new LevelFileNumIterator(cfd->internal_comparator(),
-                                     c->input_levels(which)));
+                        new LevelFileIteratorState(
+                          cfd->table_cache(), read_options, env_options_,
+                          cfd->internal_comparator(),
+                          nullptr /* no per level latency histogram */,
+                          true /* for_compaction */, (int)which /* level */),
+                        new LevelFileNumIterator(cfd->internal_comparator(),
+                            c->input_levels(which)));
       }
     }
   }
   assert(num <= space);
   InternalIterator* result =
-      NewMergingIterator(&c->column_family_data()->internal_comparator(), list,
-                         static_cast<int>(num));
+    NewMergingIterator(&c->column_family_data()->internal_comparator(), list,
+                       static_cast<int>(num));
   delete[] list;
   return result;
 }
@@ -3534,7 +3550,7 @@ void VersionSet::GetObsoleteFiles(std::vector<FileMetaData*>* files,
 }
 
 ColumnFamilyData* VersionSet::CreateColumnFamily(
-    const ColumnFamilyOptions& cf_options, VersionEdit* edit) {
+  const ColumnFamilyOptions& cf_options, VersionEdit* edit) {
   assert(edit->is_column_family_add_);
 
   Version* dummy_versions = new Version(nullptr, this);
@@ -3542,8 +3558,8 @@ ColumnFamilyData* VersionSet::CreateColumnFamily(
   // by avoiding calling "delete" explicitly (~Version is private)
   dummy_versions->Ref();
   auto new_cfd = column_family_set_->CreateColumnFamily(
-      edit->column_family_name_, edit->column_family_, dummy_versions,
-      cf_options);
+                   edit->column_family_name_, edit->column_family_, dummy_versions,
+                   cf_options);
 
   Version* v = new Version(new_cfd, this, current_version_number_++);
 

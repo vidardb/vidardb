@@ -66,10 +66,10 @@ class StatisticsImpl : public Statistics {
   // Attributes expand to nothing depending on the platform
   __declspec(align(64))
   Ticker tickers_[INTERNAL_TICKER_ENUM_MAX]
-     __attribute__((aligned(64)));
+  __attribute__((aligned(64)));
   __declspec(align(64))
   HistogramImpl histograms_[INTERNAL_HISTOGRAM_ENUM_MAX]
-      __attribute__((aligned(64)));
+  __attribute__((aligned(64)));
 };
 
 // Utility functions

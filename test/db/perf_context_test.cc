@@ -32,23 +32,23 @@ const std::string kDbName = vidardb::test::TmpDir() + "/perf_context_test";
 namespace vidardb {
 
 std::shared_ptr<DB> OpenDb(bool read_only = false) {
-    DB* db;
-    Options options;
-    options.create_if_missing = true;
-    options.max_open_files = -1;
-    options.write_buffer_size = FLAGS_write_buffer_size;
-    options.max_write_buffer_number = FLAGS_max_write_buffer_number;
-    options.min_write_buffer_number_to_merge =
-      FLAGS_min_write_buffer_number_to_merge;
+  DB* db;
+  Options options;
+  options.create_if_missing = true;
+  options.max_open_files = -1;
+  options.write_buffer_size = FLAGS_write_buffer_size;
+  options.max_write_buffer_number = FLAGS_max_write_buffer_number;
+  options.min_write_buffer_number_to_merge =
+    FLAGS_min_write_buffer_number_to_merge;
 
-    Status s;
-    if (!read_only) {
-      s = DB::Open(options, kDbName, &db);
-    } else {
-      s = DB::OpenForReadOnly(options, kDbName, &db);
-    }
-    EXPECT_OK(s);
-    return std::shared_ptr<DB>(db);
+  Status s;
+  if (!read_only) {
+    s = DB::Open(options, kDbName, &db);
+  } else {
+    s = DB::OpenForReadOnly(options, kDbName, &db);
+  }
+  EXPECT_OK(s);
+  return std::shared_ptr<DB>(db);
 }
 
 class PerfContextTest : public testing::Test {};
@@ -547,29 +547,30 @@ TEST_F(PerfContextTest, SeekKeyComparison) {
 
 TEST_F(PerfContextTest, DBMutexLockCounter) {
   int stats_code[] = {0, static_cast<int>(DB_MUTEX_WAIT_MICROS)};
-  for (PerfLevel perf_level :
-       {PerfLevel::kEnableTimeExceptForMutex, PerfLevel::kEnableTime}) {
+  for (PerfLevel perf_level : {
+         PerfLevel::kEnableTimeExceptForMutex, PerfLevel::kEnableTime
+       }) {
     for (int c = 0; c < 2; ++c) {
-    InstrumentedMutex mutex(nullptr, Env::Default(), stats_code[c]);
-    mutex.Lock();
-    std::thread child_thread([&] {
-      SetPerfLevel(perf_level);
-      perf_context.Reset();
-      ASSERT_EQ(perf_context.db_mutex_lock_nanos, 0);
+      InstrumentedMutex mutex(nullptr, Env::Default(), stats_code[c]);
       mutex.Lock();
-      mutex.Unlock();
-      if (perf_level == PerfLevel::kEnableTimeExceptForMutex ||
-          stats_code[c] != DB_MUTEX_WAIT_MICROS) {
+      std::thread child_thread([&] {
+        SetPerfLevel(perf_level);
+        perf_context.Reset();
         ASSERT_EQ(perf_context.db_mutex_lock_nanos, 0);
-      } else {
-        // increment the counter only when it's a DB Mutex
-        ASSERT_GT(perf_context.db_mutex_lock_nanos, 0);
-      }
-    });
-    Env::Default()->SleepForMicroseconds(100);
-    mutex.Unlock();
-    child_thread.join();
-  }
+        mutex.Lock();
+        mutex.Unlock();
+        if (perf_level == PerfLevel::kEnableTimeExceptForMutex ||
+        stats_code[c] != DB_MUTEX_WAIT_MICROS) {
+          ASSERT_EQ(perf_context.db_mutex_lock_nanos, 0);
+        } else {
+          // increment the counter only when it's a DB Mutex
+          ASSERT_GT(perf_context.db_mutex_lock_nanos, 0);
+        }
+      });
+      Env::Default()->SleepForMicroseconds(100);
+      mutex.Unlock();
+      child_thread.join();
+    }
   }
 }
 

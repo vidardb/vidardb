@@ -51,10 +51,12 @@ class ColumnFamilyHandleImpl : public ColumnFamilyHandle {
  public:
   // create while holding the mutex
   ColumnFamilyHandleImpl(
-      ColumnFamilyData* cfd, DBImpl* db, InstrumentedMutex* mutex);
+    ColumnFamilyData* cfd, DBImpl* db, InstrumentedMutex* mutex);
   // destroy without mutex
   virtual ~ColumnFamilyHandleImpl();
-  virtual ColumnFamilyData* cfd() const { return cfd_; }
+  virtual ColumnFamilyData* cfd() const {
+    return cfd_;
+  }
   virtual const Comparator* user_comparator() const;
 
   virtual uint32_t GetID() const override;
@@ -76,10 +78,14 @@ class ColumnFamilyHandleImpl : public ColumnFamilyHandle {
 class ColumnFamilyHandleInternal : public ColumnFamilyHandleImpl {
  public:
   ColumnFamilyHandleInternal()
-      : ColumnFamilyHandleImpl(nullptr, nullptr, nullptr) {}
+    : ColumnFamilyHandleImpl(nullptr, nullptr, nullptr) {}
 
-  void SetCFD(ColumnFamilyData* _cfd) { internal_cfd_ = _cfd; }
-  virtual ColumnFamilyData* cfd() const override { return internal_cfd_; }
+  void SetCFD(ColumnFamilyData* _cfd) {
+    internal_cfd_ = _cfd;
+  }
+  virtual ColumnFamilyData* cfd() const override {
+    return internal_cfd_;
+  }
 
  private:
   ColumnFamilyData* internal_cfd_;
@@ -134,18 +140,18 @@ struct SuperVersion {
 extern Status CheckCompressionSupported(const ColumnFamilyOptions& cf_options);
 
 extern Status CheckConcurrentWritesSupported(
-    const ColumnFamilyOptions& cf_options);
+  const ColumnFamilyOptions& cf_options);
 
 extern ColumnFamilyOptions SanitizeOptions(const DBOptions& db_options,
-                                           const InternalKeyComparator* icmp,
-                                           const ColumnFamilyOptions& src);
+    const InternalKeyComparator* icmp,
+    const ColumnFamilyOptions& src);
 // Wrap user defined table proproties collector factories `from cf_options`
 // into internal ones in int_tbl_prop_collector_factories. Add a system internal
 // one too.
 extern void GetIntTblPropCollectorFactory(
-    const ColumnFamilyOptions& cf_options,
-    std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
-        int_tbl_prop_collector_factories);
+  const ColumnFamilyOptions& cf_options,
+  std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
+  int_tbl_prop_collector_factories);
 
 class ColumnFamilySet;
 
@@ -156,14 +162,20 @@ class ColumnFamilyData {
   ~ColumnFamilyData();
 
   // thread-safe
-  uint32_t GetID() const { return id_; }
+  uint32_t GetID() const {
+    return id_;
+  }
   // thread-safe
-  const std::string& GetName() const { return name_; }
+  const std::string& GetName() const {
+    return name_;
+  }
 
   // Ref() can only be called from a context where the caller can guarantee
   // that ColumnFamilyData is alive (while holding a non-zero ref already,
   // holding a DB mutex, or as the leader in a write batch group).
-  void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
+  void Ref() {
+    refs_.fetch_add(1, std::memory_order_relaxed);
+  }
 
   // Unref decreases the reference count, but does not handle deletion
   // when the count goes to 0.  If this method returns true then the
@@ -193,20 +205,32 @@ class ColumnFamilyData {
   // *) delete all memory associated with that column family
   // *) delete all the files associated with that column family
   void SetDropped();
-  bool IsDropped() const { return dropped_; }
+  bool IsDropped() const {
+    return dropped_;
+  }
 
   // thread-safe
-  int NumberLevels() const { return ioptions_.num_levels; }
+  int NumberLevels() const {
+    return ioptions_.num_levels;
+  }
 
-  void SetLogNumber(uint64_t log_number) { log_number_ = log_number; }
-  uint64_t GetLogNumber() const { return log_number_; }
+  void SetLogNumber(uint64_t log_number) {
+    log_number_ = log_number;
+  }
+  uint64_t GetLogNumber() const {
+    return log_number_;
+  }
 
   // !!! To be deprecated! Please don't not use this function anymore!
-  const Options* options() const { return &options_; }
+  const Options* options() const {
+    return &options_;
+  }
 
   // thread-safe
   const EnvOptions* soptions() const;
-  const ImmutableCFOptions* ioptions() const { return &ioptions_; }
+  const ImmutableCFOptions* ioptions() const {
+    return &ioptions_;
+  }
   // REQUIRES: DB mutex held
   // This returns the MutableCFOptions used by current SuperVersion
   // You should use this API to reference MutableCFOptions most of the time.
@@ -221,19 +245,31 @@ class ColumnFamilyData {
 #ifndef VIDARDB_LITE
   // REQUIRES: DB mutex held
   Status SetOptions(
-      const std::unordered_map<std::string, std::string>& options_map);
+    const std::unordered_map<std::string, std::string>& options_map);
 #endif  // VIDARDB_LITE
 
-  InternalStats* internal_stats() { return internal_stats_.get(); }
+  InternalStats* internal_stats() {
+    return internal_stats_.get();
+  }
 
-  MemTableList* imm() { return &imm_; }
-  MemTable* mem() { return mem_; }
-  Version* current() { return current_; }
-  Version* dummy_versions() { return dummy_versions_; }
+  MemTableList* imm() {
+    return &imm_;
+  }
+  MemTable* mem() {
+    return mem_;
+  }
+  Version* current() {
+    return current_;
+  }
+  Version* dummy_versions() {
+    return dummy_versions_;
+  }
   void SetCurrent(Version* _current);
   uint64_t GetNumLiveVersions() const;  // REQUIRE: DB mutex held
   uint64_t GetTotalSstFilesSize() const;  // REQUIRE: DB mutex held
-  void SetMemtable(MemTable* new_mem) { mem_ = new_mem; }
+  void SetMemtable(MemTable* new_mem) {
+    mem_ = new_mem;
+  }
 
   // See Memtable constructor for explanation of earliest_seq param.
   MemTable* ConstructNewMemtable(const MutableCFOptions& mutable_cf_options,
@@ -241,7 +277,9 @@ class ColumnFamilyData {
   void CreateNewMemtable(const MutableCFOptions& mutable_cf_options,
                          SequenceNumber earliest_seq);
 
-  TableCache* table_cache() const { return table_cache_.get(); }
+  TableCache* table_cache() const {
+    return table_cache_.get();
+  }
 
   // See documentation in compaction_picker.h
   // REQUIRES: DB mutex held
@@ -261,7 +299,9 @@ class ColumnFamilyData {
                            const InternalKey* end, InternalKey** compaction_end,
                            bool* manual_conflict);
 
-  CompactionPicker* compaction_picker() { return compaction_picker_.get(); }
+  CompactionPicker* compaction_picker() {
+    return compaction_picker_.get();
+  }
   // thread-safe
   const Comparator* user_comparator() const {
     return internal_comparator_.user_comparator();
@@ -276,7 +316,9 @@ class ColumnFamilyData {
     return &int_tbl_prop_collector_factories_;
   }
 
-  SuperVersion* GetSuperVersion() { return super_version_; }
+  SuperVersion* GetSuperVersion() {
+    return super_version_;
+  }
   // thread-safe
   // Return a already referenced SuperVersion to be used safely.
   SuperVersion* GetReferencedSuperVersion(InstrumentedMutex* db_mutex);
@@ -306,10 +348,18 @@ class ColumnFamilyData {
   void ResetThreadLocalSuperVersions();
 
   // Protected by DB mutex
-  void set_pending_flush(bool value) { pending_flush_ = value; }
-  void set_pending_compaction(bool value) { pending_compaction_ = value; }
-  bool pending_flush() { return pending_flush_; }
-  bool pending_compaction() { return pending_compaction_; }
+  void set_pending_flush(bool value) {
+    pending_flush_ = value;
+  }
+  void set_pending_compaction(bool value) {
+    pending_compaction_ = value;
+  }
+  bool pending_flush() {
+    return pending_flush_;
+  }
+  bool pending_compaction() {
+    return pending_compaction_;
+  }
 
   // Recalculate some small conditions, which are changed only during
   // compaction, adding new memtable and/or
@@ -317,7 +367,7 @@ class ColumnFamilyData {
   // DBImpl::MakeRoomForWrite function to decide, if it need to make
   // a write stall
   void RecalculateWriteStallConditions(
-      const MutableCFOptions& mutable_cf_options);
+    const MutableCFOptions& mutable_cf_options);
 
  private:
   friend class ColumnFamilySet;
@@ -416,7 +466,7 @@ class ColumnFamilySet {
   class iterator {
    public:
     explicit iterator(ColumnFamilyData* cfd)
-        : current_(cfd) {}
+      : current_(cfd) {}
     iterator& operator++() {
       // dropped column families might still be included in this iteration
       // (we're only removing them when client drops the last reference to the
@@ -430,7 +480,9 @@ class ColumnFamilySet {
     bool operator!=(const iterator& other) {
       return this->current_ != other.current_;
     }
-    ColumnFamilyData* operator*() { return current_; }
+    ColumnFamilyData* operator*() {
+      return current_;
+    }
 
    private:
     ColumnFamilyData* current_;
@@ -458,14 +510,20 @@ class ColumnFamilySet {
                                        Version* dummy_version,
                                        const ColumnFamilyOptions& options);
 
-  iterator begin() { return iterator(dummy_cfd_->next_); }
-  iterator end() { return iterator(dummy_cfd_); }
+  iterator begin() {
+    return iterator(dummy_cfd_->next_);
+  }
+  iterator end() {
+    return iterator(dummy_cfd_);
+  }
 
   // REQUIRES: DB mutex held
   // Don't call while iterating over ColumnFamilySet
   void FreeDeadColumnFamilies();
 
-  Cache* get_table_cache() { return table_cache_; }
+  Cache* get_table_cache() {
+    return table_cache_;
+  }
 
  private:
   friend class ColumnFamilyData;
@@ -504,12 +562,12 @@ class ColumnFamilySet {
 class ColumnFamilyMemTablesImpl : public ColumnFamilyMemTables {
  public:
   explicit ColumnFamilyMemTablesImpl(ColumnFamilySet* column_family_set)
-      : column_family_set_(column_family_set), current_(nullptr) {}
+    : column_family_set_(column_family_set), current_(nullptr) {}
 
   // Constructs a ColumnFamilyMemTablesImpl equivalent to one constructed
   // with the arguments used to construct *orig.
   explicit ColumnFamilyMemTablesImpl(ColumnFamilyMemTablesImpl* orig)
-      : column_family_set_(orig->column_family_set_), current_(nullptr) {}
+    : column_family_set_(orig->column_family_set_), current_(nullptr) {}
 
   // sets current_ to ColumnFamilyData with column_family_id
   // returns false if column family doesn't exist
@@ -534,7 +592,9 @@ class ColumnFamilyMemTablesImpl : public ColumnFamilyMemTables {
   // Cannot be called while another thread is calling Seek().
   // REQUIRES: use this function of DBImpl::column_family_memtables_ should be
   //           under a DB mutex OR from a write thread
-  virtual ColumnFamilyData* current() override { return current_; }
+  virtual ColumnFamilyData* current() override {
+    return current_;
+  }
 
  private:
   ColumnFamilySet* column_family_set_;
@@ -545,6 +605,6 @@ class ColumnFamilyMemTablesImpl : public ColumnFamilyMemTables {
 extern uint32_t GetColumnFamilyID(ColumnFamilyHandle* column_family);
 
 extern const Comparator* GetColumnFamilyUserComparator(
-    ColumnFamilyHandle* column_family);
+  ColumnFamilyHandle* column_family);
 
 }  // namespace vidardb

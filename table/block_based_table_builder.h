@@ -41,16 +41,16 @@ class BlockBasedTableBuilder : public TableBuilder {
   // @param compression_dict Data for presetting the compression library's
   //    dictionary, or nullptr.
   BlockBasedTableBuilder(
-      const ImmutableCFOptions& ioptions,
-      const BlockBasedTableOptions& table_options,
-      const InternalKeyComparator& internal_comparator,
-      const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
-          int_tbl_prop_collector_factories,
-      uint32_t column_family_id, WritableFileWriter* file,
-      const CompressionType compression_type,
-      const CompressionOptions& compression_opts,
-      const std::string* compression_dict,
-      const std::string& column_family_name);
+    const ImmutableCFOptions& ioptions,
+    const BlockBasedTableOptions& table_options,
+    const InternalKeyComparator& internal_comparator,
+    const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
+    int_tbl_prop_collector_factories,
+    uint32_t column_family_id, WritableFileWriter* file,
+    const CompressionType compression_type,
+    const CompressionOptions& compression_opts,
+    const std::string* compression_dict,
+    const std::string& column_family_name);
 
   // REQUIRES: Either Finish() or Abandon() has been called.
   ~BlockBasedTableBuilder();
@@ -87,13 +87,17 @@ class BlockBasedTableBuilder : public TableBuilder {
   // Get table properties
   TableProperties GetTableProperties() const override;
 
-  const char* Name() const { return "BlockBasedTable"; }  // Shichao
+  const char* Name() const {
+    return "BlockBasedTable";  // Shichao
+  }
 
  private:
   struct Rep;
   Rep* rep_;
 
-  bool ok() const { return status().ok(); }
+  bool ok() const {
+    return status().ok();
+  }
 
   // Call block's Finish() method and then write the finalize block contents to
   // file.

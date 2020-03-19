@@ -150,7 +150,7 @@ TEST_F(DBIOFailureTest, ManifestWriteError) {
   // same except the log record never makes it to the MANIFEST file.
   for (int iter = 0; iter < 2; iter++) {
     std::atomic<bool>* error_type = (iter == 0) ? &env_->manifest_sync_error_
-                                                : &env_->manifest_write_error_;
+                                    : &env_->manifest_write_error_;
 
     // Insert foo=>bar mapping
     Options options = CurrentOptions();

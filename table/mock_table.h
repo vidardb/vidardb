@@ -29,7 +29,7 @@ namespace vidardb {
 namespace mock {
 
 stl_wrappers::KVMap MakeMockFile(
-    std::initializer_list<std::pair<const std::string, std::string>> l = {});
+  std::initializer_list<std::pair<const std::string, std::string>> l = {});
 
 struct MockTableFileSystem {
   port::Mutex mutex;
@@ -45,9 +45,13 @@ class MockTableReader : public TableReader {
   Status Get(const ReadOptions&, const Slice& key,
              GetContext* get_context) override;
 
-  uint64_t ApproximateOffsetOf(const Slice& key) override { return 0; }
+  uint64_t ApproximateOffsetOf(const Slice& key) override {
+    return 0;
+  }
 
-  virtual size_t ApproximateMemoryUsage() const override { return 0; }
+  virtual size_t ApproximateMemoryUsage() const override {
+    return 0;
+  }
 
   void SetupForCompaction() override {}
 
@@ -65,9 +69,13 @@ class MockTableIterator : public InternalIterator {
     itr_ = table_.end();
   }
 
-  bool Valid() const override { return itr_ != table_.end(); }
+  bool Valid() const override {
+    return itr_ != table_.end();
+  }
 
-  void SeekToFirst() override { itr_ = table_.begin(); }
+  void SeekToFirst() override {
+    itr_ = table_.begin();
+  }
 
   void SeekToLast() override {
     itr_ = table_.end();
@@ -79,7 +87,9 @@ class MockTableIterator : public InternalIterator {
     itr_ = table_.lower_bound(str_target);
   }
 
-  void Next() override { ++itr_; }
+  void Next() override {
+    ++itr_;
+  }
 
   void Prev() override {
     if (itr_ == table_.begin()) {
@@ -89,11 +99,17 @@ class MockTableIterator : public InternalIterator {
     }
   }
 
-  Slice key() const override { return Slice(itr_->first); }
+  Slice key() const override {
+    return Slice(itr_->first);
+  }
 
-  Slice value() const override { return Slice(itr_->second); }
+  Slice value() const override {
+    return Slice(itr_->second);
+  }
 
-  Status status() const override { return Status::OK(); }
+  Status status() const override {
+    return Status::OK();
+  }
 
  private:
   const stl_wrappers::KVMap& table_;
@@ -103,7 +119,7 @@ class MockTableIterator : public InternalIterator {
 class MockTableBuilder : public TableBuilder {
  public:
   MockTableBuilder(uint32_t id, MockTableFileSystem* file_system)
-      : id_(id), file_system_(file_system) {
+    : id_(id), file_system_(file_system) {
     table_ = MakeMockFile({});
   }
 
@@ -118,7 +134,9 @@ class MockTableBuilder : public TableBuilder {
   }
 
   // Return non-ok iff some error has been detected.
-  Status status() const override { return Status::OK(); }
+  Status status() const override {
+    return Status::OK();
+  }
 
   Status Finish() override {
     MutexLock lock_guard(&file_system_->mutex);
@@ -128,9 +146,13 @@ class MockTableBuilder : public TableBuilder {
 
   void Abandon() override {}
 
-  uint64_t NumEntries() const override { return table_.size(); }
+  uint64_t NumEntries() const override {
+    return table_.size();
+  }
 
-  uint64_t FileSize() const override { return table_.size(); }
+  uint64_t FileSize() const override {
+    return table_.size();
+  }
 
   TableProperties GetTableProperties() const override {
     return TableProperties();
@@ -145,14 +167,16 @@ class MockTableBuilder : public TableBuilder {
 class MockTableFactory : public TableFactory {
  public:
   MockTableFactory();
-  const char* Name() const override { return "MockTable"; }
+  const char* Name() const override {
+    return "MockTable";
+  }
   Status NewTableReader(const TableReaderOptions& table_reader_options,
                         unique_ptr<RandomAccessFileReader>&& file,
                         uint64_t file_size,
                         unique_ptr<TableReader>* table_reader) const override;
   TableBuilder* NewTableBuilder(
-      const TableBuilderOptions& table_builder_options,
-      uint32_t column_familly_id, WritableFileWriter* file) const override;
+    const TableBuilderOptions& table_builder_options,
+    uint32_t column_familly_id, WritableFileWriter* file) const override;
 
   // This function will directly create mock table instead of going through
   // MockTableBuilder. file_contents has to have a format of <internal_key,
@@ -161,8 +185,8 @@ class MockTableFactory : public TableFactory {
                          stl_wrappers::KVMap file_contents);
 
   virtual Status SanitizeOptions(
-      const DBOptions& db_opts,
-      const ColumnFamilyOptions& cf_opts) const override {
+    const DBOptions& db_opts,
+    const ColumnFamilyOptions& cf_opts) const override {
     return Status::OK();
   }
 

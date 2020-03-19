@@ -254,27 +254,27 @@ const char* VersionEdit::DecodeNewFile4From(Slice* input) {
         return "new-file4 custom field lenth prefixed slice error";
       }
       switch (custom_tag) {
-        case kPathId:
-          if (field.size() != 1) {
-            return "path_id field wrong size";
-          }
-          path_id = field[0];
-          if (path_id > 3) {
-            return "path_id wrong vaue";
-          }
-          break;
-        case kNeedCompaction:
-          if (field.size() != 1) {
-            return "need_compaction field wrong size";
-          }
-          f.marked_for_compaction = (field[0] == 1);
-          break;
-        default:
-          if ((custom_tag & kCustomTagNonSafeIgnoreMask) != 0) {
-            // Should not proceed if cannot understand it
-            return "new-file4 custom field not supported";
-          }
-          break;
+      case kPathId:
+        if (field.size() != 1) {
+          return "path_id field wrong size";
+        }
+        path_id = field[0];
+        if (path_id > 3) {
+          return "path_id wrong vaue";
+        }
+        break;
+      case kNeedCompaction:
+        if (field.size() != 1) {
+          return "need_compaction field wrong size";
+        }
+        f.marked_for_compaction = (field[0] == 1);
+        break;
+      default:
+        if ((custom_tag & kCustomTagNonSafeIgnoreMask) != 0) {
+          // Should not proceed if cannot understand it
+          return "new-file4 custom field not supported";
+        }
+        break;
       }
     }
   } else {
@@ -299,173 +299,173 @@ Status VersionEdit::DecodeFrom(const Slice& src) {
 
   while (msg == nullptr && GetVarint32(&input, &tag)) {
     switch (tag) {
-      case kComparator:
-        if (GetLengthPrefixedSlice(&input, &str)) {
-          comparator_ = str.ToString();
-          has_comparator_ = true;
-        } else {
-          msg = "comparator name";
-        }
-        break;
-
-      case kLogNumber:
-        if (GetVarint64(&input, &log_number_)) {
-          has_log_number_ = true;
-        } else {
-          msg = "log number";
-        }
-        break;
-
-      case kPrevLogNumber:
-        if (GetVarint64(&input, &prev_log_number_)) {
-          has_prev_log_number_ = true;
-        } else {
-          msg = "previous log number";
-        }
-        break;
-
-      case kNextFileNumber:
-        if (GetVarint64(&input, &next_file_number_)) {
-          has_next_file_number_ = true;
-        } else {
-          msg = "next file number";
-        }
-        break;
-
-      case kLastSequence:
-        if (GetVarint64(&input, &last_sequence_)) {
-          has_last_sequence_ = true;
-        } else {
-          msg = "last sequence number";
-        }
-        break;
-
-      case kMaxColumnFamily:
-        if (GetVarint32(&input, &max_column_family_)) {
-          has_max_column_family_ = true;
-        } else {
-          msg = "max column family";
-        }
-        break;
-
-      case kCompactPointer:
-        if (GetLevel(&input, &level, &msg) &&
-            GetInternalKey(&input, &key)) {
-          // we don't use compact pointers anymore,
-          // but we should not fail if they are still
-          // in manifest
-        } else {
-          if (!msg) {
-            msg = "compaction pointer";
-          }
-        }
-        break;
-
-      case kDeletedFile: {
-        uint64_t number;
-        if (GetLevel(&input, &level, &msg) && GetVarint64(&input, &number)) {
-          deleted_files_.insert(std::make_pair(level, number));
-        } else {
-          if (!msg) {
-            msg = "deleted file";
-          }
-        }
-        break;
+    case kComparator:
+      if (GetLengthPrefixedSlice(&input, &str)) {
+        comparator_ = str.ToString();
+        has_comparator_ = true;
+      } else {
+        msg = "comparator name";
       }
+      break;
 
-      case kNewFile: {
-        uint64_t number;
-        uint64_t file_size;
-        Slice file_type;           // Shichao
-        uint64_t file_size_total;  // Shichao
-        if (GetLevel(&input, &level, &msg) && GetVarint64(&input, &number) &&
-            GetVarint64(&input, &file_size) &&
-            GetVarint64(&input, &file_size_total) &&       // Shichao
-            GetInternalKey(&input, &f.smallest) &&
-            GetInternalKey(&input, &f.largest)) {
-          f.fd = FileDescriptor(number, 0, file_size, file_size_total);  // Shichao
-          new_files_.push_back(std::make_pair(level, f));
-        } else {
-          if (!msg) {
-            msg = "new-file entry";
-          }
-        }
-        break;
+    case kLogNumber:
+      if (GetVarint64(&input, &log_number_)) {
+        has_log_number_ = true;
+      } else {
+        msg = "log number";
       }
-      case kNewFile2: {
-        uint64_t number;
-        uint64_t file_size;
-        uint64_t file_size_total;  // Shichao
-        if (GetLevel(&input, &level, &msg) && GetVarint64(&input, &number) &&
-            GetVarint64(&input, &file_size) &&
-            GetVarint64(&input, &file_size_total) &&       // Shichao
-            GetInternalKey(&input, &f.smallest) &&
-            GetInternalKey(&input, &f.largest) &&
-            GetVarint64(&input, &f.smallest_seqno) &&
-            GetVarint64(&input, &f.largest_seqno)) {
-          f.fd = FileDescriptor(number, 0, file_size, file_size_total);  // Shichao
-          new_files_.push_back(std::make_pair(level, f));
-        } else {
-          if (!msg) {
-            msg = "new-file2 entry";
-          }
-        }
-        break;
+      break;
+
+    case kPrevLogNumber:
+      if (GetVarint64(&input, &prev_log_number_)) {
+        has_prev_log_number_ = true;
+      } else {
+        msg = "previous log number";
       }
+      break;
 
-      case kNewFile3: {
-        uint64_t number;
-        uint32_t path_id;
-        uint64_t file_size;
-        uint64_t file_size_total;  // Shichao
-        if (GetLevel(&input, &level, &msg) && GetVarint64(&input, &number) &&
-            GetVarint32(&input, &path_id) && GetVarint64(&input, &file_size) &&
-            GetVarint64(&input, &file_size_total) &&       // Shichao
-            GetInternalKey(&input, &f.smallest) &&
-            GetInternalKey(&input, &f.largest) &&
-            GetVarint64(&input, &f.smallest_seqno) &&
-            GetVarint64(&input, &f.largest_seqno)) {
-          f.fd = FileDescriptor(number, path_id, file_size, file_size_total);  // Shichao
-          new_files_.push_back(std::make_pair(level, f));
-        } else {
-          if (!msg) {
-            msg = "new-file3 entry";
-          }
-        }
-        break;
+    case kNextFileNumber:
+      if (GetVarint64(&input, &next_file_number_)) {
+        has_next_file_number_ = true;
+      } else {
+        msg = "next file number";
       }
+      break;
 
-      case kNewFile4: {
-        msg = DecodeNewFile4From(&input);
-        break;
+    case kLastSequence:
+      if (GetVarint64(&input, &last_sequence_)) {
+        has_last_sequence_ = true;
+      } else {
+        msg = "last sequence number";
       }
+      break;
 
-      case kColumnFamily:
-        if (!GetVarint32(&input, &column_family_)) {
-          if (!msg) {
-            msg = "set column family id";
-          }
+    case kMaxColumnFamily:
+      if (GetVarint32(&input, &max_column_family_)) {
+        has_max_column_family_ = true;
+      } else {
+        msg = "max column family";
+      }
+      break;
+
+    case kCompactPointer:
+      if (GetLevel(&input, &level, &msg) &&
+          GetInternalKey(&input, &key)) {
+        // we don't use compact pointers anymore,
+        // but we should not fail if they are still
+        // in manifest
+      } else {
+        if (!msg) {
+          msg = "compaction pointer";
         }
-        break;
+      }
+      break;
 
-      case kColumnFamilyAdd:
-        if (GetLengthPrefixedSlice(&input, &str)) {
-          is_column_family_add_ = true;
-          column_family_name_ = str.ToString();
-        } else {
-          if (!msg) {
-            msg = "column family add";
-          }
+    case kDeletedFile: {
+      uint64_t number;
+      if (GetLevel(&input, &level, &msg) && GetVarint64(&input, &number)) {
+        deleted_files_.insert(std::make_pair(level, number));
+      } else {
+        if (!msg) {
+          msg = "deleted file";
         }
-        break;
+      }
+      break;
+    }
 
-      case kColumnFamilyDrop:
-        is_column_family_drop_ = true;
-        break;
+    case kNewFile: {
+      uint64_t number;
+      uint64_t file_size;
+      Slice file_type;           // Shichao
+      uint64_t file_size_total;  // Shichao
+      if (GetLevel(&input, &level, &msg) && GetVarint64(&input, &number) &&
+          GetVarint64(&input, &file_size) &&
+          GetVarint64(&input, &file_size_total) &&       // Shichao
+          GetInternalKey(&input, &f.smallest) &&
+          GetInternalKey(&input, &f.largest)) {
+        f.fd = FileDescriptor(number, 0, file_size, file_size_total);  // Shichao
+        new_files_.push_back(std::make_pair(level, f));
+      } else {
+        if (!msg) {
+          msg = "new-file entry";
+        }
+      }
+      break;
+    }
+    case kNewFile2: {
+      uint64_t number;
+      uint64_t file_size;
+      uint64_t file_size_total;  // Shichao
+      if (GetLevel(&input, &level, &msg) && GetVarint64(&input, &number) &&
+          GetVarint64(&input, &file_size) &&
+          GetVarint64(&input, &file_size_total) &&       // Shichao
+          GetInternalKey(&input, &f.smallest) &&
+          GetInternalKey(&input, &f.largest) &&
+          GetVarint64(&input, &f.smallest_seqno) &&
+          GetVarint64(&input, &f.largest_seqno)) {
+        f.fd = FileDescriptor(number, 0, file_size, file_size_total);  // Shichao
+        new_files_.push_back(std::make_pair(level, f));
+      } else {
+        if (!msg) {
+          msg = "new-file2 entry";
+        }
+      }
+      break;
+    }
 
-      default:
-        msg = "unknown tag";
-        break;
+    case kNewFile3: {
+      uint64_t number;
+      uint32_t path_id;
+      uint64_t file_size;
+      uint64_t file_size_total;  // Shichao
+      if (GetLevel(&input, &level, &msg) && GetVarint64(&input, &number) &&
+          GetVarint32(&input, &path_id) && GetVarint64(&input, &file_size) &&
+          GetVarint64(&input, &file_size_total) &&       // Shichao
+          GetInternalKey(&input, &f.smallest) &&
+          GetInternalKey(&input, &f.largest) &&
+          GetVarint64(&input, &f.smallest_seqno) &&
+          GetVarint64(&input, &f.largest_seqno)) {
+        f.fd = FileDescriptor(number, path_id, file_size, file_size_total);  // Shichao
+        new_files_.push_back(std::make_pair(level, f));
+      } else {
+        if (!msg) {
+          msg = "new-file3 entry";
+        }
+      }
+      break;
+    }
+
+    case kNewFile4: {
+      msg = DecodeNewFile4From(&input);
+      break;
+    }
+
+    case kColumnFamily:
+      if (!GetVarint32(&input, &column_family_)) {
+        if (!msg) {
+          msg = "set column family id";
+        }
+      }
+      break;
+
+    case kColumnFamilyAdd:
+      if (GetLengthPrefixedSlice(&input, &str)) {
+        is_column_family_add_ = true;
+        column_family_name_ = str.ToString();
+      } else {
+        if (!msg) {
+          msg = "column family add";
+        }
+      }
+      break;
+
+    case kColumnFamilyDrop:
+      is_column_family_drop_ = true;
+      break;
+
+    default:
+      msg = "unknown tag";
+      break;
     }
   }
 

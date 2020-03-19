@@ -17,7 +17,7 @@ namespace stl_wrappers {
 
 struct LessOfComparator {
   explicit LessOfComparator(const Comparator* c = BytewiseComparator())
-      : cmp(c) {}
+    : cmp(c) {}
 
   bool operator()(const std::string& a, const std::string& b) const {
     return cmp->Compare(Slice(a), Slice(b)) < 0;

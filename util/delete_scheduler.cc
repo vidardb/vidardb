@@ -19,20 +19,20 @@ namespace vidardb {
 DeleteScheduler::DeleteScheduler(Env* env, const std::string& trash_dir,
                                  int64_t rate_bytes_per_sec, Logger* info_log,
                                  SstFileManagerImpl* sst_file_manager)
-    : env_(env),
-      trash_dir_(trash_dir),
-      rate_bytes_per_sec_(rate_bytes_per_sec),
-      pending_files_(0),
-      closing_(false),
-      cv_(&mu_),
-      info_log_(info_log),
-      sst_file_manager_(sst_file_manager) {
+  : env_(env),
+    trash_dir_(trash_dir),
+    rate_bytes_per_sec_(rate_bytes_per_sec),
+    pending_files_(0),
+    closing_(false),
+    cv_(&mu_),
+    info_log_(info_log),
+    sst_file_manager_(sst_file_manager) {
   if (rate_bytes_per_sec_ <= 0) {
     // Rate limiting is disabled
     bg_thread_.reset();
   } else {
     bg_thread_.reset(
-        new std::thread(&DeleteScheduler::BackgroundEmptyTrash, this));
+      new std::thread(&DeleteScheduler::BackgroundEmptyTrash, this));
   }
 }
 
@@ -163,7 +163,7 @@ void DeleteScheduler::BackgroundEmptyTrash() {
 
       // Apply penlty if necessary
       uint64_t total_penlty =
-          ((total_deleted_bytes * kMicrosInSecond) / rate_bytes_per_sec_);
+        ((total_deleted_bytes * kMicrosInSecond) / rate_bytes_per_sec_);
       while (!closing_ && !cv_.TimedWait(start_time + total_penlty)) {}
       TEST_SYNC_POINT_CALLBACK("DeleteScheduler::BackgroundEmptyTrash:Wait",
                                &total_penlty);

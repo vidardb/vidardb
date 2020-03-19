@@ -42,102 +42,104 @@ class OptionsTest : public testing::Test {};
 #ifndef VIDARDB_LITE  // GetOptionsFromMap is not supported in VIDARDB_LITE
 TEST_F(OptionsTest, GetOptionsFromMapTest) {
   std::unordered_map<std::string, std::string> cf_options_map = {
-      {"write_buffer_size", "1"},
-      {"max_write_buffer_number", "2"},
-      {"min_write_buffer_number_to_merge", "3"},
-      {"max_write_buffer_number_to_maintain", "99"},
-      {"compression", "kSnappyCompression"},
-      {"compression_per_level",
-       "kNoCompression:"
-       "kSnappyCompression:"
-       "kZlibCompression:"
-       "kBZip2Compression:"
-       "kLZ4Compression:"
-       "kLZ4HCCompression:"
-       "kXpressCompression:"
-       "kZSTDNotFinalCompression"},
-      {"bottommost_compression", "kLZ4Compression"},
-      {"compression_opts", "4:5:6:7"},
-      {"num_levels", "8"},
-      {"level0_file_num_compaction_trigger", "8"},
-      {"level0_slowdown_writes_trigger", "9"},
-      {"level0_stop_writes_trigger", "10"},
-      {"target_file_size_base", "12"},
-      {"target_file_size_multiplier", "13"},
-      {"max_bytes_for_level_base", "14"},
-      {"level_compaction_dynamic_level_bytes", "true"},
-      {"max_bytes_for_level_multiplier", "15"},
-      {"max_bytes_for_level_multiplier_additional", "16:17:18"},
-      {"expanded_compaction_factor", "19"},
-      {"source_compaction_factor", "20"},
-      {"max_grandparent_overlap_factor", "21"},
-      {"soft_rate_limit", "1.1"},
-      {"hard_rate_limit", "2.1"},
-      {"hard_pending_compaction_bytes_limit", "211"},
-      {"arena_block_size", "22"},
-      {"disable_auto_compactions", "true"},
-      {"compaction_style", "kCompactionStyleLevel"},
-      {"verify_checksums_in_compaction", "false"},
-      {"compaction_options_fifo", "23"},
-      {"filter_deletes", "0"},
-      {"max_sequential_skip_in_iterations", "24"},
-      {"inplace_update_support", "true"},
-      {"report_bg_io_stats", "true"},
-      {"compaction_measure_io_stats", "false"},
-      {"inplace_update_num_locks", "25"},
-      {"memtable_prefix_bloom_bits", "26"},
-      {"memtable_prefix_bloom_probes", "27"},
-      {"memtable_prefix_bloom_huge_page_tlb_size", "28"},
-      {"bloom_locality", "29"},
-      {"max_successive_merges", "30"},
-      {"min_partial_merge_operands", "31"},
-      {"prefix_extractor", "fixed:31"},
-      {"optimize_filters_for_hits", "true"},
+    {"write_buffer_size", "1"},
+    {"max_write_buffer_number", "2"},
+    {"min_write_buffer_number_to_merge", "3"},
+    {"max_write_buffer_number_to_maintain", "99"},
+    {"compression", "kSnappyCompression"},
+    {
+      "compression_per_level",
+      "kNoCompression:"
+      "kSnappyCompression:"
+      "kZlibCompression:"
+      "kBZip2Compression:"
+      "kLZ4Compression:"
+      "kLZ4HCCompression:"
+      "kXpressCompression:"
+      "kZSTDNotFinalCompression"
+    },
+    {"bottommost_compression", "kLZ4Compression"},
+    {"compression_opts", "4:5:6:7"},
+    {"num_levels", "8"},
+    {"level0_file_num_compaction_trigger", "8"},
+    {"level0_slowdown_writes_trigger", "9"},
+    {"level0_stop_writes_trigger", "10"},
+    {"target_file_size_base", "12"},
+    {"target_file_size_multiplier", "13"},
+    {"max_bytes_for_level_base", "14"},
+    {"level_compaction_dynamic_level_bytes", "true"},
+    {"max_bytes_for_level_multiplier", "15"},
+    {"max_bytes_for_level_multiplier_additional", "16:17:18"},
+    {"expanded_compaction_factor", "19"},
+    {"source_compaction_factor", "20"},
+    {"max_grandparent_overlap_factor", "21"},
+    {"soft_rate_limit", "1.1"},
+    {"hard_rate_limit", "2.1"},
+    {"hard_pending_compaction_bytes_limit", "211"},
+    {"arena_block_size", "22"},
+    {"disable_auto_compactions", "true"},
+    {"compaction_style", "kCompactionStyleLevel"},
+    {"verify_checksums_in_compaction", "false"},
+    {"compaction_options_fifo", "23"},
+    {"filter_deletes", "0"},
+    {"max_sequential_skip_in_iterations", "24"},
+    {"inplace_update_support", "true"},
+    {"report_bg_io_stats", "true"},
+    {"compaction_measure_io_stats", "false"},
+    {"inplace_update_num_locks", "25"},
+    {"memtable_prefix_bloom_bits", "26"},
+    {"memtable_prefix_bloom_probes", "27"},
+    {"memtable_prefix_bloom_huge_page_tlb_size", "28"},
+    {"bloom_locality", "29"},
+    {"max_successive_merges", "30"},
+    {"min_partial_merge_operands", "31"},
+    {"prefix_extractor", "fixed:31"},
+    {"optimize_filters_for_hits", "true"},
   };
 
   std::unordered_map<std::string, std::string> db_options_map = {
-      {"create_if_missing", "false"},
-      {"create_missing_column_families", "true"},
-      {"error_if_exists", "false"},
-      {"paranoid_checks", "true"},
-      {"max_open_files", "32"},
-      {"max_total_wal_size", "33"},
-      {"disable_data_sync", "false"},
-      {"use_fsync", "true"},
-      {"db_log_dir", "/db_log_dir"},
-      {"wal_dir", "/wal_dir"},
-      {"delete_obsolete_files_period_micros", "34"},
-      {"max_background_compactions", "35"},
-      {"max_background_flushes", "36"},
-      {"max_log_file_size", "37"},
-      {"log_file_time_to_roll", "38"},
-      {"keep_log_file_num", "39"},
-      {"recycle_log_file_num", "5"},
-      {"max_manifest_file_size", "40"},
-      {"table_cache_numshardbits", "41"},
-      {"WAL_ttl_seconds", "43"},
-      {"WAL_size_limit_MB", "44"},
-      {"manifest_preallocation_size", "45"},
-      {"allow_os_buffer", "false"},
-      {"allow_mmap_reads", "true"},
-      {"allow_mmap_writes", "false"},
-      {"is_fd_close_on_exec", "true"},
-      {"skip_log_error_on_recovery", "false"},
-      {"stats_dump_period_sec", "46"},
-      {"advise_random_on_open", "true"},
-      {"use_adaptive_mutex", "false"},
-      {"new_table_reader_for_compaction_inputs", "true"},
-      {"compaction_readahead_size", "100"},
-      {"random_access_max_buffer_size", "3145728"},
-      {"writable_file_max_buffer_size", "314159"},
-      {"bytes_per_sync", "47"},
-      {"wal_bytes_per_sync", "48"},
+    {"create_if_missing", "false"},
+    {"create_missing_column_families", "true"},
+    {"error_if_exists", "false"},
+    {"paranoid_checks", "true"},
+    {"max_open_files", "32"},
+    {"max_total_wal_size", "33"},
+    {"disable_data_sync", "false"},
+    {"use_fsync", "true"},
+    {"db_log_dir", "/db_log_dir"},
+    {"wal_dir", "/wal_dir"},
+    {"delete_obsolete_files_period_micros", "34"},
+    {"max_background_compactions", "35"},
+    {"max_background_flushes", "36"},
+    {"max_log_file_size", "37"},
+    {"log_file_time_to_roll", "38"},
+    {"keep_log_file_num", "39"},
+    {"recycle_log_file_num", "5"},
+    {"max_manifest_file_size", "40"},
+    {"table_cache_numshardbits", "41"},
+    {"WAL_ttl_seconds", "43"},
+    {"WAL_size_limit_MB", "44"},
+    {"manifest_preallocation_size", "45"},
+    {"allow_os_buffer", "false"},
+    {"allow_mmap_reads", "true"},
+    {"allow_mmap_writes", "false"},
+    {"is_fd_close_on_exec", "true"},
+    {"skip_log_error_on_recovery", "false"},
+    {"stats_dump_period_sec", "46"},
+    {"advise_random_on_open", "true"},
+    {"use_adaptive_mutex", "false"},
+    {"new_table_reader_for_compaction_inputs", "true"},
+    {"compaction_readahead_size", "100"},
+    {"random_access_max_buffer_size", "3145728"},
+    {"writable_file_max_buffer_size", "314159"},
+    {"bytes_per_sync", "47"},
+    {"wal_bytes_per_sync", "48"},
   };
 
   ColumnFamilyOptions base_cf_opt;
   ColumnFamilyOptions new_cf_opt;
   ASSERT_OK(GetColumnFamilyOptionsFromMap(
-            base_cf_opt, cf_options_map, &new_cf_opt));
+              base_cf_opt, cf_options_map, &new_cf_opt));
   ASSERT_EQ(new_cf_opt.write_buffer_size, 1U);
   ASSERT_EQ(new_cf_opt.max_write_buffer_number, 2);
   ASSERT_EQ(new_cf_opt.min_write_buffer_number_to_merge, 3);
@@ -190,13 +192,13 @@ TEST_F(OptionsTest, GetOptionsFromMapTest) {
 
   cf_options_map["write_buffer_size"] = "hello";
   ASSERT_NOK(GetColumnFamilyOptionsFromMap(
-             base_cf_opt, cf_options_map, &new_cf_opt));
+               base_cf_opt, cf_options_map, &new_cf_opt));
   cf_options_map["write_buffer_size"] = "1";
   ASSERT_OK(GetColumnFamilyOptionsFromMap(
-            base_cf_opt, cf_options_map, &new_cf_opt));
+              base_cf_opt, cf_options_map, &new_cf_opt));
   cf_options_map["unknown_option"] = "1";
   ASSERT_NOK(GetColumnFamilyOptionsFromMap(
-             base_cf_opt, cf_options_map, &new_cf_opt));
+               base_cf_opt, cf_options_map, &new_cf_opt));
 
   DBOptions base_db_opt;
   DBOptions new_db_opt;
@@ -242,7 +244,7 @@ TEST_F(OptionsTest, GetOptionsFromMapTest) {
 #endif  // !VIDARDB_LITE
 
 #ifndef VIDARDB_LITE  // GetColumnFamilyOptionsFromString is not supported in
-                      // VIDARDB_LITE
+// VIDARDB_LITE
 TEST_F(OptionsTest, GetColumnFamilyOptionsFromStringTest) {
   ColumnFamilyOptions base_cf_opt;
   ColumnFamilyOptions new_cf_opt;
@@ -273,7 +275,7 @@ TEST_F(OptionsTest, GetColumnFamilyOptionsFromStringTest) {
   // Wrong name "max_write_buffer_number_"
   ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
              "write_buffer_size=13;max_write_buffer_number_=14;",
-              &new_cf_opt));
+             &new_cf_opt));
   // Wrong key/value pair
   ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
              "write_buffer_size=13;max_write_buffer_number;", &new_cf_opt));
@@ -301,10 +303,10 @@ TEST_F(OptionsTest, GetColumnFamilyOptionsFromStringTest) {
   ASSERT_EQ(new_cf_opt.max_write_buffer_number, 16 * mega);
   // Units (g)
   ASSERT_OK(GetColumnFamilyOptionsFromString(
-      base_cf_opt,
-      "write_buffer_size=18g;prefix_extractor=capped:8;"
-      "arena_block_size=19G",
-      &new_cf_opt));
+              base_cf_opt,
+              "write_buffer_size=18g;prefix_extractor=capped:8;"
+              "arena_block_size=19G",
+              &new_cf_opt));
 
   ASSERT_EQ(new_cf_opt.write_buffer_size, 18 * giga);
   ASSERT_EQ(new_cf_opt.arena_block_size, 19 * giga);
@@ -362,14 +364,14 @@ TEST_F(OptionsTest, GetColumnFamilyOptionsFromStringTest) {
              "block_based_table_factory={xx_block_size=4;}",
              &new_cf_opt));
   ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
-           "optimize_filters_for_hits=true",
-           &new_cf_opt));
+            "optimize_filters_for_hits=true",
+            &new_cf_opt));
   ASSERT_OK(GetColumnFamilyOptionsFromString(base_cf_opt,
             "optimize_filters_for_hits=false",
             &new_cf_opt));
   ASSERT_NOK(GetColumnFamilyOptionsFromString(base_cf_opt,
-              "optimize_filters_for_hits=junk",
-              &new_cf_opt));
+             "optimize_filters_for_hits=junk",
+             &new_cf_opt));
 
   // Nested plain table options
   // Emtpy
@@ -455,28 +457,28 @@ TEST_F(OptionsTest, GetMemTableRepFactoryFromString) {
   ASSERT_OK(GetMemTableRepFactoryFromString("skip_list:16", &new_mem_factory));
   ASSERT_EQ(std::string(new_mem_factory->Name()), "SkipListFactory");
   ASSERT_NOK(GetMemTableRepFactoryFromString("skip_list:16:invalid_opt",
-                                             &new_mem_factory));
+             &new_mem_factory));
 
   ASSERT_OK(GetMemTableRepFactoryFromString("prefix_hash", &new_mem_factory));
   ASSERT_OK(GetMemTableRepFactoryFromString("prefix_hash:1000",
-                                            &new_mem_factory));
+            &new_mem_factory));
   ASSERT_EQ(std::string(new_mem_factory->Name()), "HashSkipListRepFactory");
   ASSERT_NOK(GetMemTableRepFactoryFromString("prefix_hash:1000:invalid_opt",
-                                             &new_mem_factory));
+             &new_mem_factory));
 
   ASSERT_OK(GetMemTableRepFactoryFromString("hash_linkedlist",
-                                            &new_mem_factory));
+            &new_mem_factory));
   ASSERT_OK(GetMemTableRepFactoryFromString("hash_linkedlist:1000",
-                                            &new_mem_factory));
+            &new_mem_factory));
   ASSERT_EQ(std::string(new_mem_factory->Name()), "HashLinkListRepFactory");
   ASSERT_NOK(GetMemTableRepFactoryFromString("hash_linkedlist:1000:invalid_opt",
-                                             &new_mem_factory));
+             &new_mem_factory));
 
   ASSERT_OK(GetMemTableRepFactoryFromString("vector", &new_mem_factory));
   ASSERT_OK(GetMemTableRepFactoryFromString("vector:1024", &new_mem_factory));
   ASSERT_EQ(std::string(new_mem_factory->Name()), "VectorRepFactory");
   ASSERT_NOK(GetMemTableRepFactoryFromString("vector:1024:invalid_opt",
-                                             &new_mem_factory));
+             &new_mem_factory));
 
   ASSERT_NOK(GetMemTableRepFactoryFromString("cuckoo", &new_mem_factory));
   ASSERT_OK(GetMemTableRepFactoryFromString("cuckoo:1024", &new_mem_factory));
@@ -493,14 +495,14 @@ TEST_F(OptionsTest, GetOptionsFromStringTest) {
   base_options.min_write_buffer_number_to_merge = 15;
   BlockBasedTableOptions block_based_table_options;
   base_options.table_factory.reset(
-      NewBlockBasedTableFactory(block_based_table_options));
+    NewBlockBasedTableFactory(block_based_table_options));
   ASSERT_OK(GetOptionsFromString(
-      base_options,
-      "write_buffer_size=10;max_write_buffer_number=16;"
-      "block_based_table_factory={block_cache=1M;block_size=4;};"
-      "compression_opts=4:5:6;create_if_missing=true;max_open_files=1;"
-      "rate_limiter_bytes_per_sec=1024",
-      &new_options));
+              base_options,
+              "write_buffer_size=10;max_write_buffer_number=16;"
+              "block_based_table_factory={block_cache=1M;block_size=4;};"
+              "compression_opts=4:5:6;create_if_missing=true;max_open_files=1;"
+              "rate_limiter_bytes_per_sec=1024",
+              &new_options));
 
   ASSERT_EQ(new_options.compression_opts.window_bits, 4);
   ASSERT_EQ(new_options.compression_opts.level, 5);
@@ -510,8 +512,8 @@ TEST_F(OptionsTest, GetOptionsFromStringTest) {
   ASSERT_EQ(new_options.write_buffer_size, 10U);
   ASSERT_EQ(new_options.max_write_buffer_number, 16);
   BlockBasedTableOptions new_block_based_table_options =
-      dynamic_cast<BlockBasedTableFactory*>(new_options.table_factory.get())
-          ->table_options();
+    dynamic_cast<BlockBasedTableFactory*>(new_options.table_factory.get())
+    ->table_options();
   ASSERT_EQ(new_block_based_table_options.block_cache->GetCapacity(), 1U << 20);
   ASSERT_EQ(new_block_based_table_options.block_size, 4U);
   // don't overwrite block based table options
@@ -548,20 +550,20 @@ TEST_F(OptionsTest, ColumnFamilyOptionsSerialization) {
   // Phase 2: obtain a string from base_opt
   std::string base_options_file_content;
   ASSERT_OK(
-      GetStringFromColumnFamilyOptions(&base_options_file_content, base_opt));
+    GetStringFromColumnFamilyOptions(&base_options_file_content, base_opt));
 
   // Phase 3: Set new_opt from the derived string and expect
   //          new_opt == base_opt
   ASSERT_OK(GetColumnFamilyOptionsFromString(
-      ColumnFamilyOptions(), base_options_file_content, &new_opt));
+              ColumnFamilyOptions(), base_options_file_content, &new_opt));
   ASSERT_OK(VidarDBOptionsParser::VerifyCFOptions(base_opt, new_opt));
 }
 
 #endif  // !VIDARDB_LITE
 
 Status StringToMap(
-    const std::string& opts_str,
-    std::unordered_map<std::string, std::string>* opts_map);
+  const std::string& opts_str,
+  std::unordered_map<std::string, std::string>* opts_map);
 
 #ifndef VIDARDB_LITE  // StringToMap is not supported in VIDARDB_LITE
 TEST_F(OptionsTest, StringToMapTest) {
@@ -688,9 +690,10 @@ TEST_F(OptionsTest, StringToMapRandomTest) {
   // Make sure segfault is not hit by semi-random strings
 
   std::vector<std::string> bases = {
-      "a={aa={};tt={xxx={}}};c=defff",
-      "a={aa={};tt={xxx={}}};c=defff;d={{}yxx{}3{xx}}",
-      "abc={{}{}{}{{{}}}{{}{}{}{}{}{}{}"};
+    "a={aa={};tt={xxx={}}};c=defff",
+    "a={aa={};tt={xxx={}}};c=defff;d={{}yxx{}3{xx}}",
+    "abc={{}{}{}{{{}}}{{}{}{}{}{}{}{}"
+  };
 
   for (std::string base : bases) {
     for (int rand_seed = 301; rand_seed < 401; rand_seed++) {
@@ -699,7 +702,7 @@ TEST_F(OptionsTest, StringToMapRandomTest) {
         std::string str = base;
         // Replace random position to space
         size_t pos = static_cast<size_t>(
-            rnd.Uniform(static_cast<int>(base.size())));
+                       rnd.Uniform(static_cast<int>(base.size())));
         str[pos] = ' ';
         Status s = StringToMap(str, &opts_map);
         ASSERT_TRUE(s.ok() || s.IsInvalidArgument());
@@ -717,7 +720,7 @@ TEST_F(OptionsTest, StringToMapRandomTest) {
     for (int attempt = 0; attempt < len; attempt++) {
       // Add a random character
       size_t pos = static_cast<size_t>(
-          rnd.Uniform(static_cast<int>(chars.size())));
+                     rnd.Uniform(static_cast<int>(chars.size())));
       str.append(1, chars[pos]);
     }
     Status s = StringToMap(str, &opts_map);
@@ -747,14 +750,16 @@ TEST_F(OptionsTest, GetStringFromCompressionType) {
   ASSERT_EQ(res, "kZlibCompression");
 
   ASSERT_NOK(
-      GetStringFromCompressionType(&res, static_cast<CompressionType>(-10)));
+    GetStringFromCompressionType(&res, static_cast<CompressionType>(-10)));
 }
 #endif  // !VIDARDB_LITE
 
 #ifndef VIDARDB_LITE
 class OptionsParserTest : public testing::Test {
  public:
-  OptionsParserTest() { env_.reset(new test::StringEnv(Env::Default())); }
+  OptionsParserTest() {
+    env_.reset(new test::StringEnv(Env::Default()));
+  }
 
  protected:
   std::unique_ptr<test::StringEnv> env_;
@@ -768,22 +773,22 @@ TEST_F(OptionsParserTest, Comment) {
   ColumnFamilyOptions cf_opt;
 
   std::string options_file_content =
-      "# This is a testing option string.\n"
-      "# Currently we only support \"#\" styled comment.\n"
-      "\n"
-      "[Version]\n"
-      "  vidardb_version=3.14.0\n"
-      "  options_file_version=1\n"
-      "[ DBOptions ]\n"
-      "  # note that we don't support space around \"=\"\n"
-      "  max_open_files=12345;\n"
-      "  max_background_flushes=301  # comment after a statement is fine\n"
-      "  # max_background_flushes=1000  # this line would be ignored\n"
-      "  # max_background_compactions=2000 # so does this one\n"
-      "  max_total_wal_size=1024  # keep_log_file_num=1000\n"
-      "[CFOptions   \"default\"]  # column family must be specified\n"
-      "                     # in the correct order\n"
-      "  # if a section is blank, we will use the default\n";
+    "# This is a testing option string.\n"
+    "# Currently we only support \"#\" styled comment.\n"
+    "\n"
+    "[Version]\n"
+    "  vidardb_version=3.14.0\n"
+    "  options_file_version=1\n"
+    "[ DBOptions ]\n"
+    "  # note that we don't support space around \"=\"\n"
+    "  max_open_files=12345;\n"
+    "  max_background_flushes=301  # comment after a statement is fine\n"
+    "  # max_background_flushes=1000  # this line would be ignored\n"
+    "  # max_background_compactions=2000 # so does this one\n"
+    "  max_total_wal_size=1024  # keep_log_file_num=1000\n"
+    "[CFOptions   \"default\"]  # column family must be specified\n"
+    "                     # in the correct order\n"
+    "  # if a section is blank, we will use the default\n";
 
   const std::string kTestFileName = "test-vidardb-options.ini";
   env_->WriteToNewFile(kTestFileName, options_file_content);
@@ -793,23 +798,23 @@ TEST_F(OptionsParserTest, Comment) {
   ASSERT_OK(VidarDBOptionsParser::VerifyDBOptions(*parser.db_opt(), db_opt));
   ASSERT_EQ(parser.NumColumnFamilies(), 1U);
   ASSERT_OK(VidarDBOptionsParser::VerifyCFOptions(
-      *parser.GetCFOptions("default"), cf_opt));
+              *parser.GetCFOptions("default"), cf_opt));
 }
 
 TEST_F(OptionsParserTest, ExtraSpace) {
   std::string options_file_content =
-      "# This is a testing option string.\n"
-      "# Currently we only support \"#\" styled comment.\n"
-      "\n"
-      "[      Version   ]\n"
-      "  vidardb_version     = 3.14.0      \n"
-      "  options_file_version=1   # some comment\n"
-      "[DBOptions  ]  # some comment\n"
-      "max_open_files=12345   \n"
-      "    max_background_flushes   =    301   \n"
-      " max_total_wal_size     =   1024  # keep_log_file_num=1000\n"
-      "        [CFOptions      \"default\"     ]\n"
-      "  # if a section is blank, we will use the default\n";
+    "# This is a testing option string.\n"
+    "# Currently we only support \"#\" styled comment.\n"
+    "\n"
+    "[      Version   ]\n"
+    "  vidardb_version     = 3.14.0      \n"
+    "  options_file_version=1   # some comment\n"
+    "[DBOptions  ]  # some comment\n"
+    "max_open_files=12345   \n"
+    "    max_background_flushes   =    301   \n"
+    " max_total_wal_size     =   1024  # keep_log_file_num=1000\n"
+    "        [CFOptions      \"default\"     ]\n"
+    "  # if a section is blank, we will use the default\n";
 
   const std::string kTestFileName = "test-vidardb-options.ini";
   env_->WriteToNewFile(kTestFileName, options_file_content);
@@ -819,14 +824,14 @@ TEST_F(OptionsParserTest, ExtraSpace) {
 
 TEST_F(OptionsParserTest, MissingDBOptions) {
   std::string options_file_content =
-      "# This is a testing option string.\n"
-      "# Currently we only support \"#\" styled comment.\n"
-      "\n"
-      "[Version]\n"
-      "  vidardb_version=3.14.0\n"
-      "  options_file_version=1\n"
-      "[CFOptions \"default\"]\n"
-      "  # if a section is blank, we will use the default\n";
+    "# This is a testing option string.\n"
+    "# Currently we only support \"#\" styled comment.\n"
+    "\n"
+    "[Version]\n"
+    "  vidardb_version=3.14.0\n"
+    "  options_file_version=1\n"
+    "[CFOptions \"default\"]\n"
+    "  # if a section is blank, we will use the default\n";
 
   const std::string kTestFileName = "test-vidardb-options.ini";
   env_->WriteToNewFile(kTestFileName, options_file_content);
@@ -842,19 +847,19 @@ TEST_F(OptionsParserTest, DoubleDBOptions) {
   ColumnFamilyOptions cf_opt;
 
   std::string options_file_content =
-      "# This is a testing option string.\n"
-      "# Currently we only support \"#\" styled comment.\n"
-      "\n"
-      "[Version]\n"
-      "  vidardb_version=3.14.0\n"
-      "  options_file_version=1\n"
-      "[DBOptions]\n"
-      "  max_open_files=12345\n"
-      "  max_background_flushes=301\n"
-      "  max_total_wal_size=1024  # keep_log_file_num=1000\n"
-      "[DBOptions]\n"
-      "[CFOptions \"default\"]\n"
-      "  # if a section is blank, we will use the default\n";
+    "# This is a testing option string.\n"
+    "# Currently we only support \"#\" styled comment.\n"
+    "\n"
+    "[Version]\n"
+    "  vidardb_version=3.14.0\n"
+    "  options_file_version=1\n"
+    "[DBOptions]\n"
+    "  max_open_files=12345\n"
+    "  max_background_flushes=301\n"
+    "  max_total_wal_size=1024  # keep_log_file_num=1000\n"
+    "[DBOptions]\n"
+    "[CFOptions \"default\"]\n"
+    "  # if a section is blank, we will use the default\n";
 
   const std::string kTestFileName = "test-vidardb-options.ini";
   env_->WriteToNewFile(kTestFileName, options_file_content);
@@ -870,18 +875,18 @@ TEST_F(OptionsParserTest, NoDefaultCFOptions) {
   ColumnFamilyOptions cf_opt;
 
   std::string options_file_content =
-      "# This is a testing option string.\n"
-      "# Currently we only support \"#\" styled comment.\n"
-      "\n"
-      "[Version]\n"
-      "  vidardb_version=3.14.0\n"
-      "  options_file_version=1\n"
-      "[DBOptions]\n"
-      "  max_open_files=12345\n"
-      "  max_background_flushes=301\n"
-      "  max_total_wal_size=1024  # keep_log_file_num=1000\n"
-      "[CFOptions \"something_else\"]\n"
-      "  # if a section is blank, we will use the default\n";
+    "# This is a testing option string.\n"
+    "# Currently we only support \"#\" styled comment.\n"
+    "\n"
+    "[Version]\n"
+    "  vidardb_version=3.14.0\n"
+    "  options_file_version=1\n"
+    "[DBOptions]\n"
+    "  max_open_files=12345\n"
+    "  max_background_flushes=301\n"
+    "  max_total_wal_size=1024  # keep_log_file_num=1000\n"
+    "[CFOptions \"something_else\"]\n"
+    "  # if a section is blank, we will use the default\n";
 
   const std::string kTestFileName = "test-vidardb-options.ini";
   env_->WriteToNewFile(kTestFileName, options_file_content);
@@ -897,20 +902,20 @@ TEST_F(OptionsParserTest, DefaultCFOptionsMustBeTheFirst) {
   ColumnFamilyOptions cf_opt;
 
   std::string options_file_content =
-      "# This is a testing option string.\n"
-      "# Currently we only support \"#\" styled comment.\n"
-      "\n"
-      "[Version]\n"
-      "  vidardb_version=3.14.0\n"
-      "  options_file_version=1\n"
-      "[DBOptions]\n"
-      "  max_open_files=12345\n"
-      "  max_background_flushes=301\n"
-      "  max_total_wal_size=1024  # keep_log_file_num=1000\n"
-      "[CFOptions \"something_else\"]\n"
-      "  # if a section is blank, we will use the default\n"
-      "[CFOptions \"default\"]\n"
-      "  # if a section is blank, we will use the default\n";
+    "# This is a testing option string.\n"
+    "# Currently we only support \"#\" styled comment.\n"
+    "\n"
+    "[Version]\n"
+    "  vidardb_version=3.14.0\n"
+    "  options_file_version=1\n"
+    "[DBOptions]\n"
+    "  max_open_files=12345\n"
+    "  max_background_flushes=301\n"
+    "  max_total_wal_size=1024  # keep_log_file_num=1000\n"
+    "[CFOptions \"something_else\"]\n"
+    "  # if a section is blank, we will use the default\n"
+    "[CFOptions \"default\"]\n"
+    "  # if a section is blank, we will use the default\n";
 
   const std::string kTestFileName = "test-vidardb-options.ini";
   env_->WriteToNewFile(kTestFileName, options_file_content);
@@ -926,19 +931,19 @@ TEST_F(OptionsParserTest, DuplicateCFOptions) {
   ColumnFamilyOptions cf_opt;
 
   std::string options_file_content =
-      "# This is a testing option string.\n"
-      "# Currently we only support \"#\" styled comment.\n"
-      "\n"
-      "[Version]\n"
-      "  vidardb_version=3.14.0\n"
-      "  options_file_version=1\n"
-      "[DBOptions]\n"
-      "  max_open_files=12345\n"
-      "  max_background_flushes=301\n"
-      "  max_total_wal_size=1024  # keep_log_file_num=1000\n"
-      "[CFOptions \"default\"]\n"
-      "[CFOptions \"something_else\"]\n"
-      "[CFOptions \"something_else\"]\n";
+    "# This is a testing option string.\n"
+    "# Currently we only support \"#\" styled comment.\n"
+    "\n"
+    "[Version]\n"
+    "  vidardb_version=3.14.0\n"
+    "  options_file_version=1\n"
+    "[DBOptions]\n"
+    "  max_open_files=12345\n"
+    "  max_background_flushes=301\n"
+    "  max_total_wal_size=1024  # keep_log_file_num=1000\n"
+    "[CFOptions \"default\"]\n"
+    "[CFOptions \"something_else\"]\n"
+    "[CFOptions \"something_else\"]\n";
 
   const std::string kTestFileName = "test-vidardb-options.ini";
   env_->WriteToNewFile(kTestFileName, options_file_content);
@@ -954,26 +959,27 @@ TEST_F(OptionsParserTest, ParseVersion) {
   ColumnFamilyOptions cf_opt;
 
   std::string file_template =
-      "# This is a testing option string.\n"
-      "# Currently we only support \"#\" styled comment.\n"
-      "\n"
-      "[Version]\n"
-      "  vidardb_version=3.13.1\n"
-      "  options_file_version=%s\n"
-      "[DBOptions]\n"
-      "[CFOptions \"default\"]\n";
+    "# This is a testing option string.\n"
+    "# Currently we only support \"#\" styled comment.\n"
+    "\n"
+    "[Version]\n"
+    "  vidardb_version=3.13.1\n"
+    "  options_file_version=%s\n"
+    "[DBOptions]\n"
+    "[CFOptions \"default\"]\n";
   const int kLength = 1000;
   char buffer[kLength];
   VidarDBOptionsParser parser;
 
   const std::vector<std::string> invalid_versions = {
-      "a.b.c", "3.2.2b", "3.-12", "3. 1",  // only digits and dots are allowed
-      "1.2.3.4",
-      "1.2.3"  // can only contains at most one dot.
-      "0",     // options_file_version must be at least one
-      "3..2",
-      ".", ".1.2",             // must have at least one digit before each dot
-      "1.2.", "1.", "2.34."};  // must have at least one digit after each dot
+    "a.b.c", "3.2.2b", "3.-12", "3. 1",  // only digits and dots are allowed
+    "1.2.3.4",
+    "1.2.3"  // can only contains at most one dot.
+    "0",     // options_file_version must be at least one
+    "3..2",
+    ".", ".1.2",             // must have at least one digit before each dot
+    "1.2.", "1.", "2.34."
+  };  // must have at least one digit after each dot
   for (auto iv : invalid_versions) {
     snprintf(buffer, kLength - 1, file_template.c_str(), iv.c_str());
 
@@ -983,7 +989,8 @@ TEST_F(OptionsParserTest, ParseVersion) {
   }
 
   const std::vector<std::string> valid_versions = {
-      "1.232", "100", "3.12", "1", "12.3  ", "  1.25  "};
+    "1.232", "100", "3.12", "1", "12.3  ", "  1.25  "
+  };
   for (auto vv : valid_versions) {
     snprintf(buffer, kLength - 1, file_template.c_str(), vv.c_str());
     parser.Reset();
@@ -993,11 +1000,11 @@ TEST_F(OptionsParserTest, ParseVersion) {
 }
 
 void VerifyCFPointerTypedOptions(
-    ColumnFamilyOptions* base_cf_opt, const ColumnFamilyOptions* new_cf_opt,
-    const std::unordered_map<std::string, std::string>* new_cf_opt_map) {
+  ColumnFamilyOptions* base_cf_opt, const ColumnFamilyOptions* new_cf_opt,
+  const std::unordered_map<std::string, std::string>* new_cf_opt_map) {
   std::string name_buffer;
   ASSERT_OK(VidarDBOptionsParser::VerifyCFOptions(*base_cf_opt, *new_cf_opt,
-                                                  new_cf_opt_map));
+            new_cf_opt_map));
 
   // test by setting table_factory to nullptr
   {
@@ -1006,11 +1013,11 @@ void VerifyCFPointerTypedOptions(
       base_cf_opt->table_factory.reset();
       // set table_factory to nullptr and expect non-ok status
       ASSERT_NOK(VidarDBOptionsParser::VerifyCFOptions(
-          *base_cf_opt, *new_cf_opt, new_cf_opt_map));
+                   *base_cf_opt, *new_cf_opt, new_cf_opt_map));
       // set the value back and expect ok status
       base_cf_opt->table_factory = tmp_table_factory;
       ASSERT_OK(VidarDBOptionsParser::VerifyCFOptions(*base_cf_opt, *new_cf_opt,
-                                                      new_cf_opt_map));
+                new_cf_opt_map));
     }
   }
 
@@ -1021,11 +1028,11 @@ void VerifyCFPointerTypedOptions(
       base_cf_opt->memtable_factory.reset();
       // set memtable_factory to nullptr and expect non-ok status
       ASSERT_NOK(VidarDBOptionsParser::VerifyCFOptions(
-          *base_cf_opt, *new_cf_opt, new_cf_opt_map));
+                   *base_cf_opt, *new_cf_opt, new_cf_opt_map));
       // set the value back and expect ok status
       base_cf_opt->memtable_factory = tmp_memtable_factory;
       ASSERT_OK(VidarDBOptionsParser::VerifyCFOptions(*base_cf_opt, *new_cf_opt,
-                                                      new_cf_opt_map));
+                new_cf_opt_map));
     }
   }
 }
@@ -1036,7 +1043,8 @@ TEST_F(OptionsParserTest, DumpAndParse) {
   std::vector<std::string> cf_names = {"default", "cf1", "cf2", "cf3",
                                        "c:f:4:4:4"
                                        "p\\i\\k\\a\\chu\\\\\\",
-                                       "###vidardb#1-testcf#2###"};
+                                       "###vidardb#1-testcf#2###"
+                                      };
   const int num_cf = static_cast<int>(cf_names.size());
   Random rnd(302);
   test::RandomInitDBOptions(&base_db_opt, &rnd);
@@ -1061,15 +1069,15 @@ TEST_F(OptionsParserTest, DumpAndParse) {
   ASSERT_OK(parser.Parse(kOptionsFileName, env_.get()));
 
   ASSERT_OK(VidarDBOptionsParser::VerifyVidarDBOptionsFromFile(
-      base_db_opt, cf_names, base_cf_opts, kOptionsFileName, env_.get()));
+              base_db_opt, cf_names, base_cf_opts, kOptionsFileName, env_.get()));
 
   ASSERT_OK(
-      VidarDBOptionsParser::VerifyDBOptions(*parser.db_opt(), base_db_opt));
+    VidarDBOptionsParser::VerifyDBOptions(*parser.db_opt(), base_db_opt));
   for (int c = 0; c < num_cf; ++c) {
     const auto* cf_opt = parser.GetCFOptions(cf_names[c]);
     ASSERT_NE(cf_opt, nullptr);
     ASSERT_OK(VidarDBOptionsParser::VerifyCFOptions(
-        base_cf_opts[c], *cf_opt, &(parser.cf_opt_maps()->at(c))));
+                base_cf_opts[c], *cf_opt, &(parser.cf_opt_maps()->at(c))));
   }
 
   // Further verify pointer-typed options
@@ -1084,7 +1092,7 @@ TEST_F(OptionsParserTest, DumpAndParse) {
 
   base_db_opt.max_open_files++;
   ASSERT_NOK(VidarDBOptionsParser::VerifyVidarDBOptionsFromFile(
-      base_db_opt, cf_names, base_cf_opts, kOptionsFileName, env_.get()));
+               base_db_opt, cf_names, base_cf_opts, kOptionsFileName, env_.get()));
 }
 
 TEST_F(OptionsParserTest, DifferentDefault) {
@@ -1097,8 +1105,8 @@ TEST_F(OptionsParserTest, DifferentDefault) {
   cf_univ_opts.OptimizeUniversalStyleCompaction();
 
   ASSERT_OK(PersistVidarDBOptions(DBOptions(), {"default", "universal"},
-                                  {cf_level_opts, cf_univ_opts},
-                                  kOptionsFileName, env_.get()));
+  {cf_level_opts, cf_univ_opts},
+  kOptionsFileName, env_.get()));
 
   VidarDBOptionsParser parser;
   ASSERT_OK(parser.Parse(kOptionsFileName, env_.get()));
@@ -1165,8 +1173,8 @@ class OptionsSanityCheckTest : public OptionsParserTest {
   Status SanityCheckCFOptions(const ColumnFamilyOptions& cf_opts,
                               OptionsSanityCheckLevel level) {
     return VidarDBOptionsParser::VerifyVidarDBOptionsFromFile(
-        DBOptions(), {"default"}, {cf_opts}, kOptionsFileName, env_.get(),
-        level);
+             DBOptions(), {"default"}, {cf_opts}, kOptionsFileName, env_.get(),
+             level);
   }
 
   Status PersistCFOptions(const ColumnFamilyOptions& cf_opts) {
@@ -1259,15 +1267,15 @@ bool IsEscapedString(const std::string& str) {
         continue;
       }
       switch (str[i + 1]) {
-        case ':':
-        case '\\':
-        case '#':
-          continue;
-        default:
-          // if true, '\' together with str[i + 1] is not a valid escape.
-          if (UnescapeChar(str[i + 1]) == str[i + 1]) {
-            return false;
-          }
+      case ':':
+      case '\\':
+      case '#':
+        continue;
+      default:
+        // if true, '\' together with str[i + 1] is not a valid escape.
+        if (UnescapeChar(str[i + 1]) == str[i + 1]) {
+          return false;
+        }
       }
     } else if (isSpecialChar(str[i]) && (i == 0 || str[i - 1] != '\\')) {
       return false;
@@ -1279,18 +1287,18 @@ bool IsEscapedString(const std::string& str) {
 
 TEST_F(OptionsParserTest, EscapeOptionString) {
   ASSERT_EQ(UnescapeOptionString(
-                "This is a test string with \\# \\: and \\\\ escape chars."),
+              "This is a test string with \\# \\: and \\\\ escape chars."),
             "This is a test string with # : and \\ escape chars.");
 
   ASSERT_EQ(
-      EscapeOptionString("This is a test string with # : and \\ escape chars."),
-      "This is a test string with \\# \\: and \\\\ escape chars.");
+    EscapeOptionString("This is a test string with # : and \\ escape chars."),
+    "This is a test string with \\# \\: and \\\\ escape chars.");
 
   std::string readible_chars =
-      "A String like this \"1234567890-=_)(*&^%$#@!ertyuiop[]{POIU"
-      "YTREWQasdfghjkl;':LKJHGFDSAzxcvbnm,.?>"
-      "<MNBVCXZ\\\" should be okay to \\#\\\\\\:\\#\\#\\#\\ "
-      "be serialized and deserialized";
+    "A String like this \"1234567890-=_)(*&^%$#@!ertyuiop[]{POIU"
+    "YTREWQasdfghjkl;':LKJHGFDSAzxcvbnm,.?>"
+    "<MNBVCXZ\\\" should be okay to \\#\\\\\\:\\#\\#\\#\\ "
+    "be serialized and deserialized";
 
   std::string escaped_string = EscapeOptionString(readible_chars);
   ASSERT_TRUE(IsEscapedString(escaped_string));
@@ -1310,11 +1318,11 @@ TEST_F(OptionsParserTest, EscapeOptionString) {
   ASSERT_EQ(UnescapeOptionString(escaped_string), all_chars);
 
   ASSERT_EQ(VidarDBOptionsParser::TrimAndRemoveComment(
-                "     A simple statement with a comment.  # like this :)"),
+              "     A simple statement with a comment.  # like this :)"),
             "A simple statement with a comment.");
 
   ASSERT_EQ(VidarDBOptionsParser::TrimAndRemoveComment(
-                "Escape \\# and # comment together   ."),
+              "Escape \\# and # comment together   ."),
             "Escape \\# and");
 }
 #endif  // !VIDARDB_LITE

@@ -75,16 +75,16 @@ class InternalStats {
   };
 
   InternalStats(int num_levels, Env* env, ColumnFamilyData* cfd)
-      : db_stats_{},
-        cf_stats_value_{},
-        cf_stats_count_{},
-        comp_stats_(num_levels),
-        file_read_latency_(num_levels),
-        bg_error_count_(0),
-        number_levels_(num_levels),
-        env_(env),
-        cfd_(cfd),
-        started_at_(env->NowMicros()) {}
+    : db_stats_{},
+      cf_stats_value_{},
+      cf_stats_count_{},
+      comp_stats_(num_levels),
+      file_read_latency_(num_levels),
+      bg_error_count_(0),
+      number_levels_(num_levels),
+      env_(env),
+      cfd_(cfd),
+      started_at_(env->NowMicros()) {}
 
   // Per level compaction stats.  comp_stats_[level] stores the stats for
   // compactions that produced data for the specified "level".
@@ -123,32 +123,32 @@ class InternalStats {
     int count;
 
     explicit CompactionStats(int _count = 0)
-        : micros(0),
-          bytes_read_non_output_levels(0),
-          bytes_read_output_level(0),
-          bytes_written(0),
-          bytes_moved(0),
-          num_input_files_in_non_output_levels(0),
-          num_input_files_in_output_level(0),
-          num_output_files(0),
-          num_input_records(0),
-          num_dropped_records(0),
-          count(_count) {}
+      : micros(0),
+        bytes_read_non_output_levels(0),
+        bytes_read_output_level(0),
+        bytes_written(0),
+        bytes_moved(0),
+        num_input_files_in_non_output_levels(0),
+        num_input_files_in_output_level(0),
+        num_output_files(0),
+        num_input_records(0),
+        num_dropped_records(0),
+        count(_count) {}
 
     explicit CompactionStats(const CompactionStats& c)
-        : micros(c.micros),
-          bytes_read_non_output_levels(c.bytes_read_non_output_levels),
-          bytes_read_output_level(c.bytes_read_output_level),
-          bytes_written(c.bytes_written),
-          bytes_moved(c.bytes_moved),
-          num_input_files_in_non_output_levels(
-              c.num_input_files_in_non_output_levels),
-          num_input_files_in_output_level(
-              c.num_input_files_in_output_level),
-          num_output_files(c.num_output_files),
-          num_input_records(c.num_input_records),
-          num_dropped_records(c.num_dropped_records),
-          count(c.count) {}
+      : micros(c.micros),
+        bytes_read_non_output_levels(c.bytes_read_non_output_levels),
+        bytes_read_output_level(c.bytes_read_output_level),
+        bytes_written(c.bytes_written),
+        bytes_moved(c.bytes_moved),
+        num_input_files_in_non_output_levels(
+          c.num_input_files_in_non_output_levels),
+        num_input_files_in_output_level(
+          c.num_input_files_in_output_level),
+        num_output_files(c.num_output_files),
+        num_input_records(c.num_input_records),
+        num_dropped_records(c.num_dropped_records),
+        count(c.count) {}
 
     CompactionStats& operator=(const CompactionStats& c) {
       micros = c.micros;
@@ -157,7 +157,7 @@ class InternalStats {
       bytes_written = c.bytes_written;
       bytes_moved = c.bytes_moved;
       num_input_files_in_non_output_levels =
-          c.num_input_files_in_non_output_levels;
+        c.num_input_files_in_non_output_levels;
       num_input_files_in_output_level = c.num_input_files_in_output_level;
       num_output_files = c.num_output_files;
       num_input_records = c.num_input_records;
@@ -173,9 +173,9 @@ class InternalStats {
       this->bytes_written += c.bytes_written;
       this->bytes_moved += c.bytes_moved;
       this->num_input_files_in_non_output_levels +=
-          c.num_input_files_in_non_output_levels;
+        c.num_input_files_in_non_output_levels;
       this->num_input_files_in_output_level +=
-          c.num_input_files_in_output_level;
+        c.num_input_files_in_output_level;
       this->num_output_files += c.num_output_files;
       this->num_input_records += c.num_input_records;
       this->num_dropped_records += c.num_dropped_records;
@@ -189,9 +189,9 @@ class InternalStats {
       this->bytes_written -= c.bytes_written;
       this->bytes_moved -= c.bytes_moved;
       this->num_input_files_in_non_output_levels -=
-          c.num_input_files_in_non_output_levels;
+        c.num_input_files_in_non_output_levels;
       this->num_input_files_in_output_level -=
-          c.num_input_files_in_output_level;
+        c.num_input_files_in_output_level;
       this->num_output_files -= c.num_output_files;
       this->num_input_records -= c.num_input_records;
       this->num_dropped_records -= c.num_dropped_records;
@@ -226,9 +226,13 @@ class InternalStats {
     return &file_read_latency_[level];
   }
 
-  uint64_t GetBackgroundErrorCount() const { return bg_error_count_; }
+  uint64_t GetBackgroundErrorCount() const {
+    return bg_error_count_;
+  }
 
-  uint64_t BumpAndGetBackgroundErrorCount() { return ++bg_error_count_; }
+  uint64_t BumpAndGetBackgroundErrorCount() {
+    return ++bg_error_count_;
+  }
 
   bool GetStringProperty(const DBPropertyInfo& property_info,
                          const Slice& property, std::string* value);
@@ -269,13 +273,13 @@ class InternalStats {
     double seconds_up;
 
     CFStatsSnapshot()
-        : comp_stats(0),
-          ingest_bytes(0),
-          stall_count(0),
-          compact_bytes_write(0),
-          compact_bytes_read(0),
-          compact_micros(0),
-          seconds_up(0) {}
+      : comp_stats(0),
+        ingest_bytes(0),
+        stall_count(0),
+        compact_bytes_write(0),
+        compact_bytes_read(0),
+        compact_micros(0),
+        seconds_up(0) {}
   } cf_stats_snapshot_;
 
   struct DBStatsSnapshot {
@@ -298,15 +302,15 @@ class InternalStats {
     double seconds_up;
 
     DBStatsSnapshot()
-        : ingest_bytes(0),
-          wal_bytes(0),
-          wal_synced(0),
-          write_with_wal(0),
-          write_other(0),
-          write_self(0),
-          num_keys_written(0),
-          write_stall_micros(0),
-          seconds_up(0) {}
+      : ingest_bytes(0),
+        wal_bytes(0),
+        wal_synced(0),
+        write_with_wal(0),
+        write_other(0),
+        write_self(0),
+        num_keys_written(0),
+        write_stall_micros(0),
+        seconds_up(0) {}
   } db_stats_snapshot_;
 
   // Handler functions for getting property values. They use "value" as a value-
@@ -354,7 +358,7 @@ class InternalStats {
   bool HandleBaseLevel(uint64_t* value, DBImpl* db, Version* version);
   bool HandleTotalSstFilesSize(uint64_t* value, DBImpl* db, Version* version);
   bool HandleEstimatePendingCompactionBytes(uint64_t* value, DBImpl* db,
-                                            Version* version);
+      Version* version);
   bool HandleEstimateTableReadersMem(uint64_t* value, DBImpl* db,
                                      Version* version);
   bool HandleEstimateLiveDataSize(uint64_t* value, DBImpl* db,
@@ -435,11 +439,17 @@ class InternalStats {
 
   void AddDBStats(InternalDBStatsType type, uint64_t value) {}
 
-  HistogramImpl* GetFileReadHist(int level) { return nullptr; }
+  HistogramImpl* GetFileReadHist(int level) {
+    return nullptr;
+  }
 
-  uint64_t GetBackgroundErrorCount() const { return 0; }
+  uint64_t GetBackgroundErrorCount() const {
+    return 0;
+  }
 
-  uint64_t BumpAndGetBackgroundErrorCount() { return 0; }
+  uint64_t BumpAndGetBackgroundErrorCount() {
+    return 0;
+  }
 
   bool GetStringProperty(const DBPropertyInfo& property_info,
                          const Slice& property, std::string* value) {

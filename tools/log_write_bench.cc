@@ -59,7 +59,7 @@ void RunBenchmark() {
     }
 
     int time_to_sleep =
-        (i + 1) * FLAGS_record_interval - (env->NowMicros() - start_time);
+      (i + 1) * FLAGS_record_interval - (env->NowMicros() - start_time);
     if (time_to_sleep > 0) {
       env->SleepForMicroseconds(time_to_sleep);
     }

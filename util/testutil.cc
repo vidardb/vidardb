@@ -45,18 +45,18 @@ std::string RandomKey(Random* rnd, int len, RandomKeyType type) {
   for (int i = 0; i < len; i++) {
     std::size_t indx = 0;
     switch (type) {
-      case RandomKeyType::RANDOM:
-        indx = rnd->Uniform(sizeof(kTestChars));
-        break;
-      case RandomKeyType::LARGEST:
-        indx = sizeof(kTestChars) - 1;
-        break;
-      case RandomKeyType::MIDDLE:
-        indx = sizeof(kTestChars) / 2;
-        break;
-      case RandomKeyType::SMALLEST:
-        indx = 0;
-        break;
+    case RandomKeyType::RANDOM:
+      indx = rnd->Uniform(sizeof(kTestChars));
+      break;
+    case RandomKeyType::LARGEST:
+      indx = sizeof(kTestChars) - 1;
+      break;
+    case RandomKeyType::MIDDLE:
+      indx = sizeof(kTestChars) / 2;
+      break;
+    case RandomKeyType::SMALLEST:
+      indx = 0;
+      break;
     }
     result += kTestChars[indx];
   }
@@ -103,7 +103,7 @@ class Uint64ComparatorImpl : public Comparator {
   }
 
   virtual void FindShortestSeparator(std::string* start,
-      const Slice& limit) const override {
+                                     const Slice& limit) const override {
     return;
   }
 
@@ -190,8 +190,8 @@ TableFactory* RandomTableFactory(Random* rnd, int pre_defined) {
 #ifndef VIDARDB_LITE
   int random_num = pre_defined >= 0 ? pre_defined : rnd->Uniform(4);
   switch (random_num) {
-    default:
-      return NewBlockBasedTableFactory();
+  default:
+    return NewBlockBasedTableFactory();
   }
 #else
   return NewBlockBasedTableFactory();

@@ -31,8 +31,8 @@ static std::string PrintContents(WriteBatch* b) {
   ImmutableCFOptions ioptions(options);
   WriteBuffer wb(options.db_write_buffer_size);
   MemTable* mem =
-      new MemTable(cmp, ioptions, MutableCFOptions(options, ioptions), &wb,
-                   kMaxSequenceNumber);
+    new MemTable(cmp, ioptions, MutableCFOptions(options, ioptions), &wb,
+                 kMaxSequenceNumber);
   mem->Ref();
   std::string state;
   ColumnFamilyMemTablesDefault cf_mems_default(mem);
@@ -48,25 +48,25 @@ static std::string PrintContents(WriteBatch* b) {
     memset((void *)&ikey, 0, sizeof(ikey));
     EXPECT_TRUE(ParseInternalKey(iter->key(), &ikey));
     switch (ikey.type) {
-      case kTypeValue:
-        state.append("Put(");
-        state.append(ikey.user_key.ToString());
-        state.append(", ");
-        state.append(iter->value().ToString());
-        state.append(")");
-        count++;
-        put_count++;
-        break;
-      case kTypeDeletion:
-        state.append("Delete(");
-        state.append(ikey.user_key.ToString());
-        state.append(")");
-        count++;
-        delete_count++;
-        break;
-      default:
-        assert(false);
-        break;
+    case kTypeValue:
+      state.append("Put(");
+      state.append(ikey.user_key.ToString());
+      state.append(", ");
+      state.append(iter->value().ToString());
+      state.append(")");
+      count++;
+      put_count++;
+      break;
+    case kTypeDeletion:
+      state.append("Delete(");
+      state.append(ikey.user_key.ToString());
+      state.append(")");
+      count++;
+      delete_count++;
+      break;
+    default:
+      assert(false);
+      break;
     }
     state.append("@");
     state.append(NumberToString(ikey.sequence));
@@ -151,68 +151,68 @@ TEST_F(WriteBatchTest, Append) {
 }
 
 namespace {
-  struct TestHandler : public WriteBatch::Handler {
-    std::string seen;
-    virtual Status PutCF(uint32_t column_family_id, const Slice& key,
+struct TestHandler : public WriteBatch::Handler {
+  std::string seen;
+  virtual Status PutCF(uint32_t column_family_id, const Slice& key,
+                       const Slice& value) override {
+    if (column_family_id == 0) {
+      seen += "Put(" + key.ToString() + ", " + value.ToString() + ")";
+    } else {
+      seen += "PutCF(" + ToString(column_family_id) + ", " +
+              key.ToString() + ", " + value.ToString() + ")";
+    }
+    return Status::OK();
+  }
+  virtual Status DeleteCF(uint32_t column_family_id,
+                          const Slice& key) override {
+    if (column_family_id == 0) {
+      seen += "Delete(" + key.ToString() + ")";
+    } else {
+      seen += "DeleteCF(" + ToString(column_family_id) + ", " +
+              key.ToString() + ")";
+    }
+    return Status::OK();
+  }
+  virtual Status SingleDeleteCF(uint32_t column_family_id,
+                                const Slice& key) override {
+    if (column_family_id == 0) {
+      seen += "SingleDelete(" + key.ToString() + ")";
+    } else {
+      seen += "SingleDeleteCF(" + ToString(column_family_id) + ", " +
+              key.ToString() + ")";
+    }
+    return Status::OK();
+  }
+  virtual Status MergeCF(uint32_t column_family_id, const Slice& key,
                          const Slice& value) override {
-      if (column_family_id == 0) {
-        seen += "Put(" + key.ToString() + ", " + value.ToString() + ")";
-      } else {
-        seen += "PutCF(" + ToString(column_family_id) + ", " +
-                key.ToString() + ", " + value.ToString() + ")";
-      }
-      return Status::OK();
+    if (column_family_id == 0) {
+      seen += "Merge(" + key.ToString() + ", " + value.ToString() + ")";
+    } else {
+      seen += "MergeCF(" + ToString(column_family_id) + ", " +
+              key.ToString() + ", " + value.ToString() + ")";
     }
-    virtual Status DeleteCF(uint32_t column_family_id,
-                            const Slice& key) override {
-      if (column_family_id == 0) {
-        seen += "Delete(" + key.ToString() + ")";
-      } else {
-        seen += "DeleteCF(" + ToString(column_family_id) + ", " +
-                key.ToString() + ")";
-      }
-      return Status::OK();
-    }
-    virtual Status SingleDeleteCF(uint32_t column_family_id,
-                                  const Slice& key) override {
-      if (column_family_id == 0) {
-        seen += "SingleDelete(" + key.ToString() + ")";
-      } else {
-        seen += "SingleDeleteCF(" + ToString(column_family_id) + ", " +
-                key.ToString() + ")";
-      }
-      return Status::OK();
-    }
-    virtual Status MergeCF(uint32_t column_family_id, const Slice& key,
-                           const Slice& value) override {
-      if (column_family_id == 0) {
-        seen += "Merge(" + key.ToString() + ", " + value.ToString() + ")";
-      } else {
-        seen += "MergeCF(" + ToString(column_family_id) + ", " +
-                key.ToString() + ", " + value.ToString() + ")";
-      }
-      return Status::OK();
-    }
-    virtual void LogData(const Slice& blob) override {
-      seen += "LogData(" + blob.ToString() + ")";
-    }
-    virtual Status MarkBeginPrepare() override {
-      seen += "MarkBeginPrepare()";
-      return Status::OK();
-    }
-    virtual Status MarkEndPrepare(const Slice& xid) override {
-      seen += "MarkEndPrepare(" + xid.ToString() + ")";
-      return Status::OK();
-    }
-    virtual Status MarkCommit(const Slice& xid) override {
-      seen += "MarkCommit(" + xid.ToString() + ")";
-      return Status::OK();
-    }
-    virtual Status MarkRollback(const Slice& xid) override {
-      seen += "MarkRollback(" + xid.ToString() + ")";
-      return Status::OK();
-    }
-  };
+    return Status::OK();
+  }
+  virtual void LogData(const Slice& blob) override {
+    seen += "LogData(" + blob.ToString() + ")";
+  }
+  virtual Status MarkBeginPrepare() override {
+    seen += "MarkBeginPrepare()";
+    return Status::OK();
+  }
+  virtual Status MarkEndPrepare(const Slice& xid) override {
+    seen += "MarkEndPrepare(" + xid.ToString() + ")";
+    return Status::OK();
+  }
+  virtual Status MarkCommit(const Slice& xid) override {
+    seen += "MarkCommit(" + xid.ToString() + ")";
+    return Status::OK();
+  }
+  virtual Status MarkRollback(const Slice& xid) override {
+    seen += "MarkRollback(" + xid.ToString() + ")";
+    return Status::OK();
+  }
+};
 }
 
 TEST_F(WriteBatchTest, PutNotImplemented) {
@@ -245,26 +245,26 @@ TEST_F(WriteBatchTest, Blob) {
   batch.PutLogData(Slice("blob2"));
   ASSERT_EQ(6, batch.Count());
   ASSERT_EQ(
-      "Merge(foo, bar)@5"
-      "Put(k1, v1)@0"
-      "Delete(k2)@3"
-      "Put(k2, v2)@1"
-      "SingleDelete(k3)@4"
-      "Put(k3, v3)@2",
-      PrintContents(&batch));
+    "Merge(foo, bar)@5"
+    "Put(k1, v1)@0"
+    "Delete(k2)@3"
+    "Put(k2, v2)@1"
+    "SingleDelete(k3)@4"
+    "Put(k3, v3)@2",
+    PrintContents(&batch));
 
   TestHandler handler;
   batch.Iterate(&handler);
   ASSERT_EQ(
-      "Put(k1, v1)"
-      "Put(k2, v2)"
-      "Put(k3, v3)"
-      "LogData(blob1)"
-      "Delete(k2)"
-      "SingleDelete(k3)"
-      "LogData(blob2)"
-      "Merge(foo, bar)",
-      handler.seen);
+    "Put(k1, v1)"
+    "Put(k2, v2)"
+    "Put(k3, v3)"
+    "LogData(blob1)"
+    "Delete(k2)"
+    "SingleDelete(k3)"
+    "LogData(blob2)"
+    "Merge(foo, bar)",
+    handler.seen);
 }
 
 TEST_F(WriteBatchTest, PrepareCommit) {
@@ -283,13 +283,13 @@ TEST_F(WriteBatchTest, PrepareCommit) {
   TestHandler handler;
   batch.Iterate(&handler);
   ASSERT_EQ(
-      "MarkBeginPrepare()"
-      "Put(k1, v1)"
-      "Put(k2, v2)"
-      "MarkEndPrepare(xid1)"
-      "MarkCommit(xid1)"
-      "MarkRollback(xid1)",
-      handler.seen);
+    "MarkBeginPrepare()"
+    "Put(k1, v1)"
+    "Put(k2, v2)"
+    "MarkEndPrepare(xid1)"
+    "MarkCommit(xid1)"
+    "MarkRollback(xid1)",
+    handler.seen);
 }
 
 // It requires more than 30GB of memory to run the test. With single memory
@@ -347,8 +347,12 @@ TEST_F(WriteBatchTest, DISABLED_ManyUpdates) {
       EXPECT_TRUE(false);
       return Status::OK();
     }
-    virtual void LogData(const Slice& blob) override { EXPECT_TRUE(false); }
-    virtual bool Continue() override { return num_seen < kNumUpdates; }
+    virtual void LogData(const Slice& blob) override {
+      EXPECT_TRUE(false);
+    }
+    virtual bool Continue() override {
+      return num_seen < kNumUpdates;
+    }
   } handler;
 
   batch.Iterate(&handler);
@@ -398,8 +402,12 @@ TEST_F(WriteBatchTest, DISABLED_LargeKeyValue) {
       EXPECT_TRUE(false);
       return Status::OK();
     }
-    virtual void LogData(const Slice& blob) override { EXPECT_TRUE(false); }
-    virtual bool Continue() override { return num_seen < 2; }
+    virtual void LogData(const Slice& blob) override {
+      EXPECT_TRUE(false);
+    }
+    virtual bool Continue() override {
+      return num_seen < 2;
+    }
   } handler;
 
   batch.Iterate(&handler);
@@ -425,7 +433,9 @@ TEST_F(WriteBatchTest, Continue) {
       ++num_seen;
       TestHandler::LogData(blob);
     }
-    virtual bool Continue() override { return num_seen < 5; }
+    virtual bool Continue() override {
+      return num_seen < 5;
+    }
   } handler;
 
   batch.Put(Slice("k1"), Slice("v1"));
@@ -435,12 +445,12 @@ TEST_F(WriteBatchTest, Continue) {
   batch.PutLogData(Slice("blob2"));
   batch.Iterate(&handler);
   ASSERT_EQ(
-      "Put(k1, v1)"
-      "Put(k2, v2)"
-      "LogData(blob1)"
-      "Delete(k1)"
-      "SingleDelete(k2)",
-      handler.seen);
+    "Put(k1, v1)"
+    "Put(k2, v2)"
+    "LogData(blob1)"
+    "Delete(k1)"
+    "SingleDelete(k2)",
+    handler.seen);
 }
 
 TEST_F(WriteBatchTest, PutGatherSlices) {
@@ -475,8 +485,10 @@ namespace {
 class ColumnFamilyHandleImplDummy : public ColumnFamilyHandleImpl {
  public:
   explicit ColumnFamilyHandleImplDummy(int id)
-      : ColumnFamilyHandleImpl(nullptr, nullptr, nullptr), id_(id) {}
-  uint32_t GetID() const override { return id_; }
+    : ColumnFamilyHandleImpl(nullptr, nullptr, nullptr), id_(id) {}
+  uint32_t GetID() const override {
+    return id_;
+  }
   const Comparator* user_comparator() const override {
     return BytewiseComparator();
   }
@@ -498,15 +510,15 @@ TEST_F(WriteBatchTest, ColumnFamiliesBatchTest) {
   TestHandler handler;
   batch.Iterate(&handler);
   ASSERT_EQ(
-      "Put(foo, bar)"
-      "PutCF(2, twofoo, bar2)"
-      "PutCF(8, eightfoo, bar8)"
-      "DeleteCF(8, eightfoo)"
-      "SingleDeleteCF(2, twofoo)"
-      "MergeCF(3, threethree, 3three)"
-      "Put(foo, bar)"
-      "Merge(omom, nom)",
-      handler.seen);
+    "Put(foo, bar)"
+    "PutCF(2, twofoo, bar2)"
+    "PutCF(8, eightfoo, bar8)"
+    "DeleteCF(8, eightfoo)"
+    "SingleDeleteCF(2, twofoo)"
+    "MergeCF(3, threethree, 3three)"
+    "Put(foo, bar)"
+    "Merge(omom, nom)",
+    handler.seen);
 }
 
 TEST_F(WriteBatchTest, SavePointTest) {
@@ -525,18 +537,18 @@ TEST_F(WriteBatchTest, SavePointTest) {
 
   ASSERT_OK(batch.RollbackToSavePoint());
   ASSERT_EQ(
-      "Delete(A)@3"
-      "Put(A, a)@0"
-      "Put(B, b)@1"
-      "Put(C, c)@2",
-      PrintContents(&batch));
+    "Delete(A)@3"
+    "Put(A, a)@0"
+    "Put(B, b)@1"
+    "Put(C, c)@2",
+    PrintContents(&batch));
 
   ASSERT_OK(batch.RollbackToSavePoint());
   ASSERT_OK(batch.RollbackToSavePoint());
   ASSERT_EQ(
-      "Put(A, a)@0"
-      "Put(B, b)@1",
-      PrintContents(&batch));
+    "Put(A, a)@0"
+    "Put(B, b)@1",
+    PrintContents(&batch));
 
   batch.Delete("A");
   batch.Put("B", "bb");
@@ -557,9 +569,9 @@ TEST_F(WriteBatchTest, SavePointTest) {
 
   ASSERT_OK(batch.RollbackToSavePoint());
   ASSERT_EQ(
-      "Delete(A)@1"
-      "Put(D, d)@0",
-      PrintContents(&batch));
+    "Delete(A)@1"
+    "Put(D, d)@0",
+    PrintContents(&batch));
 
   batch.SetSavePoint();
 
@@ -568,16 +580,16 @@ TEST_F(WriteBatchTest, SavePointTest) {
 
   ASSERT_OK(batch.RollbackToSavePoint());
   ASSERT_EQ(
-      "Delete(A)@1"
-      "Put(D, d)@0",
-      PrintContents(&batch));
+    "Delete(A)@1"
+    "Put(D, d)@0",
+    PrintContents(&batch));
 
   s = batch.RollbackToSavePoint();
   ASSERT_TRUE(s.IsNotFound());
   ASSERT_EQ(
-      "Delete(A)@1"
-      "Put(D, d)@0",
-      PrintContents(&batch));
+    "Delete(A)@1"
+    "Put(D, d)@0",
+    PrintContents(&batch));
 
   WriteBatch batch2;
 

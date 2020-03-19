@@ -84,7 +84,7 @@ struct BlockBasedTableOptions {
 
 // Create default block based table factory.
 extern TableFactory* NewBlockBasedTableFactory(
-    const BlockBasedTableOptions& table_options = BlockBasedTableOptions());
+  const BlockBasedTableOptions& table_options = BlockBasedTableOptions());
 
 /*********************************  Shichao  **********************************/
 // For advanced user only
@@ -136,7 +136,7 @@ struct ColumnTableOptions {
 
 // Create default column table factory.
 extern TableFactory* NewColumnTableFactory(
-    const ColumnTableOptions& table_options = ColumnTableOptions());
+  const ColumnTableOptions& table_options = ColumnTableOptions());
 /*********************************  Shichao  ************************************/
 
 class RandomAccessFileReader;
@@ -173,9 +173,9 @@ class TableFactory {
   // file_size is the physical file size of the file.
   // table_reader is the output table reader.
   virtual Status NewTableReader(
-      const TableReaderOptions& table_reader_options,
-      unique_ptr<RandomAccessFileReader>&& file, uint64_t file_size,
-      unique_ptr<TableReader>* table_reader) const = 0;
+    const TableReaderOptions& table_reader_options,
+    unique_ptr<RandomAccessFileReader>&& file, uint64_t file_size,
+    unique_ptr<TableReader>* table_reader) const = 0;
 
   // Return a table builder to write to a file for this table type.
   //
@@ -197,16 +197,16 @@ class TableFactory {
   // after closing the table builder. compression_type is the compression type
   // to use in this table.
   virtual TableBuilder* NewTableBuilder(
-      const TableBuilderOptions& table_builder_options,
-      uint32_t column_family_id, WritableFileWriter* file) const = 0;
+    const TableBuilderOptions& table_builder_options,
+    uint32_t column_family_id, WritableFileWriter* file) const = 0;
 
   // Sanitizes the specified DB Options and ColumnFamilyOptions.
   //
   // If the function cannot find a way to sanitize the input DB Options,
   // a non-ok Status will be returned.
   virtual Status SanitizeOptions(
-      const DBOptions& db_opts,
-      const ColumnFamilyOptions& cf_opts) const = 0;
+    const DBOptions& db_opts,
+    const ColumnFamilyOptions& cf_opts) const = 0;
 
   // Return a string that contains printable format of table configurations.
   // VidarDB prints configurations at DB Open().
@@ -226,7 +226,9 @@ class TableFactory {
   // TableFactory is currently used by any open DB is undefined behavior.
   // Developers should use DB::SetOption() instead to dynamically change
   // options while the DB is open.
-  virtual void* GetOptions() { return nullptr; }
+  virtual void* GetOptions() {
+    return nullptr;
+  }
 };
 
 #ifndef VIDARDB_LITE
@@ -237,13 +239,13 @@ class TableFactory {
 // @block_based_table_factory:  block based table factory to use. If NULL, use
 //                              a default one.
 // @column_table_factory: column table factory to use. If NULL, use a default one.
-// @knob: starting from which level to use column table factory. Default value 
+// @knob: starting from which level to use column table factory. Default value
 //        is -1 which means using the default @table_factory_to_write.
 extern TableFactory* NewAdaptiveTableFactory(
-    std::shared_ptr<TableFactory> table_factory_to_write = nullptr,
-    std::shared_ptr<TableFactory> block_based_table_factory = nullptr,
-    std::shared_ptr<TableFactory> column_table_factory = nullptr,  // Shichao
-    int knob = -1);                                                // Shichao
+  std::shared_ptr<TableFactory> table_factory_to_write = nullptr,
+  std::shared_ptr<TableFactory> block_based_table_factory = nullptr,
+  std::shared_ptr<TableFactory> column_table_factory = nullptr,  // Shichao
+  int knob = -1);                                                // Shichao
 
 #endif  // VIDARDB_LITE
 

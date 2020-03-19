@@ -155,9 +155,15 @@ class ConcurrentTest {
  private:
   static const uint32_t K = 4;
 
-  static uint64_t key(Key key) { return (key >> 40); }
-  static uint64_t gen(Key key) { return (key >> 8) & 0xffffffffu; }
-  static uint64_t hash(Key key) { return key & 0xff; }
+  static uint64_t key(Key key) {
+    return (key >> 40);
+  }
+  static uint64_t gen(Key key) {
+    return (key >> 8) & 0xffffffffu;
+  }
+  static uint64_t hash(Key key) {
+    return key & 0xff;
+  }
 
   static uint64_t HashNumbers(uint64_t k, uint64_t g) {
     uint64_t data[2] = { k, g };
@@ -177,15 +183,15 @@ class ConcurrentTest {
 
   static Key RandomTarget(Random* rnd) {
     switch (rnd->Next() % 10) {
-      case 0:
-        // Seek to beginning
-        return MakeKey(0, 0);
-      case 1:
-        // Seek to end
-        return MakeKey(K, 0);
-      default:
-        // Seek to middle
-        return MakeKey(rnd->Next() % K, 0);
+    case 0:
+      // Seek to beginning
+      return MakeKey(0, 0);
+    case 1:
+      // Seek to end
+      return MakeKey(K, 0);
+    default:
+      // Seek to middle
+      return MakeKey(rnd->Next() % K, 0);
     }
   }
 
@@ -195,7 +201,9 @@ class ConcurrentTest {
     void Set(int k, int v) {
       generation[k].store(v, std::memory_order_release);
     }
-    int Get(int k) { return generation[k].load(std::memory_order_acquire); }
+    int Get(int k) {
+      return generation[k].load(std::memory_order_acquire);
+    }
 
     State() {
       for (unsigned int k = 0; k < K; k++) {
@@ -254,7 +262,7 @@ class ConcurrentTest {
         // <*,0,*> is missing.
         ASSERT_TRUE((gen(pos) == 0U) ||
                     (gen(pos) > static_cast<uint64_t>(initial_state.Get(
-                                    static_cast<int>(key(pos))))))
+                          static_cast<int>(key(pos))))))
             << "key: " << key(pos) << "; gen: " << gen(pos)
             << "; initgen: " << initial_state.Get(static_cast<int>(key(pos)));
 
@@ -309,7 +317,7 @@ class TestState {
   };
 
   explicit TestState(int s)
-      : seed_(s), quit_flag_(false), state_(STARTING), state_cv_(&mu_) {}
+    : seed_(s), quit_flag_(false), state_(STARTING), state_cv_(&mu_) {}
 
   void Wait(ReaderState s) {
     mu_.Lock();
@@ -364,11 +372,21 @@ static void RunConcurrent(int run) {
   }
 }
 
-TEST_F(SkipTest, Concurrent1) { RunConcurrent(1); }
-TEST_F(SkipTest, Concurrent2) { RunConcurrent(2); }
-TEST_F(SkipTest, Concurrent3) { RunConcurrent(3); }
-TEST_F(SkipTest, Concurrent4) { RunConcurrent(4); }
-TEST_F(SkipTest, Concurrent5) { RunConcurrent(5); }
+TEST_F(SkipTest, Concurrent1) {
+  RunConcurrent(1);
+}
+TEST_F(SkipTest, Concurrent2) {
+  RunConcurrent(2);
+}
+TEST_F(SkipTest, Concurrent3) {
+  RunConcurrent(3);
+}
+TEST_F(SkipTest, Concurrent4) {
+  RunConcurrent(4);
+}
+TEST_F(SkipTest, Concurrent5) {
+  RunConcurrent(5);
+}
 
 }  // namespace vidardb
 

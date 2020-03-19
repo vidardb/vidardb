@@ -83,8 +83,8 @@ extern "C" {
 #pragma const_seg(".CRT$XLB")
 // When defining a const variable, it must have external linkage to be sure the
 // linker doesn't discard it.
-extern const PIMAGE_TLS_CALLBACK p_thread_callback_on_exit;
-const PIMAGE_TLS_CALLBACK p_thread_callback_on_exit =
+  extern const PIMAGE_TLS_CALLBACK p_thread_callback_on_exit;
+  const PIMAGE_TLS_CALLBACK p_thread_callback_on_exit =
     wintlscleanup::WinOnThreadExit;
 // Reset the default section.
 #pragma const_seg()
@@ -92,7 +92,7 @@ const PIMAGE_TLS_CALLBACK p_thread_callback_on_exit =
 #else  // _WIN64
 
 #pragma data_seg(".CRT$XLB")
-PIMAGE_TLS_CALLBACK p_thread_callback_on_exit = wintlscleanup::WinOnThreadExit;
+  PIMAGE_TLS_CALLBACK p_thread_callback_on_exit = wintlscleanup::WinOnThreadExit;
 // Reset the default section.
 #pragma data_seg()
 
@@ -136,9 +136,13 @@ ThreadLocalPtr::StaticMeta* ThreadLocalPtr::Instance() {
   return inst;
 }
 
-void ThreadLocalPtr::StaticMeta::InitSingletons() { Mutex(); }
+void ThreadLocalPtr::StaticMeta::InitSingletons() {
+  Mutex();
+}
 
-port::Mutex* ThreadLocalPtr::StaticMeta::Mutex() { return &Instance()->mutex_; }
+port::Mutex* ThreadLocalPtr::StaticMeta::Mutex() {
+  return &Instance()->mutex_;
+}
 
 void ThreadLocalPtr::StaticMeta::OnThreadExit(void* ptr) {
   auto* tls = static_cast<ThreadData*>(ptr);
@@ -219,7 +223,7 @@ void ThreadLocalPtr::StaticMeta::AddThreadData(ThreadLocalPtr::ThreadData* d) {
 }
 
 void ThreadLocalPtr::StaticMeta::RemoveThreadData(
-    ThreadLocalPtr::ThreadData* d) {
+  ThreadLocalPtr::ThreadData* d) {
   Mutex()->AssertHeld();
   d->next->prev = d->prev;
   d->prev->next = d->next;
@@ -231,7 +235,7 @@ ThreadLocalPtr::ThreadData* ThreadLocalPtr::StaticMeta::GetThreadLocal() {
   // Make this local variable name look like a member variable so that we
   // can share all the code below
   ThreadData* tls_ =
-      static_cast<ThreadData*>(pthread_getspecific(Instance()->pthread_key_));
+    static_cast<ThreadData*>(pthread_getspecific(Instance()->pthread_key_));
 #endif
 
   if (UNLIKELY(tls_ == nullptr)) {
@@ -294,16 +298,16 @@ bool ThreadLocalPtr::StaticMeta::CompareAndSwap(uint32_t id, void* ptr,
     tls->entries.resize(id + 1);
   }
   return tls->entries[id].ptr.compare_exchange_strong(
-      expected, ptr, std::memory_order_release, std::memory_order_relaxed);
+           expected, ptr, std::memory_order_release, std::memory_order_relaxed);
 }
 
 void ThreadLocalPtr::StaticMeta::Scrape(uint32_t id, std::vector<void*>* ptrs,
-    void* const replacement) {
+                                        void* const replacement) {
   MutexLock l(Mutex());
   for (ThreadData* t = head_.next; t != &head_; t = t->next) {
     if (id < t->entries.size()) {
       void* ptr =
-          t->entries[id].ptr.exchange(replacement, std::memory_order_acquire);
+        t->entries[id].ptr.exchange(replacement, std::memory_order_acquire);
       if (ptr != nullptr) {
         ptrs->push_back(ptr);
       }
@@ -362,7 +366,7 @@ void ThreadLocalPtr::StaticMeta::ReclaimId(uint32_t id) {
 }
 
 ThreadLocalPtr::ThreadLocalPtr(UnrefHandler handler)
-    : id_(Instance()->GetId()) {
+  : id_(Instance()->GetId()) {
   if (handler != nullptr) {
     Instance()->SetHandler(id_, handler);
   }

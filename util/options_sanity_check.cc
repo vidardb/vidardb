@@ -11,25 +11,25 @@ namespace vidardb {
 
 namespace {
 OptionsSanityCheckLevel SanityCheckLevelHelper(
-    const std::unordered_map<std::string, OptionsSanityCheckLevel>& smap,
-    const std::string& name) {
+  const std::unordered_map<std::string, OptionsSanityCheckLevel>& smap,
+  const std::string& name) {
   auto iter = smap.find(name);
   return iter != smap.end() ? iter->second : kSanityLevelExactMatch;
 }
 }
 
 OptionsSanityCheckLevel DBOptionSanityCheckLevel(
-    const std::string& option_name) {
+  const std::string& option_name) {
   return SanityCheckLevelHelper(sanity_level_db_options, option_name);
 }
 
 OptionsSanityCheckLevel CFOptionSanityCheckLevel(
-    const std::string& option_name) {
+  const std::string& option_name) {
   return SanityCheckLevelHelper(sanity_level_cf_options, option_name);
 }
 
 OptionsSanityCheckLevel BBTOptionSanityCheckLevel(
-    const std::string& option_name) {
+  const std::string& option_name) {
   return SanityCheckLevelHelper(sanity_level_bbt_options, option_name);
 }
 

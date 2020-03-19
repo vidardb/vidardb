@@ -13,13 +13,13 @@ namespace vidardb {
 class HistogramTest : public testing::Test {};
 
 namespace {
-  const double kIota = 0.1;
-  const HistogramBucketMapper bucketMapper;
-  Env* env = Env::Default();
+const double kIota = 0.1;
+const HistogramBucketMapper bucketMapper;
+Env* env = Env::Default();
 }
 
 void PopulateHistogram(Histogram& histogram,
-             uint64_t low, uint64_t high, uint64_t loop = 1) {
+                       uint64_t low, uint64_t high, uint64_t loop = 1) {
   for (; loop > 0; loop--) {
     for (uint64_t i = low; i <= high; i++) {
       histogram.Add(i);

@@ -33,7 +33,7 @@
 namespace vidardb {
 
 size_t ColumnBlockBuilder::EstimateSizeAfterKV(const Slice& key,
-                                               const Slice& value) const {
+    const Slice& value) const {
   size_t estimate = CurrentSizeEstimate();
   estimate += value.size();
   if (counter_ >= block_restart_interval_) {

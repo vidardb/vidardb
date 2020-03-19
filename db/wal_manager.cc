@@ -96,9 +96,9 @@ Status WalManager::GetSortedWalFiles(VectorLogPtr& files) {
 }
 
 Status WalManager::GetUpdatesSince(
-    SequenceNumber seq, std::unique_ptr<TransactionLogIterator>* iter,
-    const TransactionLogIterator::ReadOptions& read_options,
-    VersionSet* version_set) {
+  SequenceNumber seq, std::unique_ptr<TransactionLogIterator>* iter,
+  const TransactionLogIterator::ReadOptions& read_options,
+  VersionSet* version_set) {
 
   //  Get all sorted Wal Files.
   //  Do binary search and open files and find the seq number.
@@ -114,8 +114,8 @@ Status WalManager::GetUpdatesSince(
     return s;
   }
   iter->reset(new TransactionLogIteratorImpl(
-      db_options_.wal_dir, &db_options_, read_options, env_options_, seq,
-      std::move(wal_files), version_set));
+                db_options_.wal_dir, &db_options_, read_options, env_options_, seq,
+                std::move(wal_files), version_set));
   return (*iter)->status();
 }
 
@@ -144,8 +144,8 @@ void WalManager::PurgeObsoleteWALFiles() {
   }
   uint64_t const now_seconds = static_cast<uint64_t>(current_time);
   uint64_t const time_to_check = (ttl_enabled && !size_limit_enabled)
-                                     ? db_options_.WAL_ttl_seconds / 2
-                                     : kDefaultIntervalToDeleteObsoleteWAL;
+                                 ? db_options_.WAL_ttl_seconds / 2
+                                 : kDefaultIntervalToDeleteObsoleteWAL;
 
   if (purge_wal_files_last_run_ + time_to_check > now_seconds) {
     return;
@@ -229,7 +229,7 @@ void WalManager::PurgeObsoleteWALFiles() {
   }
 
   size_t const files_keep_num =
-      db_options_.WAL_size_limit_MB * 1024 * 1024 / log_file_size;
+    db_options_.WAL_size_limit_MB * 1024 * 1024 / log_file_size;
   if (log_files_num <= files_keep_num) {
     return;
   }
@@ -330,7 +330,7 @@ Status WalManager::GetSortedWalsOfType(const std::string& path,
       }
 
       log_files.push_back(std::unique_ptr<LogFile>(
-          new LogFileImpl(number, log_type, sequence, size_bytes)));
+                            new LogFileImpl(number, log_type, sequence, size_bytes)));
     }
   }
   CompareLogByPointer compare_log_files;
@@ -339,7 +339,7 @@ Status WalManager::GetSortedWalsOfType(const std::string& path,
 }
 
 Status WalManager::RetainProbableWalFiles(VectorLogPtr& all_logs,
-                                          const SequenceNumber target) {
+    const SequenceNumber target) {
   int64_t start = 0;  // signed to avoid overflow when target is < first file.
   int64_t end = static_cast<int64_t>(all_logs.size()) - 1;
   // Binary Search. avoid opening all files.
@@ -370,7 +370,7 @@ Status WalManager::ReadFirstRecord(const WalFileType type,
     Log(InfoLogLevel::ERROR_LEVEL, db_options_.info_log,
         "[WalManger] Unknown file type %s", ToString(type).c_str());
     return Status::NotSupported(
-        "File Type Not Known " + ToString(type));
+             "File Type Not Known " + ToString(type));
   }
   {
     MutexLock l(&read_first_record_cache_mutex_);
@@ -393,7 +393,7 @@ Status WalManager::ReadFirstRecord(const WalFileType type,
   if (type == kArchivedLogFile || !s.ok()) {
     //  check if the file got moved to archive.
     std::string archived_file =
-        ArchivedLogFileName(db_options_.wal_dir, number);
+      ArchivedLogFileName(db_options_.wal_dir, number);
     s = ReadFirstLine(archived_file, sequence);
     // maybe the file was deleted from archive dir. If that's the case, return
     // Status::OK(). The caller with identify this as empty file because
@@ -436,7 +436,7 @@ Status WalManager::ReadFirstLine(const std::string& fname,
   std::unique_ptr<SequentialFile> file;
   Status status = env_->NewSequentialFile(fname, &file, env_options_);
   unique_ptr<SequentialFileReader> file_reader(
-      new SequentialFileReader(std::move(file)));
+    new SequentialFileReader(std::move(file)));
 
   if (!status.ok()) {
     return status;

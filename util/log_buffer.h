@@ -25,7 +25,9 @@ class LogBuffer {
   // max_log_size indicates maximize log size, including some metadata.
   void AddLogToBuffer(size_t max_log_size, const char* format, va_list ap);
 
-  size_t IsEmpty() const { return logs_.empty(); }
+  size_t IsEmpty() const {
+    return logs_.empty();
+  }
 
   // Flush all buffered log to the info log.
   void FlushBufferToLog();

@@ -34,7 +34,9 @@ class IntTblPropCollector {
 
   virtual UserCollectedProperties GetReadableProperties() const = 0;
 
-  virtual bool NeedCompact() const { return false; }
+  virtual bool NeedCompact() const {
+    return false;
+  }
 };
 
 // Factory for internal table properties collector.
@@ -43,7 +45,7 @@ class IntTblPropCollectorFactory {
   virtual ~IntTblPropCollectorFactory() {}
   // has to be thread-safe
   virtual IntTblPropCollector* CreateIntTblPropCollector(
-      uint32_t column_family_id) = 0;
+    uint32_t column_family_id) = 0;
 
   // The name of the properties collector can be used for debugging purpose.
   virtual const char* Name() const = 0;
@@ -70,10 +72,10 @@ class InternalKeyPropertiesCollector : public IntTblPropCollector {
 };
 
 class InternalKeyPropertiesCollectorFactory
-    : public IntTblPropCollectorFactory {
+  : public IntTblPropCollectorFactory {
  public:
   virtual IntTblPropCollector* CreateIntTblPropCollector(
-      uint32_t column_family_id) override {
+    uint32_t column_family_id) override {
     return new InternalKeyPropertiesCollector();
   }
 
@@ -91,7 +93,7 @@ class UserKeyTablePropertiesCollector : public IntTblPropCollector {
  public:
   // transfer of ownership
   explicit UserKeyTablePropertiesCollector(TablePropertiesCollector* collector)
-      : collector_(collector) {}
+    : collector_(collector) {}
 
   virtual ~UserKeyTablePropertiesCollector() {}
 
@@ -100,7 +102,9 @@ class UserKeyTablePropertiesCollector : public IntTblPropCollector {
 
   virtual Status Finish(UserCollectedProperties* properties) override;
 
-  virtual const char* Name() const override { return collector_->Name(); }
+  virtual const char* Name() const override {
+    return collector_->Name();
+  }
 
   UserCollectedProperties GetReadableProperties() const override;
 
@@ -113,17 +117,17 @@ class UserKeyTablePropertiesCollector : public IntTblPropCollector {
 };
 
 class UserKeyTablePropertiesCollectorFactory
-    : public IntTblPropCollectorFactory {
+  : public IntTblPropCollectorFactory {
  public:
   explicit UserKeyTablePropertiesCollectorFactory(
-      std::shared_ptr<TablePropertiesCollectorFactory> user_collector_factory)
-      : user_collector_factory_(user_collector_factory) {}
+    std::shared_ptr<TablePropertiesCollectorFactory> user_collector_factory)
+    : user_collector_factory_(user_collector_factory) {}
   virtual IntTblPropCollector* CreateIntTblPropCollector(
-      uint32_t column_family_id) override {
+    uint32_t column_family_id) override {
     TablePropertiesCollectorFactory::Context context;
     context.column_family_id = column_family_id;
     return new UserKeyTablePropertiesCollector(
-        user_collector_factory_->CreateTablePropertiesCollector(context));
+             user_collector_factory_->CreateTablePropertiesCollector(context));
   }
 
   virtual const char* Name() const override {

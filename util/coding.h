@@ -78,18 +78,18 @@ inline uint32_t DecodeFixed32(const char* ptr) {
     return result;
   } else {
     return ((static_cast<uint32_t>(static_cast<unsigned char>(ptr[0])))
-        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[1])) << 8)
-        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[2])) << 16)
-        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[3])) << 24));
+            | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[1])) << 8)
+            | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[2])) << 16)
+            | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[3])) << 24));
   }
 }
 
 // Only used in column store for sub-column key
 inline uint32_t DecodeFixed32BigEndian(const char* ptr) {
   return ((static_cast<uint32_t>(static_cast<unsigned char>(ptr[0])) << 24)
-        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[1])) << 16)
-        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[2])) << 8)
-        | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[3]))));
+          | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[1])) << 16)
+          | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[2])) << 8)
+          | (static_cast<uint32_t>(static_cast<unsigned char>(ptr[3]))));
 }
 
 inline uint64_t DecodeFixed64(const char* ptr) {
@@ -113,8 +113,8 @@ inline uint64_t DecodeFixed64BigEndian(const char* ptr) {
 
 // Internal routine for use by fallback path of GetVarint32Ptr
 extern const char* GetVarint32PtrFallback(const char* p,
-                                          const char* limit,
-                                          uint32_t* value);
+    const char* limit,
+    uint32_t* value);
 inline const char* GetVarint32Ptr(const char* p,
                                   const char* limit,
                                   uint32_t* value) {

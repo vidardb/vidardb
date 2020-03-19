@@ -21,11 +21,11 @@ static std::string CompressibleString(Random* rnd, int len) {
 }
 
 class DBTestUniversalCompactionBase
-    : public DBTestBase,
-      public ::testing::WithParamInterface<std::tuple<int, bool>> {
+  : public DBTestBase,
+    public ::testing::WithParamInterface<std::tuple<int, bool>> {
  public:
   explicit DBTestUniversalCompactionBase(
-      const std::string& path) : DBTestBase(path) {}
+    const std::string& path) : DBTestBase(path) {}
   virtual void SetUp() override {
     num_levels_ = std::get<0>(GetParam());
     exclusive_manual_compaction_ = std::get<1>(GetParam());
@@ -37,13 +37,13 @@ class DBTestUniversalCompactionBase
 class DBTestUniversalCompaction : public DBTestUniversalCompactionBase {
  public:
   DBTestUniversalCompaction() :
-      DBTestUniversalCompactionBase("/db_universal_compaction_test") {}
+    DBTestUniversalCompactionBase("/db_universal_compaction_test") {}
 };
 
 namespace {
 void VerifyCompactionResult(
-    const ColumnFamilyMetaData& cf_meta,
-    const std::set<std::string>& overlapping_file_numbers) {
+  const ColumnFamilyMetaData& cf_meta,
+  const std::set<std::string>& overlapping_file_numbers) {
 #ifndef NDEBUG
   for (auto& level : cf_meta.levels) {
     for (auto& file : level.files) {
@@ -171,13 +171,13 @@ TEST_P(DBTestUniversalCompaction, UniversalCompactionTrigger) {
   CreateAndReopenWithCF({"pikachu"}, options);
 
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBTestWritableFile.GetPreallocationStatus", [&](void* arg) {
-        ASSERT_TRUE(arg != nullptr);
-        size_t preallocation_size = *(static_cast<size_t*>(arg));
-        if (num_levels_ > 3) {
-          ASSERT_LE(preallocation_size, options.target_file_size_base * 1.1);
-        }
-      });
+  "DBTestWritableFile.GetPreallocationStatus", [&](void* arg) {
+    ASSERT_TRUE(arg != nullptr);
+    size_t preallocation_size = *(static_cast<size_t*>(arg));
+    if (num_levels_ > 3) {
+      ASSERT_LE(preallocation_size, options.target_file_size_base * 1.1);
+    }
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Random rnd(301);
@@ -332,38 +332,38 @@ TEST_P(DBTestUniversalCompaction, CompactFilesOnUniversalCompaction) {
 
   if (compaction_input_file_names.size() == 0) {
     compaction_input_file_names.push_back(
-        cf_meta.levels[0].files[0].name);
+      cf_meta.levels[0].files[0].name);
   }
 
   // expect fail since universal compaction only allow L0 output
   ASSERT_FALSE(dbfull()
-                   ->CompactFiles(CompactionOptions(), handles_[1],
-                                  compaction_input_file_names, 1)
-                   .ok());
+               ->CompactFiles(CompactionOptions(), handles_[1],
+                              compaction_input_file_names, 1)
+               .ok());
 
   // expect ok and verify the compacted files no longer exist.
   ASSERT_OK(dbfull()->CompactFiles(
-      CompactionOptions(), handles_[1],
-      compaction_input_file_names, 0));
+              CompactionOptions(), handles_[1],
+              compaction_input_file_names, 0));
 
   dbfull()->GetColumnFamilyMetaData(handles_[1], &cf_meta);
   VerifyCompactionResult(
-      cf_meta,
-      std::set<std::string>(compaction_input_file_names.begin(),
-          compaction_input_file_names.end()));
+    cf_meta,
+    std::set<std::string>(compaction_input_file_names.begin(),
+                          compaction_input_file_names.end()));
 
   compaction_input_file_names.clear();
 
   // Pick the first and the last file, expect everything is
   // compacted into one single file.
   compaction_input_file_names.push_back(
-      cf_meta.levels[0].files[0].name);
+    cf_meta.levels[0].files[0].name);
   compaction_input_file_names.push_back(
-      cf_meta.levels[0].files[
-          cf_meta.levels[0].files.size() - 1].name);
+    cf_meta.levels[0].files[
+      cf_meta.levels[0].files.size() - 1].name);
   ASSERT_OK(dbfull()->CompactFiles(
-      CompactionOptions(), handles_[1],
-      compaction_input_file_names, 0));
+              CompactionOptions(), handles_[1],
+              compaction_input_file_names, 0));
 
   dbfull()->GetColumnFamilyMetaData(handles_[1], &cf_meta);
   ASSERT_EQ(cf_meta.levels[0].files.size(), 1U);
@@ -406,11 +406,11 @@ TEST_P(DBTestUniversalCompaction, UniversalCompactionTargetLevel) {
 
 
 class DBTestUniversalCompactionMultiLevels
-    : public DBTestUniversalCompactionBase {
+  : public DBTestUniversalCompactionBase {
  public:
   DBTestUniversalCompactionMultiLevels() :
-      DBTestUniversalCompactionBase(
-          "/db_universal_compaction_multi_levels_test") {}
+    DBTestUniversalCompactionBase(
+      "/db_universal_compaction_multi_levels_test") {}
 };
 
 TEST_P(DBTestUniversalCompactionMultiLevels, UniversalCompactionMultiLevels) {
@@ -445,15 +445,17 @@ TEST_P(DBTestUniversalCompactionMultiLevels, UniversalCompactionTrivialMove) {
   int32_t trivial_move = 0;
   int32_t non_trivial_move = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:TrivialMove",
-      [&](void* arg) { trivial_move++; });
+    "DBImpl::BackgroundCompaction:TrivialMove",
+  [&](void* arg) {
+    trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial", [&](void* arg) {
-        non_trivial_move++;
-        ASSERT_TRUE(arg != nullptr);
-        int output_level = *(static_cast<int*>(arg));
-        ASSERT_EQ(output_level, 0);
-      });
+  "DBImpl::BackgroundCompaction:NonTrivial", [&](void* arg) {
+    non_trivial_move++;
+    ASSERT_TRUE(arg != nullptr);
+    int output_level = *(static_cast<int*>(arg));
+    ASSERT_EQ(output_level, 0);
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Options options = CurrentOptions();
@@ -491,14 +493,14 @@ TEST_P(DBTestUniversalCompactionMultiLevels, UniversalCompactionTrivialMove) {
 INSTANTIATE_TEST_CASE_P(DBTestUniversalCompactionMultiLevels,
                         DBTestUniversalCompactionMultiLevels,
                         ::testing::Combine(::testing::Values(3, 20),
-                                           ::testing::Bool()));
+                            ::testing::Bool()));
 
 class DBTestUniversalCompactionParallel :
-    public DBTestUniversalCompactionBase {
+  public DBTestUniversalCompactionBase {
  public:
   DBTestUniversalCompactionParallel() :
-      DBTestUniversalCompactionBase(
-          "/db_universal_compaction_prallel_test") {}
+    DBTestUniversalCompactionBase(
+      "/db_universal_compaction_prallel_test") {}
 };
 
 TEST_P(DBTestUniversalCompactionParallel, UniversalCompactionParallel) {
@@ -518,7 +520,7 @@ TEST_P(DBTestUniversalCompactionParallel, UniversalCompactionParallel) {
   std::atomic<int> num_compactions_running(0);
   std::atomic<bool> has_parallel(false);
   vidardb::SyncPoint::GetInstance()->SetCallBack("CompactionJob::Run():Start",
-                                                 [&](void* arg) {
+  [&](void* arg) {
     if (num_compactions_running.fetch_add(1) > 0) {
       has_parallel.store(true);
       return;
@@ -532,8 +534,10 @@ TEST_P(DBTestUniversalCompactionParallel, UniversalCompactionParallel) {
     }
   });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "CompactionJob::Run():End",
-      [&](void* arg) { num_compactions_running.fetch_add(-1); });
+    "CompactionJob::Run():End",
+  [&](void* arg) {
+    num_compactions_running.fetch_add(-1);
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   options = CurrentOptions(options);
@@ -564,7 +568,7 @@ TEST_P(DBTestUniversalCompactionParallel, UniversalCompactionParallel) {
 INSTANTIATE_TEST_CASE_P(DBTestUniversalCompactionParallel,
                         DBTestUniversalCompactionParallel,
                         ::testing::Combine(::testing::Values(1, 10),
-                                           ::testing::Bool()));
+                            ::testing::Bool()));
 
 TEST_P(DBTestUniversalCompaction, UniversalCompactionOptions) {
   Options options = CurrentOptions();
@@ -608,7 +612,7 @@ TEST_P(DBTestUniversalCompaction, UniversalCompactionStopStyleSimilarSize) {
   options.level0_file_num_compaction_trigger = 4;
   options.compaction_options_universal.size_ratio = 10;
   options.compaction_options_universal.stop_style =
-      kCompactionStopStyleSimilarSize;
+    kCompactionStopStyleSimilarSize;
   options.num_levels = num_levels_;
   DestroyAndReopen(options);
 
@@ -785,15 +789,17 @@ TEST_P(DBTestUniversalCompaction, UniversalCompactionTrivialMoveTest1) {
   int32_t trivial_move = 0;
   int32_t non_trivial_move = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:TrivialMove",
-      [&](void* arg) { trivial_move++; });
+    "DBImpl::BackgroundCompaction:TrivialMove",
+  [&](void* arg) {
+    trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial", [&](void* arg) {
-        non_trivial_move++;
-        ASSERT_TRUE(arg != nullptr);
-        int output_level = *(static_cast<int*>(arg));
-        ASSERT_EQ(output_level, 0);
-      });
+  "DBImpl::BackgroundCompaction:NonTrivial", [&](void* arg) {
+    non_trivial_move++;
+    ASSERT_TRUE(arg != nullptr);
+    int output_level = *(static_cast<int*>(arg));
+    ASSERT_EQ(output_level, 0);
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
   Options options = CurrentOptions();
@@ -832,11 +838,15 @@ TEST_P(DBTestUniversalCompaction, UniversalCompactionTrivialMoveTest2) {
   int32_t trivial_move = 0;
   int32_t non_trivial_move = 0;
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:TrivialMove",
-      [&](void* arg) { trivial_move++; });
+    "DBImpl::BackgroundCompaction:TrivialMove",
+  [&](void* arg) {
+    trivial_move++;
+  });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "DBImpl::BackgroundCompaction:NonTrivial",
-      [&](void* arg) { non_trivial_move++; });
+    "DBImpl::BackgroundCompaction:NonTrivial",
+  [&](void* arg) {
+    non_trivial_move++;
+  });
 
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
@@ -879,7 +889,7 @@ TEST_P(DBTestUniversalCompaction, UniversalCompactionFourPaths) {
   options.db_paths.emplace_back(dbname_ + "_3", 500 * 1024);
   options.db_paths.emplace_back(dbname_ + "_4", 1024 * 1024 * 1024);
   options.memtable_factory.reset(
-      new SpecialSkipListFactory(KNumKeysByGenerateNewFile - 1));
+    new SpecialSkipListFactory(KNumKeysByGenerateNewFile - 1));
   options.compaction_style = kCompactionStyleUniversal;
   options.compaction_options_universal.size_ratio = 5;
   options.write_buffer_size = 111 << 10;  // 114KB
@@ -1085,7 +1095,7 @@ TEST_P(DBTestUniversalCompaction, UniversalCompactionSecondPathRatio) {
   options.level0_file_num_compaction_trigger = 2;
   options.num_levels = 1;
   options.memtable_factory.reset(
-      new SpecialSkipListFactory(KNumKeysByGenerateNewFile - 1));
+    new SpecialSkipListFactory(KNumKeysByGenerateNewFile - 1));
 
   std::vector<std::string> filenames;
   env_->GetChildren(options.db_paths[1].path, &filenames);
@@ -1173,14 +1183,14 @@ TEST_P(DBTestUniversalCompaction, UniversalCompactionSecondPathRatio) {
 
 INSTANTIATE_TEST_CASE_P(UniversalCompactionNumLevels, DBTestUniversalCompaction,
                         ::testing::Combine(::testing::Values(1, 3, 5),
-                                           ::testing::Bool()));
+                            ::testing::Bool()));
 
 class DBTestUniversalManualCompactionOutputPathId
-    : public DBTestUniversalCompactionBase {
+  : public DBTestUniversalCompactionBase {
  public:
   DBTestUniversalManualCompactionOutputPathId() :
-      DBTestUniversalCompactionBase(
-          "/db_universal_compaction_manual_pid_test") {}
+    DBTestUniversalCompactionBase(
+      "/db_universal_compaction_manual_pid_test") {}
 };
 
 TEST_P(DBTestUniversalManualCompactionOutputPathId,
@@ -1238,13 +1248,13 @@ TEST_P(DBTestUniversalManualCompactionOutputPathId,
   compact_options.target_path_id = 2;
   compact_options.exclusive_manual_compaction = exclusive_manual_compaction_;
   ASSERT_TRUE(db_->CompactRange(compact_options, handles_[1], nullptr, nullptr)
-                  .IsInvalidArgument());
+              .IsInvalidArgument());
 }
 
 INSTANTIATE_TEST_CASE_P(DBTestUniversalManualCompactionOutputPathId,
                         DBTestUniversalManualCompactionOutputPathId,
                         ::testing::Combine(::testing::Values(1, 8),
-                                           ::testing::Bool()));
+                            ::testing::Bool()));
 
 }  // namespace vidardb
 

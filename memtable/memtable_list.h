@@ -148,13 +148,13 @@ class MemTableList {
   // A list of memtables.
   explicit MemTableList(int min_write_buffer_number_to_merge,
                         int max_write_buffer_number_to_maintain)
-      : imm_flush_needed(false),
-        min_write_buffer_number_to_merge_(min_write_buffer_number_to_merge),
-        current_(new MemTableListVersion(&current_memory_usage_,
-                                         max_write_buffer_number_to_maintain)),
-        num_flush_not_started_(0),
-        commit_in_progress_(false),
-        flush_requested_(false) {
+    : imm_flush_needed(false),
+      min_write_buffer_number_to_merge_(min_write_buffer_number_to_merge),
+      current_(new MemTableListVersion(&current_memory_usage_,
+                                       max_write_buffer_number_to_maintain)),
+      num_flush_not_started_(0),
+      commit_in_progress_(false),
+      flush_requested_(false) {
     current_->Ref();
     current_memory_usage_ = 0;
   }
@@ -163,7 +163,9 @@ class MemTableList {
   // is Unref()'d.
   ~MemTableList() {}
 
-  MemTableListVersion* current() { return current_; }
+  MemTableListVersion* current() {
+    return current_;
+  }
 
   // so that background threads can detect non-nullptr pointer to
   // determine whether there is anything more to start flushing.
@@ -192,10 +194,10 @@ class MemTableList {
 
   // Commit a successful flush in the manifest file
   Status InstallMemtableFlushResults(
-      ColumnFamilyData* cfd, const MutableCFOptions& mutable_cf_options,
-      const std::vector<MemTable*>& m, VersionSet* vset, InstrumentedMutex* mu,
-      uint64_t file_number, std::vector<MemTable*>* to_delete,
-      Directory* db_directory, LogBuffer* log_buffer);
+    ColumnFamilyData* cfd, const MutableCFOptions& mutable_cf_options,
+    const std::vector<MemTable*>& m, VersionSet* vset, InstrumentedMutex* mu,
+    uint64_t file_number, std::vector<MemTable*>* to_delete,
+    Directory* db_directory, LogBuffer* log_buffer);
 
   // New memtables are inserted at the front of the list.
   // Takes ownership of the referenced held on *m by the caller of Add().
@@ -213,13 +215,17 @@ class MemTableList {
   // non-empty (regardless of the min_write_buffer_number_to_merge
   // parameter). This flush request will persist until the next time
   // PickMemtablesToFlush() is called.
-  void FlushRequested() { flush_requested_ = true; }
+  void FlushRequested() {
+    flush_requested_ = true;
+  }
 
   // Copying allowed
   // MemTableList(const MemTableList&);
   // void operator=(const MemTableList&);
 
-  size_t* current_memory_usage() { return &current_memory_usage_; }
+  size_t* current_memory_usage() {
+    return &current_memory_usage_;
+  }
 
   uint64_t GetMinLogContainingPrepSection();
 

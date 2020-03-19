@@ -20,14 +20,14 @@ class InstrumentedCondVar;
 class InstrumentedMutex {
  public:
   explicit InstrumentedMutex(bool adaptive = false)
-      : mutex_(adaptive), stats_(nullptr), env_(nullptr),
-        stats_code_(0) {}
+    : mutex_(adaptive), stats_(nullptr), env_(nullptr),
+      stats_code_(0) {}
 
   InstrumentedMutex(
-      Statistics* stats, Env* env,
-      int stats_code, bool adaptive = false)
-      : mutex_(adaptive), stats_(stats), env_(env),
-        stats_code_(stats_code) {}
+    Statistics* stats, Env* env,
+    int stats_code, bool adaptive = false)
+    : mutex_(adaptive), stats_(stats), env_(env),
+      stats_code_(stats_code) {}
 
   void Lock();
 
@@ -69,10 +69,10 @@ class InstrumentedMutexLock {
 class InstrumentedCondVar {
  public:
   explicit InstrumentedCondVar(InstrumentedMutex* instrumented_mutex)
-      : cond_(&(instrumented_mutex->mutex_)),
-        stats_(instrumented_mutex->stats_),
-        env_(instrumented_mutex->env_),
-        stats_code_(instrumented_mutex->stats_code_) {}
+    : cond_(&(instrumented_mutex->mutex_)),
+      stats_(instrumented_mutex->stats_),
+      env_(instrumented_mutex->env_),
+      stats_code_(instrumented_mutex->stats_code_) {}
 
   void Wait();
 

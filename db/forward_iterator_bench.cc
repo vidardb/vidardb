@@ -15,7 +15,9 @@ int main() {
 }
 #elif defined(OS_MACOSX) || defined(OS_WIN)
 // Block forward_iterator_bench under MAC and Windows
-int main() { return 0; }
+int main() {
+  return 0;
+}
 #else
 #include <gflags/gflags.h>
 #include <semaphore.h>
@@ -62,10 +64,14 @@ struct Stats {
 struct Key {
   Key() {}
   Key(uint64_t shard_in, uint64_t seqno_in)
-      : shard_be(htobe64(shard_in)), seqno_be(htobe64(seqno_in)) {}
+    : shard_be(htobe64(shard_in)), seqno_be(htobe64(seqno_in)) {}
 
-  uint64_t shard() const { return be64toh(shard_be); }
-  uint64_t seqno() const { return be64toh(seqno_be); }
+  uint64_t shard() const {
+    return be64toh(shard_be);
+  }
+  uint64_t seqno() const {
+    return be64toh(seqno_be);
+  }
 
  private:
   uint64_t shard_be;
@@ -92,7 +98,7 @@ struct ShardState {
 struct Reader {
  public:
   explicit Reader(std::vector<ShardState>* shard_states, vidardb::DB* db)
-      : shard_states_(shard_states), db_(db) {
+    : shard_states_(shard_states), db_(db) {
     sem_init(&sem_, 0, 0);
     thread_ = std::thread(&Reader::run, this);
   }
@@ -125,7 +131,7 @@ struct Reader {
       if (FLAGS_iterate_upper_bound) {
         state.upper_bound = Key(shard, std::numeric_limits<uint64_t>::max());
         state.upper_bound_slice = vidardb::Slice(
-            (const char*)&state.upper_bound, sizeof(state.upper_bound));
+                                    (const char*)&state.upper_bound, sizeof(state.upper_bound));
         options.iterate_upper_bound = &state.upper_bound_slice;
       }
 
@@ -138,7 +144,9 @@ struct Reader {
     }
 
     const uint64_t upto = state.last_written.load();
-    for (vidardb::Iterator* it : {state.it_cacheonly.get(), state.it.get()}) {
+    for (vidardb::Iterator* it : {
+           state.it_cacheonly.get(), state.it.get()
+         }) {
       if (it == nullptr) {
         continue;
       }
@@ -204,15 +212,17 @@ struct Reader {
 
 struct Writer {
   explicit Writer(std::vector<ShardState>* shard_states, vidardb::DB* db)
-      : shard_states_(shard_states), db_(db) {}
+    : shard_states_(shard_states), db_(db) {}
 
-  void start() { thread_ = std::thread(&Writer::run, this); }
+  void start() {
+    thread_ = std::thread(&Writer::run, this);
+  }
 
   void run() {
     std::queue<std::chrono::steady_clock::time_point> workq;
     std::chrono::steady_clock::time_point deadline(
-        std::chrono::steady_clock::now() +
-        std::chrono::nanoseconds((uint64_t)(1000000000 * FLAGS_runtime)));
+      std::chrono::steady_clock::now() +
+      std::chrono::nanoseconds((uint64_t)(1000000000 * FLAGS_runtime)));
     std::vector<uint64_t> my_shards;
     for (int i = 1; i <= FLAGS_shards; ++i) {
       if ((*shard_states_)[i].writer == this) {
@@ -222,7 +232,7 @@ struct Writer {
 
     std::mt19937 rng{std::random_device()()};
     std::uniform_int_distribution<int> shard_dist(
-        0, static_cast<int>(my_shards.size()) - 1);
+      0, static_cast<int>(my_shards.size()) - 1);
     std::string value(FLAGS_value_size, '*');
 
     while (1) {
@@ -244,9 +254,9 @@ struct Writer {
         Key key(shard, seqno);
         // fprintf(stderr, "Writing (%ld, %ld)\n", shard, seqno);
         vidardb::Status status =
-            db_->Put(vidardb::WriteOptions(),
-                     vidardb::Slice((const char*)&key, sizeof(key)),
-                     vidardb::Slice(value));
+          db_->Put(vidardb::WriteOptions(),
+                   vidardb::Slice((const char*)&key, sizeof(key)),
+                   vidardb::Slice(value));
         assert(status.ok());
         state.last_written.store(seqno);
         state.reader->onWrite(shard);
@@ -257,7 +267,9 @@ struct Writer {
     // fprintf(stderr, "Writer done\n");
   }
 
-  ~Writer() { thread_.join(); }
+  ~Writer() {
+    thread_.join();
+  }
 
  private:
   char pad1[128] __attribute__((__unused__));
@@ -269,7 +281,7 @@ struct Writer {
 
 struct StatsThread {
   explicit StatsThread(vidardb::DB* db)
-      : db_(db), thread_(&StatsThread::run, this) {}
+    : db_(db), thread_(&StatsThread::run, this) {}
 
   void run() {
     //    using namespace std::chrono;
@@ -282,8 +294,8 @@ struct StatsThread {
       }
       auto now = std::chrono::steady_clock::now();
       double elapsed =
-          std::chrono::duration_cast<std::chrono::duration<double> >(
-              now - tlast).count();
+        std::chrono::duration_cast<std::chrono::duration<double> >(
+          now - tlast).count();
       uint64_t w = ::stats.written.load();
       uint64_t r = ::stats.read.load();
       fprintf(stderr,
@@ -291,7 +303,7 @@ struct StatsThread {
               "r/s %10.0f | cache misses %10ld\n",
               db_->GetEnv()->TimeToString(time(nullptr)).c_str(),
               std::chrono::duration_cast<std::chrono::seconds>(now - tstart)
-                  .count(),
+              .count(),
               w, (w - wlast) / elapsed, r, (r - rlast) / elapsed,
               ::stats.cache_misses.load());
       wlast = w;
@@ -336,7 +348,7 @@ int main(int argc, char** argv) {
   table_options.block_cache = vidardb::NewLRUCache(FLAGS_block_cache_size);
   table_options.block_size = FLAGS_block_size;
   options.table_factory.reset(
-      vidardb::NewBlockBasedTableFactory(table_options));
+    vidardb::NewBlockBasedTableFactory(table_options));
 
   status = vidardb::DestroyDB(path, options);
   assert(status.ok());

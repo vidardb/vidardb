@@ -64,12 +64,16 @@ class WriteBatch : public WriteBatchBase {
   using WriteBatchBase::Delete;
   // If the database contains a mapping for "key", erase it.  Else do nothing.
   void Delete(ColumnFamilyHandle* column_family, const Slice& key) override;
-  void Delete(const Slice& key) override { Delete(nullptr, key); }
+  void Delete(const Slice& key) override {
+    Delete(nullptr, key);
+  }
 
   // variant that takes SliceParts
   void Delete(ColumnFamilyHandle* column_family,
               const SliceParts& key) override;
-  void Delete(const SliceParts& key) override { Delete(nullptr, key); }
+  void Delete(const SliceParts& key) override {
+    Delete(nullptr, key);
+  }
 
   using WriteBatchBase::PutLogData;
   // Append a blob of arbitrary size to the records in this batch. The blob will
@@ -116,7 +120,7 @@ class WriteBatch : public WriteBatchBase {
         return Status::OK();
       }
       return Status::InvalidArgument(
-          "non-default column family and PutCF not implemented");
+               "non-default column family and PutCF not implemented");
     }
     virtual void Put(const Slice& /*key*/, const Slice& /*value*/) {}
 
@@ -126,7 +130,7 @@ class WriteBatch : public WriteBatchBase {
         return Status::OK();
       }
       return Status::InvalidArgument(
-          "non-default column family and DeleteCF not implemented");
+               "non-default column family and DeleteCF not implemented");
     }
     virtual void Delete(const Slice& /*key*/) {}
 
@@ -136,7 +140,7 @@ class WriteBatch : public WriteBatchBase {
         return Status::OK();
       }
       return Status::InvalidArgument(
-          "non-default column family and SingleDeleteCF not implemented");
+               "non-default column family and SingleDeleteCF not implemented");
     }
     virtual void SingleDelete(const Slice& /*key*/) {}
 
@@ -150,7 +154,7 @@ class WriteBatch : public WriteBatchBase {
         return Status::OK();
       }
       return Status::InvalidArgument(
-          "non-default column family and MergeCF not implemented");
+               "non-default column family and MergeCF not implemented");
     }
     virtual void Merge(const Slice& /*key*/, const Slice& /*value*/) {}
 
@@ -167,7 +171,7 @@ class WriteBatch : public WriteBatchBase {
 
     virtual Status MarkRollback(const Slice& xid) {
       return Status::InvalidArgument(
-          "MarkRollbackPrepare() handler not defined.");
+               "MarkRollbackPrepare() handler not defined.");
     }
 
     virtual Status MarkCommit(const Slice& xid) {
@@ -182,10 +186,14 @@ class WriteBatch : public WriteBatchBase {
   Status Iterate(Handler* handler) const;
 
   // Retrieve the serialized version of this batch.
-  const std::string& Data() const { return rep_; }
+  const std::string& Data() const {
+    return rep_;
+  }
 
   // Retrieve data size of the batch.
-  size_t GetDataSize() const { return rep_.size(); }
+  size_t GetDataSize() const {
+    return rep_.size();
+  }
 
   // Returns the number of updates in the batch
   int Count() const;
@@ -212,7 +220,9 @@ class WriteBatch : public WriteBatchBase {
   bool HasRollback() const;
 
   using WriteBatchBase::GetWriteBatch;
-  WriteBatch* GetWriteBatch() override { return this; }
+  WriteBatch* GetWriteBatch() override {
+    return this;
+  }
 
   // Constructor with a serialized string object
   explicit WriteBatch(const std::string& rep);

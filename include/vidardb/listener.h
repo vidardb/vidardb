@@ -22,7 +22,7 @@ class Status;
 struct CompactionJobStats;
 enum CompressionType : char;
 
-enum class TableFileCreationReason {
+  enum class TableFileCreationReason {
   kFlush,
   kCompaction,
   kRecovery,
@@ -45,7 +45,7 @@ struct TableFileCreationBriefInfo {
 struct TableFileCreationInfo : public TableFileCreationBriefInfo {
   TableFileCreationInfo() = default;
   explicit TableFileCreationInfo(TableProperties&& prop)
-      : table_properties(prop) {}
+    : table_properties(prop) {}
   // the size of the file.
   uint64_t file_size;
   // Detailed properties of the created file.
@@ -117,7 +117,7 @@ struct FlushJobInfo {
 struct CompactionJobInfo {
   CompactionJobInfo() = default;
   explicit CompactionJobInfo(const CompactionJobStats& _stats) :
-      stats(_stats) {}
+    stats(_stats) {}
 
   // the name of the column family where the compaction happened.
   std::string cf_name;
@@ -264,8 +264,8 @@ class EventListener {
   // outside this function call, they should make copies from these
   // returned value.
   virtual void OnTableFileCreationStarted(
-      const TableFileCreationBriefInfo& /*info*/) {}
- 
+    const TableFileCreationBriefInfo& /*info*/) {}
+
   // A call-back function for VidarDB which will be called before
   // a memtable is made immutable.
   //

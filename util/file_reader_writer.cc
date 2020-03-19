@@ -31,7 +31,9 @@ Status SequentialFileReader::Read(size_t n, Slice* result, char* scratch) {
   return s;
 }
 
-Status SequentialFileReader::Skip(uint64_t n) { return file_->Skip(n); }
+Status SequentialFileReader::Skip(uint64_t n) {
+  return file_->Skip(n);
+}
 
 Status RandomAccessFileReader::Read(uint64_t offset, size_t n, Slice* result,
                                     char* scratch) const {
@@ -68,7 +70,7 @@ Status WritableFileWriter::Append(const Slice& data) {
 
   // Flush only when I/O is buffered
   if (use_os_buffer_ &&
-    (buf_.Capacity() - buf_.CurrentSize()) < left) {
+      (buf_.Capacity() - buf_.CurrentSize()) < left) {
     if (buf_.CurrentSize() > 0) {
       s = Flush();
       if (!s.ok()) {
@@ -229,8 +231,8 @@ Status WritableFileWriter::Sync(bool use_fsync) {
 Status WritableFileWriter::SyncWithoutFlush(bool use_fsync) {
   if (!writable_file_->IsSyncThreadSafe()) {
     return Status::NotSupported(
-      "Can't WritableFileWriter::SyncWithoutFlush() because "
-      "WritableFile::IsSyncThreadSafe() is false");
+             "Can't WritableFileWriter::SyncWithoutFlush() because "
+             "WritableFile::IsSyncThreadSafe() is false");
   }
   TEST_SYNC_POINT("WritableFileWriter::SyncWithoutFlush:1");
   Status s = SyncInternal(use_fsync);
@@ -365,13 +367,13 @@ class ReadaheadRandomAccessFile : public RandomAccessFile {
  public:
   ReadaheadRandomAccessFile(std::unique_ptr<RandomAccessFile>&& file,
                             size_t readahead_size)
-      : RandomAccessFile(file->GetFileName()),  // Shichao
-        file_(std::move(file)),
-        readahead_size_(readahead_size),
-        forward_calls_(file_->ShouldForwardRawRequest()),
-        buffer_(),
-        buffer_offset_(0),
-        buffer_len_(0) {
+    : RandomAccessFile(file->GetFileName()),  // Shichao
+      file_(std::move(file)),
+      readahead_size_(readahead_size),
+      forward_calls_(file_->ShouldForwardRawRequest()),
+      buffer_(),
+      buffer_offset_(0),
+      buffer_len_(0) {
     if (!forward_calls_) {
       buffer_.reset(new char[readahead_size_]);
     } else if (readahead_size_ > 0) {
@@ -413,7 +415,7 @@ class ReadaheadRandomAccessFile : public RandomAccessFile {
     }
     Slice readahead_result;
     Status s = file_->Read(offset + copied, readahead_size_, &readahead_result,
-      buffer_.get());
+                           buffer_.get());
     if (!s.ok()) {
       return s;
     }
@@ -436,7 +438,9 @@ class ReadaheadRandomAccessFile : public RandomAccessFile {
     return file_->GetUniqueId(id, max_size);
   }
 
-  virtual void Hint(AccessPattern pattern) override { file_->Hint(pattern); }
+  virtual void Hint(AccessPattern pattern) override {
+    file_->Hint(pattern);
+  }
 
   virtual Status InvalidateCache(size_t offset, size_t length) override {
     return file_->InvalidateCache(offset, length);
@@ -461,7 +465,8 @@ class ReadaheadRandomAccessFile : public RandomAccessFile {
 }  // namespace
 
 std::unique_ptr<RandomAccessFile> NewReadaheadRandomAccessFile(
-    std::unique_ptr<RandomAccessFile>&& file, size_t readahead_size) {\
+  std::unique_ptr<RandomAccessFile>&& file, size_t readahead_size) {
+  \
   std::unique_ptr<RandomAccessFile> result(
     new ReadaheadRandomAccessFile(std::move(file), readahead_size));
   return result;

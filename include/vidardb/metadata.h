@@ -28,7 +28,7 @@ struct ColumnFamilyMetaData {
   ColumnFamilyMetaData() : size(0), name("") {}
   ColumnFamilyMetaData(const std::string& _name, uint64_t _size,
                        const std::vector<LevelMetaData>&& _levels) :
-      size(_size), name(_name), levels(_levels) {}
+    size(_size), name(_name), levels(_levels) {}
 
   // The size of this column family in bytes, which is equal to the sum of
   // the file size of its "levels".
@@ -45,8 +45,8 @@ struct ColumnFamilyMetaData {
 struct LevelMetaData {
   LevelMetaData(int _level, uint64_t _size,
                 const std::vector<SstFileMetaData>&& _files) :
-      level(_level), size(_size),
-      files(_files) {}
+    level(_level), size(_size),
+    files(_files) {}
 
   // The level which this meta data describes.
   const int level;

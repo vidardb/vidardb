@@ -27,11 +27,13 @@ using std::unique_ptr;
 class BlockBasedTableFactory : public TableFactory {
  public:
   explicit BlockBasedTableFactory(
-      const BlockBasedTableOptions& table_options = BlockBasedTableOptions());
+    const BlockBasedTableOptions& table_options = BlockBasedTableOptions());
 
   ~BlockBasedTableFactory() {}
 
-  const char* Name() const override { return "BlockBasedTable"; }
+  const char* Name() const override {
+    return "BlockBasedTable";
+  }
 
   Status NewTableReader(const TableReaderOptions& table_reader_options,
                         unique_ptr<RandomAccessFileReader>&& file,
@@ -47,8 +49,8 @@ class BlockBasedTableFactory : public TableFactory {
                         bool prefetch_enabled) const;
 
   TableBuilder* NewTableBuilder(
-      const TableBuilderOptions& table_builder_options,
-      uint32_t column_family_id, WritableFileWriter* file) const override;
+    const TableBuilderOptions& table_builder_options,
+    uint32_t column_family_id, WritableFileWriter* file) const override;
 
   // Sanitizes the specified DB Options.
   Status SanitizeOptions(const DBOptions& db_opts,
@@ -58,7 +60,9 @@ class BlockBasedTableFactory : public TableFactory {
 
   const BlockBasedTableOptions& table_options() const;
 
-  void* GetOptions() override { return &table_options_; }
+  void* GetOptions() override {
+    return &table_options_;
+  }
 
  private:
   BlockBasedTableOptions table_options_;

@@ -48,13 +48,19 @@ class Slice {
   Slice(const struct SliceParts& parts, std::string* buf);
 
   // Return a pointer to the beginning of the referenced data
-  const char* data() const { return data_; }
+  const char* data() const {
+    return data_;
+  }
 
   // Return the length (in bytes) of the referenced data
-  size_t size() const { return size_; }
+  size_t size() const {
+    return size_;
+  }
 
   // Return true iff the length of the referenced data is zero
-  bool empty() const { return size_ == 0; }
+  bool empty() const {
+    return size_ == 0;
+  }
 
   // Return the ith byte in the referenced data.
   // REQUIRES: n < size()
@@ -64,7 +70,10 @@ class Slice {
   }
 
   // Change this slice to refer to an empty array
-  void clear() { data_ = ""; size_ = 0; }
+  void clear() {
+    data_ = "";
+    size_ = 0;
+  }
 
   // Drop the first "n" bytes from this slice.
   void remove_prefix(size_t n) {
@@ -109,7 +118,7 @@ class Slice {
   // Compare two slices and returns the first byte where they differ
   size_t difference_offset(const Slice& b) const;
 
- // private: make these public for vidardbjni access
+// private: make these public for vidardbjni access
   const char* data_;
   size_t size_;
 
@@ -120,7 +129,7 @@ class Slice {
 // to an array of Slices.  The number of elements in the array is 'num_parts'.
 struct SliceParts {
   SliceParts(const Slice* _parts, int _num_parts) :
-      parts(_parts), num_parts(_num_parts) { }
+    parts(_parts), num_parts(_num_parts) { }
   SliceParts() : parts(nullptr), num_parts(0) {}
 
   const Slice* parts;

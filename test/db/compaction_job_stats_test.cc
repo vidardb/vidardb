@@ -74,7 +74,7 @@ std::string Key(uint64_t key, int length) {
 }
 
 class CompactionJobStatsTest : public testing::Test,
-                               public testing::WithParamInterface<bool> {
+  public testing::WithParamInterface<bool> {
  public:
   std::string dbname_;
   std::string alternative_wal_dir_;
@@ -153,8 +153,8 @@ class CompactionJobStatsTest : public testing::Test,
   }
 
   Status TryReopenWithColumnFamilies(
-      const std::vector<std::string>& cfs,
-      const std::vector<Options>& options) {
+    const std::vector<std::string>& cfs,
+    const std::vector<Options>& options) {
     Close();
     EXPECT_EQ(cfs.size(), options.size());
     std::vector<ColumnFamilyDescriptor> column_families;
@@ -265,11 +265,11 @@ class CompactionJobStatsTest : public testing::Test,
     if (cf == 0) {
       // default cfd
       EXPECT_TRUE(db_->GetProperty(
-          "vidardb.num-files-at-level" + NumberToString(level), &property));
+                    "vidardb.num-files-at-level" + NumberToString(level), &property));
     } else {
       EXPECT_TRUE(db_->GetProperty(
-          handles_[cf], "vidardb.num-files-at-level" + NumberToString(level),
-          &property));
+                    handles_[cf], "vidardb.num-files-at-level" + NumberToString(level),
+                    &property));
     }
     return atoi(property.c_str());
   }
@@ -277,7 +277,7 @@ class CompactionJobStatsTest : public testing::Test,
   // Return spread of files per level
   std::string FilesPerLevel(int cf = 0) {
     int num_levels =
-        (cf == 0) ? db_->NumberLevels() : db_->NumberLevels(handles_[1]);
+      (cf == 0) ? db_->NumberLevels() : db_->NumberLevels(handles_[1]);
     std::string result;
     size_t last_non_zero_offset = 0;
     for (int level = 0; level < num_levels; level++) {
@@ -313,7 +313,7 @@ class CompactionJobStatsTest : public testing::Test,
 
   void Compact(int cf, const Slice& start, const Slice& limit) {
     ASSERT_OK(
-        db_->CompactRange(CompactRangeOptions(), handles_[cf], &start, &limit));
+      db_->CompactRange(CompactRangeOptions(), handles_[cf], &start, &limit));
   }
 
   void Compact(const Slice& start, const Slice& limit) {
@@ -337,8 +337,8 @@ class CompactionJobStatsTest : public testing::Test,
   }
 
   static void SetDeletionCompactionStats(
-      CompactionJobStats *stats, uint64_t input_deletions,
-      uint64_t expired_deletions, uint64_t records_replaced) {
+    CompactionJobStats *stats, uint64_t input_deletions,
+    uint64_t expired_deletions, uint64_t records_replaced) {
     stats->num_input_deletion_records = input_deletions;
     stats->num_expired_deletion_records = expired_deletions;
     stats->num_records_replaced = records_replaced;
@@ -350,7 +350,7 @@ class CompactionJobStatsTest : public testing::Test,
     double ratio, int cf = 0) {
     for (auto key = smallest; key < largest; key += interval) {
       ASSERT_OK(Put(cf, Slice(Key(key, key_size)),
-                        Slice(RandomString(rnd, value_size, ratio))));
+                    Slice(RandomString(rnd, value_size, ratio))));
     }
     ASSERT_OK(Flush(cf));
   }
@@ -359,8 +359,8 @@ class CompactionJobStatsTest : public testing::Test,
   // rounds of keys are inserted into the database, as per the behavior
   // of the DeletionStatsTest.
   void SelectivelyDeleteKeys(uint64_t smallest, uint64_t largest,
-    uint64_t interval, int deletion_interval, int key_size,
-    uint64_t cutoff_key_num, CompactionJobStats* stats, int cf = 0) {
+                             uint64_t interval, int deletion_interval, int key_size,
+                             uint64_t cutoff_key_num, CompactionJobStats* stats, int cf = 0) {
 
     // interval needs to be >= 2 so that deletion entries can be inserted
     // that are intended to not result in an actual key deletion by using
@@ -398,7 +398,7 @@ class CompactionJobStatsTest : public testing::Test,
 
     ASSERT_OK(Flush(cf));
     SetDeletionCompactionStats(stats, deletions_made, num_expired,
-      num_deleted);
+                               num_deleted);
   }
 };
 
@@ -407,11 +407,15 @@ class CompactionJobStatsTest : public testing::Test,
 class CompactionJobStatsChecker : public EventListener {
  public:
   CompactionJobStatsChecker()
-      : compression_enabled_(false), verify_next_comp_io_stats_(false) {}
+    : compression_enabled_(false), verify_next_comp_io_stats_(false) {}
 
-  size_t NumberOfUnverifiedStats() { return expected_stats_.size(); }
+  size_t NumberOfUnverifiedStats() {
+    return expected_stats_.size();
+  }
 
-  void set_verify_next_comp_io_stats(bool v) { verify_next_comp_io_stats_ = v; }
+  void set_verify_next_comp_io_stats(bool v) {
+    verify_next_comp_io_stats_ = v;
+  }
 
   // Once a compaction completed, this function will verify the returned
   // CompactionJobInfo with the oldest CompactionJobInfo added earlier
@@ -438,24 +442,24 @@ class CompactionJobStatsChecker : public EventListener {
   // use ASSERT_GE and ASSERT_LE with a reasonable bias ---
   // 10% in uncompressed case and 20% when compression is used.
   virtual void Verify(const CompactionJobStats& current_stats,
-              const CompactionJobStats& stats) {
+                      const CompactionJobStats& stats) {
     // time
     ASSERT_GT(current_stats.elapsed_micros, 0U);
 
     ASSERT_EQ(current_stats.num_input_records,
-        stats.num_input_records);
+              stats.num_input_records);
     ASSERT_EQ(current_stats.num_input_files,
-        stats.num_input_files);
+              stats.num_input_files);
     ASSERT_EQ(current_stats.num_input_files_at_output_level,
-        stats.num_input_files_at_output_level);
+              stats.num_input_files_at_output_level);
 
     ASSERT_EQ(current_stats.num_output_records,
-        stats.num_output_records);
+              stats.num_output_records);
     ASSERT_EQ(current_stats.num_output_files,
-        stats.num_output_files);
+              stats.num_output_files);
 
     ASSERT_EQ(current_stats.is_manual_compaction,
-        stats.is_manual_compaction);
+              stats.is_manual_compaction);
 
     // file size
     double kFileSizeBias = compression_enabled_ ? 0.20 : 0.10;
@@ -473,17 +477,17 @@ class CompactionJobStatsChecker : public EventListener {
               stats.total_input_raw_value_bytes);
 
     ASSERT_EQ(current_stats.num_records_replaced,
-        stats.num_records_replaced);
+              stats.num_records_replaced);
 
     ASSERT_EQ(current_stats.num_corrupt_keys,
-        stats.num_corrupt_keys);
+              stats.num_corrupt_keys);
 
     ASSERT_EQ(
-        std::string(current_stats.smallest_output_key_prefix),
-        std::string(stats.smallest_output_key_prefix));
+      std::string(current_stats.smallest_output_key_prefix),
+      std::string(stats.smallest_output_key_prefix));
     ASSERT_EQ(
-        std::string(current_stats.largest_output_key_prefix),
-        std::string(stats.largest_output_key_prefix));
+      std::string(current_stats.largest_output_key_prefix),
+      std::string(stats.largest_output_key_prefix));
   }
 
   // Add an expected compaction stats, which will be used to
@@ -498,7 +502,9 @@ class CompactionJobStatsChecker : public EventListener {
     compression_enabled_ = flag;
   }
 
-  bool verify_next_comp_io_stats() const { return verify_next_comp_io_stats_; }
+  bool verify_next_comp_io_stats() const {
+    return verify_next_comp_io_stats_;
+  }
 
  private:
   std::mutex mutex_;
@@ -518,24 +524,24 @@ class CompactionJobDeletionStatsChecker : public CompactionJobStatsChecker {
       current_stats.num_input_deletion_records,
       stats.num_input_deletion_records);
     ASSERT_EQ(
-        current_stats.num_expired_deletion_records,
-        stats.num_expired_deletion_records);
+      current_stats.num_expired_deletion_records,
+      stats.num_expired_deletion_records);
     ASSERT_EQ(
-        current_stats.num_records_replaced,
-        stats.num_records_replaced);
+      current_stats.num_records_replaced,
+      stats.num_records_replaced);
 
     ASSERT_EQ(current_stats.num_corrupt_keys,
-        stats.num_corrupt_keys);
+              stats.num_corrupt_keys);
   }
 };
 
 namespace {
 
 uint64_t EstimatedFileSize(
-    uint64_t num_records, size_t key_size, size_t value_size,
-    double compression_ratio = 1.0,
-    size_t block_size = 4096,
-    int bloom_bits_per_key = 10) {
+  uint64_t num_records, size_t key_size, size_t value_size,
+  double compression_ratio = 1.0,
+  size_t block_size = 4096,
+  int bloom_bits_per_key = 10) {
   const size_t kPerKeyOverhead = 8;
   const size_t kFooterSize = 512;
 
@@ -552,7 +558,7 @@ uint64_t EstimatedFileSize(
 namespace {
 
 void CopyPrefix(
-    const Slice& src, size_t prefix_length, std::string* dst) {
+  const Slice& src, size_t prefix_length, std::string* dst) {
   assert(prefix_length > 0);
   size_t length = src.size() > prefix_length ? prefix_length : src.size();
   dst->assign(src.data(), length);
@@ -561,12 +567,12 @@ void CopyPrefix(
 }  // namespace
 
 CompactionJobStats NewManualCompactionJobStats(
-    const std::string& smallest_key, const std::string& largest_key,
-    size_t num_input_files, size_t num_input_files_at_output_level,
-    uint64_t num_input_records, size_t key_size, size_t value_size,
-    size_t num_output_files, uint64_t num_output_records,
-    double compression_ratio, uint64_t num_records_replaced,
-    bool is_manual = true) {
+  const std::string& smallest_key, const std::string& largest_key,
+  size_t num_input_files, size_t num_input_files_at_output_level,
+  uint64_t num_input_records, size_t key_size, size_t value_size,
+  size_t num_output_files, uint64_t num_output_records,
+  double compression_ratio, uint64_t num_records_replaced,
+  bool is_manual = true) {
   CompactionJobStats stats;
   stats.Reset();
 
@@ -578,17 +584,17 @@ CompactionJobStats NewManualCompactionJobStats(
   stats.num_output_files = num_output_files;
 
   stats.total_input_bytes =
-      EstimatedFileSize(
-          num_input_records / num_input_files,
-          key_size, value_size, compression_ratio) * num_input_files;
+    EstimatedFileSize(
+      num_input_records / num_input_files,
+      key_size, value_size, compression_ratio) * num_input_files;
   stats.total_output_bytes =
-      EstimatedFileSize(
-          num_output_records / num_output_files,
-          key_size, value_size, compression_ratio) * num_output_files;
+    EstimatedFileSize(
+      num_output_records / num_output_files,
+      key_size, value_size, compression_ratio) * num_output_files;
   stats.total_input_raw_key_bytes =
-      num_input_records * (key_size + 8);
+    num_input_records * (key_size + 8);
   stats.total_input_raw_value_bytes =
-      num_input_records * value_size;
+    num_input_records * value_size;
 
   stats.is_manual_compaction = is_manual;
 
@@ -660,12 +666,12 @@ TEST_P(CompactionJobStatsTest, CompactionJobStatsTest) {
     // 1st Phase: generate "num_L0_files" L0 files.
     int num_L0_files = 0;
     for (uint64_t start_key = key_base;
-                  start_key <= key_base * kTestScale;
-                  start_key += key_base) {
+         start_key <= key_base * kTestScale;
+         start_key += key_base) {
       MakeTableWithKeyValues(
-          &rnd, start_key, start_key + key_base - 1,
-          kKeySize, kValueSize, key_interval,
-          compression_ratio, 1);
+        &rnd, start_key, start_key + key_base - 1,
+        kKeySize, kValueSize, key_interval,
+        compression_ratio, 1);
       snprintf(buf, kBufSize, "%d", ++num_L0_files);
       ASSERT_EQ(std::string(buf), FilesPerLevel(1));
     }
@@ -682,12 +688,12 @@ TEST_P(CompactionJobStatsTest, CompactionJobStatsTest) {
       smallest_key = Key(start_key, 10);
       largest_key = Key(start_key + key_base - key_interval, 10);
       stats_checker->AddExpectedStats(
-          NewManualCompactionJobStats(
-              smallest_key, largest_key,
-              1, 0, num_keys_per_L0_file,
-              kKeySize, kValueSize,
-              1, num_keys_per_L0_file,
-              compression_ratio, 0));
+        NewManualCompactionJobStats(
+          smallest_key, largest_key,
+          1, 0, num_keys_per_L0_file,
+          kKeySize, kValueSize,
+          1, num_keys_per_L0_file,
+          compression_ratio, 0));
       ASSERT_EQ(stats_checker->NumberOfUnverifiedStats(), 1U);
       TEST_Compact(0, 1, smallest_key, largest_key);
       snprintf(buf, kBufSize, "%d,%d", num_L0_files - count, count);
@@ -699,13 +705,13 @@ TEST_P(CompactionJobStatsTest, CompactionJobStatsTest) {
     smallest_key = Key(key_base * (L0_compaction_count + 1), 10);
     largest_key = Key(key_base * (kTestScale + 1) - key_interval, 10);
     stats_checker->AddExpectedStats(
-        NewManualCompactionJobStats(
-            smallest_key, largest_key,
-            num_remaining_L0,
-            0, num_keys_per_L0_file * num_remaining_L0,
-            kKeySize, kValueSize,
-            1, num_keys_per_L0_file * num_remaining_L0,
-            compression_ratio, 0));
+      NewManualCompactionJobStats(
+        smallest_key, largest_key,
+        num_remaining_L0,
+        0, num_keys_per_L0_file * num_remaining_L0,
+        kKeySize, kValueSize,
+        1, num_keys_per_L0_file * num_remaining_L0,
+        compression_ratio, 0));
     ASSERT_EQ(stats_checker->NumberOfUnverifiedStats(), 1U);
     TEST_Compact(0, 1, smallest_key, largest_key);
 
@@ -717,13 +723,13 @@ TEST_P(CompactionJobStatsTest, CompactionJobStatsTest) {
     // 3rd Phase: generate sparse L0 files (wider key-range, same num of keys)
     int sparseness = 2;
     for (uint64_t start_key = key_base;
-                  start_key <= key_base * kTestScale;
-                  start_key += key_base * sparseness) {
+         start_key <= key_base * kTestScale;
+         start_key += key_base * sparseness) {
       MakeTableWithKeyValues(
-          &rnd, start_key, start_key + key_base * sparseness - 1,
-          kKeySize, kValueSize,
-          key_base * sparseness / num_keys_per_L0_file,
-          compression_ratio, 1);
+        &rnd, start_key, start_key + key_base * sparseness - 1,
+        kKeySize, kValueSize,
+        key_base * sparseness / num_keys_per_L0_file,
+        compression_ratio, 1);
       snprintf(buf, kBufSize, "%d,%d", ++num_L0_files, num_L1_files);
       ASSERT_EQ(std::string(buf), FilesPerLevel(1));
     }
@@ -739,16 +745,16 @@ TEST_P(CompactionJobStatsTest, CompactionJobStatsTest) {
          start_key += key_base * sparseness) {
       smallest_key = Key(start_key, 10);
       largest_key =
-          Key(start_key + key_base * sparseness - key_interval, 10);
+        Key(start_key + key_base * sparseness - key_interval, 10);
       stats_checker->AddExpectedStats(
-          NewManualCompactionJobStats(
-              smallest_key, largest_key,
-              3, 2, num_keys_per_L0_file * 3,
-              kKeySize, kValueSize,
-              num_output_files,
-              num_keys_per_L0_file * 2,  // 1/3 of the data will be updated.
-              compression_ratio,
-              num_keys_per_L0_file));
+        NewManualCompactionJobStats(
+          smallest_key, largest_key,
+          3, 2, num_keys_per_L0_file * 3,
+          kKeySize, kValueSize,
+          num_output_files,
+          num_keys_per_L0_file * 2,  // 1/3 of the data will be updated.
+          compression_ratio,
+          num_keys_per_L0_file));
       ASSERT_EQ(stats_checker->NumberOfUnverifiedStats(), 1U);
       Compact(1, smallest_key, largest_key);
       if (options.max_subcompactions == 1) {
@@ -764,13 +770,13 @@ TEST_P(CompactionJobStatsTest, CompactionJobStatsTest) {
     smallest_key = Key(key_base, 10);
     largest_key = Key(key_base * (kTestScale + 1) - key_interval, 10);
     stats_checker->AddExpectedStats(
-        NewManualCompactionJobStats(
-            Key(key_base * (kTestScale + 1 - sparseness), 10), largest_key,
-            2, 1, num_keys_per_L0_file * 3,
-            kKeySize, kValueSize,
-            1, num_keys_per_L0_file * 2,
-            compression_ratio,
-            num_keys_per_L0_file));
+      NewManualCompactionJobStats(
+        Key(key_base * (kTestScale + 1 - sparseness), 10), largest_key,
+        2, 1, num_keys_per_L0_file * 3,
+        kKeySize, kValueSize,
+        1, num_keys_per_L0_file * 2,
+        compression_ratio,
+        num_keys_per_L0_file));
     ASSERT_EQ(stats_checker->NumberOfUnverifiedStats(), 1U);
     Compact(1, smallest_key, largest_key);
 
@@ -797,39 +803,39 @@ TEST_P(CompactionJobStatsTest, CompactionJobStatsTest) {
     stats_checker->set_verify_next_comp_io_stats(true);
     std::atomic<bool> first_prepare_write(true);
     vidardb::SyncPoint::GetInstance()->SetCallBack(
-        "WritableFileWriter::Append:BeforePrepareWrite", [&](void* arg) {
-          if (first_prepare_write.load()) {
-            options.env->SleepForMicroseconds(3);
-            first_prepare_write.store(false);
-          }
-        });
+    "WritableFileWriter::Append:BeforePrepareWrite", [&](void* arg) {
+      if (first_prepare_write.load()) {
+        options.env->SleepForMicroseconds(3);
+        first_prepare_write.store(false);
+      }
+    });
 
     std::atomic<bool> first_flush(true);
     vidardb::SyncPoint::GetInstance()->SetCallBack(
-        "WritableFileWriter::Flush:BeforeAppend", [&](void* arg) {
-          if (first_flush.load()) {
-            options.env->SleepForMicroseconds(3);
-            first_flush.store(false);
-          }
-        });
+    "WritableFileWriter::Flush:BeforeAppend", [&](void* arg) {
+      if (first_flush.load()) {
+        options.env->SleepForMicroseconds(3);
+        first_flush.store(false);
+      }
+    });
 
     std::atomic<bool> first_sync(true);
     vidardb::SyncPoint::GetInstance()->SetCallBack(
-        "WritableFileWriter::SyncInternal:0", [&](void* arg) {
-          if (first_sync.load()) {
-            options.env->SleepForMicroseconds(3);
-            first_sync.store(false);
-          }
-        });
+    "WritableFileWriter::SyncInternal:0", [&](void* arg) {
+      if (first_sync.load()) {
+        options.env->SleepForMicroseconds(3);
+        first_sync.store(false);
+      }
+    });
 
     std::atomic<bool> first_range_sync(true);
     vidardb::SyncPoint::GetInstance()->SetCallBack(
-        "WritableFileWriter::RangeSync:0", [&](void* arg) {
-          if (first_range_sync.load()) {
-            options.env->SleepForMicroseconds(3);
-            first_range_sync.store(false);
-          }
-        });
+    "WritableFileWriter::RangeSync:0", [&](void* arg) {
+      if (first_range_sync.load()) {
+        options.env->SleepForMicroseconds(3);
+        first_range_sync.store(false);
+      }
+    });
     vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
     Compact(1, smallest_key, largest_key);
@@ -880,12 +886,12 @@ TEST_P(CompactionJobStatsTest, DeletionStatsTest) {
   // using CompactRangeOptions and CompactRange(). These files will
   // have a strict subset of the keys from the full key-range
   for (uint64_t start_key = key_base;
-                start_key <= key_base * kTestScale / 2;
-                start_key += key_base) {
+       start_key <= key_base * kTestScale / 2;
+       start_key += key_base) {
     MakeTableWithKeyValues(
-        &rnd, start_key, start_key + key_base - 1,
-        kKeySize, kValueSize, key_interval,
-        compression_ratio, 1);
+      &rnd, start_key, start_key + key_base - 1,
+      kKeySize, kValueSize, key_interval,
+      compression_ratio, 1);
   }
 
   CompactRangeOptions cr_options;
@@ -896,12 +902,12 @@ TEST_P(CompactionJobStatsTest, DeletionStatsTest) {
 
   // Stage 2: Generate files including keys from the entire key range
   for (uint64_t start_key = key_base;
-                start_key <= key_base * kTestScale;
-                start_key += key_base) {
+       start_key <= key_base * kTestScale;
+       start_key += key_base) {
     MakeTableWithKeyValues(
-        &rnd, start_key, start_key + key_base - 1,
-        kKeySize, kValueSize, key_interval,
-        compression_ratio, 1);
+      &rnd, start_key, start_key + key_base - 1,
+      kKeySize, kValueSize, key_interval,
+      compression_ratio, 1);
   }
 
   // Send these L0 files to L1
@@ -918,8 +924,8 @@ TEST_P(CompactionJobStatsTest, DeletionStatsTest) {
   int deletion_interval = 3;
   CompactionJobStats first_compaction_stats;
   SelectivelyDeleteKeys(key_base, largest_key_num,
-      key_interval, deletion_interval, kKeySize, cutoff_key_num,
-      &first_compaction_stats, 1);
+                        key_interval, deletion_interval, kKeySize, cutoff_key_num,
+                        &first_compaction_stats, 1);
 
   stats_checker->AddExpectedStats(first_compaction_stats);
 
@@ -983,30 +989,30 @@ TEST_P(CompactionJobStatsTest, UniversalCompactionTest) {
     // happens when the number of flushes equals to the number of compaction
     // input runs.
     uint64_t smallest_key =
-        (num_flushes == num_input_units) ?
-            key_base : key_base * (num_flushes - 1);
+      (num_flushes == num_input_units) ?
+      key_base : key_base * (num_flushes - 1);
 
     stats_checker->AddExpectedStats(
-        NewManualCompactionJobStats(
-            Key(smallest_key, 10),
-            Key(smallest_key + key_base * num_input_units - key_interval, 10),
-            num_input_units,
-            num_input_units > 2 ? num_input_units / 2 : 0,
-            num_keys_per_table * num_input_units,
-            kKeySize, kValueSize,
-            num_input_units,
-            num_keys_per_table * num_input_units,
-            1.0, 0, false));
+      NewManualCompactionJobStats(
+        Key(smallest_key, 10),
+        Key(smallest_key + key_base * num_input_units - key_interval, 10),
+        num_input_units,
+        num_input_units > 2 ? num_input_units / 2 : 0,
+        num_keys_per_table * num_input_units,
+        kKeySize, kValueSize,
+        num_input_units,
+        num_keys_per_table * num_input_units,
+        1.0, 0, false));
   }
   ASSERT_EQ(stats_checker->NumberOfUnverifiedStats(), 4U);
 
   for (uint64_t start_key = key_base;
-                start_key <= key_base * kTestScale;
-                start_key += key_base) {
+       start_key <= key_base * kTestScale;
+       start_key += key_base) {
     MakeTableWithKeyValues(
-        &rnd, start_key, start_key + key_base - 1,
-        kKeySize, kValueSize, key_interval,
-        compression_ratio, 1);
+      &rnd, start_key, start_key + key_base - 1,
+      kKeySize, kValueSize, key_interval,
+      compression_ratio, 1);
     reinterpret_cast<DBImpl*>(db_)->TEST_WaitForCompact();
   }
   ASSERT_EQ(stats_checker->NumberOfUnverifiedStats(), 0U);
@@ -1034,5 +1040,7 @@ int main(int argc, char** argv) {
 
 #else
 
-int main(int argc, char** argv) { return 0; }
+int main(int argc, char** argv) {
+  return 0;
+}
 #endif  // !defined(IOS_CROSS_COMPILE)

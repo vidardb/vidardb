@@ -46,8 +46,12 @@ class ThreadPool {
     return queue_len_.load(std::memory_order_relaxed);
   }
 
-  void SetHostEnv(Env* env) { env_ = env; }
-  Env* GetHostEnv() const { return env_; }
+  void SetHostEnv(Env* env) {
+    env_ = env;
+  }
+  Env* GetHostEnv() const {
+    return env_;
+  }
 
   // Return true if there is at least one thread needs to terminate.
   bool HasExcessiveThread() const {
@@ -68,10 +72,14 @@ class ThreadPool {
 
   // Return the thread priority.
   // This would allow its member-thread to know its priority.
-  Env::Priority GetThreadPriority() const { return priority_; }
+  Env::Priority GetThreadPriority() const {
+    return priority_;
+  }
 
   // Set the thread priority.
-  void SetThreadPriority(Env::Priority priority) { priority_ = priority; }
+  void SetThreadPriority(Env::Priority priority) {
+    priority_ = priority;
+  }
 
   static void PthreadCall(const char* label, int result);
 

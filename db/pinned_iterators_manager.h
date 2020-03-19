@@ -18,7 +18,9 @@ namespace vidardb {
 class PinnedIteratorsManager {
  public:
   PinnedIteratorsManager() : pinning_enabled(false), pinned_iters_(nullptr) {}
-  ~PinnedIteratorsManager() { assert(!pinning_enabled); }
+  ~PinnedIteratorsManager() {
+    assert(!pinning_enabled);
+  }
 
   // Enable Iterators pinning
   void StartPinning() {
@@ -31,7 +33,9 @@ class PinnedIteratorsManager {
   }
 
   // Is pinning enabled ?
-  bool PinningEnabled() { return pinning_enabled; }
+  bool PinningEnabled() {
+    return pinning_enabled;
+  }
 
   // Take ownership of iter if pinning is enabled and delete it when
   // ReleasePinnedIterators() is called

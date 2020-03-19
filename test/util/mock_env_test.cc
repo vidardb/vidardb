@@ -18,7 +18,7 @@ class MockEnvTest : public testing::Test {
   const EnvOptions soptions_;
 
   MockEnvTest()
-      : env_(new MockEnv(Env::Default())) {
+    : env_(new MockEnv(Env::Default())) {
   }
   ~MockEnvTest() {
     delete env_;
@@ -54,13 +54,13 @@ TEST_F(MockEnvTest, Corrupt) {
   ASSERT_TRUE(writable_file->GetFileSize() == kGood.size() + kCorrupted.size());
   result.clear();
   ASSERT_OK(rand_file->Read(kGood.size(), kCorrupted.size(),
-            &result, &(scratch[0])));
+                            &result, &(scratch[0])));
   ASSERT_EQ(result.compare(kCorrupted), 0);
   // Corrupted
   ASSERT_OK(dynamic_cast<MockEnv*>(env_)->CorruptBuffer(kFileName));
   result.clear();
   ASSERT_OK(rand_file->Read(kGood.size(), kCorrupted.size(),
-            &result, &(scratch[0])));
+                            &result, &(scratch[0])));
   ASSERT_NE(result.compare(kCorrupted), 0);
 }
 

@@ -29,7 +29,9 @@ class AutoRollLoggerTest : public testing::Test {
     // become confused
     std::string testDir(kTestDir);
     std::replace_if(testDir.begin(), testDir.end(),
-                    [](char ch) { return ch == '/'; }, '\\');
+    [](char ch) {
+      return ch == '/';
+    }, '\\');
     std::string deleteCmd = "if exist " + testDir + " rd /s /q " + testDir;
 #else
     std::string deleteCmd = "rm -rf " + kTestDir;
@@ -50,10 +52,10 @@ class AutoRollLoggerTest : public testing::Test {
 };
 
 const std::string AutoRollLoggerTest::kSampleMessage(
-    "this is the message to be written to the log file!!");
+  "this is the message to be written to the log file!!");
 const std::string AutoRollLoggerTest::kTestDir(test::TmpDir() + "/db_log_test");
 const std::string AutoRollLoggerTest::kLogFile(test::TmpDir() +
-                                               "/db_log_test/LOG");
+    "/db_log_test/LOG");
 Env* AutoRollLoggerTest::env = Env::Default();
 
 // In this test we only want to Log some simple log message with
@@ -82,8 +84,8 @@ void GetFileCreateTime(const std::string& fname, uint64_t* file_ctime) {
 }  // namespace
 
 void AutoRollLoggerTest::RollLogFileBySizeTest(AutoRollLogger* logger,
-                                               size_t log_max_size,
-                                               const std::string& log_message) {
+    size_t log_max_size,
+    const std::string& log_message) {
   logger->SetInfoLogLevel(InfoLogLevel::INFO_LEVEL);
   // measure the size of each message, which is supposed
   // to be equal or greater than log_message.size()
@@ -108,7 +110,7 @@ void AutoRollLoggerTest::RollLogFileBySizeTest(AutoRollLogger* logger,
 }
 
 uint64_t AutoRollLoggerTest::RollLogFileByTimeTest(
-    AutoRollLogger* logger, size_t time, const std::string& log_message) {
+  AutoRollLogger* logger, size_t time, const std::string& log_message) {
   uint64_t expected_create_time;
   uint64_t actual_create_time;
   uint64_t total_log_size;
@@ -119,16 +121,16 @@ uint64_t AutoRollLoggerTest::RollLogFileByTimeTest(
   // -- Write to the log for several times, which is supposed
   // to be finished before time.
   for (int i = 0; i < 10; ++i) {
-     LogMessage(logger, log_message.c_str());
-     EXPECT_OK(logger->GetStatus());
-     // Make sure we always write to the same log file (by
-     // checking the create time);
-     GetFileCreateTime(kLogFile, &actual_create_time);
+    LogMessage(logger, log_message.c_str());
+    EXPECT_OK(logger->GetStatus());
+    // Make sure we always write to the same log file (by
+    // checking the create time);
+    GetFileCreateTime(kLogFile, &actual_create_time);
 
-     // Also make sure the log size is increasing.
-     EXPECT_EQ(expected_create_time, actual_create_time);
-     EXPECT_GT(logger->GetLogFileSize(), total_log_size);
-     total_log_size = logger->GetLogFileSize();
+    // Also make sure the log size is increasing.
+    EXPECT_EQ(expected_create_time, actual_create_time);
+    EXPECT_GT(logger->GetLogFileSize(), total_log_size);
+    total_log_size = logger->GetLogFileSize();
   }
 
   // -- Make the log file expire
@@ -149,26 +151,26 @@ uint64_t AutoRollLoggerTest::RollLogFileByTimeTest(
 }
 
 TEST_F(AutoRollLoggerTest, RollLogFileBySize) {
-    InitTestDb();
-    size_t log_max_size = 1024 * 5;
+  InitTestDb();
+  size_t log_max_size = 1024 * 5;
 
-    AutoRollLogger logger(Env::Default(), kTestDir, "", log_max_size, 0);
+  AutoRollLogger logger(Env::Default(), kTestDir, "", log_max_size, 0);
 
-    RollLogFileBySizeTest(&logger, log_max_size,
-                          kSampleMessage + ":RollLogFileBySize");
+  RollLogFileBySizeTest(&logger, log_max_size,
+                        kSampleMessage + ":RollLogFileBySize");
 }
 
 TEST_F(AutoRollLoggerTest, RollLogFileByTime) {
-    size_t time = 2;
-    size_t log_size = 1024 * 5;
+  size_t time = 2;
+  size_t log_size = 1024 * 5;
 
-    InitTestDb();
-    // -- Test the existence of file during the server restart.
-    ASSERT_EQ(Status::NotFound(), env->FileExists(kLogFile));
-    AutoRollLogger logger(Env::Default(), kTestDir, "", log_size, time);
-    ASSERT_OK(env->FileExists(kLogFile));
+  InitTestDb();
+  // -- Test the existence of file during the server restart.
+  ASSERT_EQ(Status::NotFound(), env->FileExists(kLogFile));
+  AutoRollLogger logger(Env::Default(), kTestDir, "", log_size, time);
+  ASSERT_OK(env->FileExists(kLogFile));
 
-    RollLogFileByTimeTest(&logger, time, kSampleMessage + ":RollLogFileByTime");
+  RollLogFileByTimeTest(&logger, time, kSampleMessage + ":RollLogFileByTime");
 }
 
 TEST_F(AutoRollLoggerTest, OpenLogFilesMultipleTimesWithOptionLog_max_size) {
@@ -205,12 +207,12 @@ TEST_F(AutoRollLoggerTest, CompositeRollByTimeAndSizeLogger) {
 
   // Test the ability to roll by size
   RollLogFileBySizeTest(
-      &logger, log_max_size,
-      kSampleMessage + ":CompositeRollByTimeAndSizeLogger");
+    &logger, log_max_size,
+    kSampleMessage + ":CompositeRollByTimeAndSizeLogger");
 
   // Test the ability to roll by Time
   RollLogFileByTimeTest( &logger, time,
-      kSampleMessage + ":CompositeRollByTimeAndSizeLogger");
+                         kSampleMessage + ":CompositeRollByTimeAndSizeLogger");
 }
 
 #ifndef OS_WIN
@@ -232,8 +234,8 @@ TEST_F(AutoRollLoggerTest, CreateLoggerFromOptions) {
     dynamic_cast<AutoRollLogger*>(logger.get());
   ASSERT_TRUE(auto_roll_logger);
   RollLogFileBySizeTest(
-      auto_roll_logger, options.max_log_file_size,
-      kSampleMessage + ":CreateLoggerFromOptions - size");
+    auto_roll_logger, options.max_log_file_size,
+    kSampleMessage + ":CreateLoggerFromOptions - size");
 
   // Only roll by Time
   InitTestDb();
@@ -243,8 +245,8 @@ TEST_F(AutoRollLoggerTest, CreateLoggerFromOptions) {
   auto_roll_logger =
     dynamic_cast<AutoRollLogger*>(logger.get());
   RollLogFileByTimeTest(
-      auto_roll_logger, options.log_file_time_to_roll,
-      kSampleMessage + ":CreateLoggerFromOptions - time");
+    auto_roll_logger, options.log_file_time_to_roll,
+    kSampleMessage + ":CreateLoggerFromOptions - time");
 
   // roll by both Time and size
   InitTestDb();
@@ -254,11 +256,11 @@ TEST_F(AutoRollLoggerTest, CreateLoggerFromOptions) {
   auto_roll_logger =
     dynamic_cast<AutoRollLogger*>(logger.get());
   RollLogFileBySizeTest(
-      auto_roll_logger, options.max_log_file_size,
-      kSampleMessage + ":CreateLoggerFromOptions - both");
+    auto_roll_logger, options.max_log_file_size,
+    kSampleMessage + ":CreateLoggerFromOptions - both");
   RollLogFileByTimeTest(
-      auto_roll_logger, options.log_file_time_to_roll,
-      kSampleMessage + ":CreateLoggerFromOptions - both");
+    auto_roll_logger, options.log_file_time_to_roll,
+    kSampleMessage + ":CreateLoggerFromOptions - both");
 }
 
 TEST_F(AutoRollLoggerTest, LogFlushWhileRolling) {
@@ -269,44 +271,54 @@ TEST_F(AutoRollLoggerTest, LogFlushWhileRolling) {
   options.max_log_file_size = 1024 * 5;
   ASSERT_OK(CreateLoggerFromOptions(kTestDir, options, &logger));
   AutoRollLogger* auto_roll_logger =
-      dynamic_cast<AutoRollLogger*>(logger.get());
+    dynamic_cast<AutoRollLogger*>(logger.get());
   ASSERT_TRUE(auto_roll_logger);
   std::thread flush_thread;
 
   vidardb::SyncPoint::GetInstance()->LoadDependency({
-      // Need to pin the old logger before beginning the roll, as rolling grabs
-      // the mutex, which would prevent us from accessing the old logger.
-      {"AutoRollLogger::Flush:PinnedLogger",
-       "AutoRollLoggerTest::LogFlushWhileRolling:PreRollAndPostThreadInit"},
-      // Need to finish the flush thread init before this callback because the
-      // callback accesses flush_thread.get_id() in order to apply certain sync
-      // points only to the flush thread.
-      {"AutoRollLoggerTest::LogFlushWhileRolling:PreRollAndPostThreadInit",
-       "AutoRollLoggerTest::LogFlushWhileRolling:FlushCallbackBegin"},
-      // Need to reset logger at this point in Flush() to exercise a race
-      // condition case, which is executing the flush with the pinned (old)
-      // logger after the roll has cut over to a new logger.
-      {"AutoRollLoggerTest::LogFlushWhileRolling:FlushCallback1",
-       "AutoRollLogger::ResetLogger:BeforeNewLogger"},
-      {"AutoRollLogger::ResetLogger:AfterNewLogger",
-       "AutoRollLoggerTest::LogFlushWhileRolling:FlushCallback2"},
+    // Need to pin the old logger before beginning the roll, as rolling grabs
+    // the mutex, which would prevent us from accessing the old logger.
+    {
+      "AutoRollLogger::Flush:PinnedLogger",
+      "AutoRollLoggerTest::LogFlushWhileRolling:PreRollAndPostThreadInit"
+    },
+    // Need to finish the flush thread init before this callback because the
+    // callback accesses flush_thread.get_id() in order to apply certain sync
+    // points only to the flush thread.
+    {
+      "AutoRollLoggerTest::LogFlushWhileRolling:PreRollAndPostThreadInit",
+      "AutoRollLoggerTest::LogFlushWhileRolling:FlushCallbackBegin"
+    },
+    // Need to reset logger at this point in Flush() to exercise a race
+    // condition case, which is executing the flush with the pinned (old)
+    // logger after the roll has cut over to a new logger.
+    {
+      "AutoRollLoggerTest::LogFlushWhileRolling:FlushCallback1",
+      "AutoRollLogger::ResetLogger:BeforeNewLogger"
+    },
+    {
+      "AutoRollLogger::ResetLogger:AfterNewLogger",
+      "AutoRollLoggerTest::LogFlushWhileRolling:FlushCallback2"
+    },
   });
   vidardb::SyncPoint::GetInstance()->SetCallBack(
-      "PosixLogger::Flush:BeginCallback", [&](void* arg) {
-        TEST_SYNC_POINT(
-            "AutoRollLoggerTest::LogFlushWhileRolling:FlushCallbackBegin");
-        if (std::this_thread::get_id() == flush_thread.get_id()) {
-          TEST_SYNC_POINT(
-              "AutoRollLoggerTest::LogFlushWhileRolling:FlushCallback1");
-          TEST_SYNC_POINT(
-              "AutoRollLoggerTest::LogFlushWhileRolling:FlushCallback2");
-        }
-      });
+  "PosixLogger::Flush:BeginCallback", [&](void* arg) {
+    TEST_SYNC_POINT(
+      "AutoRollLoggerTest::LogFlushWhileRolling:FlushCallbackBegin");
+    if (std::this_thread::get_id() == flush_thread.get_id()) {
+      TEST_SYNC_POINT(
+        "AutoRollLoggerTest::LogFlushWhileRolling:FlushCallback1");
+      TEST_SYNC_POINT(
+        "AutoRollLoggerTest::LogFlushWhileRolling:FlushCallback2");
+    }
+  });
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
 
-  flush_thread = std::thread([&]() { auto_roll_logger->Flush(); });
+  flush_thread = std::thread([&]() {
+    auto_roll_logger->Flush();
+  });
   TEST_SYNC_POINT(
-      "AutoRollLoggerTest::LogFlushWhileRolling:PreRollAndPostThreadInit");
+    "AutoRollLoggerTest::LogFlushWhileRolling:PreRollAndPostThreadInit");
   RollLogFileBySizeTest(auto_roll_logger, options.max_log_file_size,
                         kSampleMessage + ":LogFlushWhileRolling");
   flush_thread.join();
@@ -351,7 +363,7 @@ TEST_F(AutoRollLoggerTest, InfoLogLevel) {
   }
   std::ifstream inFile(AutoRollLoggerTest::kLogFile.c_str());
   size_t lines = std::count(std::istreambuf_iterator<char>(inFile),
-                         std::istreambuf_iterator<char>(), '\n');
+                            std::istreambuf_iterator<char>(), '\n');
   ASSERT_EQ(log_lines, lines);
   inFile.close();
 }
@@ -461,7 +473,9 @@ TEST_F(AutoRollLoggerTest, LogFileExistence) {
   // become confused
   std::string testDir(kTestDir);
   std::replace_if(testDir.begin(), testDir.end(),
-    [](char ch) { return ch == '/'; }, '\\');
+  [](char ch) {
+    return ch == '/';
+  }, '\\');
   std::string deleteCmd = "if exist " + testDir + " rd /s /q " + testDir;
 #else
   std::string deleteCmd = "rm -rf " + kTestDir;

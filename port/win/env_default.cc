@@ -26,15 +26,17 @@ namespace port {
 //    dead-lock.
 //    in this manner any remaining threads are terminated OK.
 namespace {
-  std::once_flag winenv_once_flag;
-  Env* envptr;
+std::once_flag winenv_once_flag;
+Env* envptr;
 };
 
 }
 
 Env* Env::Default() {
   using namespace port;
-  std::call_once(winenv_once_flag, []() { envptr = new WinEnv(); });
+  std::call_once(winenv_once_flag, []() {
+    envptr = new WinEnv();
+  });
   return envptr;
 }
 

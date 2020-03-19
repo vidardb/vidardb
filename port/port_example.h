@@ -86,7 +86,7 @@ extern bool Snappy_Compress(const char* input, size_t input_length,
 // buffer, store the size of the uncompressed data in *result and
 // return true.  Else return false.
 extern bool Snappy_GetUncompressedLength(const char* input, size_t length,
-                                         size_t* result);
+    size_t* result);
 
 // Attempt to snappy uncompress input[0,input_length-1] into *output.
 // Returns true if successful, false if the input is invalid lightweight

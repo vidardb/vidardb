@@ -35,11 +35,11 @@ struct TableReaderOptions {
                      const InternalKeyComparator& _internal_comparator,
                      int _level = -1,
                      const std::vector<uint32_t>& _cols = std::vector<uint32_t>())  // Shichao
-      : ioptions(_ioptions),
-        env_options(_env_options),
-        internal_comparator(_internal_comparator),
-        level(_level),
-        cols(_cols) {}  // Shichao
+    : ioptions(_ioptions),
+      env_options(_env_options),
+      internal_comparator(_internal_comparator),
+      level(_level),
+      cols(_cols) {}  // Shichao
 
   const ImmutableCFOptions& ioptions;
   const EnvOptions& env_options;
@@ -51,23 +51,23 @@ struct TableReaderOptions {
 
 struct TableBuilderOptions {
   TableBuilderOptions(
-      const ImmutableCFOptions& _ioptions,
-      const InternalKeyComparator& _internal_comparator,
-      const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
-          _int_tbl_prop_collector_factories,
-      CompressionType _compression_type,
-      const CompressionOptions& _compression_opts,
-      const std::string* _compression_dict,
-      const std::string& _column_family_name,
-      const EnvOptions& _env_options)  // Shichao
-      : ioptions(_ioptions),
-        internal_comparator(_internal_comparator),
-        int_tbl_prop_collector_factories(_int_tbl_prop_collector_factories),
-        compression_type(_compression_type),
-        compression_opts(_compression_opts),
-        compression_dict(_compression_dict),
-        column_family_name(_column_family_name),
-        env_options(_env_options) {}  // Shichao
+    const ImmutableCFOptions& _ioptions,
+    const InternalKeyComparator& _internal_comparator,
+    const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
+    _int_tbl_prop_collector_factories,
+    CompressionType _compression_type,
+    const CompressionOptions& _compression_opts,
+    const std::string* _compression_dict,
+    const std::string& _column_family_name,
+    const EnvOptions& _env_options)  // Shichao
+    : ioptions(_ioptions),
+      internal_comparator(_internal_comparator),
+      int_tbl_prop_collector_factories(_int_tbl_prop_collector_factories),
+      compression_type(_compression_type),
+      compression_opts(_compression_opts),
+      compression_dict(_compression_dict),
+      column_family_name(_column_family_name),
+      env_options(_env_options) {}  // Shichao
   const ImmutableCFOptions& ioptions;
   const InternalKeyComparator& internal_comparator;
   const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
@@ -119,16 +119,22 @@ class TableBuilder {
 
   // For compaction calculation purpose. For row based, should be equal to
   // FileSize(), while for column equals to all column size + meta size.
-  virtual uint64_t FileSizeTotal() const { return FileSize(); }  // Shichao
+  virtual uint64_t FileSizeTotal() const {
+    return FileSize();  // Shichao
+  }
 
   // If the user defined table properties collector suggest the file to
   // be further compacted.
-  virtual bool NeedCompact() const { return false; }
+  virtual bool NeedCompact() const {
+    return false;
+  }
 
   // Returns table properties
   virtual TableProperties GetTableProperties() const = 0;
 
-  virtual const char* Name() const { return ""; }  // Shichao
+  virtual const char* Name() const {
+    return "";  // Shichao
+  }
 };
 
 }  // namespace vidardb

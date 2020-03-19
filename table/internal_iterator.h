@@ -99,7 +99,9 @@ class InternalIterator : public Cleanable {
   //  - Iterator is created with ReadOptions::pin_data = true
   //  - DB tables were created with BlockBasedTableOptions::use_delta_encoding
   //    set to false.
-  virtual bool IsKeyPinned() const { return false; }
+  virtual bool IsKeyPinned() const {
+    return false;
+  }
 
   virtual Status GetProperty(std::string prop_name, std::string* prop) {
     return Status::NotSupported("");

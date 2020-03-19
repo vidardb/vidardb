@@ -71,8 +71,8 @@ struct BatchResult {
   BatchResult& operator=(const BatchResult&) = delete;
 
   BatchResult(BatchResult&& bResult)
-      : sequence(std::move(bResult.sequence)),
-        writeBatchPtr(std::move(bResult.writeBatchPtr)) {}
+    : sequence(std::move(bResult.sequence)),
+      writeBatchPtr(std::move(bResult.writeBatchPtr)) {}
 
   BatchResult& operator=(BatchResult&& bResult) {
     sequence = std::move(bResult.sequence);
@@ -117,7 +117,7 @@ class TransactionLogIterator {
     ReadOptions() : verify_checksums_(true) {}
 
     explicit ReadOptions(bool verify_checksums)
-        : verify_checksums_(verify_checksums) {}
+      : verify_checksums_(verify_checksums) {}
   };
 };
 } //  namespace vidardb

@@ -42,10 +42,10 @@
 namespace vidardb {
 
 BlockBuilder::BlockBuilder(int block_restart_interval)
-    : block_restart_interval_(block_restart_interval),
-      restarts_(),
-      counter_(0),
-      finished_(false) {
+  : block_restart_interval_(block_restart_interval),
+    restarts_(),
+    counter_(0),
+    finished_(false) {
   assert(block_restart_interval_ >= 1);
   restarts_.push_back(0);       // First restart point is at offset 0
 }
@@ -66,7 +66,7 @@ size_t BlockBuilder::CurrentSizeEstimate() const {
 }
 
 size_t BlockBuilder::EstimateSizeAfterKV(const Slice& key, const Slice& value)
-  const {
+const {
   size_t estimate = CurrentSizeEstimate();
   estimate += key.size() + value.size();
   if (counter_ >= block_restart_interval_) {

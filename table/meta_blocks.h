@@ -95,7 +95,7 @@ class MetaColumnBlockBuilder {
 // Were we encounter any error occurs during user-defined statistics collection,
 // we'll write the warning message to info log.
 void LogPropertiesCollectionError(
-    Logger* info_log, const std::string& method, const std::string& name);
+  Logger* info_log, const std::string& method, const std::string& name);
 
 // Utility functions help table builder to trigger batch events for user
 // defined property collectors.
@@ -104,15 +104,15 @@ void LogPropertiesCollectionError(
 // NotifyCollectTableCollectorsOnAdd() triggers the `Add` event for all
 // property collectors.
 bool NotifyCollectTableCollectorsOnAdd(
-    const Slice& key, const Slice& value, uint64_t file_size,
-    const std::vector<std::unique_ptr<IntTblPropCollector>>& collectors,
-    Logger* info_log);
+  const Slice& key, const Slice& value, uint64_t file_size,
+  const std::vector<std::unique_ptr<IntTblPropCollector>>& collectors,
+  Logger* info_log);
 
 // NotifyCollectTableCollectorsOnAdd() triggers the `Finish` event for all
 // property collectors. The collected properties will be added to `builder`.
 bool NotifyCollectTableCollectorsOnFinish(
-    const std::vector<std::unique_ptr<IntTblPropCollector>>& collectors,
-    Logger* info_log, PropertyBlockBuilder* builder);
+  const std::vector<std::unique_ptr<IntTblPropCollector>>& collectors,
+  Logger* info_log, PropertyBlockBuilder* builder);
 
 // Read the properties from the table.
 // @returns a status to indicate if the operation succeeded. On success,

@@ -107,8 +107,8 @@ int InternalKeyComparator::Compare(const ParsedInternalKey& a,
 }
 
 void InternalKeyComparator::FindShortestSeparator(
-      std::string* start,
-      const Slice& limit) const {
+  std::string* start,
+  const Slice& limit) const {
   // Attempt to shorten the user portion of the key
   Slice user_start = ExtractUserKey(*start);
   Slice user_limit = ExtractUserKey(limit);

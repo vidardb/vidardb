@@ -15,7 +15,7 @@ namespace vidardb {
 class MergerTest : public testing::Test {
  public:
   MergerTest()
-      : rnd_(3), merging_iterator_(nullptr), single_iterator_(nullptr) {}
+    : rnd_(3), merging_iterator_(nullptr), single_iterator_(nullptr) {}
   ~MergerTest() = default;
   std::vector<std::string> GenerateStrings(size_t len, int string_len) {
     std::vector<std::string> ret;
@@ -37,7 +37,9 @@ class MergerTest : public testing::Test {
     }
   }
 
-  void SeekToRandom() { Seek(test::RandomHumanReadableString(&rnd_, 5)); }
+  void SeekToRandom() {
+    Seek(test::RandomHumanReadableString(&rnd_, 5));
+  }
 
   void Seek(std::string target) {
     merging_iterator_->Seek(target);
@@ -96,8 +98,8 @@ class MergerTest : public testing::Test {
     }
 
     merging_iterator_.reset(
-        NewMergingIterator(BytewiseComparator(), &small_iterators[0],
-                           static_cast<int>(small_iterators.size())));
+      NewMergingIterator(BytewiseComparator(), &small_iterators[0],
+                         static_cast<int>(small_iterators.size())));
     single_iterator_.reset(new test::VectorIterator(all_keys_));
   }
 

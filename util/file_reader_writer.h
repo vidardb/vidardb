@@ -26,7 +26,7 @@ class SequentialFileReader {
 
  public:
   explicit SequentialFileReader(std::unique_ptr<SequentialFile>&& _file)
-      : file_(std::move(_file)) {}
+    : file_(std::move(_file)) {}
 
   SequentialFileReader(SequentialFileReader&& o) VIDARDB_NOEXCEPT {
     *this = std::move(o);
@@ -44,7 +44,9 @@ class SequentialFileReader {
 
   Status Skip(uint64_t n);
 
-  SequentialFile* file() { return file_.get(); }
+  SequentialFile* file() {
+    return file_.get();
+  }
 };
 
 class RandomAccessFileReader {
@@ -61,11 +63,11 @@ class RandomAccessFileReader {
                                   Statistics* stats = nullptr,
                                   uint32_t hist_type = 0,
                                   HistogramImpl* file_read_hist = nullptr)
-      : file_(std::move(raf)),
-        env_(env),
-        stats_(stats),
-        hist_type_(hist_type),
-        file_read_hist_(file_read_hist) {}
+    : file_(std::move(raf)),
+      env_(env),
+      stats_(stats),
+      hist_type_(hist_type),
+      file_read_hist_(file_read_hist) {}
 
   RandomAccessFileReader(RandomAccessFileReader&& o) VIDARDB_NOEXCEPT {
     *this = std::move(o);
@@ -85,7 +87,9 @@ class RandomAccessFileReader {
 
   Status Read(uint64_t offset, size_t n, Slice* result, char* scratch) const;
 
-  RandomAccessFile* file() { return file_.get(); }
+  RandomAccessFile* file() {
+    return file_.get();
+  }
 };
 
 // Use posix write to write data to a file.
@@ -111,17 +115,17 @@ class WritableFileWriter {
  public:
   WritableFileWriter(std::unique_ptr<WritableFile>&& file,
                      const EnvOptions& options)
-      : writable_file_(std::move(file)),
-        buf_(),
-        max_buffer_size_(options.writable_file_max_buffer_size),
-        filesize_(0),
-        next_write_offset_(0),
-        pending_sync_(false),
-        pending_fsync_(false),
-        direct_io_(writable_file_->UseDirectIO()),
-        use_os_buffer_(writable_file_->UseOSBuffer()),
-        last_sync_size_(0),
-        bytes_per_sync_(options.bytes_per_sync) {
+    : writable_file_(std::move(file)),
+      buf_(),
+      max_buffer_size_(options.writable_file_max_buffer_size),
+      filesize_(0),
+      next_write_offset_(0),
+      pending_sync_(false),
+      pending_fsync_(false),
+      direct_io_(writable_file_->UseDirectIO()),
+      use_os_buffer_(writable_file_->UseOSBuffer()),
+      last_sync_size_(0),
+      bytes_per_sync_(options.bytes_per_sync) {
 
     buf_.Alignment(writable_file_->GetRequiredBufferAlignment());
     buf_.AllocateNewBuffer(65536);
@@ -131,7 +135,9 @@ class WritableFileWriter {
 
   WritableFileWriter& operator=(const WritableFileWriter&) = delete;
 
-  ~WritableFileWriter() { Close(); }
+  ~WritableFileWriter() {
+    Close();
+  }
 
   Status Append(const Slice& data);
 
@@ -146,13 +152,17 @@ class WritableFileWriter {
   // returns NotSupported status.
   Status SyncWithoutFlush(bool use_fsync);
 
-  uint64_t GetFileSize() { return filesize_; }
+  uint64_t GetFileSize() {
+    return filesize_;
+  }
 
   Status InvalidateCache(size_t offset, size_t length) {
     return writable_file_->InvalidateCache(offset, length);
   }
 
-  WritableFile* writable_file() const { return writable_file_.get(); }
+  WritableFile* writable_file() const {
+    return writable_file_.get();
+  }
 
  private:
   // Used when os buffering is OFF and we are writing

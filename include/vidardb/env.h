@@ -66,10 +66,10 @@ struct EnvOptions {
   // If true, then allow caching of data in environment buffers
   bool use_os_buffer = true;
 
-   // If true, then use mmap to read data
+  // If true, then use mmap to read data
   bool use_mmap_reads = false;
 
-   // If true, then use mmap to write data
+  // If true, then use mmap to write data
   bool use_mmap_writes = true;
 
   // If true, then use O_DIRECT for reading data
@@ -138,7 +138,7 @@ class Env {
   virtual Status NewSequentialFile(const std::string& fname,
                                    unique_ptr<SequentialFile>* result,
                                    const EnvOptions& options)
-                                   = 0;
+    = 0;
 
   // Create a brand new random access read-only file with the
   // specified name.  On success, stores a pointer to the new file in
@@ -150,7 +150,7 @@ class Env {
   virtual Status NewRandomAccessFile(const std::string& fname,
                                      unique_ptr<RandomAccessFile>* result,
                                      const EnvOptions& options)
-                                     = 0;
+    = 0;
 
   // Create an object that writes to a new file with the specified
   // name.  Deletes any existing file with the same name and creates a
@@ -199,7 +199,7 @@ class Env {
   // The name attributes are relative to "dir".
   // Original contents of *results are dropped.
   virtual Status GetChildrenFileAttributes(const std::string& dir,
-                                           std::vector<FileAttributes>* result);
+      std::vector<FileAttributes>* result);
 
   // Delete the named file.
   virtual Status DeleteFile(const std::string& fname) = 0;
@@ -276,7 +276,9 @@ class Env {
 
   // Arrange to remove jobs for given arg from the queue_ if they are not
   // already scheduled. Caller is expected to have exclusive lock on arg.
-  virtual int UnSchedule(void* arg, Priority pri) { return 0; }
+  virtual int UnSchedule(void* arg, Priority pri) {
+    return 0;
+  }
 
   // Start a new thread, invoking "function(arg)" within the new thread.
   // When "function(arg)" returns, the thread will be destroyed.
@@ -324,7 +326,7 @@ class Env {
 
   // Get full directory name for this db.
   virtual Status GetAbsolutePath(const std::string& db_path,
-      std::string* output_path) = 0;
+                                 std::string* output_path) = 0;
 
   // The number of background worker threads of a specific thread pool
   // for this environment. 'LOW' is the default pool.
@@ -354,7 +356,7 @@ class Env {
   // of the EnvOptions in the parameters, but is optimized for writing manifest
   // files. Default implementation returns the copy of the same object.
   virtual EnvOptions OptimizeForManifestWrite(const EnvOptions& env_options)
-      const;
+  const;
 
   // Returns the status of all threads that belong to the current Env.
   virtual Status GetThreadList(std::vector<ThreadStatus>* thread_list) {
@@ -482,7 +484,7 @@ class RandomAccessFile {
   // Note: these IDs are only valid for the duration of the process.
   virtual size_t GetUniqueId(char* id, size_t max_size) const {
     return 0; // Default implementation to prevent issues with backwards
-              // compatibility.
+    // compatibility.
   };
 
   /********************** Shichao ************************/
@@ -581,7 +583,9 @@ class WritableFile {
 
   // Indicates the upper layers if the current WritableFile implementation
   // uses direct IO.
-  virtual bool UseDirectIO() const { return false; }
+  virtual bool UseDirectIO() const {
+    return false;
+  }
 
   /*
    * Change the priority in rate limiter if rate limiting is enabled.
@@ -591,7 +595,9 @@ class WritableFile {
     io_priority_ = pri;
   }
 
-  virtual Env::IOPriority GetIOPriority() { return io_priority_; }
+  virtual Env::IOPriority GetIOPriority() {
+    return io_priority_;
+  }
 
   /*
    * Get the size of valid data in the file.
@@ -641,7 +647,9 @@ class WritableFile {
   // This asks the OS to initiate flushing the cached data to disk,
   // without waiting for completion.
   // Default implementation does nothing.
-  virtual Status RangeSync(uint64_t offset, uint64_t nbytes) { return Status::OK(); }
+  virtual Status RangeSync(uint64_t offset, uint64_t nbytes) {
+    return Status::OK();
+  }
 
   // PrepareWrite performs any necessary preparation for a write
   // before the write actually occurs.  This allows for pre-allocation
@@ -675,7 +683,9 @@ class WritableFile {
     return Status::OK();
   }
 
-  size_t preallocation_block_size() { return preallocation_block_size_; }
+  size_t preallocation_block_size() {
+    return preallocation_block_size_;
+  }
 
  private:
   size_t last_preallocated_block_;
@@ -717,7 +727,7 @@ class Logger {
   size_t kDoNotSupportGetLogFileSize = std::numeric_limits<size_t>::max();
 
   explicit Logger(const InfoLogLevel log_level = InfoLogLevel::INFO_LEVEL)
-      : log_level_(log_level) {}
+    : log_level_(log_level) {}
   virtual ~Logger();
 
   // Write a header to the log file with the specified format
@@ -738,10 +748,14 @@ class Logger {
   // printed.
   virtual void Logv(const InfoLogLevel log_level, const char* format, va_list ap);
 
-  virtual size_t GetLogFileSize() const { return kDoNotSupportGetLogFileSize; }
+  virtual size_t GetLogFileSize() const {
+    return kDoNotSupportGetLogFileSize;
+  }
   // Flush to the OS buffers
   virtual void Flush() {}
-  virtual InfoLogLevel GetInfoLogLevel() const { return log_level_; }
+  virtual InfoLogLevel GetInfoLogLevel() const {
+    return log_level_;
+  }
   virtual void SetInfoLogLevel(const InfoLogLevel log_level) {
     log_level_ = log_level;
   }
@@ -782,9 +796,9 @@ extern void Fatal(const shared_ptr<Logger>& info_log, const char* format, ...);
 // The default info log level is InfoLogLevel::ERROR.
 extern void Log(const shared_ptr<Logger>& info_log, const char* format, ...)
 #   if defined(__GNUC__) || defined(__clang__)
-    __attribute__((__format__ (__printf__, 2, 3)))
+__attribute__((__format__ (__printf__, 2, 3)))
 #   endif
-    ;
+;
 
 extern void LogFlush(Logger *info_log);
 
@@ -794,9 +808,9 @@ extern void Log(const InfoLogLevel log_level, Logger* info_log,
 // The default info log level is InfoLogLevel::ERROR.
 extern void Log(Logger* info_log, const char* format, ...)
 #   if defined(__GNUC__) || defined(__clang__)
-    __attribute__((__format__ (__printf__, 2, 3)))
+__attribute__((__format__ (__printf__, 2, 3)))
 #   endif
-    ;
+;
 
 // a set of log functions with different log levels.
 extern void Header(Logger* info_log, const char* format, ...);
@@ -825,7 +839,9 @@ class EnvWrapper : public Env {
   virtual ~EnvWrapper();
 
   // Return the target to which this Env forwards all calls
-  Env* target() const { return target_; }
+  Env* target() const {
+    return target_;
+  }
 
   // The following text is boilerplate that forwards all methods to target()
   Status NewSequentialFile(const std::string& f, unique_ptr<SequentialFile>* r,
@@ -859,7 +875,7 @@ class EnvWrapper : public Env {
     return target_->GetChildren(dir, r);
   }
   Status GetChildrenFileAttributes(
-      const std::string& dir, std::vector<FileAttributes>* result) override {
+    const std::string& dir, std::vector<FileAttributes>* result) override {
     return target_->GetChildrenFileAttributes(dir, result);
   }
   Status DeleteFile(const std::string& f) override {
@@ -895,7 +911,9 @@ class EnvWrapper : public Env {
     return target_->LockFile(f, l);
   }
 
-  Status UnlockFile(FileLock* l) override { return target_->UnlockFile(l); }
+  Status UnlockFile(FileLock* l) override {
+    return target_->UnlockFile(l);
+  }
 
   void Schedule(void (*f)(void* arg), void* a, Priority pri,
                 void* tag = nullptr, void (*u)(void* arg) = 0) override {
@@ -909,9 +927,11 @@ class EnvWrapper : public Env {
   void StartThread(void (*f)(void*), void* a) override {
     return target_->StartThread(f, a);
   }
-  void WaitForJoin() override { return target_->WaitForJoin(); }
+  void WaitForJoin() override {
+    return target_->WaitForJoin();
+  }
   virtual unsigned int GetThreadPoolQueueLen(
-      Priority pri = LOW) const override {
+    Priority pri = LOW) const override {
     return target_->GetThreadPoolQueueLen(pri);
   }
   virtual Status GetTestDirectory(std::string* path) override {
@@ -921,7 +941,9 @@ class EnvWrapper : public Env {
                            shared_ptr<Logger>* result) override {
     return target_->NewLogger(fname, result);
   }
-  uint64_t NowMicros() override { return target_->NowMicros(); }
+  uint64_t NowMicros() override {
+    return target_->NowMicros();
+  }
   void SleepForMicroseconds(int micros) override {
     target_->SleepForMicroseconds(micros);
   }
@@ -976,21 +998,39 @@ class WritableFileWrapper : public WritableFile {
  public:
   explicit WritableFileWrapper(WritableFile* t) : target_(t) { }
 
-  Status Append(const Slice& data) override { return target_->Append(data); }
+  Status Append(const Slice& data) override {
+    return target_->Append(data);
+  }
   Status PositionedAppend(const Slice& data, uint64_t offset) override {
     return target_->PositionedAppend(data, offset);
   }
-  Status Truncate(uint64_t size) override { return target_->Truncate(size); }
-  Status Close() override { return target_->Close(); }
-  Status Flush() override { return target_->Flush(); }
-  Status Sync() override { return target_->Sync(); }
-  Status Fsync() override { return target_->Fsync(); }
-  bool IsSyncThreadSafe() const override { return target_->IsSyncThreadSafe(); }
+  Status Truncate(uint64_t size) override {
+    return target_->Truncate(size);
+  }
+  Status Close() override {
+    return target_->Close();
+  }
+  Status Flush() override {
+    return target_->Flush();
+  }
+  Status Sync() override {
+    return target_->Sync();
+  }
+  Status Fsync() override {
+    return target_->Fsync();
+  }
+  bool IsSyncThreadSafe() const override {
+    return target_->IsSyncThreadSafe();
+  }
   void SetIOPriority(Env::IOPriority pri) override {
     target_->SetIOPriority(pri);
   }
-  Env::IOPriority GetIOPriority() override { return target_->GetIOPriority(); }
-  uint64_t GetFileSize() override { return target_->GetFileSize(); }
+  Env::IOPriority GetIOPriority() override {
+    return target_->GetIOPriority();
+  }
+  uint64_t GetFileSize() override {
+    return target_->GetFileSize();
+  }
   void GetPreallocationStatus(size_t* block_size,
                               size_t* last_allocated_block) override {
     target_->GetPreallocationStatus(block_size, last_allocated_block);

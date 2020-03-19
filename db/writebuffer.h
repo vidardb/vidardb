@@ -18,14 +18,16 @@ namespace vidardb {
 class WriteBuffer {
  public:
   explicit WriteBuffer(size_t _buffer_size)
-      : buffer_size_(_buffer_size), memory_used_(0) {}
+    : buffer_size_(_buffer_size), memory_used_(0) {}
 
   ~WriteBuffer() {}
 
   size_t memory_usage() const {
     return memory_used_.load(std::memory_order_relaxed);
   }
-  size_t buffer_size() const { return buffer_size_; }
+  size_t buffer_size() const {
+    return buffer_size_;
+  }
 
   // Should only be called from write thread
   bool ShouldFlush() const {

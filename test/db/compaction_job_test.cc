@@ -28,7 +28,7 @@ namespace vidardb {
 namespace {
 
 void VerifyInitializationOfCompactionJobStats(
-      const CompactionJobStats& compaction_job_stats) {
+  const CompactionJobStats& compaction_job_stats) {
 #if !defined(IOS_CROSS_COMPILE)
   ASSERT_EQ(compaction_job_stats.elapsed_micros, 0U);
 
@@ -65,16 +65,16 @@ void VerifyInitializationOfCompactionJobStats(
 class CompactionJobTest : public testing::Test {
  public:
   CompactionJobTest()
-      : env_(Env::Default()),
-        dbname_(test::TmpDir() + "/compaction_job_test"),
-        mutable_cf_options_(Options(), ImmutableCFOptions(Options())),
-        table_cache_(NewLRUCache(50000, 16)),
-        write_buffer_(db_options_.db_write_buffer_size),
-        versions_(new VersionSet(dbname_, &db_options_, env_options_,
-                                 table_cache_.get(), &write_buffer_,
-                                 &write_controller_)),
-        shutting_down_(false),
-        mock_table_factory_(new mock::MockTableFactory()) {
+    : env_(Env::Default()),
+      dbname_(test::TmpDir() + "/compaction_job_test"),
+      mutable_cf_options_(Options(), ImmutableCFOptions(Options())),
+      table_cache_(NewLRUCache(50000, 16)),
+      write_buffer_(db_options_.db_write_buffer_size),
+      versions_(new VersionSet(dbname_, &db_options_, env_options_,
+                               table_cache_.get(), &write_buffer_,
+                               &write_controller_)),
+      shutting_down_(false),
+      mock_table_factory_(new mock::MockTableFactory()) {
     EXPECT_OK(env_->CreateDirIfMissing(dbname_));
     db_options_.db_paths.emplace_back(dbname_,
                                       std::numeric_limits<uint64_t>::max());
@@ -89,7 +89,7 @@ class CompactionJobTest : public testing::Test {
   }
 
   std::string KeyStr(const std::string& user_key, const SequenceNumber seq_num,
-      const ValueType t) {
+                     const ValueType t) {
     return InternalKey(user_key, seq_num, t).Encode().ToString();
   }
 
@@ -127,11 +127,11 @@ class CompactionJobTest : public testing::Test {
 
     uint64_t file_number = versions_->NewFileNumber();
     EXPECT_OK(mock_table_factory_->CreateMockTable(
-        env_, GenerateFileName(file_number), std::move(contents)));
+                env_, GenerateFileName(file_number), std::move(contents)));
 
     VersionEdit edit;
     edit.AddFile(level, file_number, 0, 10, smallest_key, largest_key,
-        smallest_seqno, largest_seqno, false, 0);
+                 smallest_seqno, largest_seqno, false, 0);
 
     mutex_.Lock();
     versions_->LogAndApply(versions_->GetColumnFamilySet()->GetDefault(),
@@ -165,7 +165,7 @@ class CompactionJobTest : public testing::Test {
         // This is how the key will look like once it's written in bottommost
         // file
         InternalKey bottommost_internal_key(
-            key, (key == "9999") ? sequence_number : 0, kTypeValue);
+          key, (key == "9999") ? sequence_number : 0, kTypeValue);
 
         if (corrupt_id(k)) {
           test::CorruptKeyType(&internal_key);
@@ -174,7 +174,7 @@ class CompactionJobTest : public testing::Test {
         contents.insert({ internal_key.Encode().ToString(), value });
         if (i == 1 || k < kMatchingKeys || corrupt_id(k - kMatchingKeys)) {
           expected_results.insert(
-              { bottommost_internal_key.Encode().ToString(), value });
+          { bottommost_internal_key.Encode().ToString(), value });
         }
       }
 
@@ -195,10 +195,10 @@ class CompactionJobTest : public testing::Test {
     const std::string manifest = DescriptorFileName(dbname_, 1);
     unique_ptr<WritableFile> file;
     Status s = env_->NewWritableFile(
-        manifest, &file, env_->OptimizeForManifestWrite(env_options_));
+                 manifest, &file, env_->OptimizeForManifestWrite(env_options_));
     ASSERT_OK(s);
     unique_ptr<WritableFileWriter> file_writer(
-        new WritableFileWriter(std::move(file), env_options_));
+      new WritableFileWriter(std::move(file), env_options_));
     {
       log::Writer log(std::move(file_writer), 0, false);
       std::string record;
@@ -218,10 +218,10 @@ class CompactionJobTest : public testing::Test {
   }
 
   void RunCompaction(
-      const std::vector<std::vector<FileMetaData*>>& input_files,
-      const stl_wrappers::KVMap& expected_results,
-      const std::vector<SequenceNumber>& snapshots = {},
-      SequenceNumber earliest_write_conflict_snapshot = kMaxSequenceNumber) {
+    const std::vector<std::vector<FileMetaData*>>& input_files,
+    const stl_wrappers::KVMap& expected_results,
+    const std::vector<SequenceNumber>& snapshots = {},
+    SequenceNumber earliest_write_conflict_snapshot = kMaxSequenceNumber) {
     auto cfd = versions_->GetColumnFamilySet()->GetDefault();
 
     size_t num_input_files = 0;
@@ -231,7 +231,7 @@ class CompactionJobTest : public testing::Test {
       CompactionInputFiles compaction_level;
       compaction_level.level = static_cast<int>(level);
       compaction_level.files.insert(compaction_level.files.end(),
-          level_files.begin(), level_files.end());
+                                    level_files.begin(), level_files.end());
       compaction_input_files.push_back(compaction_level);
       num_input_files += level_files.size();
     }
@@ -246,10 +246,10 @@ class CompactionJobTest : public testing::Test {
     mutex_.Lock();
     EventLogger event_logger(db_options_.info_log.get());
     CompactionJob compaction_job(
-        0, &compaction, db_options_, env_options_, versions_.get(),
-        &shutting_down_, &log_buffer, nullptr, nullptr, nullptr, &mutex_,
-        &bg_error_, snapshots, earliest_write_conflict_snapshot, table_cache_,
-        &event_logger, false, false, dbname_, &compaction_job_stats_);
+      0, &compaction, db_options_, env_options_, versions_.get(),
+      &shutting_down_, &log_buffer, nullptr, nullptr, nullptr, &mutex_,
+      &bg_error_, snapshots, earliest_write_conflict_snapshot, table_cache_,
+      &event_logger, false, false, dbname_, &compaction_job_stats_);
 
     VerifyInitializationOfCompactionJobStats(compaction_job_stats_);
 
@@ -316,15 +316,17 @@ TEST_F(CompactionJobTest, SimpleDeletion) {
   NewDB();
 
   auto file1 = mock::MakeMockFile({{KeyStr("c", 4U, kTypeDeletion), ""},
-                                   {KeyStr("c", 3U, kTypeValue), "val"}});
+    {KeyStr("c", 3U, kTypeValue), "val"}
+  });
   AddMockFile(file1);
 
   auto file2 = mock::MakeMockFile({{KeyStr("b", 2U, kTypeValue), "val"},
-                                   {KeyStr("b", 1U, kTypeValue), "val"}});
+    {KeyStr("b", 1U, kTypeValue), "val"}
+  });
   AddMockFile(file2);
 
   auto expected_results =
-      mock::MakeMockFile({{KeyStr("b", 0U, kTypeValue), "val"}});
+  mock::MakeMockFile({{KeyStr("b", 0U, kTypeValue), "val"}});
 
   SetLastSequence(4U);
   auto files = cfd_->current()->storage_info()->LevelFiles(0);
@@ -335,18 +337,20 @@ TEST_F(CompactionJobTest, SimpleOverwrite) {
   NewDB();
 
   auto file1 = mock::MakeMockFile({
-      {KeyStr("a", 3U, kTypeValue), "val2"},
-      {KeyStr("b", 4U, kTypeValue), "val3"},
+    {KeyStr("a", 3U, kTypeValue), "val2"},
+    {KeyStr("b", 4U, kTypeValue), "val3"},
   });
   AddMockFile(file1);
 
   auto file2 = mock::MakeMockFile({{KeyStr("a", 1U, kTypeValue), "val"},
-                                   {KeyStr("b", 2U, kTypeValue), "val"}});
+    {KeyStr("b", 2U, kTypeValue), "val"}
+  });
   AddMockFile(file2);
 
   auto expected_results =
-      mock::MakeMockFile({{KeyStr("a", 0U, kTypeValue), "val2"},
-                          {KeyStr("b", 4U, kTypeValue), "val3"}});
+  mock::MakeMockFile({{KeyStr("a", 0U, kTypeValue), "val2"},
+    {KeyStr("b", 4U, kTypeValue), "val3"}
+  });
 
   SetLastSequence(4U);
   auto files = cfd_->current()->storage_info()->LevelFiles(0);
@@ -357,24 +361,27 @@ TEST_F(CompactionJobTest, SimpleNonLastLevel) {
   NewDB();
 
   auto file1 = mock::MakeMockFile({
-      {KeyStr("a", 5U, kTypeValue), "val2"},
-      {KeyStr("b", 6U, kTypeValue), "val3"},
+    {KeyStr("a", 5U, kTypeValue), "val2"},
+    {KeyStr("b", 6U, kTypeValue), "val3"},
   });
   AddMockFile(file1);
 
   auto file2 = mock::MakeMockFile({{KeyStr("a", 3U, kTypeValue), "val"},
-                                   {KeyStr("b", 4U, kTypeValue), "val"}});
+    {KeyStr("b", 4U, kTypeValue), "val"}
+  });
   AddMockFile(file2, 1);
 
   auto file3 = mock::MakeMockFile({{KeyStr("a", 1U, kTypeValue), "val"},
-                                   {KeyStr("b", 2U, kTypeValue), "val"}});
+    {KeyStr("b", 2U, kTypeValue), "val"}
+  });
   AddMockFile(file3, 2);
 
   // Because level 1 is not the last level, the sequence numbers of a and b
   // cannot be set to 0
   auto expected_results =
-      mock::MakeMockFile({{KeyStr("a", 5U, kTypeValue), "val2"},
-                          {KeyStr("b", 6U, kTypeValue), "val3"}});
+  mock::MakeMockFile({{KeyStr("a", 5U, kTypeValue), "val2"},
+    {KeyStr("b", 6U, kTypeValue), "val3"}
+  });
 
   SetLastSequence(6U);
   auto lvl0_files = cfd_->current()->storage_info()->LevelFiles(0);
@@ -389,70 +396,70 @@ TEST_F(CompactionJobTest, EarliestWriteConflictSnapshot) {
   // write-conflic-snapshot.
 
   auto file1 = mock::MakeMockFile({
-      {KeyStr("A", 24U, kTypeSingleDeletion), ""},
-      {KeyStr("A", 23U, kTypeValue), "val"},
-      {KeyStr("B", 24U, kTypeSingleDeletion), ""},
-      {KeyStr("B", 23U, kTypeValue), "val"},
-      {KeyStr("D", 24U, kTypeSingleDeletion), ""},
-      {KeyStr("G", 32U, kTypeSingleDeletion), ""},
-      {KeyStr("G", 31U, kTypeValue), "val"},
-      {KeyStr("G", 24U, kTypeSingleDeletion), ""},
-      {KeyStr("G", 23U, kTypeValue), "val2"},
-      {KeyStr("H", 31U, kTypeValue), "val"},
-      {KeyStr("H", 24U, kTypeSingleDeletion), ""},
-      {KeyStr("H", 23U, kTypeValue), "val"},
-      {KeyStr("I", 35U, kTypeSingleDeletion), ""},
-      {KeyStr("I", 34U, kTypeValue), "val2"},
-      {KeyStr("I", 33U, kTypeSingleDeletion), ""},
-      {KeyStr("I", 32U, kTypeValue), "val3"},
-      {KeyStr("I", 31U, kTypeSingleDeletion), ""},
-      {KeyStr("J", 34U, kTypeValue), "val"},
-      {KeyStr("J", 33U, kTypeSingleDeletion), ""},
-      {KeyStr("J", 25U, kTypeValue), "val2"},
-      {KeyStr("J", 24U, kTypeSingleDeletion), ""},
+    {KeyStr("A", 24U, kTypeSingleDeletion), ""},
+    {KeyStr("A", 23U, kTypeValue), "val"},
+    {KeyStr("B", 24U, kTypeSingleDeletion), ""},
+    {KeyStr("B", 23U, kTypeValue), "val"},
+    {KeyStr("D", 24U, kTypeSingleDeletion), ""},
+    {KeyStr("G", 32U, kTypeSingleDeletion), ""},
+    {KeyStr("G", 31U, kTypeValue), "val"},
+    {KeyStr("G", 24U, kTypeSingleDeletion), ""},
+    {KeyStr("G", 23U, kTypeValue), "val2"},
+    {KeyStr("H", 31U, kTypeValue), "val"},
+    {KeyStr("H", 24U, kTypeSingleDeletion), ""},
+    {KeyStr("H", 23U, kTypeValue), "val"},
+    {KeyStr("I", 35U, kTypeSingleDeletion), ""},
+    {KeyStr("I", 34U, kTypeValue), "val2"},
+    {KeyStr("I", 33U, kTypeSingleDeletion), ""},
+    {KeyStr("I", 32U, kTypeValue), "val3"},
+    {KeyStr("I", 31U, kTypeSingleDeletion), ""},
+    {KeyStr("J", 34U, kTypeValue), "val"},
+    {KeyStr("J", 33U, kTypeSingleDeletion), ""},
+    {KeyStr("J", 25U, kTypeValue), "val2"},
+    {KeyStr("J", 24U, kTypeSingleDeletion), ""},
   });
   AddMockFile(file1);
 
   auto file2 = mock::MakeMockFile({
-      {KeyStr("A", 14U, kTypeSingleDeletion), ""},
-      {KeyStr("A", 13U, kTypeValue), "val2"},
-      {KeyStr("C", 14U, kTypeSingleDeletion), ""},
-      {KeyStr("C", 13U, kTypeValue), "val"},
-      {KeyStr("E", 12U, kTypeSingleDeletion), ""},
-      {KeyStr("F", 4U, kTypeSingleDeletion), ""},
-      {KeyStr("F", 3U, kTypeValue), "val"},
-      {KeyStr("G", 14U, kTypeSingleDeletion), ""},
-      {KeyStr("G", 13U, kTypeValue), "val3"},
-      {KeyStr("H", 14U, kTypeSingleDeletion), ""},
-      {KeyStr("H", 13U, kTypeValue), "val2"},
-      {KeyStr("I", 13U, kTypeValue), "val4"},
-      {KeyStr("I", 12U, kTypeSingleDeletion), ""},
-      {KeyStr("I", 11U, kTypeValue), "val5"},
-      {KeyStr("J", 15U, kTypeValue), "val3"},
-      {KeyStr("J", 14U, kTypeSingleDeletion), ""},
+    {KeyStr("A", 14U, kTypeSingleDeletion), ""},
+    {KeyStr("A", 13U, kTypeValue), "val2"},
+    {KeyStr("C", 14U, kTypeSingleDeletion), ""},
+    {KeyStr("C", 13U, kTypeValue), "val"},
+    {KeyStr("E", 12U, kTypeSingleDeletion), ""},
+    {KeyStr("F", 4U, kTypeSingleDeletion), ""},
+    {KeyStr("F", 3U, kTypeValue), "val"},
+    {KeyStr("G", 14U, kTypeSingleDeletion), ""},
+    {KeyStr("G", 13U, kTypeValue), "val3"},
+    {KeyStr("H", 14U, kTypeSingleDeletion), ""},
+    {KeyStr("H", 13U, kTypeValue), "val2"},
+    {KeyStr("I", 13U, kTypeValue), "val4"},
+    {KeyStr("I", 12U, kTypeSingleDeletion), ""},
+    {KeyStr("I", 11U, kTypeValue), "val5"},
+    {KeyStr("J", 15U, kTypeValue), "val3"},
+    {KeyStr("J", 14U, kTypeSingleDeletion), ""},
   });
   AddMockFile(file2);
 
   auto expected_results = mock::MakeMockFile({
-      {KeyStr("A", 24U, kTypeSingleDeletion), ""},
-      {KeyStr("A", 23U, kTypeValue), ""},
-      {KeyStr("B", 24U, kTypeSingleDeletion), ""},
-      {KeyStr("B", 23U, kTypeValue), ""},
-      {KeyStr("D", 24U, kTypeSingleDeletion), ""},
-      {KeyStr("E", 12U, kTypeSingleDeletion), ""},
-      {KeyStr("G", 32U, kTypeSingleDeletion), ""},
-      {KeyStr("G", 31U, kTypeValue), ""},
-      {KeyStr("H", 31U, kTypeValue), "val"},
-      {KeyStr("I", 35U, kTypeSingleDeletion), ""},
-      {KeyStr("I", 34U, kTypeValue), ""},
-      {KeyStr("I", 31U, kTypeSingleDeletion), ""},
-      {KeyStr("I", 13U, kTypeValue), "val4"},
-      {KeyStr("J", 34U, kTypeValue), "val"},
-      {KeyStr("J", 33U, kTypeSingleDeletion), ""},
-      {KeyStr("J", 25U, kTypeValue), "val2"},
-      {KeyStr("J", 24U, kTypeSingleDeletion), ""},
-      {KeyStr("J", 15U, kTypeValue), "val3"},
-      {KeyStr("J", 14U, kTypeSingleDeletion), ""},
+    {KeyStr("A", 24U, kTypeSingleDeletion), ""},
+    {KeyStr("A", 23U, kTypeValue), ""},
+    {KeyStr("B", 24U, kTypeSingleDeletion), ""},
+    {KeyStr("B", 23U, kTypeValue), ""},
+    {KeyStr("D", 24U, kTypeSingleDeletion), ""},
+    {KeyStr("E", 12U, kTypeSingleDeletion), ""},
+    {KeyStr("G", 32U, kTypeSingleDeletion), ""},
+    {KeyStr("G", 31U, kTypeValue), ""},
+    {KeyStr("H", 31U, kTypeValue), "val"},
+    {KeyStr("I", 35U, kTypeSingleDeletion), ""},
+    {KeyStr("I", 34U, kTypeValue), ""},
+    {KeyStr("I", 31U, kTypeSingleDeletion), ""},
+    {KeyStr("I", 13U, kTypeValue), "val4"},
+    {KeyStr("J", 34U, kTypeValue), "val"},
+    {KeyStr("J", 33U, kTypeSingleDeletion), ""},
+    {KeyStr("J", 25U, kTypeValue), "val2"},
+    {KeyStr("J", 24U, kTypeSingleDeletion), ""},
+    {KeyStr("J", 15U, kTypeValue), "val3"},
+    {KeyStr("J", 14U, kTypeSingleDeletion), ""},
   });
 
   SetLastSequence(24U);
@@ -468,22 +475,25 @@ TEST_F(CompactionJobTest, CorruptionAfterDeletion) {
   NewDB();
 
   auto file1 =
-      mock::MakeMockFile({{test::KeyStr("A", 6U, kTypeValue), "val3"},
-                          {test::KeyStr("a", 5U, kTypeDeletion), ""},
-                          {test::KeyStr("a", 4U, kTypeValue, true), "val"}});
+  mock::MakeMockFile({{test::KeyStr("A", 6U, kTypeValue), "val3"},
+    {test::KeyStr("a", 5U, kTypeDeletion), ""},
+    {test::KeyStr("a", 4U, kTypeValue, true), "val"}
+  });
   AddMockFile(file1);
 
   auto file2 =
-      mock::MakeMockFile({{test::KeyStr("b", 3U, kTypeSingleDeletion), ""},
-                          {test::KeyStr("b", 2U, kTypeValue, true), "val"},
-                          {test::KeyStr("c", 1U, kTypeValue), "val2"}});
+  mock::MakeMockFile({{test::KeyStr("b", 3U, kTypeSingleDeletion), ""},
+    {test::KeyStr("b", 2U, kTypeValue, true), "val"},
+    {test::KeyStr("c", 1U, kTypeValue), "val2"}
+  });
   AddMockFile(file2);
 
   auto expected_results =
-      mock::MakeMockFile({{test::KeyStr("A", 0U, kTypeValue), "val3"},
-                          {test::KeyStr("a", 0U, kTypeValue, true), "val"},
-                          {test::KeyStr("b", 0U, kTypeValue, true), "val"},
-                          {test::KeyStr("c", 1U, kTypeValue), "val2"}});
+  mock::MakeMockFile({{test::KeyStr("A", 0U, kTypeValue), "val3"},
+    {test::KeyStr("a", 0U, kTypeValue, true), "val"},
+    {test::KeyStr("b", 0U, kTypeValue, true), "val"},
+    {test::KeyStr("c", 1U, kTypeValue), "val2"}
+  });
 
   SetLastSequence(6U);
   auto files = cfd_->current()->storage_info()->LevelFiles(0);

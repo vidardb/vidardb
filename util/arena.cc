@@ -43,7 +43,7 @@ size_t OptimizeBlockSize(size_t block_size) {
 }
 
 Arena::Arena(size_t block_size, size_t huge_page_size)
-    : kBlockSize(OptimizeBlockSize(block_size)) {
+  : kBlockSize(OptimizeBlockSize(block_size)) {
   assert(kBlockSize >= kMinBlockSize && kBlockSize <= kMaxBlockSize &&
          kBlockSize % kAlignUnit == 0);
   alloc_bytes_remaining_ = sizeof(inline_block_);
@@ -143,7 +143,7 @@ char* Arena::AllocateAligned(size_t bytes, size_t huge_page_size,
     // Allocate from a huge page TBL table.
     assert(logger != nullptr);  // logger need to be passed in.
     size_t reserved_size =
-        ((bytes - 1U) / huge_page_size + 1U) * huge_page_size;
+      ((bytes - 1U) / huge_page_size + 1U) * huge_page_size;
     assert(reserved_size >= bytes);
 
     char* addr = AllocateFromHugePage(reserved_size);
@@ -158,7 +158,7 @@ char* Arena::AllocateAligned(size_t bytes, size_t huge_page_size,
 #endif
 
   size_t current_mod =
-      reinterpret_cast<uintptr_t>(aligned_alloc_ptr_) & (kAlignUnit - 1);
+    reinterpret_cast<uintptr_t>(aligned_alloc_ptr_) & (kAlignUnit - 1);
   size_t slop = (current_mod == 0 ? 0 : kAlignUnit - current_mod);
   size_t needed = bytes + slop;
   char* result;

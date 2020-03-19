@@ -194,11 +194,15 @@ class MemTableRep {
 
   // Return true if the current MemTableRep supports merge operator.
   // Default: true
-  virtual bool IsMergeOperatorSupported() const { return true; }
+  virtual bool IsMergeOperatorSupported() const {
+    return true;
+  }
 
   // Return true if the current MemTableRep supports snapshot
   // Default: true
-  virtual bool IsSnapshotSupported() const { return true; }
+  virtual bool IsSnapshotSupported() const {
+    return true;
+  }
 
  protected:
   // When *key is an internal key concatenated with the value, returns the
@@ -220,7 +224,9 @@ class MemTableRepFactory {
 
   // Return true if the current MemTableRep supports concurrent inserts
   // Default: false
-  virtual bool IsInsertConcurrentlySupported() const { return false; }
+  virtual bool IsInsertConcurrentlySupported() const {
+    return false;
+  }
 };
 
 // This uses a skip list to store keys. It is the default.
@@ -237,9 +243,13 @@ class SkipListFactory : public MemTableRepFactory {
   virtual MemTableRep* CreateMemTableRep(const MemTableRep::KeyComparator&,
                                          MemTableAllocator*,
                                          Logger* logger) override;
-  virtual const char* Name() const override { return "SkipListFactory"; }
+  virtual const char* Name() const override {
+    return "SkipListFactory";
+  }
 
-  bool IsInsertConcurrentlySupported() const override { return true; }
+  bool IsInsertConcurrentlySupported() const override {
+    return true;
+  }
 
  private:
   const size_t lookahead_;

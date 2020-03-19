@@ -104,7 +104,7 @@ class CompactionJob {
 
   void UpdateCompactionStats();
   void UpdateCompactionInputStatsHelper(
-      int* num_files, uint64_t* bytes_read, int input_level);
+    int* num_files, uint64_t* bytes_read, int input_level);
 
   void LogCompaction();
 

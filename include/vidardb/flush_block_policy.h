@@ -43,13 +43,13 @@ class FlushBlockPolicyFactory {
   // Callers must delete the result after any database that is using the
   // result has been closed.
   virtual FlushBlockPolicy* NewFlushBlockPolicy(
-      const BlockBasedTableOptions& table_options,
-      const BlockBuilder& data_block_builder) const = 0;
+    const BlockBasedTableOptions& table_options,
+    const BlockBuilder& data_block_builder) const = 0;
 
   /***************************** Shichao ******************************/
   virtual FlushBlockPolicy* NewFlushBlockPolicy(
-      const ColumnTableOptions& table_options,
-      const BlockBuilder& data_block_builder) const = 0;
+    const ColumnTableOptions& table_options,
+    const BlockBuilder& data_block_builder) const = 0;
   /***************************** Shichao ******************************/
 
   virtual ~FlushBlockPolicyFactory() { }
@@ -64,13 +64,13 @@ class FlushBlockBySizePolicyFactory : public FlushBlockPolicyFactory {
   }
 
   virtual FlushBlockPolicy* NewFlushBlockPolicy(
-      const BlockBasedTableOptions& table_options,
-      const BlockBuilder& data_block_builder) const override;
+    const BlockBasedTableOptions& table_options,
+    const BlockBuilder& data_block_builder) const override;
 
   /***************************** Shichao ******************************/
   virtual FlushBlockPolicy* NewFlushBlockPolicy(
-      const ColumnTableOptions& table_options,
-      const BlockBuilder& data_block_builder) const override;
+    const ColumnTableOptions& table_options,
+    const BlockBuilder& data_block_builder) const override;
   /***************************** Shichao ******************************/
 };
 

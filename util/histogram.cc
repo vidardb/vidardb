@@ -21,37 +21,38 @@
 namespace vidardb {
 
 HistogramBucketMapper::HistogramBucketMapper()
-    :
-      // Add newer bucket index here.
-      // Should be always added in sorted order.
-      // If you change this, you also need to change
-      // size of array buckets_ in HistogramImpl
-      bucketValues_(
-          {1,         2,         3,         4,         5,         6,
-           7,         8,         9,         10,        12,        14,
-           16,        18,        20,        25,        30,        35,
-           40,        45,        50,        60,        70,        80,
-           90,        100,       120,       140,       160,       180,
-           200,       250,       300,       350,       400,       450,
-           500,       600,       700,       800,       900,       1000,
-           1200,      1400,      1600,      1800,      2000,      2500,
-           3000,      3500,      4000,      4500,      5000,      6000,
-           7000,      8000,      9000,      10000,     12000,     14000,
-           16000,     18000,     20000,     25000,     30000,     35000,
-           40000,     45000,     50000,     60000,     70000,     80000,
-           90000,     100000,    120000,    140000,    160000,    180000,
-           200000,    250000,    300000,    350000,    400000,    450000,
-           500000,    600000,    700000,    800000,    900000,    1000000,
-           1200000,   1400000,   1600000,   1800000,   2000000,   2500000,
-           3000000,   3500000,   4000000,   4500000,   5000000,   6000000,
-           7000000,   8000000,   9000000,   10000000,  12000000,  14000000,
-           16000000,  18000000,  20000000,  25000000,  30000000,  35000000,
-           40000000,  45000000,  50000000,  60000000,  70000000,  80000000,
-           90000000,  100000000, 120000000, 140000000, 160000000, 180000000,
-           200000000, 250000000, 300000000, 350000000, 400000000, 450000000,
-           500000000, 600000000, 700000000, 800000000, 900000000, 1000000000}),
-      maxBucketValue_(bucketValues_.back()),
-      minBucketValue_(bucketValues_.front()) {
+  :
+  // Add newer bucket index here.
+  // Should be always added in sorted order.
+  // If you change this, you also need to change
+  // size of array buckets_ in HistogramImpl
+  bucketValues_( {
+  1,         2,         3,         4,         5,         6,
+  7,         8,         9,         10,        12,        14,
+  16,        18,        20,        25,        30,        35,
+  40,        45,        50,        60,        70,        80,
+  90,        100,       120,       140,       160,       180,
+  200,       250,       300,       350,       400,       450,
+  500,       600,       700,       800,       900,       1000,
+  1200,      1400,      1600,      1800,      2000,      2500,
+  3000,      3500,      4000,      4500,      5000,      6000,
+  7000,      8000,      9000,      10000,     12000,     14000,
+  16000,     18000,     20000,     25000,     30000,     35000,
+  40000,     45000,     50000,     60000,     70000,     80000,
+  90000,     100000,    120000,    140000,    160000,    180000,
+  200000,    250000,    300000,    350000,    400000,    450000,
+  500000,    600000,    700000,    800000,    900000,    1000000,
+  1200000,   1400000,   1600000,   1800000,   2000000,   2500000,
+  3000000,   3500000,   4000000,   4500000,   5000000,   6000000,
+  7000000,   8000000,   9000000,   10000000,  12000000,  14000000,
+  16000000,  18000000,  20000000,  25000000,  30000000,  35000000,
+  40000000,  45000000,  50000000,  60000000,  70000000,  80000000,
+  90000000,  100000000, 120000000, 140000000, 160000000, 180000000,
+  200000000, 250000000, 300000000, 350000000, 400000000, 450000000,
+  500000000, 600000000, 700000000, 800000000, 900000000, 1000000000
+}),
+maxBucketValue_(bucketValues_.back()),
+minBucketValue_(bucketValues_.front()) {
   for (size_t i =0; i < bucketValues_.size(); ++i) {
     valueIndexMap_[bucketValues_[i]] = i;
   }
@@ -74,7 +75,7 @@ size_t HistogramBucketMapper::IndexForValue(const uint64_t value) const {
 }
 
 namespace {
-  const HistogramBucketMapper bucketMapper;
+const HistogramBucketMapper bucketMapper;
 }
 
 HistogramStat::HistogramStat()
@@ -94,7 +95,9 @@ void HistogramStat::Clear() {
   }
 };
 
-bool HistogramStat::Empty() const { return num() == 0; }
+bool HistogramStat::Empty() const {
+  return num() == 0;
+}
 
 void HistogramStat::Add(uint64_t value) {
   // This function is designed to be lock free, as it's in the critical path
@@ -156,7 +159,7 @@ double HistogramStat::Percentile(double p) const {
       double pos = 0;
       uint64_t right_left_diff = right_sum - left_sum;
       if (right_left_diff != 0) {
-       pos = (threshold - left_sum) / right_left_diff;
+        pos = (threshold - left_sum) / right_left_diff;
       }
       double r = left_point + (right_point - left_point) * pos;
       uint64_t cur_min = min();
@@ -182,8 +185,8 @@ double HistogramStat::StandardDeviation() const {
   uint64_t cur_sum_squares = sum_squares();
   if (cur_num == 0) return 0;
   double variance =
-      static_cast<double>(cur_sum_squares * cur_num - cur_sum * cur_sum) /
-      static_cast<double>(cur_num * cur_num);
+    static_cast<double>(cur_sum_squares * cur_num - cur_sum * cur_sum) /
+    static_cast<double>(cur_num * cur_num);
   return sqrt(variance);
 }
 std::string HistogramStat::ToString() const {
@@ -214,8 +217,8 @@ std::string HistogramStat::ToString() const {
     snprintf(buf, sizeof(buf),
              "[ %7" PRIu64 ", %7" PRIu64 " ) %8" PRIu64 " %7.3f%% %7.3f%% ",
              (b == 0) ? 0 : bucketMapper.BucketLimit(b-1),  // left
-              bucketMapper.BucketLimit(b),  // right
-              bucket_value,                   // count
+             bucketMapper.BucketLimit(b),  // right
+             bucket_value,                   // count
              (mult * bucket_value),           // percentage
              (mult * cumulative_sum));       // cumulative percentage
     r.append(buf);
@@ -274,7 +277,7 @@ double HistogramImpl::Average() const {
 }
 
 double HistogramImpl::StandardDeviation() const {
- return stats_.StandardDeviation();
+  return stats_.StandardDeviation();
 }
 
 std::string HistogramImpl::ToString() const {

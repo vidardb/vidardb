@@ -66,7 +66,9 @@ class FlushJob {
   ~FlushJob();
 
   Status Run(FileMetaData* file_meta = nullptr);
-  TableProperties GetTableProperties() const { return table_properties_; }
+  TableProperties GetTableProperties() const {
+    return table_properties_;
+  }
 
  private:
   void ReportStartedFlush();

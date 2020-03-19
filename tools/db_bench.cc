@@ -19,5 +19,7 @@ int main() {
 }
 #else
 #include <vidardb/db_bench_tool.h>
-int main(int argc, char** argv) { return vidardb::db_bench_tool(argc, argv); }
+int main(int argc, char** argv) {
+  return vidardb::db_bench_tool(argc, argv);
+}
 #endif  // GFLAGS

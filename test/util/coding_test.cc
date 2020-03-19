@@ -152,7 +152,7 @@ TEST(Coding, Varint32Truncation) {
     ASSERT_TRUE(GetVarint32Ptr(s.data(), s.data() + len, &result) == nullptr);
   }
   ASSERT_TRUE(
-      GetVarint32Ptr(s.data(), s.data() + s.size(), &result) != nullptr);
+    GetVarint32Ptr(s.data(), s.data() + s.size(), &result) != nullptr);
   ASSERT_EQ(large_value, result);
 }
 
@@ -172,7 +172,7 @@ TEST(Coding, Varint64Truncation) {
     ASSERT_TRUE(GetVarint64Ptr(s.data(), s.data() + len, &result) == nullptr);
   }
   ASSERT_TRUE(
-      GetVarint64Ptr(s.data(), s.data() + s.size(), &result) != nullptr);
+    GetVarint64Ptr(s.data(), s.data() + s.size(), &result) != nullptr);
   ASSERT_EQ(large_value, result);
 }
 

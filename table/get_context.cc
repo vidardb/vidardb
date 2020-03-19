@@ -34,16 +34,16 @@ GetContext::GetContext(const Comparator* ucmp,
                        Statistics* statistics, GetState init_state,
                        const Slice& user_key, std::string* ret_value,
                        bool* value_found, Env* env, SequenceNumber* seq)
-    : ucmp_(ucmp),
-      logger_(logger),
-      statistics_(statistics),
-      state_(init_state),
-      user_key_(user_key),
-      value_(ret_value),
-      value_found_(value_found),
-      env_(env),
-      seq_(seq),
-      replay_log_(nullptr) {
+  : ucmp_(ucmp),
+    logger_(logger),
+    statistics_(statistics),
+    state_(init_state),
+    user_key_(user_key),
+    value_(ret_value),
+    value_found_(value_found),
+    env_(env),
+    seq_(seq),
+    replay_log_(nullptr) {
   if (seq_) {
     *seq_ = kMaxSequenceNumber;
   }
@@ -75,26 +75,26 @@ bool GetContext::SaveValue(const ParsedInternalKey& parsed_key,
 
     // Key matches. Process it
     switch (parsed_key.type) {
-      case kTypeValue:
-        assert(state_ == kNotFound);
-        if (kNotFound == state_) {
-          state_ = kFound;
-          if (value_ != nullptr) {
-            value_->assign(value.data(), value.size());
-          }
+    case kTypeValue:
+      assert(state_ == kNotFound);
+      if (kNotFound == state_) {
+        state_ = kFound;
+        if (value_ != nullptr) {
+          value_->assign(value.data(), value.size());
         }
-        return false;
+      }
+      return false;
 
-      case kTypeDeletion:
-        assert(state_ == kNotFound);
-        if (kNotFound == state_) {
-          state_ = kDeleted;
-        }
-        return false;
+    case kTypeDeletion:
+      assert(state_ == kNotFound);
+      if (kNotFound == state_) {
+        state_ = kDeleted;
+      }
+      return false;
 
-      default:
-        assert(false);
-        break;
+    default:
+      assert(false);
+      break;
     }
   }
 
@@ -117,7 +117,7 @@ void replayGetContextLog(const Slice& replay_log, const Slice& user_key,
     // Since SequenceNumber is not stored and unknown, we will use
     // kMaxSequenceNumber.
     get_context->SaveValue(
-        ParsedInternalKey(user_key, kMaxSequenceNumber, type), value);
+      ParsedInternalKey(user_key, kMaxSequenceNumber, type), value);
   }
 #else   // VIDARDB_LITE
   assert(false);

@@ -14,9 +14,9 @@
 namespace vidardb {
 
 WriteThread::WriteThread(uint64_t max_yield_usec, uint64_t slow_yield_usec)
-    : max_yield_usec_(max_yield_usec),
-      slow_yield_usec_(slow_yield_usec),
-      newest_writer_(nullptr) {}
+  : max_yield_usec_(max_yield_usec),
+    slow_yield_usec_(slow_yield_usec),
+    newest_writer_(nullptr) {}
 
 uint8_t WriteThread::BlockingAwaitState(Writer* w, uint8_t goal_mask) {
   // We're going to block.  Lazily create the mutex.  We guarantee
@@ -230,8 +230,8 @@ void WriteThread::JoinBatchGroup(Writer* w) {
 }
 
 size_t WriteThread::EnterAsBatchGroupLeader(
-    Writer* leader, WriteThread::Writer** last_writer,
-    std::vector<WriteThread::Writer*>* write_batch_group) {
+  Writer* leader, WriteThread::Writer** last_writer,
+  std::vector<WriteThread::Writer*>* write_batch_group) {
   assert(leader->link_older == nullptr);
   assert(leader->batch != nullptr);
 
@@ -295,7 +295,7 @@ size_t WriteThread::EnterAsBatchGroupLeader(
 }
 
 void WriteThread::LaunchParallelFollowers(ParallelGroup* pg,
-                                          SequenceNumber sequence) {
+    SequenceNumber sequence) {
   // EnterAsBatchGroupLeader already created the links from leader to
   // newer writers in the group
 
@@ -363,7 +363,7 @@ void WriteThread::EarlyExitParallelGroup(Writer* w) {
 }
 
 void WriteThread::ExitAsBatchGroupLeader(Writer* leader, Writer* last_writer,
-                                         Status status) {
+    Status status) {
   assert(leader->link_older == nullptr);
 
   Writer* head = newest_writer_.load(std::memory_order_acquire);

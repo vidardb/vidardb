@@ -26,15 +26,15 @@ namespace vidardb {
 class FlushJobTest : public testing::Test {
  public:
   FlushJobTest()
-      : env_(Env::Default()),
-        dbname_(test::TmpDir() + "/flush_job_test"),
-        table_cache_(NewLRUCache(50000, 16)),
-        write_buffer_(db_options_.db_write_buffer_size),
-        versions_(new VersionSet(dbname_, &db_options_, env_options_,
-                                 table_cache_.get(), &write_buffer_,
-                                 &write_controller_)),
-        shutting_down_(false),
-        mock_table_factory_(new mock::MockTableFactory()) {
+    : env_(Env::Default()),
+      dbname_(test::TmpDir() + "/flush_job_test"),
+      table_cache_(NewLRUCache(50000, 16)),
+      write_buffer_(db_options_.db_write_buffer_size),
+      versions_(new VersionSet(dbname_, &db_options_, env_options_,
+                               table_cache_.get(), &write_buffer_,
+                               &write_controller_)),
+      shutting_down_(false),
+      mock_table_factory_(new mock::MockTableFactory()) {
     EXPECT_OK(env_->CreateDirIfMissing(dbname_));
     db_options_.db_paths.emplace_back(dbname_,
                                       std::numeric_limits<uint64_t>::max());
@@ -56,10 +56,10 @@ class FlushJobTest : public testing::Test {
     const std::string manifest = DescriptorFileName(dbname_, 1);
     unique_ptr<WritableFile> file;
     Status s = env_->NewWritableFile(
-        manifest, &file, env_->OptimizeForManifestWrite(env_options_));
+                 manifest, &file, env_->OptimizeForManifestWrite(env_options_));
     ASSERT_OK(s);
     unique_ptr<WritableFileWriter> file_writer(
-        new WritableFileWriter(std::move(file), EnvOptions()));
+      new WritableFileWriter(std::move(file), EnvOptions()));
     {
       log::Writer log(std::move(file_writer), 0, false);
       std::string record;
@@ -102,7 +102,7 @@ TEST_F(FlushJobTest, NonEmpty) {
   JobContext job_context(0);
   auto cfd = versions_->GetColumnFamilySet()->GetDefault();
   auto new_mem = cfd->ConstructNewMemtable(*cfd->GetLatestMutableCFOptions(),
-                                           kMaxSequenceNumber);
+                 kMaxSequenceNumber);
   new_mem->Ref();
   auto inserted_keys = mock::MakeMockFile();
   // Test data:
@@ -149,7 +149,7 @@ TEST_F(FlushJobTest, Snapshots) {
   JobContext job_context(0);
   auto cfd = versions_->GetColumnFamilySet()->GetDefault();
   auto new_mem = cfd->ConstructNewMemtable(*cfd->GetLatestMutableCFOptions(),
-                                           kMaxSequenceNumber);
+                 kMaxSequenceNumber);
 
   std::vector<SequenceNumber> snapshots;
   std::set<SequenceNumber> snapshots_set;
@@ -193,10 +193,10 @@ TEST_F(FlushJobTest, Snapshots) {
 
   EventLogger event_logger(db_options_.info_log.get());
   FlushJob flush_job(
-      dbname_, versions_->GetColumnFamilySet()->GetDefault(), db_options_,
-      *cfd->GetLatestMutableCFOptions(), env_options_, versions_.get(), &mutex_,
-      &shutting_down_, snapshots, kMaxSequenceNumber, &job_context, nullptr,
-      nullptr, nullptr, kNoCompression, nullptr, &event_logger, true);
+    dbname_, versions_->GetColumnFamilySet()->GetDefault(), db_options_,
+    *cfd->GetLatestMutableCFOptions(), env_options_, versions_.get(), &mutex_,
+    &shutting_down_, snapshots, kMaxSequenceNumber, &job_context, nullptr,
+    nullptr, nullptr, kNoCompression, nullptr, &event_logger, true);
   mutex_.Lock();
   ASSERT_OK(flush_job.Run());
   mutex_.Unlock();

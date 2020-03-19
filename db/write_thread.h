@@ -93,18 +93,18 @@ class WriteThread {
     Writer* link_newer;  // lazy, read/write only before linking, or as leader
 
     Writer()
-        : batch(nullptr),
-          sync(false),
-          disableWAL(false),
-          disable_memtable(false),
-          log_used(0),
-          log_ref(0),
-          in_batch_group(false),
-          made_waitable(false),
-          state(STATE_INIT),
-          parallel_group(nullptr),
-          link_older(nullptr),
-          link_newer(nullptr) {}
+      : batch(nullptr),
+        sync(false),
+        disableWAL(false),
+        disable_memtable(false),
+        log_used(0),
+        log_ref(0),
+        in_batch_group(false),
+        made_waitable(false),
+        state(STATE_INIT),
+        parallel_group(nullptr),
+        link_older(nullptr),
+        link_newer(nullptr) {}
 
     ~Writer() {
       if (made_waitable) {
@@ -133,7 +133,9 @@ class WriteThread {
       return !disable_memtable;
     }
 
-    bool ShouldWriteToWAL() { return !disableWAL; }
+    bool ShouldWriteToWAL() {
+      return !disableWAL;
+    }
 
     // No other mutexes may be acquired while holding StateMutex(), it is
     // always last in the order
@@ -145,7 +147,7 @@ class WriteThread {
     std::condition_variable& StateCV() {
       assert(made_waitable);
       return *static_cast<std::condition_variable*>(
-                 static_cast<void*>(&state_cv_bytes));
+               static_cast<void*>(&state_cv_bytes));
     }
   };
 
@@ -179,8 +181,8 @@ class WriteThread {
   // autovector<WriteBatch*>* write_batch_group: Out-param of group members
   // returns:                Total batch group byte size
   size_t EnterAsBatchGroupLeader(
-      Writer* leader, Writer** last_writer,
-      std::vector<WriteThread::Writer*>* write_batch_group);
+    Writer* leader, Writer** last_writer,
+    std::vector<WriteThread::Writer*>* write_batch_group);
 
   // Causes JoinBatchGroup to return STATE_PARALLEL_FOLLOWER for all of the
   // non-leader members of this write batch group.  Sets Writer::sequence

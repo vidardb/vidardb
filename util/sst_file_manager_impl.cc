@@ -17,12 +17,12 @@ namespace vidardb {
 SstFileManagerImpl::SstFileManagerImpl(Env* env, std::shared_ptr<Logger> logger,
                                        const std::string& trash_dir,
                                        int64_t rate_bytes_per_sec)
-    : env_(env),
-      logger_(logger),
-      total_files_size_(0),
-      max_allowed_space_(0),
-      delete_scheduler_(env, trash_dir, rate_bytes_per_sec, logger.get(),
-                        this) {}
+  : env_(env),
+    logger_(logger),
+    total_files_size_(0),
+    max_allowed_space_(0),
+    delete_scheduler_(env, trash_dir, rate_bytes_per_sec, logger.get(),
+                      this) {}
 
 SstFileManagerImpl::~SstFileManagerImpl() {}
 
@@ -122,7 +122,7 @@ SstFileManager* NewSstFileManager(Env* env, std::shared_ptr<Logger> info_log,
                                   int64_t rate_bytes_per_sec,
                                   bool delete_exisitng_trash, Status* status) {
   SstFileManagerImpl* res =
-      new SstFileManagerImpl(env, info_log, trash_dir, rate_bytes_per_sec);
+    new SstFileManagerImpl(env, info_log, trash_dir, rate_bytes_per_sec);
 
   Status s;
   if (trash_dir != "" && rate_bytes_per_sec > 0) {

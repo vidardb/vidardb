@@ -51,19 +51,19 @@ namespace vidardb {
 class CacheBench;
 namespace {
 void deleter(const Slice& key, void* value) {
-    delete reinterpret_cast<char *>(value);
+  delete reinterpret_cast<char *>(value);
 }
 
 // State shared by all concurrent executions of the same benchmark.
 class SharedState {
  public:
   explicit SharedState(CacheBench* cache_bench)
-      : cv_(&mu_),
-        num_threads_(FLAGS_threads),
-        num_initialized_(0),
-        start_(false),
-        num_done_(0),
-        cache_bench_(cache_bench) {
+    : cv_(&mu_),
+      num_threads_(FLAGS_threads),
+      num_initialized_(0),
+      start_(false),
+      num_done_(0),
+      cache_bench_(cache_bench) {
   }
 
   ~SharedState() {}
@@ -123,15 +123,15 @@ struct ThreadState {
   SharedState* shared;
 
   ThreadState(uint32_t index, SharedState* _shared)
-      : tid(index), rnd(1000 + index), shared(_shared) {}
+    : tid(index), rnd(1000 + index), shared(_shared) {}
 };
 }  // namespace
 
 class CacheBench {
  public:
   CacheBench() :
-      cache_(NewLRUCache(FLAGS_cache_size, FLAGS_num_shard_bits)),
-      num_threads_(FLAGS_threads) {}
+    cache_(NewLRUCache(FLAGS_cache_size, FLAGS_num_shard_bits)),
+    num_threads_(FLAGS_threads) {}
 
   ~CacheBench() {}
 
@@ -177,7 +177,7 @@ class CacheBench {
       uint64_t end_time = env->NowMicros();
       double elapsed = static_cast<double>(end_time - start_time) * 1e-6;
       uint32_t qps = static_cast<uint32_t>(
-          static_cast<double>(FLAGS_threads * FLAGS_ops_per_thread) / elapsed);
+                       static_cast<double>(FLAGS_threads * FLAGS_ops_per_thread) / elapsed);
       fprintf(stdout, "Complete in %.3f s; QPS = %u\n", elapsed, qps);
     }
     return true;
@@ -222,14 +222,14 @@ class CacheBench {
         // do insert
         cache_->Insert(key, new char[10], 1, &deleter);
       } else if (prob_op -= FLAGS_insert_percent &&
-                 prob_op < FLAGS_lookup_percent) {
+                            prob_op < FLAGS_lookup_percent) {
         // do lookup
         auto handle = cache_->Lookup(key);
         if (handle) {
           cache_->Release(handle);
         }
       } else if (prob_op -= FLAGS_lookup_percent &&
-                 prob_op < FLAGS_erase_percent) {
+                            prob_op < FLAGS_erase_percent) {
         // do erase
         cache_->Erase(key);
       }

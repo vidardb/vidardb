@@ -38,24 +38,24 @@ class CompactionFilterFactory;
 class Comparator;
 class Env;
 enum InfoLogLevel : unsigned char;
-class SstFileManager;
-class FilterPolicy;
-class Logger;
-class Snapshot;
-class TableFactory;
-class MemTableRepFactory;
-class TablePropertiesCollectorFactory;
-class Slice;
-class Statistics;
-class InternalKeyComparator;
-class WalFilter;
-class Splitter;
+  class SstFileManager;
+  class FilterPolicy;
+  class Logger;
+  class Snapshot;
+  class TableFactory;
+  class MemTableRepFactory;
+  class TablePropertiesCollectorFactory;
+  class Slice;
+  class Statistics;
+  class InternalKeyComparator;
+  class WalFilter;
+  class Splitter;
 
 // DB contents are stored in a set of blocks, each of which holds a
 // sequence of key,value pairs.  Each block may be compressed before
 // being stored in a file.  The following enum describes which
 // compression method (if any) is used to compress a block.
-enum CompressionType : char {
+  enum CompressionType : char {
   // NOTE: do not change the values of existing entries, as these are
   // part of the persistent format on disk.
   kNoCompression = 0x0,
@@ -154,12 +154,12 @@ struct CompressionOptions {
   uint32_t max_dict_bytes;
 
   CompressionOptions()
-      : window_bits(-14), level(-1), strategy(0), max_dict_bytes(0) {}
+    : window_bits(-14), level(-1), strategy(0), max_dict_bytes(0) {}
   CompressionOptions(int wbits, int _lev, int _strategy, int _max_dict_bytes)
-      : window_bits(wbits),
-        level(_lev),
-        strategy(_strategy),
-        max_dict_bytes(_max_dict_bytes) {}
+    : window_bits(wbits),
+      level(_lev),
+      strategy(_strategy),
+      max_dict_bytes(_max_dict_bytes) {}
 };
 
 enum UpdateStatus {    // Return status For inplace update callback
@@ -194,7 +194,7 @@ struct ColumnFamilyOptions {
   //
   // Not supported in VIDARDB_LITE
   ColumnFamilyOptions* OptimizeForPointLookup(
-      uint64_t block_cache_size_mb);
+    uint64_t block_cache_size_mb);
 
   // Default values for some parameters in ColumnFamilyOptions are not
   // optimized for heavy workloads and big datasets, which means you might
@@ -213,12 +213,12 @@ struct ColumnFamilyOptions {
   //
   // OptimizeUniversalStyleCompaction is not supported in VIDARDB_LITE
   ColumnFamilyOptions* OptimizeLevelStyleCompaction(
-      uint64_t memtable_memory_budget = 512 * 1024 * 1024);
+    uint64_t memtable_memory_budget = 512 * 1024 * 1024);
   ColumnFamilyOptions* OptimizeUniversalStyleCompaction(
-      uint64_t memtable_memory_budget = 512 * 1024 * 1024);
+    uint64_t memtable_memory_budget = 512 * 1024 * 1024);
   /********************* Shichao ***************************/
   ColumnFamilyOptions* OptimizeAdaptiveLevelStyleCompaction(
-        uint64_t memtable_memory_budget = 512 * 1024 * 1024);
+    uint64_t memtable_memory_budget = 512 * 1024 * 1024);
   /********************* Shichao ***************************/
 
   // -------------------
@@ -1010,10 +1010,10 @@ struct DBOptions {
   // It will be applied to all input files of a compaction.
   // Default: NORMAL
   enum AccessHint {
-      NONE,
-      NORMAL,
-      SEQUENTIAL,
-      WILLNEED
+    NONE,
+    NORMAL,
+    SEQUENTIAL,
+    WILLNEED
   };
   AccessHint access_hint_on_compaction_start;
 
@@ -1215,7 +1215,7 @@ struct Options : public DBOptions, public ColumnFamilyOptions {
 
   Options(const DBOptions& db_options,
           const ColumnFamilyOptions& column_family_options)
-      : DBOptions(db_options), ColumnFamilyOptions(column_family_options) {}
+    : DBOptions(db_options), ColumnFamilyOptions(column_family_options) {}
 
   // The function recovers options to the option as in version 4.6.
   Options* OldDefaults(int vidardb_major_version = 4,
@@ -1253,9 +1253,9 @@ enum ReadTier {
   kReadAllTier = 0x0,     // data in memtable, block cache, OS cache or storage
   kBlockCacheTier = 0x1,  // data in memtable or block cache
   kPersistedTier = 0x2    // persisted data.  When WAL is disabled, this option
-                          // will skip data in memtable.
-                          // Note that this ReadTier currently only supports
-                          // Get and MultiGet and does not support iterators.
+                   // will skip data in memtable.
+                   // Note that this ReadTier currently only supports
+                   // Get and MultiGet and does not support iterators.
 };
 
 // Options that control read operations
@@ -1414,10 +1414,10 @@ struct WriteOptions {
   bool ignore_missing_column_families;
 
   WriteOptions()
-      : sync(false),
-        disableWAL(false),
-        timeout_hint_us(0),
-        ignore_missing_column_families(false) {}
+    : sync(false),
+      disableWAL(false),
+      timeout_hint_us(0),
+      ignore_missing_column_families(false) {}
 };
 
 // Options that control flush operations
@@ -1444,8 +1444,8 @@ struct CompactionOptions {
   uint64_t output_file_size_limit;
 
   CompactionOptions()
-      : compression(kSnappyCompression),
-        output_file_size_limit(std::numeric_limits<uint64_t>::max()) {}
+    : compression(kSnappyCompression),
+      output_file_size_limit(std::numeric_limits<uint64_t>::max()) {}
 };
 
 // For level based compaction, we can configure if we want to skip/force
@@ -1477,7 +1477,7 @@ struct CompactRangeOptions {
   // By default level based compaction will only compact the bottommost level
   // if there is a compaction filter
   BottommostLevelCompaction bottommost_level_compaction =
-      BottommostLevelCompaction::kIfHaveCompactionFilter;
+    BottommostLevelCompaction::kIfHaveCompactionFilter;
 };
 
 }  // namespace vidardb
