@@ -30,7 +30,7 @@ std::vector<std::string> EncodingSplitter::Split(const std::string& s) const {
   Slice ss(s), val;
   std::vector<std::string> result;
   while (GetLengthPrefixedSlice(&ss, &val)) {
-    result.emplace_back(std::move(val.ToString()));
+    result.emplace_back(val.ToString());
   }
   return result;
 }
