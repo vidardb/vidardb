@@ -462,6 +462,7 @@ coverage:
 
 # install pre-commit hook, see CONTRIBUTING.md for the details
 hook_install:
+	@echo "Installing pre-commit hook..."
 	./scripts/git-pre-commit-format install
 
 ifneq (,$(filter check parallel_check,$(MAKECMDGOALS)),)
