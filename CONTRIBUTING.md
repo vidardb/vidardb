@@ -1,6 +1,6 @@
 # Contributing to VidarDB
 
-## Code Style
+## Pre-commit hook installation
 
 We are currently using clang-format to keep our code style consistent.
 We add [pre-commit hook](https://github.com/barisione/clang-format-hooks) to check the style of changed code before every commit. 
@@ -14,7 +14,7 @@ Then, every time you commit your code, the hook will check if your code matches 
 If it doesn't, you can choose to fix it automatically or manually.
 
 Note: if you use git through a GUI or some other tool (i.e. not directly on the command line), the script will fail to
- get your input. In this case disable the interactive behaviour with:
+get your input. In this case disable the interactive behaviour with:
  
  ```bash
 git config hooks.clangFormatDiffInteractive false
