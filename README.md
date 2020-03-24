@@ -1,6 +1,6 @@
 <img style="width:100%;" src="/github-banner.png">
 
-## VidarDB: the world's first unified database system, replacing multiple data systems with a single unified tool.
+## VidarDB: the world's first unified database system, replacing multiple data tools with a single unified database.
 
 [![Build Status](https://travis-ci.org/vidardb/vidardb.svg?branch=master)](https://travis-ci.org/vidardb/vidardb)
 

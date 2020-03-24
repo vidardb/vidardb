@@ -27,13 +27,10 @@ void PipeSplitter::Append(std::string& ss, const Slice& s, bool last) const {
 }
 
 std::vector<std::string> EncodingSplitter::Split(const std::string& s) const {
+  Slice ss(s), val;
   std::vector<std::string> result;
-  for (auto i = 0u; i < s.size();) {
-    assert(i + 4 <= s.size());
-    uint32_t length = DecodeFixed32(s.data() + i);
-    assert(i + 4 + length <= s.size());
-    result.emplace_back(s.substr(i + 4, length));
-    i += 4 + length;
+  while (GetLengthPrefixedSlice(&ss, &val)) {
+    result.emplace_back(val.ToString());
   }
   return result;
 }
@@ -47,10 +44,7 @@ std::string EncodingSplitter::Stitch(const std::vector<std::string>& v) const {
 }
 
 void EncodingSplitter::Append(std::string& ss, const Slice& s, bool last) const {
-  std::string length;
-  PutFixed32(&length, s.size());
-  ss.append(length);
-  ss.append(s.data_, s.size_);
+  PutLengthPrefixedSlice(&ss, s);
 }
 
 }  // namespace vidardb
