@@ -428,7 +428,7 @@ endif  # PLATFORM_SHARED_EXT
 .PHONY: blackbox_crash_test check clean coverage crash_test ldb_tests package \
 	release tags valgrind_check whitebox_crash_test format static_lib shared_lib all \
 	dbg vidardbjavastatic vidardbjava install install-static install-shared uninstall \
-	analyze tools tools_lib docker-image
+	analyze tools tools_lib docker-image hook_install
 
 docker-image:
 	@echo "Building docker image..."
@@ -459,6 +459,11 @@ coverage:
 	cd coverage && ./coverage_test.sh
         # Delete intermediate files
 	find . -type f -regex ".*\.\(\(gcda\)\|\(gcno\)\)" -exec rm {} \;
+
+# install pre-commit hook, see CONTRIBUTING.md for the details
+hook_install:
+	@echo "Installing pre-commit hook..."
+	./scripts/git-pre-commit-format install
 
 ifneq (,$(filter check parallel_check,$(MAKECMDGOALS)),)
 # Use /dev/shm if it has the sticky bit set (otherwise, /tmp),
