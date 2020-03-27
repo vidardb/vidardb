@@ -39,10 +39,11 @@ sudo apt update
 sudo apt install clang-format-10
 ```
 
-Finally, rename `clang-format-10` to `clang-format`:
+Finally, create a soft link from `clang-format-10` to `clang-format`:
 
 ```bash
-sudo mv /usr/bin/clang-format-10 /usr/bin/clang-format
+sudo ln -s /usr/bin/clang-format-10 /usr/bin/clang-format
+sudo ln -s /usr/bin/clang-format-diff-10 /usr/bin/clang-format-diff
 ```
 
 ## Pre-commit hook installation
