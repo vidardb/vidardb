@@ -2,18 +2,18 @@
 
 ## Clang-format installation
 
-We are currently using clang-format-10 to keep our code style consistent.
+We are currently using `clang-format-10` to keep our code style consistent.
 
 Please add the corresponding source to the end of `/etc/apt/sources.list`:
 
- - For Ubuntu 16.04: 
+ - For Ubuntu 16.04 (xenial):
 
     ```
     deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-10 main
     deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-10 main
     ```
 
- - For Ubuntu 18.04:
+ - For Ubuntu 18.04 (bionic):
 
     ```
     deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main
