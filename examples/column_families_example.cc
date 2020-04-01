@@ -47,7 +47,8 @@ int main() {
   s = db->Put(WriteOptions(), handles[1], Slice("key"), Slice("value"));
   assert(s.ok());
   std::string value;
-  s = db->Get(ReadOptions(), handles[1], Slice("key"), &value);
+  ReadOptions ro;
+  s = db->Get(ro, handles[1], Slice("key"), &value);
   assert(s.ok());
 
   // atomic write

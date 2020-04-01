@@ -14,23 +14,25 @@ using namespace std;
 using namespace vidardb;
 
 unsigned int M = 3;
-string kDBPath = "/tmp/range_query_column_example";
+string kDBPath = "/tmp/vidardb_range_query_column_example";
 
 int main(int argc, char* argv[]) {
   // remove existed db path
-  system("rm -rf /tmp/range_query_column_example");
+  system(string("rm -rf " + kDBPath).c_str());
 
   // open database
-  DB* db; // db ref
+  DB* db;
   Options options;
   options.create_if_missing = true;
+
+  const Splitter* splitter = NewEncodingSplitter();
+  options.splitter = splitter;
 
   // column table
   TableFactory* table_factory = NewColumnTableFactory();
   ColumnTableOptions* opts =
       static_cast<ColumnTableOptions*>(table_factory->GetOptions());
   opts->column_count = M;
-  // opts->splitter.reset(new PipeSplitter()); // default EncodingSplitter
   options.table_factory.reset(table_factory);
 
   Status s = DB::Open(options, kDBPath, &db);
@@ -39,7 +41,6 @@ int main(int argc, char* argv[]) {
   // insert data
   WriteOptions write_options;
   // write_options.sync = true;
-  Splitter *splitter = opts->splitter.get();
   s = db->Put(write_options, "1", 
       splitter->Stitch(vector<string>{"chen1", "33", "hangzhou"}));
   assert(s.ok());
@@ -79,14 +80,13 @@ int main(int argc, char* argv[]) {
   ReadOptions read_options;
   // read_options.batch_capacity = 0; // full search
   read_options.batch_capacity = 2; // in batch
-  read_options.columns = {0}; // only query keys
-//  read_options.columns = {1, 3};
-  read_options.splitter = splitter;
+  // read_options.columns = {0}; // only query keys
+  read_options.columns = {1, 3};
 
-//  Range range; // full search
+  // Range range; // full search
   // Range range("2", "5"); // [2, 5]
   Range range("1", "6"); // [1, 6]
-//  Range range("1", kRangeQueryMax); // [1, max]
+  // Range range("1", kRangeQueryMax); // [1, max]
 
   list<RangeQueryKeyVal> res;
   bool next = true;
@@ -114,6 +114,6 @@ int main(int argc, char* argv[]) {
     assert(total_val_size == read_options.result_val_size);
   }
 
-  delete db;
+  delete db, splitter;
   return 0;
 }

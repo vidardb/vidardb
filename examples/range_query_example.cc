@@ -11,16 +11,17 @@ using namespace std;
 #include "vidardb/options.h"
 using namespace vidardb;
 
-string kDBPath = "/tmp/range_query_example";
+string kDBPath = "/tmp/vidardb_range_query_example";
 
 int main(int argc, char* argv[]) {
   // remove existed db path
-  system("rm -rf /tmp/range_query_example");
+  system(string("rm -rf " + kDBPath).c_str());
 
   // open database
-  DB* db; // db ref
+  DB* db;
   Options options;
   options.create_if_missing = true;
+
   Status s = DB::Open(options, kDBPath, &db);
   assert(s.ok());
 
@@ -58,10 +59,10 @@ int main(int argc, char* argv[]) {
   // read_options.batch_capacity = 0; // full search
   read_options.batch_capacity = 2; // in batch
 
-//  Range range; // full search
-//  Range range("2", "4"); // [2, 4]
+  // Range range; // full search
+  // Range range("2", "4"); // [2, 4]
   Range range("1", "6"); // [1, 6]
-//  Range range("1", kRangeQueryMax); // [1, max]
+  // Range range("1", kRangeQueryMax); // [1, max]
 
   list<RangeQueryKeyVal> res;
   bool next = true;

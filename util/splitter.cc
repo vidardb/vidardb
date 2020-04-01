@@ -26,6 +26,8 @@ void PipeSplitter::Append(std::string& ss, const Slice& s, bool last) const {
   }
 }
 
+Splitter* NewPipeSplitter() { return new PipeSplitter(); }
+
 std::vector<std::string> EncodingSplitter::Split(const std::string& s) const {
   Slice ss(s), val;
   std::vector<std::string> result;
@@ -46,5 +48,7 @@ std::string EncodingSplitter::Stitch(const std::vector<std::string>& v) const {
 void EncodingSplitter::Append(std::string& ss, const Slice& s, bool last) const {
   PutLengthPrefixedSlice(&ss, s);
 }
+
+Splitter* NewEncodingSplitter() { return new EncodingSplitter(); }
 
 }  // namespace vidardb

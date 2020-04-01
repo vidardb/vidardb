@@ -11,7 +11,7 @@
 
 #define VIDARDB_MAJOR 0
 #define VIDARDB_MINOR 1
-#define VIDARDB_PATCH 0
+#define VIDARDB_PATCH 2
 
 // Do not use these. We made the mistake of declaring macros starting with
 // double underscore. Now we have to live with our choice. We'll deprecate these

@@ -891,12 +891,14 @@ class ColumnTable::BlockEntryIteratorState : public TwoLevelIteratorState {
 class ColumnTable::ColumnIterator : public InternalIterator {
  public:
   ColumnIterator(const std::vector<InternalIterator*>& columns,
-                 std::shared_ptr<Splitter> splitter,
-                 bool has_main_column,
+                 bool has_main_column, const Splitter* splitter,
                  const InternalKeyComparator& internal_comparator,
                  uint64_t num_entries = 0)
-  : columns_(columns), splitter_(splitter), has_main_column_(has_main_column),
-    internal_comparator_(internal_comparator), num_entries_(num_entries) {}
+      : columns_(columns),
+        has_main_column_(has_main_column),
+        splitter_(splitter),
+        internal_comparator_(internal_comparator),
+        num_entries_(num_entries) {}
 
   virtual ~ColumnIterator() {
     for (const auto& it : columns_) {
@@ -1148,9 +1150,9 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 
   std::vector<InternalIterator*> columns_;
   std::string value_;
-  std::shared_ptr<Splitter> splitter_;
   Status status_;
   bool has_main_column_;  // true in NewIterator, false in Get & Prefetch
+  const Splitter* splitter_;                         // used in rangequery
   const InternalKeyComparator& internal_comparator_; // used in rangrquery
   uint64_t num_entries_;  // used in rangrquery
 };
@@ -1190,8 +1192,8 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
         new BlockEntryIteratorState(rep_->tables[column_index-1].get(), ro),
         rep_->tables[column_index-1]->NewIndexIterator(ro), arena));
   }
-  return new ColumnIterator(iters, rep_->table_options.splitter,
-                            true, rep_->internal_comparator,
+  return new ColumnIterator(iters, true, rep_->ioptions.splitter,
+                            rep_->internal_comparator,
                             rep_->table_properties->num_entries);
 }
 
@@ -1244,8 +1246,8 @@ Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
             rep_->tables[it-1]->NewIndexIterator(ro)));
       }
 
-      ColumnIterator citers(iters, rep_->table_options.splitter,
-                            false, rep_->internal_comparator, /* might change*/
+      ColumnIterator citers(iters, false, rep_->ioptions.splitter,
+                            rep_->internal_comparator, /* might change*/
                             rep_->table_properties->num_entries);
       if (!citers.status().ok()) {
         s = citers.status();
@@ -1343,8 +1345,8 @@ Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end,
           rep_->tables[it-1]->NewIndexIterator(ro)));
     }
 
-    ColumnIterator citers(iters, rep_->table_options.splitter,
-                          false, rep_->internal_comparator,
+    ColumnIterator citers(iters, false, rep_->ioptions.splitter,
+                          rep_->internal_comparator,
                           rep_->table_properties->num_entries);
     if (!citers.status().ok()) {
       return citers.status();

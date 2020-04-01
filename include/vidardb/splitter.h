@@ -12,7 +12,7 @@
 namespace vidardb {
 
 // A Splitter object provides the function of splitting a string to multiple
-// sub-strings and joining multiple sub-strings.  A Splitter implementation
+// sub-strings and stitching multiple sub-strings.  A Splitter implementation
 // must be thread-safe since vidardb may invoke its methods concurrently
 // from multiple threads.
 class Splitter {
@@ -25,7 +25,7 @@ class Splitter {
   //
   // Names starting with "vidardb." are reserved and should not be used
   // by any clients of this package.
-  virtual const std::string Name() const = 0;
+  virtual const char* Name() const = 0;
 
   // Split a string to multiple sub-strings.
   virtual std::vector<std::string> Split(const std::string& s) const = 0;
@@ -43,9 +43,7 @@ class PipeSplitter : public Splitter {
  public:
   PipeSplitter() { }
 
-  virtual const std::string Name() const override {
-    return "vidardb.PipeSplitter";
-  }
+  virtual const char* Name() const override { return "vidardb.PipeSplitter"; }
 
   virtual std::vector<std::string> Split(const std::string& s) const override;
 
@@ -57,17 +55,20 @@ class PipeSplitter : public Splitter {
   const char delim = '|';
 };
 
+// Create default pipe splitter.
+extern Splitter* NewPipeSplitter();
+
 // A builtin encoding splitter that uses the following format:
 // entry1entry2entry3...
 //
-// Every entry contains:
-//   length (4B)
+// Each entry contains:
+//   length (variable)
 //   string
 class EncodingSplitter : public Splitter {
  public:
   EncodingSplitter() { }
 
-  virtual const std::string Name() const override {
+  virtual const char* Name() const override {
     return "vidardb.EncodingSplitter";
   }
 
@@ -77,6 +78,9 @@ class EncodingSplitter : public Splitter {
 
   virtual void Append(std::string& ss, const Slice& s, bool last) const override;
 };
+
+// Create default encoding splitter
+extern Splitter* NewEncodingSplitter();
 
 }  // namespace vidardb
 

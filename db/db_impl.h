@@ -82,9 +82,8 @@ class DBImpl : public DB {
                        WriteBatch* updates) override;
 
   using DB::Get;
-  virtual Status Get(const ReadOptions& options,
-                     ColumnFamilyHandle* column_family, const Slice& key,
-                     std::string* value) override;
+  virtual Status Get(ReadOptions& options, ColumnFamilyHandle* column_family,
+                     const Slice& key, std::string* value) override;
 
   /*************************** Shichao ****************************/
   using DB::RangeQuery;
@@ -232,8 +231,9 @@ class DBImpl : public DB {
   //
   // Returns OK or NotFound on success,
   // other status on unexpected error.
-  Status GetLatestSequenceForKey(SuperVersion* sv, const Slice& key,
-                                 bool cache_only, SequenceNumber* seq,
+  Status GetLatestSequenceForKey(ReadOptions& options, SuperVersion* sv,
+                                 const Slice& key, bool cache_only,
+                                 SequenceNumber* seq,
                                  bool* found_record_for_key);
 
   using DB::AddFile;
@@ -975,7 +975,7 @@ class DBImpl : public DB {
 
   // Function that Get and KeyMayExist call with no_io true or false
   // Note: 'value_found' from KeyMayExist propagates here
-  Status GetImpl(const ReadOptions& options, ColumnFamilyHandle* column_family,
+  Status GetImpl(ReadOptions& options, ColumnFamilyHandle* column_family,
                  const Slice& key, std::string* value,
                  bool* value_found = nullptr);
 

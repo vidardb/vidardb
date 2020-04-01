@@ -12,7 +12,6 @@
 #include "port/port.h"
 #include "vidardb/flush_block_policy.h"
 #include "vidardb/cache.h"
-#include "vidardb/splitter.h"
 #include "table/column_table_builder.h"
 #include "table/column_table_reader.h"
 #include "table/format.h"
@@ -40,9 +39,6 @@ ColumnTableFactory::ColumnTableFactory(
   }
   if (table_options_.index_block_restart_interval < 1) {
     table_options_.index_block_restart_interval = 1;
-  }
-  if (table_options_.splitter == nullptr) {
-    table_options_.splitter.reset(new EncodingSplitter());
   }
 }
 
@@ -83,6 +79,9 @@ TableBuilder* ColumnTableFactory::NewTableBuilder(
 
 Status ColumnTableFactory::SanitizeOptions(
     const DBOptions& db_opts, const ColumnFamilyOptions& cf_opts) const {
+  if (cf_opts.splitter == nullptr) {
+    return Status::InvalidArgument("Missing splitter.");
+  }
   return Status::OK();
 }
 

@@ -252,10 +252,9 @@ class DB {
   // a status for which Status::IsNotFound() returns true.
   //
   // May return some other Status on an error.
-  virtual Status Get(const ReadOptions& options,
-                     ColumnFamilyHandle* column_family, const Slice& key,
-                     std::string* value) = 0;
-  virtual Status Get(const ReadOptions& options, const Slice& key,
+  virtual Status Get(ReadOptions& options, ColumnFamilyHandle* column_family,
+                     const Slice& key, std::string* value) = 0;
+  virtual Status Get(ReadOptions& options, const Slice& key,
                      std::string* value) {
     return Get(options, DefaultColumnFamily(), key, value);
   }

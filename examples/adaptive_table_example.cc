@@ -17,17 +17,20 @@ using namespace vidardb;
 #define COLUMN_STORE
 
 unsigned int M = 3;
-string kDBPath = "/tmp/adaptive_table_example";
+string kDBPath = "/tmp/vidardb_adaptive_table_example";
 
 int main(int argc, char* argv[]) {
   // remove existed db path
-  system("rm -rf /tmp/adaptive_table_example");
+  system(string("rm -rf " + kDBPath).c_str());
 
   // open database
-  DB* db; // db ref
+  DB* db;
   Options options;
-  options.OptimizeAdaptiveLevelStyleCompaction();
   options.create_if_missing = true;
+  options.OptimizeAdaptiveLevelStyleCompaction();
+
+  const Splitter* splitter = NewEncodingSplitter();
+  options.splitter = splitter;
 
   // adaptive table factory
   #ifdef ROW_STORE
@@ -49,10 +52,8 @@ int main(int argc, char* argv[]) {
   assert(s.ok());
 
   // insert data
-  #ifdef COLUMN_STORE
   WriteOptions write_options;
   // write_options.sync = true;
-  Splitter *splitter = column_opts->splitter.get();
   s = db->Put(write_options, "1", 
       splitter->Stitch(vector<string>{"chen1", "33", "hangzhou"}));
   assert(s.ok());
@@ -84,33 +85,6 @@ int main(int argc, char* argv[]) {
   assert(s.ok());
   s = db->Delete(write_options, "3");
   assert(s.ok());
-  #endif
-  #ifdef ROW_STORE
-  WriteOptions write_options;
-  // write_options.sync = true;
-  s = db->Put(write_options, "1", "data1");
-  assert(s.ok());
-  s = db->Put(write_options, "2", "data2");
-  assert(s.ok());
-  s = db->Put(write_options, "3", "data3");
-  assert(s.ok());
-  s = db->Put(write_options, "4", "data4");
-  assert(s.ok());
-  s = db->Put(write_options, "5", "data5");
-  assert(s.ok());
-  s = db->Put(write_options, "6", "data6");
-  assert(s.ok());
-  s = db->Delete(write_options, "1");
-  assert(s.ok());
-  s = db->Put(write_options, "3", "data333");
-  assert(s.ok());
-  s = db->Put(write_options, "6", "data666");
-  assert(s.ok());
-  s = db->Put(write_options, "1", "data1111");
-  assert(s.ok());
-  s = db->Delete(write_options, "3");
-  assert(s.ok());
-  #endif
 
   // test memtable or sstable
   s = db->Flush(FlushOptions());
@@ -119,13 +93,13 @@ int main(int argc, char* argv[]) {
   ReadOptions read_options;
   // read_options.batch_capacity = 0; // full search
   read_options.batch_capacity = 2; // in batch
+  read_options.columns = {1, 3};
 
-//  Range range; // full search
+  // Range range; // full search
   // Range range("2", "5"); // [2, 5]
   Range range("1", "6"); // [1, 6]
-//  Range range("1", kRangeQueryMax); // [1, max]
+  // Range range("1", kRangeQueryMax); // [1, max]
 
-  #ifdef COLUMN_STORE
   list<RangeQueryKeyVal> res;
   bool next = true;
   while (next) { // range query loop
@@ -144,20 +118,7 @@ int main(int argc, char* argv[]) {
     }
     cout << endl;
   }
-  #endif
-  #ifdef ROW_STORE
-  list<RangeQueryKeyVal> res;
-  bool next = true;
-  while (next) { // range query loop
-    next = db->RangeQuery(read_options, range, res, &s);
-    assert(s.ok());
-    for (auto it : res) {
-      cout << it.user_key << "=" << it.user_val << " ";
-    }
-    cout << endl;
-  }
-  #endif
 
-  delete db;
+  delete db, splitter;
   return 0;
 }

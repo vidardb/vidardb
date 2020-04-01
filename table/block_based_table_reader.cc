@@ -17,16 +17,6 @@
 #include <utility>
 
 #include "db/dbformat.h"
-
-#include "vidardb/cache.h"
-#include "vidardb/comparator.h"
-#include "vidardb/env.h"
-#include "vidardb/iterator.h"
-#include "vidardb/options.h"
-#include "vidardb/statistics.h"
-#include "vidardb/table.h"
-#include "vidardb/table_properties.h"
-
 #include "table/block.h"
 #include "table/block_based_table_factory.h"
 #include "table/format.h"
@@ -34,12 +24,20 @@
 #include "table/internal_iterator.h"
 #include "table/meta_blocks.h"
 #include "table/two_level_iterator.h"
-
 #include "util/coding.h"
 #include "util/file_reader_writer.h"
 #include "util/perf_context_imp.h"
 #include "util/stop_watch.h"
 #include "util/string_util.h"
+#include "vidardb/cache.h"
+#include "vidardb/comparator.h"
+#include "vidardb/env.h"
+#include "vidardb/iterator.h"
+#include "vidardb/options.h"
+#include "vidardb/splitter.h"
+#include "vidardb/statistics.h"
+#include "vidardb/table.h"
+#include "vidardb/table_properties.h"
 
 namespace vidardb {
 
@@ -832,8 +830,13 @@ class BlockBasedTable::BlockEntryIteratorState : public TwoLevelIteratorState {
 class BlockBasedTable::BlockBasedIterator : public InternalIterator {
  public:
   BlockBasedIterator(InternalIterator* iter,
-                     const InternalKeyComparator& internal_comparator)
-  : iter_(iter), internal_comparator_(internal_comparator) {}
+                     const InternalKeyComparator& internal_comparator,
+                     const Splitter* splitter,
+                     const std::vector<uint32_t> columns)
+      : iter_(iter),
+        internal_comparator_(internal_comparator),
+        splitter_(splitter),
+        columns_(columns) {}
 
   virtual ~BlockBasedIterator() {
     iter_->~InternalIterator();
@@ -872,7 +875,13 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 
   virtual Slice value() const {
     assert(Valid());
-    return iter_->value();
+    Slice v = iter_->value();
+    if (columns_.empty() || splitter_ == nullptr) {
+      return v;
+    }
+
+    std::string user_full_val(v.data(), v.size());
+    return ReformatUserValue(user_full_val, columns_, splitter_);
   }
 
   virtual Status status() const {
@@ -918,7 +927,10 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
           continue;
         }
 
-        std::string user_val(iter_->value().data(), iter_->value().size());
+        Slice v = iter_->value();
+        std::string user_full_val(v.data(), v.size());
+        std::string user_val =
+            ReformatUserValue(user_full_val, read_options.columns, splitter_);
 
         if (it->second.seq_ < parsed_key.sequence) {
           // replaced
@@ -970,14 +982,18 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   InternalIterator* iter_;
   Status status_;
   const InternalKeyComparator& internal_comparator_;
+
+  const Splitter* splitter_;
+  const std::vector<uint32_t> columns_;
 };
 /***************************** Shichao *********************************/
 
 InternalIterator* BlockBasedTable::NewIterator(const ReadOptions& read_options,
                                                Arena* arena) {
-  return new BlockBasedIterator(NewTwoLevelIterator(
-      new BlockEntryIteratorState(this, read_options),
-      NewIndexIterator(read_options), arena), rep_->internal_comparator);
+  return new BlockBasedIterator(
+      NewTwoLevelIterator(new BlockEntryIteratorState(this, read_options),
+                          NewIndexIterator(read_options), arena),
+      rep_->internal_comparator, rep_->ioptions.splitter, read_options.columns);
 }
 
 Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
@@ -1013,7 +1029,11 @@ Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
         break;  // Shichao
       }
 
-      if (!get_context->SaveValue(parsed_key, biter.value())) {
+      Slice v = biter.value();
+      std::string user_full_val(v.data(), v.size());
+      Slice user_val = ReformatUserValue(user_full_val, read_options.columns,
+                                         rep_->ioptions.splitter);
+      if (!get_context->SaveValue(parsed_key, user_val)) {
         done = true;
         break;
       }
