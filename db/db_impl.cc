@@ -3555,9 +3555,8 @@ ColumnFamilyHandle* DBImpl::DefaultColumnFamily() const {
   return default_cf_handle_;
 }
 
-Status DBImpl::Get(const ReadOptions& read_options,
-                   ColumnFamilyHandle* column_family, const Slice& key,
-                   std::string* value) {
+Status DBImpl::Get(ReadOptions& read_options, ColumnFamilyHandle* column_family,
+                   const Slice& key, std::string* value) {
   return GetImpl(read_options, column_family, key, value);
 }
 
@@ -3613,7 +3612,7 @@ SuperVersion* DBImpl::InstallSuperVersionAndScheduleWork(
   return old;
 }
 
-Status DBImpl::GetImpl(const ReadOptions& read_options,
+Status DBImpl::GetImpl(ReadOptions& read_options,
                        ColumnFamilyHandle* column_family, const Slice& key,
                        std::string* value, bool* value_found) {
   StopWatch sw(env_, stats_, DB_GET);
@@ -3643,10 +3642,10 @@ Status DBImpl::GetImpl(const ReadOptions& read_options,
       (read_options.read_tier == kPersistedTier && has_unpersisted_data_);
   bool done = false;
   if (!skip_memtable) {
-    if (sv->mem->Get(lkey, value, &s)) {
+    if (sv->mem->Get(read_options, lkey, value, &s)) {
       done = true;
       RecordTick(stats_, MEMTABLE_HIT);
-    } else if (sv->imm->Get(lkey, value, &s)) {
+    } else if (sv->imm->Get(read_options, lkey, value, &s)) {
       done = true;
       RecordTick(stats_, MEMTABLE_HIT);
     }
@@ -5977,8 +5976,9 @@ SequenceNumber DBImpl::GetEarliestMemTableSequenceNumber(SuperVersion* sv,
 #endif  // VIDARDB_LITE
 
 #ifndef VIDARDB_LITE
-Status DBImpl::GetLatestSequenceForKey(SuperVersion* sv, const Slice& key,
-                                       bool cache_only, SequenceNumber* seq,
+Status DBImpl::GetLatestSequenceForKey(ReadOptions& options, SuperVersion* sv,
+                                       const Slice& key, bool cache_only,
+                                       SequenceNumber* seq,
                                        bool* found_record_for_key) {
   Status s;
 
@@ -5989,7 +5989,7 @@ Status DBImpl::GetLatestSequenceForKey(SuperVersion* sv, const Slice& key,
   *found_record_for_key = false;
 
   // Check if there is a record for this key in the latest memtable
-  sv->mem->Get(lkey, nullptr, &s, seq);
+  sv->mem->Get(options, lkey, nullptr, &s, seq);
 
   if (!(s.ok() || s.IsNotFound() || s.IsMergeInProgress())) {
     // unexpected error reading memtable.
@@ -6007,7 +6007,7 @@ Status DBImpl::GetLatestSequenceForKey(SuperVersion* sv, const Slice& key,
   }
 
   // Check if there is a record for this key in the immutable memtables
-  sv->imm->Get(lkey, nullptr, &s, seq);
+  sv->imm->Get(options, lkey, nullptr, &s, seq);
 
   if (!(s.ok() || s.IsNotFound() || s.IsMergeInProgress())) {
     // unexpected error reading memtable.
@@ -6025,7 +6025,7 @@ Status DBImpl::GetLatestSequenceForKey(SuperVersion* sv, const Slice& key,
   }
 
   // Check if there is a record for this key in the immutable memtables
-  sv->imm->GetFromHistory(lkey, nullptr, &s, seq);
+  sv->imm->GetFromHistory(options, lkey, nullptr, &s, seq);
 
   if (!(s.ok() || s.IsNotFound() || s.IsMergeInProgress())) {
     // unexpected error reading memtable.

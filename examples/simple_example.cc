@@ -22,41 +22,60 @@ int main() {
   // create the DB if it's not already present
   options.create_if_missing = true;
 
+  const Splitter* splitter = NewPipeSplitter();
+  options.splitter = splitter;
+
   // open DB
   Status s = DB::Open(options, kDBPath, &db);
   assert(s.ok());
 
-  // Put key-value
-  s = db->Put(WriteOptions(), "key1", "value");
+  // Put key-value: key1 -> val11|val12
+  s = db->Put(WriteOptions(), "key1", splitter->Stitch({"val11", "val12"}));
   assert(s.ok());
-  std::string value;
+
+  // test memtable or sstable
+  s = db->Flush(FlushOptions());
+  assert(s.ok());
+
   // get value
-  s = db->Get(ReadOptions(), "key1", &value);
+  ReadOptions ro;
+  ro.columns = {1};
+
+  std::string value;
+  s = db->Get(ro, "key1", &value);
   assert(s.ok());
-  assert(value == "value");
+  assert(value == "val11");
+  cout << "key1: " << value << endl;
 
   // atomically apply a set of updates
   {
     WriteBatch batch;
     batch.Delete("key1");
-    batch.Put("key2", value);
+    // key2 -> val21|val22
+    batch.Put("key2", splitter->Stitch({"val21", "val22"}));
     s = db->Write(WriteOptions(), &batch);
+
+    // test memtable or sstable
+    s = db->Flush(FlushOptions());
+    assert(s.ok());
   }
 
-  s = db->Get(ReadOptions(), "key1", &value);
+  s = db->Get(ro, "key1", &value);
   assert(s.IsNotFound());
 
-  db->Get(ReadOptions(), "key2", &value);
-  assert(value == "value");
+  db->Get(ro, "key2", &value);
+  assert(value == "val21");
+  cout << "key2: " << value << endl;
 
-  Iterator* iter = db->NewIterator(ReadOptions());
+  Iterator* iter = db->NewIterator(ro);
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-      cout << "key:" << iter->key().ToString()
-           << " value:" << iter->value().ToString() << endl;;
+    cout << "key: " << iter->key().ToString()
+         << " value: " << iter->value().ToString() << endl;
+    ;
   }
   delete iter;
 
-  delete db;
+  delete db, splitter;
 
   return 0;
 }

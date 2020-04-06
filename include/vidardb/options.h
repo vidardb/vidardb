@@ -16,15 +16,17 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <string>
-#include <memory>
-#include <vector>
-#include <limits>
-#include <unordered_map>
 
-#include "vidardb/version.h"
+#include <limits>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <vector>
+
 #include "vidardb/listener.h"
+#include "vidardb/splitter.h"
 #include "vidardb/universal_compaction.h"
+#include "vidardb/version.h"
 
 #ifdef max
 #undef max
@@ -231,6 +233,12 @@ struct ColumnFamilyOptions {
   // here has the same name and orders keys *exactly* the same as the
   // comparator provided to previous open calls on the same DB.
   const Comparator* comparator;
+
+  // Splitter used to reformat the values in the table.
+  //
+  // REQUIRES: The client must ensure that the splitter is initialized
+  // for column storage.
+  const Splitter* splitter;
 
   // -------------------
   // Parameters that affect performance
@@ -1356,20 +1364,15 @@ struct ReadOptions {
   //       the value column index is from 1 to MAX_COLUMN_INDEX.
   std::vector<uint32_t> columns;
 
-  // Specify the splitter for column storage when only querying the specified
-  // index column.
-  // Default: nullptr which returns the all columns.
-  const Splitter* splitter = nullptr;
-
   // If non-zero, RangeQuery will return the expected result keys of the given
   // maximum size in every batch. Otherwise, it will return the all result keys
   // in one batch.
   // Default: 0
-  size_t batch_capacity = 0;
+  size_t batch_capacity;
 
   // Store the temporary states for RangeQuery.
   // Note: Caller should not set the value.
-  void* range_query_meta = nullptr;
+  void* range_query_meta;
 
   // Store the result key and value size in one batch for RangeQuery.
   // Note: Caller should not set the value.
@@ -1379,6 +1382,7 @@ struct ReadOptions {
 
   ReadOptions();
   ReadOptions(bool cksum, bool cache);
+  ReadOptions(std::vector<uint32_t> cols, size_t capacity);
 };
 
 // Options that control write operations

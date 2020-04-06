@@ -49,6 +49,7 @@ struct MemTableOptions {
   bool filter_deletes;
   Statistics* statistics;
   Logger* info_log;
+  const Splitter* splitter;
 };
 
 // Note:  Many of the methods in this class have comments indicating that
@@ -168,12 +169,13 @@ class MemTable {
   // returned).  Otherwise, *seq will be set to kMaxSequenceNumber.
   // On success, *s may be set to OK, NotFound, or MergeInProgress.  Any other
   // status returned indicates a corruption or other unexpected error.
-  bool Get(const LookupKey& key, std::string* value, Status* s,
-           SequenceNumber* seq);
+  bool Get(ReadOptions& read_options, const LookupKey& key, std::string* value,
+           Status* s, SequenceNumber* seq);
 
-  bool Get(const LookupKey& key, std::string* value, Status* s) {
+  bool Get(ReadOptions& read_options, const LookupKey& key, std::string* value,
+           Status* s) {
     SequenceNumber seq;
-    return Get(key, value, s, &seq);
+    return Get(read_options, key, value, s, &seq);
   }
 
   /******************************* Shichao *******************************/
@@ -300,35 +302,6 @@ class MemTable {
   }
 
   const MemTableOptions* GetMemTableOptions() const { return &moptions_; }
-
-  // Reformat the user value by specified column index.
-  // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
-  //       Index 0 means only querying the user keys, and 
-  //       the value column index is from 1 to MAX_COLUMN_INDEX.
-  const std::string ReformatUserValue(const std::string& user_value,
-                                      const std::vector<uint32_t>& columns,
-                                      const Splitter* splitter) const {
-    if (columns.size() == 0 || splitter == nullptr || user_value.empty()) {
-      return user_value;
-    }
-
-    if (columns.size() == 1 && columns[0] == 0) {
-      return "";  // only query the user keys
-    }
-
-    std::vector<std::string> result;
-    result.reserve(columns.size());
-    // TODO: split slice in-place and extract the target attrs directly
-    std::vector<std::string> user_vals = splitter->Split(user_value);
-    for (auto index : columns) {  // from 0 to MAX_COLUMN_INDEX
-      assert(index <= user_vals.size());
-      if (index > 0) {  // only process the value columns
-        result.emplace_back(std::move(user_vals[index-1]));
-      }
-    }
-
-    return splitter->Stitch(result);
-  };
 
  private:
   enum FlushStateEnum { FLUSH_NOT_REQUESTED, FLUSH_REQUESTED, FLUSH_SCHEDULED };

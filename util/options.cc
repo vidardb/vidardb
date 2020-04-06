@@ -42,6 +42,7 @@ ImmutableCFOptions::ImmutableCFOptions(const Options& options)
       compaction_options_universal(options.compaction_options_universal),
       compaction_options_fifo(options.compaction_options_fifo),
       comparator(options.comparator),
+      splitter(options.splitter),
       info_log(options.info_log.get()),
       statistics(options.statistics.get()),
       env(options.env),
@@ -73,6 +74,7 @@ ImmutableCFOptions::ImmutableCFOptions(const Options& options)
 
 ColumnFamilyOptions::ColumnFamilyOptions()
     : comparator(BytewiseComparator()),
+      splitter(nullptr),
       write_buffer_size(64 << 20),
       max_write_buffer_number(2),
       min_write_buffer_number_to_merge(1),
@@ -118,6 +120,7 @@ ColumnFamilyOptions::ColumnFamilyOptions()
 
 ColumnFamilyOptions::ColumnFamilyOptions(const Options& options)
     : comparator(options.comparator),
+      splitter(options.splitter),
       write_buffer_size(options.write_buffer_size),
       max_write_buffer_number(options.max_write_buffer_number),
       min_write_buffer_number_to_merge(
@@ -444,6 +447,9 @@ void DBOptions::Dump(Logger* log) const {
 
 void ColumnFamilyOptions::Dump(Logger* log) const {
   Header(log, "              Options.comparator: %s", comparator->Name());
+  if (splitter != nullptr) {
+    Header(log, "              Options.splitter: %s", splitter->Name());
+  }
   Header(log, "        Options.memtable_factory: %s", memtable_factory->Name());
   Header(log, "           Options.table_factory: %s", table_factory->Name());
   Header(log, "           table_factory options: %s",
@@ -705,7 +711,8 @@ ColumnFamilyOptions* ColumnFamilyOptions::OptimizeLevelStyleCompaction(
     if (i < 2) {
       compression_per_level[i] = kNoCompression;
     } else {
-      compression_per_level[i] = kSnappyCompression;
+      compression_per_level[i] =
+          Snappy_Supported() ? kSnappyCompression : kNoCompression;
     }
   }
   return this;
@@ -769,8 +776,12 @@ ReadOptions::ReadOptions()
       tailing(false),
       total_order_seek(false),
       pin_data(false),
-      readahead_size(0) {
-}
+      readahead_size(0),
+      columns({}),
+      batch_capacity(0),
+      range_query_meta(nullptr),
+      result_key_size(0),
+      result_val_size(0) {}
 
 ReadOptions::ReadOptions(bool cksum, bool cache)
     : verify_checksums(cksum),
@@ -781,7 +792,27 @@ ReadOptions::ReadOptions(bool cksum, bool cache)
       tailing(false),
       total_order_seek(false),
       pin_data(false),
-      readahead_size(0) {
-}
+      readahead_size(0),
+      columns({}),
+      batch_capacity(0),
+      range_query_meta(nullptr),
+      result_key_size(0),
+      result_val_size(0) {}
+
+ReadOptions::ReadOptions(std::vector<uint32_t> cols, size_t capacity)
+    : verify_checksums(true),
+      fill_cache(true),
+      snapshot(nullptr),
+      iterate_upper_bound(nullptr),
+      read_tier(kReadAllTier),
+      tailing(false),
+      total_order_seek(false),
+      pin_data(false),
+      readahead_size(0),
+      columns(cols),
+      batch_capacity(capacity),
+      range_query_meta(nullptr),
+      result_key_size(0),
+      result_val_size(0) {}
 
 }  // namespace vidardb

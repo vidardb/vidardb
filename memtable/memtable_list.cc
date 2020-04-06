@@ -104,9 +104,10 @@ int MemTableList::NumFlushed() const {
 // Search all the memtables starting from the most recent one.
 // Return the most recent value found, if any.
 // Operands stores the list of merge operations to apply, so far.
-bool MemTableListVersion::Get(const LookupKey& key, std::string* value,
-                              Status* s, SequenceNumber* seq) {
-  return GetFromList(&memlist_, key, value, s, seq);
+bool MemTableListVersion::Get(ReadOptions& read_options, const LookupKey& key,
+                              std::string* value, Status* s,
+                              SequenceNumber* seq) {
+  return GetFromList(read_options, &memlist_, key, value, s, seq);
 }
 
 /******************************* Shichao *******************************/
@@ -123,13 +124,15 @@ bool MemTableListVersion::RangeQuery(ReadOptions& read_options,
 }
 /******************************* Shichao *******************************/
 
-bool MemTableListVersion::GetFromHistory(const LookupKey& key,
+bool MemTableListVersion::GetFromHistory(ReadOptions& read_options,
+                                         const LookupKey& key,
                                          std::string* value, Status* s,
                                          SequenceNumber* seq) {
-  return GetFromList(&memlist_history_, key, value, s, seq);
+  return GetFromList(read_options, &memlist_history_, key, value, s, seq);
 }
 
-bool MemTableListVersion::GetFromList(std::list<MemTable*>* list,
+bool MemTableListVersion::GetFromList(ReadOptions& read_options,
+                                      std::list<MemTable*>* list,
                                       const LookupKey& key, std::string* value,
                                       Status* s, SequenceNumber* seq) {
   *seq = kMaxSequenceNumber;
@@ -137,7 +140,7 @@ bool MemTableListVersion::GetFromList(std::list<MemTable*>* list,
   for (auto& memtable : *list) {
     SequenceNumber current_seq = kMaxSequenceNumber;
 
-    bool done = memtable->Get(key, value, s, &current_seq);
+    bool done = memtable->Get(read_options, key, value, s, &current_seq);
     if (*seq == kMaxSequenceNumber) {
       // Store the most recent sequence number of any operation on this key.
       // Since we only care about the most recent change, we only need to

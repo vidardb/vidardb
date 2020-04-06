@@ -14,15 +14,18 @@
 
 #pragma once
 #include <stdio.h>
+
 #include <string>
 #include <unordered_map>  // Shichao
+
+#include "util/coding.h"
+#include "util/logging.h"
 #include "vidardb/comparator.h"
 #include "vidardb/db.h"
 #include "vidardb/slice.h"
+#include "vidardb/splitter.h"
 #include "vidardb/table.h"
 #include "vidardb/types.h"
-#include "util/coding.h"
-#include "util/logging.h"
 
 namespace vidardb {
 
@@ -614,4 +617,12 @@ extern bool ReadKeyFromWriteBatchEntry(Slice* input, Slice* key,
 extern Status ReadRecordFromWriteBatch(Slice* input, char* tag,
                                        uint32_t* column_family, Slice* key,
                                        Slice* value, Slice* blob, Slice* xid);
+
+// Reformat the user value by specified column index.
+// Note: Column index must be from 0 to MAX_COLUMN_INDEX.
+//       Index 0 means only querying the user keys, and
+//       the value column index is from 1 to MAX_COLUMN_INDEX.
+extern const std::string ReformatUserValue(const std::string& user_value,
+                                           const std::vector<uint32_t>& columns,
+                                           const Splitter* splitter);
 }  // namespace vidardb

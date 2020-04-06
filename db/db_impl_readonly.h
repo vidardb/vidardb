@@ -20,9 +20,8 @@ class DBImplReadOnly : public DBImpl {
 
   // Implementations of the DB interface
   using DB::Get;
-  virtual Status Get(const ReadOptions& options,
-                     ColumnFamilyHandle* column_family, const Slice& key,
-                     std::string* value) override;
+  virtual Status Get(ReadOptions& options, ColumnFamilyHandle* column_family,
+                     const Slice& key, std::string* value) override;
 
   using DBImpl::NewIterator;
   virtual Iterator* NewIterator(const ReadOptions&,

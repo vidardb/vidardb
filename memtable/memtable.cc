@@ -14,16 +14,16 @@
 
 #include "memtable/memtable.h"
 
-#include <memory>
+#include <string.h>
+
 #include <algorithm>
 #include <limits>
+#include <memory>
 
 #include "db/dbformat.h"
 #include "db/pinned_iterators_manager.h"
 #include "db/writebuffer.h"
-#include "vidardb/comparator.h"
-#include "vidardb/env.h"
-#include "vidardb/iterator.h"
+#include "table/column_table_factory.h"
 #include "table/internal_iterator.h"
 #include "table/merger.h"
 #include "util/arena.h"
@@ -33,18 +33,23 @@
 #include "util/perf_context_imp.h"
 #include "util/statistics.h"
 #include "util/stop_watch.h"
+#include "vidardb/comparator.h"
+#include "vidardb/env.h"
+#include "vidardb/iterator.h"
+#include "vidardb/splitter.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
 
-MemTableOptions::MemTableOptions(
-    const ImmutableCFOptions& ioptions,
-    const MutableCFOptions& mutable_cf_options)
-  : write_buffer_size(mutable_cf_options.write_buffer_size),
-    arena_block_size(mutable_cf_options.arena_block_size),
-    max_successive_merges(mutable_cf_options.max_successive_merges),
-    filter_deletes(mutable_cf_options.filter_deletes),
-    statistics(ioptions.statistics),
-    info_log(ioptions.info_log) {}
+MemTableOptions::MemTableOptions(const ImmutableCFOptions& ioptions,
+                                 const MutableCFOptions& mutable_cf_options)
+    : write_buffer_size(mutable_cf_options.write_buffer_size),
+      arena_block_size(mutable_cf_options.arena_block_size),
+      max_successive_merges(mutable_cf_options.max_successive_merges),
+      filter_deletes(mutable_cf_options.filter_deletes),
+      statistics(ioptions.statistics),
+      info_log(ioptions.info_log),
+      splitter(ioptions.splitter) {}
 
 MemTable::MemTable(const InternalKeyComparator& cmp,
                    const ImmutableCFOptions& ioptions,
@@ -197,11 +202,11 @@ const char* EncodeKey(std::string* scratch, const Slice& target) {
 
 class MemTableIterator : public InternalIterator {
  public:
-  MemTableIterator(
-      const MemTable& mem, const ReadOptions& read_options, Arena* arena)
-      : valid_(false),
-        arena_mode_(arena != nullptr) {
+  MemTableIterator(const MemTable& mem, const std::vector<uint32_t> columns,
+                   Arena* arena)
+      : valid_(false), arena_mode_(arena != nullptr), columns_(columns) {
     iter_ = mem.table_->GetIterator(arena);
+    splitter_ = mem.GetMemTableOptions()->splitter;
   }
 
   ~MemTableIterator() {
@@ -258,7 +263,14 @@ class MemTableIterator : public InternalIterator {
   virtual Slice value() const override {
     assert(Valid());
     Slice key_slice = GetLengthPrefixedSlice(iter_->key());
-    return GetLengthPrefixedSlice(key_slice.data() + key_slice.size());
+    Slice val_slice =
+        GetLengthPrefixedSlice(key_slice.data() + key_slice.size());
+    if (columns_.empty() || splitter_ == nullptr) {
+      return val_slice;  // for flushing
+    }
+
+    std::string user_full_val(val_slice.data(), val_slice.size());
+    return ReformatUserValue(user_full_val, columns_, splitter_);
   }
 
   virtual Status status() const override { return Status::OK(); }
@@ -272,6 +284,8 @@ class MemTableIterator : public InternalIterator {
   MemTableRep::Iterator* iter_;
   bool valid_;
   bool arena_mode_;
+  const Splitter* splitter_;
+  const std::vector<uint32_t> columns_;
 
   // No copying allowed
   MemTableIterator(const MemTableIterator&);
@@ -282,7 +296,7 @@ InternalIterator* MemTable::NewIterator(const ReadOptions& read_options,
                                         Arena* arena) {
   assert(arena != nullptr);
   auto mem = arena->AllocateAligned(sizeof(MemTableIterator));
-  return new (mem) MemTableIterator(*this, read_options, arena);
+  return new (mem) MemTableIterator(*this, read_options.columns, arena);
 }
 
 uint64_t MemTable::ApproximateSize(const Slice& start_ikey,
@@ -427,9 +441,13 @@ static bool SaveValue(void* arg, const char* entry) {
     switch (type) {
       case kTypeValue: {
         Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
+        std::string user_full_val(v.data(), v.size());
+        std::string user_val =
+            ReformatUserValue(user_full_val, s->read_options->columns,
+                              s->mem->GetMemTableOptions()->splitter);
         *(s->status) = Status::OK();
         if (s->value != nullptr) {
-          s->value->assign(v.data(), v.size());
+          s->value->assign(user_val.data(), user_val.size());
         }
         *(s->found_final_value) = true;
         return false;
@@ -488,10 +506,11 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
 
         if (it->second.seq_ <= s->seq) {
           // TODO: might leverage move semantic later
-          std::string user_full_val(
-              GetLengthPrefixedSlice(key_ptr + key_length).ToString());
-          std::string user_val = s->mem->ReformatUserValue(user_full_val,
-              s->read_options->columns, s->read_options->splitter);
+          Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
+          std::string user_full_val(v.data(), v.size());
+          std::string user_val =
+              ReformatUserValue(user_full_val, s->read_options->columns,
+                                s->mem->GetMemTableOptions()->splitter);
 
           if (it->second.seq_ < s->seq) {
             // replaced
@@ -540,8 +559,8 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
 }
 /***************************** Shichao *****************************/
 
-bool MemTable::Get(const LookupKey& key, std::string* value, Status* s,
-                   SequenceNumber* seq) {
+bool MemTable::Get(ReadOptions& read_options, const LookupKey& key,
+                   std::string* value, Status* s, SequenceNumber* seq) {
   // The sequence number is updated synchronously in version_set.h
   if (IsEmpty()) {
     // Avoiding recording stats for speed.
@@ -552,19 +571,20 @@ bool MemTable::Get(const LookupKey& key, std::string* value, Status* s,
   bool found_final_value = false;
   bool merge_in_progress = s->IsMergeInProgress();
 
-    Saver saver;
-    saver.status = s;
-    saver.found_final_value = &found_final_value;
-    saver.key = &key;
-    saver.value = value;
-    saver.seq = kMaxSequenceNumber;
-    saver.mem = this;
-    saver.logger = moptions_.info_log;
-    saver.statistics = moptions_.statistics;
-    saver.env_ = env_;
-    table_->Get(key, &saver, SaveValue);
+  Saver saver;
+  saver.status = s;
+  saver.found_final_value = &found_final_value;
+  saver.key = &key;
+  saver.value = value;
+  saver.seq = kMaxSequenceNumber;
+  saver.mem = this;
+  saver.logger = moptions_.info_log;
+  saver.statistics = moptions_.statistics;
+  saver.env_ = env_;
+  saver.read_options = &read_options;
+  table_->Get(key, &saver, SaveValue);
 
-    *seq = saver.seq;
+  *seq = saver.seq;
 
   // No change to value, since we have not yet found a Put/Delete
   if (!found_final_value && merge_in_progress) {

@@ -56,12 +56,13 @@ class MemTableListVersion {
   // If any operation was found for this key, its most recent sequence number
   // will be stored in *seq on success (regardless of whether true/false is
   // returned).  Otherwise, *seq will be set to kMaxSequenceNumber.
-  bool Get(const LookupKey& key, std::string* value, Status* s,
-           SequenceNumber* seq);
+  bool Get(ReadOptions& read_options, const LookupKey& key, std::string* value,
+           Status* s, SequenceNumber* seq);
 
-  bool Get(const LookupKey& key, std::string* value, Status* s) {
+  bool Get(ReadOptions& read_options, const LookupKey& key, std::string* value,
+           Status* s) {
     SequenceNumber seq;
-    return Get(key, value, s, &seq);
+    return Get(read_options, key, value, s, &seq);
   }
 
   /******************************* Shichao *******************************/
@@ -73,11 +74,12 @@ class MemTableListVersion {
   // have already been flushed.  Should only be used from in-memory only
   // queries (such as Transaction validation) as the history may contain
   // writes that are also present in the SST files.
-  bool GetFromHistory(const LookupKey& key, std::string* value, Status* s,
-                      SequenceNumber* seq);
-  bool GetFromHistory(const LookupKey& key, std::string* value, Status* s) {
+  bool GetFromHistory(ReadOptions& read_options, const LookupKey& key,
+                      std::string* value, Status* s, SequenceNumber* seq);
+  bool GetFromHistory(ReadOptions& read_options, const LookupKey& key,
+                      std::string* value, Status* s) {
     SequenceNumber seq;
-    return GetFromHistory(key, value, s, &seq);
+    return GetFromHistory(read_options, key, value, s, &seq);
   }
 
   void AddIterators(const ReadOptions& options,
@@ -107,8 +109,9 @@ class MemTableListVersion {
 
   void TrimHistory(std::vector<MemTable*>* to_delete);
 
-  bool GetFromList(std::list<MemTable*>* list, const LookupKey& key,
-                   std::string* value, Status* s, SequenceNumber* seq);
+  bool GetFromList(ReadOptions& read_options, std::list<MemTable*>* list,
+                   const LookupKey& key, std::string* value, Status* s,
+                   SequenceNumber* seq);
 
   void AddMemTable(MemTable* m);
 

@@ -51,6 +51,9 @@ class AdaptiveTableFactory : public TableFactory {
   // Sanitizes the specified DB Options.
   Status SanitizeOptions(const DBOptions& db_opts,
                          const ColumnFamilyOptions& cf_opts) const override {
+    if (cf_opts.splitter == nullptr) {
+      return Status::InvalidArgument("Missing splitter.");
+    }
     return Status::OK();
   }
 

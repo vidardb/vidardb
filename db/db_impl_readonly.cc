@@ -25,7 +25,7 @@ DBImplReadOnly::~DBImplReadOnly() {
 }
 
 // Implementations of the DB interface
-Status DBImplReadOnly::Get(const ReadOptions& read_options,
+Status DBImplReadOnly::Get(ReadOptions& read_options,
                            ColumnFamilyHandle* column_family, const Slice& key,
                            std::string* value) {
   Status s;
@@ -34,7 +34,7 @@ Status DBImplReadOnly::Get(const ReadOptions& read_options,
   auto cfd = cfh->cfd();
   SuperVersion* super_version = cfd->GetSuperVersion();
   LookupKey lkey(key, snapshot);
-  if (super_version->mem->Get(lkey, value, &s)) {
+  if (super_version->mem->Get(read_options, lkey, value, &s)) {
   } else {
     PERF_TIMER_GUARD(get_from_output_files_time);
     super_version->current->Get(read_options, lkey, value, &s);

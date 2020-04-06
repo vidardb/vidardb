@@ -7,7 +7,9 @@
 
 #include <string>
 #include <vector>
+
 #include "vidardb/options.h"
+#include "vidardb/splitter.h"
 
 namespace vidardb {
 
@@ -26,6 +28,7 @@ struct ImmutableCFOptions {
   CompactionOptionsFIFO compaction_options_fifo;
 
   const Comparator* comparator;
+  const Splitter* splitter;
 
   Logger* info_log;
 
