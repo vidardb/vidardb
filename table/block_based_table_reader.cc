@@ -1031,8 +1031,8 @@ Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
 
       Slice v = biter.value();
       std::string user_full_val(v.data(), v.size());
-      Slice user_val = ReformatUserValue(user_full_val, read_options.columns,
-                                         rep_->ioptions.splitter);
+      std::string user_val = ReformatUserValue(
+          user_full_val, read_options.columns, rep_->ioptions.splitter);
       if (!get_context->SaveValue(parsed_key, user_val)) {
         done = true;
         break;
