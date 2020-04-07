@@ -202,7 +202,7 @@ const char* EncodeKey(std::string* scratch, const Slice& target) {
 
 class MemTableIterator : public InternalIterator {
  public:
-  MemTableIterator(const MemTable& mem, const std::vector<uint32_t> columns,
+  MemTableIterator(const MemTable& mem, const std::vector<uint32_t>& columns,
                    Arena* arena)
       : valid_(false), arena_mode_(arena != nullptr), columns_(columns) {
     iter_ = mem.table_->GetIterator(arena);

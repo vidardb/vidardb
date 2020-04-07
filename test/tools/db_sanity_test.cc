@@ -60,11 +60,12 @@ class SanityTest {
     if (!s.ok()) {
       return s;
     }
+    ReadOptions ro;
     for (int i = 0; i < 1000000; ++i) {
       std::string k = "key" + ToString(i);
       std::string v = "value" + ToString(i);
       std::string result;
-      s = db->Get(ReadOptions(), Slice(k), &result);
+      s = db->Get(ro, Slice(k), &result);
       if (!s.ok()) {
         return s;
       }

@@ -16,7 +16,7 @@ unsigned int M = 3;
 string kDBPath = "/tmp/vidardb_simple_column_example";
 
 int main() {
-  system(string("rm -rf " + kDBPath).c_str());
+  int ret = system(string("rm -rf " + kDBPath).c_str());
 
   DB* db;
   Options options;

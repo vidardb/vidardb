@@ -96,9 +96,10 @@ TEST_F(DBTest, MockEnvTest) {
     ASSERT_OK(db->Put(WriteOptions(), keys[i], vals[i]));
   }
 
+  ReadOptions ro;
   for (size_t i = 0; i < 3; ++i) {
     std::string res;
-    ASSERT_OK(db->Get(ReadOptions(), keys[i], &res));
+    ASSERT_OK(db->Get(ro, keys[i], &res));
     ASSERT_TRUE(res == vals[i]);
   }
 
@@ -120,7 +121,7 @@ TEST_F(DBTest, MockEnvTest) {
 
   for (size_t i = 0; i < 3; ++i) {
     std::string res;
-    ASSERT_OK(db->Get(ReadOptions(), keys[i], &res));
+    ASSERT_OK(db->Get(ro, keys[i], &res));
     ASSERT_TRUE(res == vals[i]);
   }
 #endif  // VIDARDB_LITE
@@ -240,12 +241,13 @@ TEST_F(DBTest, DISABLED_VeryLargeValue) {
   ASSERT_EQ(1, NumTableFilesAtLevel(0));
 
   std::string value;
-  Status s = db_->Get(ReadOptions(), key1, &value);
+  ReadOptions ro;
+  Status s = db_->Get(ro, key1, &value);
   ASSERT_OK(s);
   ASSERT_EQ(kValueSize, value.size());
   ASSERT_EQ('v', value[0]);
 
-  s = db_->Get(ReadOptions(), key2, &value);
+  s = db_->Get(ro, key2, &value);
   ASSERT_OK(s);
   ASSERT_EQ(kValueSize, value.size());
   ASSERT_EQ('w', value[0]);
@@ -257,12 +259,12 @@ TEST_F(DBTest, DISABLED_VeryLargeValue) {
   // Check DB is not in read-only state.
   ASSERT_OK(Put("boo", "v1"));
 
-  s = db_->Get(ReadOptions(), key1, &value);
+  s = db_->Get(ro, key1, &value);
   ASSERT_OK(s);
   ASSERT_EQ(kValueSize, value.size());
   ASSERT_EQ('v', value[0]);
 
-  s = db_->Get(ReadOptions(), key2, &value);
+  s = db_->Get(ro, key2, &value);
   ASSERT_OK(s);
   ASSERT_EQ(kValueSize, value.size());
   ASSERT_EQ('w', value[0]);
@@ -2077,7 +2079,7 @@ class ModelDB : public DB {
     return Write(o, &batch);
   }
   using DB::Get;
-  virtual Status Get(const ReadOptions& options, ColumnFamilyHandle* cf,
+  virtual Status Get(ReadOptions& options, ColumnFamilyHandle* cf,
                      const Slice& key, std::string* value) override {
     return Status::NotSupported(key);
   }

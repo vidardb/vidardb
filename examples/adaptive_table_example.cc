@@ -21,7 +21,7 @@ string kDBPath = "/tmp/vidardb_adaptive_table_example";
 
 int main(int argc, char* argv[]) {
   // remove existed db path
-  system(string("rm -rf " + kDBPath).c_str());
+  int ret = system(string("rm -rf " + kDBPath).c_str());
 
   // open database
   DB* db;

@@ -832,7 +832,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   BlockBasedIterator(InternalIterator* iter,
                      const InternalKeyComparator& internal_comparator,
                      const Splitter* splitter,
-                     const std::vector<uint32_t> columns)
+                     const std::vector<uint32_t>& columns)
       : iter_(iter),
         internal_comparator_(internal_comparator),
         splitter_(splitter),

@@ -447,7 +447,7 @@ void DBOptions::Dump(Logger* log) const {
 
 void ColumnFamilyOptions::Dump(Logger* log) const {
   Header(log, "              Options.comparator: %s", comparator->Name());
-  if (splitter != nullptr) {
+  if (splitter) {
     Header(log, "              Options.splitter: %s", splitter->Name());
   }
   Header(log, "        Options.memtable_factory: %s", memtable_factory->Name());
@@ -777,7 +777,6 @@ ReadOptions::ReadOptions()
       total_order_seek(false),
       pin_data(false),
       readahead_size(0),
-      columns({}),
       batch_capacity(0),
       range_query_meta(nullptr),
       result_key_size(0),
@@ -793,24 +792,7 @@ ReadOptions::ReadOptions(bool cksum, bool cache)
       total_order_seek(false),
       pin_data(false),
       readahead_size(0),
-      columns({}),
       batch_capacity(0),
-      range_query_meta(nullptr),
-      result_key_size(0),
-      result_val_size(0) {}
-
-ReadOptions::ReadOptions(std::vector<uint32_t> cols, size_t capacity)
-    : verify_checksums(true),
-      fill_cache(true),
-      snapshot(nullptr),
-      iterate_upper_bound(nullptr),
-      read_tier(kReadAllTier),
-      tailing(false),
-      total_order_seek(false),
-      pin_data(false),
-      readahead_size(0),
-      columns(cols),
-      batch_capacity(capacity),
       range_query_meta(nullptr),
       result_key_size(0),
       result_val_size(0) {}

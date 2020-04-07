@@ -345,15 +345,16 @@ TEST_F(CorruptionTest, SequenceNumberRecovery) {
   RepairDB();
   Reopen();
   std::string v;
-  ASSERT_OK(db_->Get(ReadOptions(), "foo", &v));
+  ReadOptions ro;
+  ASSERT_OK(db_->Get(ro, "foo", &v));
   ASSERT_EQ("v5", v);
   // Write something.  If sequence number was not recovered properly,
   // it will be hidden by an earlier write.
   ASSERT_OK(db_->Put(WriteOptions(), "foo", "v6"));
-  ASSERT_OK(db_->Get(ReadOptions(), "foo", &v));
+  ASSERT_OK(db_->Get(ro, "foo", &v));
   ASSERT_EQ("v6", v);
   Reopen();
-  ASSERT_OK(db_->Get(ReadOptions(), "foo", &v));
+  ASSERT_OK(db_->Get(ro, "foo", &v));
   ASSERT_EQ("v6", v);
 }
 
@@ -370,7 +371,8 @@ TEST_F(CorruptionTest, CorruptedDescriptor) {
   RepairDB();
   Reopen();
   std::string v;
-  ASSERT_OK(db_->Get(ReadOptions(), "foo", &v));
+  ReadOptions ro;
+  ASSERT_OK(db_->Get(ro, "foo", &v));
   ASSERT_EQ("hello", v);
 }
 
@@ -446,10 +448,11 @@ TEST_F(CorruptionTest, UnrelatedKeys) {
   std::string tmp1, tmp2;
   ASSERT_OK(db_->Put(WriteOptions(), Key(1000, &tmp1), Value(1000, &tmp2)));
   std::string v;
-  ASSERT_OK(db_->Get(ReadOptions(), Key(1000, &tmp1), &v));
+  ReadOptions ro;
+  ASSERT_OK(db_->Get(ro, Key(1000, &tmp1), &v));
   ASSERT_EQ(Value(1000, &tmp2).ToString(), v);
   dbi->TEST_FlushMemTable();
-  ASSERT_OK(db_->Get(ReadOptions(), Key(1000, &tmp1), &v));
+  ASSERT_OK(db_->Get(ro, Key(1000, &tmp1), &v));
   ASSERT_EQ(Value(1000, &tmp2).ToString(), v);
 }
 

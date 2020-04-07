@@ -158,9 +158,9 @@ int main() {
 
   // verify the values are still there
   std::string value;
+  ReadOptions ro;
   for (int i = 1000; i < 99999; ++i) {
-    db->Get(ReadOptions(), std::to_string(i),
-                           &value);
+    db->Get(ro, std::to_string(i), &value);
     assert(value == std::string(500, 'a' + (i % 26)));
   }
 

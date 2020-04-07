@@ -79,7 +79,7 @@ TableBuilder* ColumnTableFactory::NewTableBuilder(
 
 Status ColumnTableFactory::SanitizeOptions(
     const DBOptions& db_opts, const ColumnFamilyOptions& cf_opts) const {
-  if (cf_opts.splitter == nullptr) {
+  if (!cf_opts.splitter) {
     return Status::InvalidArgument("Missing splitter.");
   }
   return Status::OK();

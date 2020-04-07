@@ -115,7 +115,8 @@ TEST_F(MemTableListTest, GetTest) {
   std::vector<MemTable*> to_delete;
 
   LookupKey lkey("key1", seq);
-  bool found = list.current()->Get(lkey, &value, &s);
+  ReadOptions ro;
+  bool found = list.current()->Get(ro, lkey, &value, &s);
   ASSERT_FALSE(found);
 
   // Create a MemTable
@@ -137,15 +138,15 @@ TEST_F(MemTableListTest, GetTest) {
   mem->Add(++seq, kTypeValue, "key2", "value2.2");
 
   // Fetch the newly written keys
-  found = mem->Get(LookupKey("key1", seq), &value, &s);
+  found = mem->Get(ro, LookupKey("key1", seq), &value, &s);
   ASSERT_TRUE(s.ok() && found);
   ASSERT_EQ(value, "value1");
 
-  found = mem->Get(LookupKey("key1", 2), &value, &s);
+  found = mem->Get(ro, LookupKey("key1", 2), &value, &s);
   // MemTable found out that this key is *not* found (at this sequence#)
   ASSERT_TRUE(found && s.IsNotFound());
 
-  found = mem->Get(LookupKey("key2", seq), &value, &s);
+  found = mem->Get(ro, LookupKey("key2", seq), &value, &s);
   ASSERT_TRUE(s.ok() && found);
   ASSERT_EQ(value, "value2.2");
 
@@ -171,18 +172,18 @@ TEST_F(MemTableListTest, GetTest) {
   list.Add(mem2, &to_delete);
 
   // Fetch keys via MemTableList
-  found = list.current()->Get(LookupKey("key1", seq), &value, &s);
+  found = list.current()->Get(ro, LookupKey("key1", seq), &value, &s);
   ASSERT_TRUE(found && s.IsNotFound());
 
-  found = list.current()->Get(LookupKey("key1", saved_seq), &value, &s);
+  found = list.current()->Get(ro, LookupKey("key1", saved_seq), &value, &s);
   ASSERT_TRUE(s.ok() && found);
   ASSERT_EQ("value1", value);
 
-  found = list.current()->Get(LookupKey("key2", seq), &value, &s);
+  found = list.current()->Get(ro, LookupKey("key2", seq), &value, &s);
   ASSERT_TRUE(s.ok() && found);
   ASSERT_EQ(value, "value2.3");
 
-  found = list.current()->Get(LookupKey("key2", 1), &value, &s);
+  found = list.current()->Get(ro, LookupKey("key2", 1), &value, &s);
   ASSERT_FALSE(found);
 
   ASSERT_EQ(2, list.NumNotFlushed());
@@ -206,7 +207,8 @@ TEST_F(MemTableListTest, GetFromHistoryTest) {
   std::vector<MemTable*> to_delete;
 
   LookupKey lkey("key1", seq);
-  bool found = list.current()->Get(lkey, &value, &s);
+  ReadOptions ro;
+  bool found = list.current()->Get(ro, lkey, &value, &s);
   ASSERT_FALSE(found);
 
   // Create a MemTable
@@ -227,11 +229,11 @@ TEST_F(MemTableListTest, GetFromHistoryTest) {
   mem->Add(++seq, kTypeValue, "key2", "value2.2");
 
   // Fetch the newly written keys
-  found = mem->Get(LookupKey("key1", seq), &value, &s);
+  found = mem->Get(ro, LookupKey("key1", seq), &value, &s);
   // MemTable found out that this key is *not* found (at this sequence#)
   ASSERT_TRUE(found && s.IsNotFound());
 
-  found = mem->Get(LookupKey("key2", seq), &value, &s);
+  found = mem->Get(ro, LookupKey("key2", seq), &value, &s);
   ASSERT_TRUE(s.ok() && found);
   ASSERT_EQ(value, "value2.2");
 
@@ -240,10 +242,10 @@ TEST_F(MemTableListTest, GetFromHistoryTest) {
   ASSERT_EQ(0, to_delete.size());
 
   // Fetch keys via MemTableList
-  found = list.current()->Get(LookupKey("key1", seq), &value, &s);
+  found = list.current()->Get(ro, LookupKey("key1", seq), &value, &s);
   ASSERT_TRUE(found && s.IsNotFound());
 
-  found = list.current()->Get(LookupKey("key2", seq), &value, &s);
+  found = list.current()->Get(ro, LookupKey("key2", seq), &value, &s);
   ASSERT_TRUE(s.ok() && found);
   ASSERT_EQ("value2.2", value);
 
@@ -261,17 +263,19 @@ TEST_F(MemTableListTest, GetFromHistoryTest) {
   ASSERT_EQ(0, to_delete.size());
 
   // Verify keys are no longer in MemTableList
-  found = list.current()->Get(LookupKey("key1", seq), &value, &s);
+  found = list.current()->Get(ro, LookupKey("key1", seq), &value, &s);
   ASSERT_FALSE(found);
 
-  found = list.current()->Get(LookupKey("key2", seq), &value, &s);
+  found = list.current()->Get(ro, LookupKey("key2", seq), &value, &s);
   ASSERT_FALSE(found);
 
   // Verify keys are present in history
-  found = list.current()->GetFromHistory(LookupKey("key1", seq), &value, &s);
+  found =
+      list.current()->GetFromHistory(ro, LookupKey("key1", seq), &value, &s);
   ASSERT_TRUE(found && s.IsNotFound());
 
-  found = list.current()->GetFromHistory(LookupKey("key2", seq), &value, &s);
+  found =
+      list.current()->GetFromHistory(ro, LookupKey("key2", seq), &value, &s);
   ASSERT_TRUE(found);
   ASSERT_EQ("value2.2", value);
 
@@ -313,29 +317,27 @@ TEST_F(MemTableListTest, GetFromHistoryTest) {
   ASSERT_EQ(1, to_delete.size());
 
   // Verify keys are no longer in MemTableList
-  found =
-      list.current()->Get(LookupKey("key1", seq), &value, &s);
+  found = list.current()->Get(ro, LookupKey("key1", seq), &value, &s);
   ASSERT_FALSE(found);
 
-  found =
-      list.current()->Get(LookupKey("key2", seq), &value, &s);
+  found = list.current()->Get(ro, LookupKey("key2", seq), &value, &s);
   ASSERT_FALSE(found);
 
-  found =
-      list.current()->Get(LookupKey("key3", seq), &value, &s);
+  found = list.current()->Get(ro, LookupKey("key3", seq), &value, &s);
   ASSERT_FALSE(found);
 
   // Verify that the second memtable's keys are in the history
-  found = list.current()->GetFromHistory(LookupKey("key1", seq), &value, &s);
+  found =
+      list.current()->GetFromHistory(ro, LookupKey("key1", seq), &value, &s);
   ASSERT_TRUE(found && s.IsNotFound());
 
-  found = list.current()->GetFromHistory(LookupKey("key3", seq), &value, &s);
+  found =
+      list.current()->GetFromHistory(ro, LookupKey("key3", seq), &value, &s);
   ASSERT_TRUE(found);
   ASSERT_EQ("value3", value);
 
   // Verify that key2 from the first memtable is no longer in the history
-  found =
-      list.current()->Get(LookupKey("key2", seq), &value, &s);
+  found = list.current()->Get(ro, LookupKey("key2", seq), &value, &s);
   ASSERT_FALSE(found);
 
   // Cleanup

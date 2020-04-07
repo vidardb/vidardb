@@ -148,7 +148,8 @@ void DoRandomIteraratorTest(DB* db, std::vector<std::string> source_strings,
         auto key_idx = rnd->Uniform(static_cast<int>(source_strings.size()));
         auto key = source_strings[key_idx];
         std::string result;
-        auto status = db->Get(ReadOptions(), key, &result);
+        ReadOptions ro;
+        auto status = db->Get(ro, key, &result);
         if (map.find(key) == map.end()) {
           ASSERT_TRUE(status.IsNotFound());
         } else {

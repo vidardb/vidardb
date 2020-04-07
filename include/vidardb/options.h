@@ -28,10 +28,6 @@
 #include "vidardb/universal_compaction.h"
 #include "vidardb/version.h"
 
-#ifdef max
-#undef max
-#endif
-
 namespace vidardb {
 
 class Cache;
@@ -237,7 +233,7 @@ struct ColumnFamilyOptions {
   // Splitter used to reformat the values in the table.
   //
   // REQUIRES: The client must ensure that the splitter is initialized
-  // for column storage.
+  // for columnar storage.
   const Splitter* splitter;
 
   // -------------------
@@ -1382,7 +1378,6 @@ struct ReadOptions {
 
   ReadOptions();
   ReadOptions(bool cksum, bool cache);
-  ReadOptions(std::vector<uint32_t> cols, size_t capacity);
 };
 
 // Options that control write operations
