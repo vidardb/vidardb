@@ -22,9 +22,14 @@ before_script:
   - export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/tmp/gflags-2.1.2/lib"
   - export LIBRARY_PATH="$LIBRARY_PATH:/tmp/gflags-2.1.2/lib"
   - export CPLUS_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:/tmp/gflags-2.1.2/include"
+  - export CPU_CORES=`cat /proc/cpuinfo | grep processor | wc -l`
   - if [[ "${TRAVIS_OS_NAME}" == 'linux' ]]; then CXX=clang++-8; fi
   # Limit the maximum number of open file descriptors to 2000
   - ulimit -n 2000 || true
 
 script:
-  - if [[ "${JOB_NAME}" == 'build' ]]; then OPT="-DTRAVIS -DVIDARDB" V=1 make -j4 static_lib; fi
+  # Compile all related codes
+  - OPT="-DTRAVIS -DVIDARDB" V=1 make -j${CPU_CORES} release
+  - OPT="-DTRAVIS -DVIDARDB" V=1 make -j${CPU_CORES} shared_lib
+  - OPT="-DTRAVIS -DVIDARDB" V=1 make -j${CPU_CORES} tools_lib
+  - OPT="-DTRAVIS -DVIDARDB" V=1 make -j${CPU_CORES} test_libs

@@ -10,3 +10,11 @@ shared-objects
 make_config.mk
 libvidardb*.so*
 libvidardb*.dylib
+db_bench
+db_repl_stress
+db_sanity_test
+db_stress
+write_stress
+cache_bench
+memtablerep_bench
+table_reader_bench
