@@ -23,16 +23,15 @@ int main() {
   options.OptimizeLevelStyleCompaction();
   // create the DB if it's not already present
   options.create_if_missing = true;
-
-  const Splitter* splitter = NewPipeSplitter();
-  options.splitter = splitter;
+  options.splitter.reset(NewPipeSplitter());
 
   // open DB
   Status s = DB::Open(options, kDBPath, &db);
   assert(s.ok());
 
   // Put key-value: key1 -> val11|val12
-  s = db->Put(WriteOptions(), "key1", splitter->Stitch({"val11", "val12"}));
+  s = db->Put(WriteOptions(), "key1",
+              options.splitter->Stitch({"val11", "val12"}));
   assert(s.ok());
 
   // test memtable or sstable
@@ -54,7 +53,7 @@ int main() {
     WriteBatch batch;
     batch.Delete("key1");
     // key2 -> val21|val22
-    batch.Put("key2", splitter->Stitch({"val21", "val22"}));
+    batch.Put("key2", options.splitter->Stitch({"val21", "val22"}));
     s = db->Write(WriteOptions(), &batch);
 
     // test memtable or sstable
@@ -77,7 +76,7 @@ int main() {
   }
   delete iter;
 
-  delete db, splitter;
+  delete db;
 
   return 0;
 }

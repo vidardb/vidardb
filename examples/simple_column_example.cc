@@ -21,9 +21,7 @@ int main() {
   DB* db;
   Options options;
   options.create_if_missing = true;
-
-  const Splitter* splitter = NewPipeSplitter();
-  options.splitter = splitter;
+  options.splitter.reset(NewPipeSplitter());
 
   TableFactory* table_factory = NewColumnTableFactory();
   ColumnTableOptions* opts =
@@ -35,9 +33,9 @@ int main() {
   assert(s.ok());
 
   s = db->Put(WriteOptions(), "column1",
-              splitter->Stitch({"val11", "val12", "val13"}));
+              options.splitter->Stitch({"val11", "val12", "val13"}));
   s = db->Put(WriteOptions(), "column2",
-              splitter->Stitch({"val21", "val22", "val23"}));
+              options.splitter->Stitch({"val21", "val22", "val23"}));
   if (!s.ok()) cout << "Put not ok!" << endl;
 
   // test memtable or sstable
@@ -79,7 +77,7 @@ int main() {
   }
   delete it;
 
-  delete db, splitter;
+  delete db;
 
   cout << "finished!" << endl;
   return 0;
