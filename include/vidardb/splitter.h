@@ -9,10 +9,12 @@
 #include <string>
 #include <vector>
 
+#include "vidardb/slice.h"
+
 namespace vidardb {
 
-// A Splitter object provides the function of splitting a string to multiple
-// sub-strings and stitching multiple sub-strings.  A Splitter implementation
+// A Splitter object provides the function of splitting a slice to multiple
+// sub-slices and stitching multiple sub-slices.  A Splitter implementation
 // must be thread-safe since vidardb may invoke its methods concurrently
 // from multiple threads.
 class Splitter {
@@ -27,17 +29,17 @@ class Splitter {
   // by any clients of this package.
   virtual const char* Name() const = 0;
 
-  // Split a string to multiple sub-strings.
-  virtual std::vector<std::string> Split(const std::string& s) const = 0;
+  // Split a slice to multiple sub-slices.
+  virtual std::vector<Slice> Split(const Slice& s) const = 0;
 
-  // Stitch multiple sub-strings to a string.
-  virtual std::string Stitch(const std::vector<std::string>& v) const = 0;
+  // Stitch multiple sub-slices to a slice.
+  virtual Slice Stitch(const std::vector<Slice> v) const = 0;
 
-  // Append a sub-string.
+  // Append a sub-slice.
   virtual void Append(std::string& ss, const Slice& s, bool last) const = 0;
 };
 
-// A builtin pipe splitter that uses '|' to split a string.
+// A built-in pipe splitter that uses '|' to split a slice.
 // For example: s1|s2|s3...
 class PipeSplitter : public Splitter {
  public:
@@ -45,9 +47,9 @@ class PipeSplitter : public Splitter {
 
   virtual const char* Name() const override { return "vidardb.PipeSplitter"; }
 
-  virtual std::vector<std::string> Split(const std::string& s) const override;
+  virtual std::vector<Slice> Split(const Slice& s) const override;
 
-  virtual std::string Stitch(const std::vector<std::string>& v) const override;
+  virtual Slice Stitch(const std::vector<Slice> v) const override;
 
   virtual void Append(std::string& ss, const Slice& s, bool last) const override;
 
@@ -55,10 +57,10 @@ class PipeSplitter : public Splitter {
   const char delim = '|';
 };
 
-// Create default pipe splitter.
+// Create a default pipe splitter.
 extern Splitter* NewPipeSplitter();
 
-// A builtin encoding splitter that uses the following format:
+// A built-in encoding splitter that uses the following format:
 // entry1entry2entry3...
 //
 // Each entry contains:
@@ -72,14 +74,14 @@ class EncodingSplitter : public Splitter {
     return "vidardb.EncodingSplitter";
   }
 
-  virtual std::vector<std::string> Split(const std::string& s) const override;
+  virtual std::vector<Slice> Split(const Slice& s) const override;
 
-  virtual std::string Stitch(const std::vector<std::string>& v) const override;
+  virtual Slice Stitch(const std::vector<Slice> v) const override;
 
   virtual void Append(std::string& ss, const Slice& s, bool last) const override;
 };
 
-// Create default encoding splitter
+// Create a default encoding splitter
 extern Splitter* NewEncodingSplitter();
 
 }  // namespace vidardb

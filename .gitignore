@@ -18,3 +18,4 @@ write_stress
 cache_bench
 memtablerep_bench
 table_reader_bench
+build.sh

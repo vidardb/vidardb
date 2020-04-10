@@ -159,10 +159,10 @@ LookupKey::LookupKey(const Slice& _user_key, SequenceNumber s) {
   end_ = dst;
 }
 
-const std::string ReformatUserValue(const std::string& user_value,
-                                    const std::vector<uint32_t>& columns,
-                                    const Splitter* splitter) {
-  if (columns.empty() || user_value.empty() || splitter == nullptr) {
+const Slice ReformatUserValue(const Slice& user_value,
+                              const std::vector<uint32_t>& columns,
+                              const Splitter* splitter) {
+  if (columns.empty() || user_value.empty() || !splitter) {
     return user_value;
   }
 
@@ -170,14 +170,13 @@ const std::string ReformatUserValue(const std::string& user_value,
     return "";  // only query the user keys
   }
 
-  std::vector<std::string> result;
+  std::vector<Slice> result;
   result.reserve(columns.size());
-  // TODO: split slice in-place and extract the target attrs directly
-  std::vector<std::string> user_vals = splitter->Split(user_value);
+  std::vector<Slice> user_vals = splitter->Split(user_value);
   for (auto index : columns) {  // from 0 to MAX_COLUMN_INDEX
     assert(index <= user_vals.size());
     if (index > 0) {  // only process the value columns
-      result.emplace_back(std::move(user_vals[index - 1]));
+      result.emplace_back(user_vals[index - 1]);
     }
   }
 

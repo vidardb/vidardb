@@ -876,12 +876,10 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   virtual Slice value() const {
     assert(Valid());
     Slice v = iter_->value();
-    if (columns_.empty() || splitter_ == nullptr) {
+    if (columns_.empty() || !splitter_) {
       return v;
     }
-
-    std::string user_full_val(v.data(), v.size());
-    return ReformatUserValue(user_full_val, columns_, splitter_);
+    return ReformatUserValue(v, columns_, splitter_);
   }
 
   virtual Status status() const {
@@ -928,9 +926,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
         }
 
         Slice v = iter_->value();
-        std::string user_full_val(v.data(), v.size());
-        std::string user_val =
-            ReformatUserValue(user_full_val, read_options.columns, splitter_);
+        Slice user_val = ReformatUserValue(v, read_options.columns, splitter_);
 
         if (it->second.seq_ < parsed_key.sequence) {
           // replaced
@@ -942,7 +938,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
           read_options.result_val_size -= it->second.iter_->user_val.size();
           it->second.seq_ = parsed_key.sequence;
           it->second.type_ = parsed_key.type;
-          it->second.iter_->user_val = std::move(user_val);
+          it->second.iter_->user_val = std::move(user_val.ToString());
           read_options.result_val_size += it->second.iter_->user_val.size();
           if (parsed_key.type == kTypeDeletion) {
             meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
@@ -951,7 +947,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
           // inserted
           size_t delta_key_size = user_key.size();
           size_t delta_val_size = user_val.size();
-          res.emplace_back(user_key, std::move(user_val));
+          res.emplace_back(user_key, std::move(user_val.ToString()));
           read_options.result_key_size += delta_key_size;
           read_options.result_val_size += delta_val_size;
           it->second.iter_ = --res.end();
@@ -1030,9 +1026,8 @@ Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
       }
 
       Slice v = biter.value();
-      std::string user_full_val(v.data(), v.size());
-      std::string user_val = ReformatUserValue(
-          user_full_val, read_options.columns, rep_->ioptions.splitter);
+      Slice user_val =
+          ReformatUserValue(v, read_options.columns, rep_->ioptions.splitter);
       if (!get_context->SaveValue(parsed_key, user_val)) {
         done = true;
         break;

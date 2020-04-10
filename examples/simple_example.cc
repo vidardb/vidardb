@@ -3,11 +3,13 @@
 // LICENSE file in the root directory of this source tree. An additional grant
 // of patent rights can be found in the PATENTS file in the same directory.
 #include <cstdio>
-#include <string>
 #include <iostream>
+#include <string>
+
 #include "vidardb/db.h"
-#include "vidardb/slice.h"
 #include "vidardb/options.h"
+#include "vidardb/slice.h"
+#include "vidardb/splitter.h"
 using namespace std;
 using namespace vidardb;
 

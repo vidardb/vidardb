@@ -109,11 +109,12 @@ class Slice {
   // Compare two slices and returns the first byte where they differ
   size_t difference_offset(const Slice& b) const;
 
- // private: make these public for vidardbjni access
+  // private: make these public for vidardbjni access
   const char* data_;
   size_t size_;
 
   // Intentionally copyable
+  std::string rep_;  // stitch sub-slices
 };
 
 // A set of Slices that are virtually concatenated together.  'parts' points

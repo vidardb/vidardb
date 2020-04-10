@@ -361,7 +361,7 @@ void ColumnTableBuilder::CreateSubcolumnBuilders(Rep* r) {
 
 void ColumnTableBuilder::AddInSubcolumnBuilders(Rep* r, const Slice& key,
                                                 const Slice& value) {
-  std::vector<std::string> vals(r->ioptions.splitter->Split(value.ToString()));
+  std::vector<Slice> vals = r->ioptions.splitter->Split(value);
   if (!vals.empty() && vals.size() != r->table_options.column_count) {
     r->status = Status::InvalidArgument("table_options.column_count");
     return;

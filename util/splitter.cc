@@ -3,20 +3,46 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
+#include "vidardb/splitter.h"
+
+#include <string.h>
+
 #include <string>
 #include <vector>
-#include "string_util.h"
+
 #include "coding.h"
-#include "vidardb/splitter.h"
+#include "vidardb/slice.h"
 
 namespace vidardb {
 
-std::vector<std::string> PipeSplitter::Split(const std::string& s) const {
-  return StringSplit(s, delim);
+std::vector<Slice> PipeSplitter::Split(const Slice& s) const {
+  const char* p = s.data();
+  std::vector<Slice> res;
+  for (auto i = 0u, j = 0u; i < s.size();) {
+    if (s[i] != delim && i + 1 < s.size()) {
+      i++;
+      continue;
+    }
+
+    size_t n = i - j;
+    if (i + 1 == s.size()) {
+      n = i + 1 - j;  // last
+    }
+
+    res.emplace_back(Slice(p + j, n));
+    j = ++i;
+  }
+  return res;
 }
 
-std::string PipeSplitter::Stitch(const std::vector<std::string>& v) const {
-  return StringStitch(v, delim);
+Slice PipeSplitter::Stitch(const std::vector<Slice> v) const {
+  Slice res;
+  for (auto i = 0u; i < v.size(); i++) {
+    Append(res.rep_, v[i], i + 1 == v.size());
+  }
+  res.data_ = res.rep_.data();
+  res.size_ = res.rep_.size();
+  return res;
 }
 
 void PipeSplitter::Append(std::string& ss, const Slice& s, bool last) const {
@@ -28,21 +54,23 @@ void PipeSplitter::Append(std::string& ss, const Slice& s, bool last) const {
 
 Splitter* NewPipeSplitter() { return new PipeSplitter(); }
 
-std::vector<std::string> EncodingSplitter::Split(const std::string& s) const {
-  Slice ss(s), val;
-  std::vector<std::string> result;
+std::vector<Slice> EncodingSplitter::Split(const Slice& s) const {
+  Slice val, ss(s.data_, s.size_);
+  std::vector<Slice> res;
   while (GetLengthPrefixedSlice(&ss, &val)) {
-    result.emplace_back(val.ToString());
+    res.emplace_back(val);
   }
-  return result;
+  return res;
 }
 
-std::string EncodingSplitter::Stitch(const std::vector<std::string>& v) const {
-  std::string result;
+Slice EncodingSplitter::Stitch(const std::vector<Slice> v) const {
+  Slice res;
   for (const auto& s: v) {
-    Append(result, s, false);
+    Append(res.rep_, s, false);
   }
-  return result;
+  res.data_ = res.rep_.data();
+  res.size_ = res.rep_.size();
+  return res;
 }
 
 void EncodingSplitter::Append(std::string& ss, const Slice& s, bool last) const {

@@ -622,7 +622,7 @@ extern Status ReadRecordFromWriteBatch(Slice* input, char* tag,
 // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
 //       Index 0 means only querying the user keys, and
 //       the value column index is from 1 to MAX_COLUMN_INDEX.
-extern const std::string ReformatUserValue(const std::string& user_value,
-                                           const std::vector<uint32_t>& columns,
-                                           const Splitter* splitter);
+extern const Slice ReformatUserValue(const Slice& user_value,
+                                     const std::vector<uint32_t>& columns,
+                                     const Splitter* splitter);
 }  // namespace vidardb

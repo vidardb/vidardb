@@ -265,12 +265,10 @@ class MemTableIterator : public InternalIterator {
     Slice key_slice = GetLengthPrefixedSlice(iter_->key());
     Slice val_slice =
         GetLengthPrefixedSlice(key_slice.data() + key_slice.size());
-    if (columns_.empty() || splitter_ == nullptr) {
+    if (columns_.empty() || !splitter_) {
       return val_slice;  // for flushing
     }
-
-    std::string user_full_val(val_slice.data(), val_slice.size());
-    return ReformatUserValue(user_full_val, columns_, splitter_);
+    return ReformatUserValue(val_slice, columns_, splitter_);
   }
 
   virtual Status status() const override { return Status::OK(); }
@@ -441,9 +439,8 @@ static bool SaveValue(void* arg, const char* entry) {
     switch (type) {
       case kTypeValue: {
         Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
-        std::string user_full_val(v.data(), v.size());
-        std::string user_val =
-            ReformatUserValue(user_full_val, s->read_options->columns,
+        Slice user_val =
+            ReformatUserValue(v, s->read_options->columns,
                               s->mem->GetMemTableOptions()->splitter);
         *(s->status) = Status::OK();
         if (s->value != nullptr) {
@@ -507,9 +504,8 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
         if (it->second.seq_ <= s->seq) {
           // TODO: might leverage move semantic later
           Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
-          std::string user_full_val(v.data(), v.size());
-          std::string user_val =
-              ReformatUserValue(user_full_val, s->read_options->columns,
+          Slice user_val =
+              ReformatUserValue(v, s->read_options->columns,
                                 s->mem->GetMemTableOptions()->splitter);
 
           if (it->second.seq_ < s->seq) {
@@ -523,7 +519,7 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
                 it->second.iter_->user_val.size();
             it->second.seq_ = s->seq;
             it->second.type_ = type;
-            it->second.iter_->user_val = std::move(user_val);
+            it->second.iter_->user_val = std::move(user_val.ToString());
             s->read_options->result_val_size += 
                 it->second.iter_->user_val.size();
             if (type == kTypeDeletion) {
@@ -533,7 +529,7 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
             // inserted
             size_t delta_key_size = user_key.size();
             size_t delta_val_size = user_val.size();
-            s->res->emplace_back(user_key, std::move(user_val));
+            s->res->emplace_back(user_key, std::move(user_val.ToString()));
             s->read_options->result_key_size += delta_key_size;
             s->read_options->result_val_size += delta_val_size;
             it->second.iter_ = --(s->res->end());

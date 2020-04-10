@@ -54,34 +54,34 @@ int main(int argc, char* argv[]) {
   // insert data
   WriteOptions write_options;
   // write_options.sync = true;
-  s = db->Put(write_options, "1", 
-      splitter->Stitch(vector<string>{"chen1", "33", "hangzhou"}));
+  s = db->Put(write_options, "1",
+              splitter->Stitch(vector<Slice>{"chen1", "33", "hangzhou"}));
   assert(s.ok());
-  s = db->Put(write_options, "2", 
-      splitter->Stitch(vector<string>{"wang2", "32", "wuhan"}));
+  s = db->Put(write_options, "2",
+              splitter->Stitch(vector<Slice>{"wang2", "32", "wuhan"}));
   assert(s.ok());
-  s = db->Put(write_options, "3", 
-      splitter->Stitch(vector<string>{"zhao3", "35", "nanjing"}));
+  s = db->Put(write_options, "3",
+              splitter->Stitch(vector<Slice>{"zhao3", "35", "nanjing"}));
   assert(s.ok());
-  s = db->Put(write_options, "4", 
-      splitter->Stitch(vector<string>{"liao4", "28", "beijing"}));
+  s = db->Put(write_options, "4",
+              splitter->Stitch(vector<Slice>{"liao4", "28", "beijing"}));
   assert(s.ok());
-  s = db->Put(write_options, "5", 
-      splitter->Stitch(vector<string>{"jiang5", "30", "shanghai"}));
+  s = db->Put(write_options, "5",
+              splitter->Stitch(vector<Slice>{"jiang5", "30", "shanghai"}));
   assert(s.ok());
-  s = db->Put(write_options, "6", 
-      splitter->Stitch(vector<string>{"lian6", "30", "changsha"}));
+  s = db->Put(write_options, "6",
+              splitter->Stitch(vector<Slice>{"lian6", "30", "changsha"}));
   assert(s.ok());
   s = db->Delete(write_options, "1");
   assert(s.ok());
-  s = db->Put(write_options, "3", 
-      splitter->Stitch(vector<string>{"zhao333", "35", "nanjing"}));
+  s = db->Put(write_options, "3",
+              splitter->Stitch(vector<Slice>{"zhao333", "35", "nanjing"}));
   assert(s.ok());
-  s = db->Put(write_options, "6", 
-      splitter->Stitch(vector<string>{"lian666", "30", "changsha"}));
+  s = db->Put(write_options, "6",
+              splitter->Stitch(vector<Slice>{"lian666", "30", "changsha"}));
   assert(s.ok());
-  s = db->Put(write_options, "1", 
-      splitter->Stitch(vector<string>{"chen1111", "33", "hangzhou"}));
+  s = db->Put(write_options, "1",
+              splitter->Stitch(vector<Slice>{"chen1111", "33", "hangzhou"}));
   assert(s.ok());
   s = db->Delete(write_options, "3");
   assert(s.ok());
@@ -107,9 +107,9 @@ int main(int argc, char* argv[]) {
     assert(s.ok());
     for (auto it : res) {
       cout << it.user_key << "=[";
-      vector<string> vals(splitter->Split(it.user_val));
+      vector<Slice> vals = splitter->Split(it.user_val);
       for (auto i = 0u; i < vals.size(); i++) {
-        cout << vals[i];
+        cout << vals[i].ToString();
         if (i < vals.size() - 1) {
           cout << ", ";
         };
