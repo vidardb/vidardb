@@ -91,7 +91,7 @@ class MockTableIterator : public InternalIterator {
 
   Slice key() const override { return Slice(itr_->first); }
 
-  Slice value() const override { return Slice(itr_->second); }
+  Slice value() override { return Slice(itr_->second); }
 
   Status status() const override { return Status::OK(); }
 

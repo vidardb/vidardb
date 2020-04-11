@@ -873,13 +873,14 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
     return iter_->key();
   }
 
-  virtual Slice value() const {
+  virtual Slice value() {
     assert(Valid());
     Slice v = iter_->value();
-    if (columns_.empty() || !splitter_) {
+    if (columns_.empty() || !splitter_ || v.empty()) {
       return v;
     }
-    return ReformatUserValue(v, columns_, splitter_);
+    value_.clear();  // prepare for splitting user value
+    return ReformatUserValue(v, columns_, splitter_, &value_);
   }
 
   virtual Status status() const {
@@ -925,8 +926,9 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
           continue;
         }
 
-        Slice v = iter_->value();
-        Slice user_val = ReformatUserValue(v, read_options.columns, splitter_);
+        value_.clear();  // prepare for splitting user value
+        Slice user_val = ReformatUserValue(iter_->value(), read_options.columns,
+                                           splitter_, &value_);
 
         if (it->second.seq_ < parsed_key.sequence) {
           // replaced
@@ -981,6 +983,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 
   const Splitter* splitter_;
   const std::vector<uint32_t> columns_;
+  std::string value_;  // mutable
 };
 /***************************** Shichao *********************************/
 
@@ -1025,9 +1028,9 @@ Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
         break;  // Shichao
       }
 
-      Slice v = biter.value();
-      Slice user_val =
-          ReformatUserValue(v, read_options.columns, rep_->ioptions.splitter);
+      std::string value_;  // prepare for splitting user value
+      Slice user_val = ReformatUserValue(biter.value(), read_options.columns,
+                                         rep_->ioptions.splitter, &value_);
       if (!get_context->SaveValue(parsed_key, user_val)) {
         done = true;
         break;

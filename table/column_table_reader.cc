@@ -971,7 +971,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return columns_[0]->key();
   }
 
-  virtual Slice value() const {
+  virtual Slice value() {
     assert(Valid());
     return value_;
   }

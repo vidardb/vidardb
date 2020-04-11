@@ -51,7 +51,7 @@ class TwoLevelIterator : public InternalIterator {
     assert(Valid());
     return second_level_iter_.key();
   }
-  virtual Slice value() const override {
+  virtual Slice value() override {
     assert(Valid());
     return second_level_iter_.value();
   }

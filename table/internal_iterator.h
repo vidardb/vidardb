@@ -69,7 +69,7 @@ class InternalIterator : public Cleanable {
   // the returned slice is valid only until the next modification of
   // the iterator.
   // REQUIRES: !AtEnd() && !AtStart()
-  virtual Slice value() const = 0;
+  virtual Slice value() = 0;
 
   // If an error has occurred, return it.  Else return an ok status.
   // If non-blocking IO is requested and this operation cannot be

@@ -161,26 +161,26 @@ LookupKey::LookupKey(const Slice& _user_key, SequenceNumber s) {
 
 const Slice ReformatUserValue(const Slice& user_value,
                               const std::vector<uint32_t>& columns,
-                              const Splitter* splitter) {
+                              const Splitter* splitter, std::string* buf) {
   if (columns.empty() || user_value.empty() || !splitter) {
     return user_value;
   }
 
   if (columns.size() == 1 && columns[0] == 0) {
-    return "";  // only query the user keys
+    return Slice();  // only query the user keys
   }
 
   std::vector<Slice> result;
   result.reserve(columns.size());
-  std::vector<Slice> user_vals = splitter->Split(user_value);
+  std::vector<Slice> user_vals(splitter->Split(user_value));
   for (auto index : columns) {  // from 0 to MAX_COLUMN_INDEX
     assert(index <= user_vals.size());
     if (index > 0) {  // only process the value columns
-      result.emplace_back(user_vals[index - 1]);
+      result.emplace_back(std::move(user_vals[index - 1]));
     }
   }
 
-  return splitter->Stitch(result);
+  return splitter->Stitch(result, buf);
 }
 
 }  // namespace vidardb

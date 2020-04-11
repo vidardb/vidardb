@@ -94,7 +94,7 @@ class EmptyInternalIterator : public InternalIterator {
     assert(false);
     return Slice();
   }
-  Slice value() const override {
+  Slice value() override {
     assert(false);
     return Slice();
   }

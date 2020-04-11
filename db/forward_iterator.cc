@@ -92,7 +92,7 @@ class LevelIterator : public InternalIterator {
     assert(valid_);
     return file_iter_->key();
   }
-  Slice value() const override {
+  Slice value() override {
     assert(valid_);
     return file_iter_->value();
   }
@@ -447,7 +447,7 @@ Slice ForwardIterator::key() const {
   return current_->key();
 }
 
-Slice ForwardIterator::value() const {
+Slice ForwardIterator::value() {
   assert(valid_);
   return current_->value();
 }

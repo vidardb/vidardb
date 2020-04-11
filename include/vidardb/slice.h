@@ -114,7 +114,6 @@ class Slice {
   size_t size_;
 
   // Intentionally copyable
-  std::string rep_;  // stitch sub-slices
 };
 
 // A set of Slices that are virtually concatenated together.  'parts' points

@@ -45,8 +45,8 @@ int main() {
   std::string value;
   s = db->Get(ro, "key1", &value);
   assert(s.ok());
-  assert(value == "val11");
   cout << "key1: " << value << endl;
+  assert(value == "val11");
 
   // atomically apply a set of updates
   {
@@ -65,8 +65,8 @@ int main() {
   assert(s.IsNotFound());
 
   db->Get(ro, "key2", &value);
-  assert(value == "val21");
   cout << "key2: " << value << endl;
+  assert(value == "val21");
 
   Iterator* iter = db->NewIterator(ro);
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {

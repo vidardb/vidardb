@@ -35,14 +35,21 @@ std::vector<Slice> PipeSplitter::Split(const Slice& s) const {
   return res;
 }
 
-Slice PipeSplitter::Stitch(const std::vector<Slice> v) const {
-  Slice res;
+std::string PipeSplitter::Stitch(const std::vector<Slice>& v) const {
+  std::string res;  // RVO/NRVO/move
   for (auto i = 0u; i < v.size(); i++) {
-    Append(res.rep_, v[i], i + 1 == v.size());
+    Append(res, v[i], i + 1 == v.size());
   }
-  res.data_ = res.rep_.data();
-  res.size_ = res.rep_.size();
   return res;
+}
+
+Slice PipeSplitter::Stitch(const std::vector<Slice>& v,
+                           std::string* buf) const {
+  assert(!buf);
+  for (auto i = 0u; i < v.size(); i++) {
+    Append(*buf, v[i], i + 1 == v.size());
+  }
+  return Slice(*buf);
 }
 
 void PipeSplitter::Append(std::string& ss, const Slice& s, bool last) const {
@@ -63,14 +70,21 @@ std::vector<Slice> EncodingSplitter::Split(const Slice& s) const {
   return res;
 }
 
-Slice EncodingSplitter::Stitch(const std::vector<Slice> v) const {
-  Slice res;
+std::string EncodingSplitter::Stitch(const std::vector<Slice>& v) const {
+  std::string res;  // RVO/NRVO/move
   for (const auto& s: v) {
-    Append(res.rep_, s, false);
+    Append(res, s, false);
   }
-  res.data_ = res.rep_.data();
-  res.size_ = res.rep_.size();
   return res;
+}
+
+Slice EncodingSplitter::Stitch(const std::vector<Slice>& v,
+                               std::string* buf) const {
+  assert(!buf);
+  for (const auto& s : v) {
+    Append(*buf, s, false);
+  }
+  return Slice(*buf);
 }
 
 void EncodingSplitter::Append(std::string& ss, const Slice& s, bool last) const {

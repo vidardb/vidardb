@@ -522,7 +522,7 @@ class LevelFileNumIterator : public InternalIterator {
     assert(Valid());
     return flevel_->files[index_].largest_key;
   }
-  Slice value() const override {
+  Slice value() override {
     assert(Valid());
 
     auto file_meta = flevel_->files[index_];
