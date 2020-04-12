@@ -30,6 +30,6 @@ before_script:
 script:
   # Compile all related codes
   - OPT="-DTRAVIS -DVIDARDB" V=1 make -j${CPU_CORES} release
-  - OPT="-DTRAVIS -DVIDARDB" V=1 make -j${CPU_CORES} all
+  - OPT="-DTRAVIS -DVIDARDB" V=1 DEBUG_LEVEL=0 make -j${CPU_CORES} all
   # - OPT="-DTRAVIS -DVIDARDB" V=1 make -j${CPU_CORES} dbg
   - cd examples && OPT="-DTRAVIS -DVIDARDB" V=1 make all

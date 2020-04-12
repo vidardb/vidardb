@@ -626,5 +626,5 @@ extern Status ReadRecordFromWriteBatch(Slice* input, char* tag,
 extern const Slice ReformatUserValue(const Slice& user_value,
                                      const std::vector<uint32_t>& columns,
                                      const Splitter* splitter,
-                                     std::string* buf);
+                                     std::string& buf);
 }  // namespace vidardb

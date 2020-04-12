@@ -37,7 +37,7 @@ class Splitter {
 
   // Stitch multiple sub-slices to a slice using buf as storage.
   // Note: buf must exist as long as the returned Slice exists.
-  virtual Slice Stitch(const std::vector<Slice>& v, std::string* buf) const = 0;
+  virtual Slice Stitch(const std::vector<Slice>& v, std::string& buf) const = 0;
 
   // Append a sub-slice.
   virtual void Append(std::string& ss, const Slice& s, bool last) const = 0;
@@ -56,7 +56,7 @@ class PipeSplitter : public Splitter {
   virtual std::string Stitch(const std::vector<Slice>& v) const override;
 
   virtual Slice Stitch(const std::vector<Slice>& v,
-                       std::string* buf) const override;
+                       std::string& buf) const override;
 
   virtual void Append(std::string& ss, const Slice& s, bool last) const override;
 
@@ -86,7 +86,7 @@ class EncodingSplitter : public Splitter {
   virtual std::string Stitch(const std::vector<Slice>& v) const override;
 
   virtual Slice Stitch(const std::vector<Slice>& v,
-                       std::string* buf) const override;
+                       std::string& buf) const override;
 
   virtual void Append(std::string& ss, const Slice& s, bool last) const override;
 };

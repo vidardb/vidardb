@@ -269,7 +269,7 @@ class MemTableIterator : public InternalIterator {
       return val_slice;  // for flushing
     }
     value_.clear();  // prepare for splitting user value
-    return ReformatUserValue(val_slice, columns_, splitter_, &value_);
+    return ReformatUserValue(val_slice, columns_, splitter_, value_);
   }
 
   virtual Status status() const override { return Status::OK(); }
@@ -445,7 +445,7 @@ static bool SaveValue(void* arg, const char* entry) {
         Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
         Slice user_val =
             ReformatUserValue(v, s->read_options->columns,
-                              s->mem->GetMemTableOptions()->splitter, &value_);
+                              s->mem->GetMemTableOptions()->splitter, value_);
         *(s->status) = Status::OK();
         if (s->get_value != nullptr) {
           s->get_value->assign(user_val.data(), user_val.size());
@@ -511,7 +511,7 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
           s->range_query_val.clear();  // prepare for splitting user value
           Slice user_val = ReformatUserValue(
               v, s->read_options->columns,
-              s->mem->GetMemTableOptions()->splitter, &s->range_query_val);
+              s->mem->GetMemTableOptions()->splitter, s->range_query_val);
 
           if (it->second.seq_ < s->seq) {
             // replaced
