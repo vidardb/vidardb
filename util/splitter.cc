@@ -48,7 +48,7 @@ Slice PipeSplitter::Stitch(const std::vector<Slice>& v,
   for (auto i = 0u; i < v.size(); i++) {
     Append(buf, v[i], i + 1 == v.size());
   }
-  return Slice(buf);
+  return buf;
 }
 
 void PipeSplitter::Append(std::string& ss, const Slice& s, bool last) const {
@@ -82,7 +82,7 @@ Slice EncodingSplitter::Stitch(const std::vector<Slice>& v,
   for (const auto& s : v) {
     Append(buf, s, false);
   }
-  return Slice(buf);
+  return buf;
 }
 
 void EncodingSplitter::Append(std::string& ss, const Slice& s, bool last) const {

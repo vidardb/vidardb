@@ -412,7 +412,6 @@ struct Saver {
   Statistics* statistics;
   Env* env_;
   ReadOptions* read_options;  // Quanzhao
-  std::string range_query_val;  // Quanzhao
 };
 }  // namespace
 
@@ -441,11 +440,11 @@ static bool SaveValue(void* arg, const char* entry) {
 
     switch (type) {
       case kTypeValue: {
-        std::string value_;  // prepare for splitting user value
+        std::string buf;  // prepare for splitting user value
         Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
-        Slice user_val =
-            ReformatUserValue(v, s->read_options->columns,
-                              s->mem->GetMemTableOptions()->splitter, value_);
+        Slice user_val(ReformatUserValue(v, s->read_options->columns,
+                                         s->mem->GetMemTableOptions()->splitter,
+                                         buf));
         *(s->status) = Status::OK();
         if (s->get_value != nullptr) {
           s->get_value->assign(user_val.data(), user_val.size());
@@ -508,10 +507,10 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
         if (it->second.seq_ <= s->seq) {
           // TODO: might leverage move semantic later
           Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
-          s->range_query_val.clear();  // prepare for splitting user value
-          Slice user_val = ReformatUserValue(
-              v, s->read_options->columns,
-              s->mem->GetMemTableOptions()->splitter, s->range_query_val);
+          std::string buf;  // prepare for splitting user value
+          Slice user_val(
+              ReformatUserValue(v, s->read_options->columns,
+                                s->mem->GetMemTableOptions()->splitter, buf));
 
           if (it->second.seq_ < s->seq) {
             // replaced

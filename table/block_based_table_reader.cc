@@ -927,8 +927,8 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
         }
 
         value_.clear();  // prepare for splitting user value
-        Slice user_val = ReformatUserValue(iter_->value(), read_options.columns,
-                                           splitter_, value_);
+        Slice user_val(ReformatUserValue(iter_->value(), read_options.columns,
+                                         splitter_, value_));
 
         if (it->second.seq_ < parsed_key.sequence) {
           // replaced
@@ -1028,9 +1028,9 @@ Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
         break;  // Shichao
       }
 
-      std::string value_;  // prepare for splitting user value
+      std::string buf;  // prepare for splitting user value
       Slice user_val = ReformatUserValue(biter.value(), read_options.columns,
-                                         rep_->ioptions.splitter, value_);
+                                         rep_->ioptions.splitter, buf);
       if (!get_context->SaveValue(parsed_key, user_val)) {
         done = true;
         break;
