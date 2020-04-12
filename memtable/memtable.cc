@@ -260,17 +260,16 @@ class MemTableIterator : public InternalIterator {
     assert(Valid());
     return GetLengthPrefixedSlice(iter_->key());
   }
-  virtual Slice value() const override {
+  virtual Slice value() override {
     assert(Valid());
     Slice key_slice = GetLengthPrefixedSlice(iter_->key());
     Slice val_slice =
         GetLengthPrefixedSlice(key_slice.data() + key_slice.size());
-    if (columns_.empty() || splitter_ == nullptr) {
+    if (columns_.empty() || !splitter_ || val_slice.empty()) {
       return val_slice;  // for flushing
     }
-
-    std::string user_full_val(val_slice.data(), val_slice.size());
-    return ReformatUserValue(user_full_val, columns_, splitter_);
+    value_.clear();  // prepare for splitting user value
+    return ReformatUserValue(val_slice, columns_, splitter_, value_);
   }
 
   virtual Status status() const override { return Status::OK(); }
@@ -286,6 +285,7 @@ class MemTableIterator : public InternalIterator {
   bool arena_mode_;
   const Splitter* splitter_;
   const std::vector<uint32_t> columns_;
+  std::string value_;  // mutable
 
   // No copying allowed
   MemTableIterator(const MemTableIterator&);
@@ -403,7 +403,7 @@ struct Saver {
   const LookupKey* key;
   const LookupRange* range;  // Shichao
   bool* found_final_value;   // Is value set correctly? Used by KeyMayExist
-  std::string* value;
+  std::string* get_value;    // User value ptr for Get()
   std::list<RangeQueryKeyVal>* res;  // Shichao
   std::map<std::string, SeqTypeVal>::iterator prev_iter;  // Shichao
   SequenceNumber seq;
@@ -412,6 +412,7 @@ struct Saver {
   Statistics* statistics;
   Env* env_;
   ReadOptions* read_options;  // Quanzhao
+  std::string range_query_val;  // Quanzhao
 };
 }  // namespace
 
@@ -440,14 +441,14 @@ static bool SaveValue(void* arg, const char* entry) {
 
     switch (type) {
       case kTypeValue: {
+        std::string value_;  // prepare for splitting user value
         Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
-        std::string user_full_val(v.data(), v.size());
-        std::string user_val =
-            ReformatUserValue(user_full_val, s->read_options->columns,
-                              s->mem->GetMemTableOptions()->splitter);
+        Slice user_val =
+            ReformatUserValue(v, s->read_options->columns,
+                              s->mem->GetMemTableOptions()->splitter, value_);
         *(s->status) = Status::OK();
-        if (s->value != nullptr) {
-          s->value->assign(user_val.data(), user_val.size());
+        if (s->get_value != nullptr) {
+          s->get_value->assign(user_val.data(), user_val.size());
         }
         *(s->found_final_value) = true;
         return false;
@@ -507,10 +508,10 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
         if (it->second.seq_ <= s->seq) {
           // TODO: might leverage move semantic later
           Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
-          std::string user_full_val(v.data(), v.size());
-          std::string user_val =
-              ReformatUserValue(user_full_val, s->read_options->columns,
-                                s->mem->GetMemTableOptions()->splitter);
+          s->range_query_val.clear();  // prepare for splitting user value
+          Slice user_val = ReformatUserValue(
+              v, s->read_options->columns,
+              s->mem->GetMemTableOptions()->splitter, s->range_query_val);
 
           if (it->second.seq_ < s->seq) {
             // replaced
@@ -523,7 +524,7 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
                 it->second.iter_->user_val.size();
             it->second.seq_ = s->seq;
             it->second.type_ = type;
-            it->second.iter_->user_val = std::move(user_val);
+            it->second.iter_->user_val = std::move(user_val.ToString());
             s->read_options->result_val_size += 
                 it->second.iter_->user_val.size();
             if (type == kTypeDeletion) {
@@ -533,7 +534,7 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
             // inserted
             size_t delta_key_size = user_key.size();
             size_t delta_val_size = user_val.size();
-            s->res->emplace_back(user_key, std::move(user_val));
+            s->res->emplace_back(user_key, std::move(user_val.ToString()));
             s->read_options->result_key_size += delta_key_size;
             s->read_options->result_val_size += delta_val_size;
             it->second.iter_ = --(s->res->end());
@@ -575,7 +576,7 @@ bool MemTable::Get(ReadOptions& read_options, const LookupKey& key,
   saver.status = s;
   saver.found_final_value = &found_final_value;
   saver.key = &key;
-  saver.value = value;
+  saver.get_value = value;
   saver.seq = kMaxSequenceNumber;
   saver.mem = this;
   saver.logger = moptions_.info_log;

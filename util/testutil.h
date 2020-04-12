@@ -160,7 +160,7 @@ class VectorIterator : public InternalIterator {
   virtual void Prev() override { current_--; }
 
   virtual Slice key() const override { return Slice(keys_[current_]); }
-  virtual Slice value() const override { return Slice(values_[current_]); }
+  virtual Slice value() override { return Slice(values_[current_]); }
 
   virtual Status status() const override { return Status::OK(); }
 

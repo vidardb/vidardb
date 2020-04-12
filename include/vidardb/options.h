@@ -234,7 +234,7 @@ struct ColumnFamilyOptions {
   //
   // REQUIRES: The client must ensure that the splitter is initialized
   // for columnar storage.
-  const Splitter* splitter;
+  std::shared_ptr<Splitter> splitter;
 
   // -------------------
   // Parameters that affect performance

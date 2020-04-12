@@ -434,7 +434,7 @@ docker-image:
 	@echo "Building docker image..."
 	$(DOCKER) build --no-cache --pull -t $(REGISTRY)/$(IMAGE):$(TAG) docker_image
 
-all: $(LIBRARY) $(BENCHMARKS) tools tools_lib test_libs $(TESTS)  # Shichao
+all: $(LIBRARY) $(SHARED) $(BENCHMARKS) tools tools_lib test_libs  # Shichao
 
 static_lib: $(LIBRARY)
 
@@ -760,6 +760,7 @@ clean:
 	rm -f $(BENCHMARKS) $(TOOLS) $(TESTS) $(LIBRARY) $(SHARED)
 	rm -rf $(CLEAN_FILES) ios-x86 ios-arm scan_build_report
 	find . -name "*.[oda]" -exec rm -f {} \;
+	find . -name "*.so*" -exec rm -f {} \;
 	find . -type f -regex ".*\.\(\(gcda\)\|\(gcno\)\)" -exec rm {} \;
 	rm -rf bzip2* snappy* zlib* lz4*
 

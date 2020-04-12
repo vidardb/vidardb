@@ -159,21 +159,20 @@ LookupKey::LookupKey(const Slice& _user_key, SequenceNumber s) {
   end_ = dst;
 }
 
-const std::string ReformatUserValue(const std::string& user_value,
-                                    const std::vector<uint32_t>& columns,
-                                    const Splitter* splitter) {
-  if (columns.empty() || user_value.empty() || splitter == nullptr) {
+const Slice ReformatUserValue(const Slice& user_value,
+                              const std::vector<uint32_t>& columns,
+                              const Splitter* splitter, std::string& buf) {
+  if (columns.empty() || user_value.empty() || !splitter) {
     return user_value;
   }
 
   if (columns.size() == 1 && columns[0] == 0) {
-    return "";  // only query the user keys
+    return Slice();  // only query the user keys
   }
 
-  std::vector<std::string> result;
+  std::vector<Slice> result;
   result.reserve(columns.size());
-  // TODO: split slice in-place and extract the target attrs directly
-  std::vector<std::string> user_vals = splitter->Split(user_value);
+  std::vector<Slice> user_vals(splitter->Split(user_value));
   for (auto index : columns) {  // from 0 to MAX_COLUMN_INDEX
     assert(index <= user_vals.size());
     if (index > 0) {  // only process the value columns
@@ -181,7 +180,7 @@ const std::string ReformatUserValue(const std::string& user_value,
     }
   }
 
-  return splitter->Stitch(result);
+  return splitter->Stitch(result, buf);
 }
 
 }  // namespace vidardb

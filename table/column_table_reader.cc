@@ -971,7 +971,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return columns_[0]->key();
   }
 
-  virtual Slice value() const {
+  virtual Slice value() {
     assert(Valid());
     return value_;
   }
@@ -1107,7 +1107,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
           auto& it = user_vals[user_val_idx++]->second.iter_;
           size_t prev_val_size = it->user_val.size();
           splitter_->Append(it->user_val, iter->value(),
-                            i + 1 >= columns_.size());
+                            i + 1 == columns_.size());
           size_t delta_val_size = it->user_val.size() - prev_val_size;
           read_options.result_val_size += delta_val_size;
         }
@@ -1143,7 +1143,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
         // skip main column (only key)
         continue;
       }
-      splitter_->Append(value_, columns_[i]->value(), i + 1 >= columns_.size());
+      splitter_->Append(value_, columns_[i]->value(), i + 1 == columns_.size());
     }
     return true;
   }

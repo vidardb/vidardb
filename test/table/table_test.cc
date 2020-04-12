@@ -267,7 +267,7 @@ class KeyConvertingIterator : public InternalIterator {
     return parsed_key.user_key;
   }
 
-  virtual Slice value() const override { return iter_->value(); }
+  virtual Slice value() override { return iter_->value(); }
   virtual Status status() const override {
     return status_.ok() ? iter_->status() : status_;
   }
@@ -456,7 +456,7 @@ class InternalIteratorFromIterator : public InternalIterator {
   virtual void Next() override { it_->Next(); }
   virtual void Prev() override { it_->Prev(); }
   Slice key() const override { return it_->key(); }
-  Slice value() const override { return it_->value(); }
+  Slice value() override { return it_->value(); }
   virtual Status status() const override { return it_->status(); }
 
  private:
@@ -791,7 +791,7 @@ class HarnessTest : public testing::Test {
     }
   }
 
-  std::string ToString(const InternalIterator* it) {
+  std::string ToString(InternalIterator* it) {
     if (!it->Valid()) {
       return "END";
     } else {

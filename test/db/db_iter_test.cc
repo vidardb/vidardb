@@ -131,7 +131,7 @@ class TestIterator : public InternalIterator {
     return data_[iter_].first;
   }
 
-  virtual Slice value() const override {
+  virtual Slice value() override {
     assert(initialized_);
     return data_[iter_].second;
   }

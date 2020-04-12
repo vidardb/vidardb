@@ -118,7 +118,7 @@ class BlockIter : public InternalIterator {
     return key_.GetKey();
   }
 
-  virtual Slice value() const override {
+  virtual Slice value() override {
     assert(Valid());
     return value_;
   }

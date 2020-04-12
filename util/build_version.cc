@@ -1,5 +1,5 @@
 #include "build_version.h"
 const char* vidardb_build_git_sha =
-    "vidardb_build_git_sha:bdcd80decb1f2162b311f54fc3c9dd219f21d52a";
-const char* vidardb_build_git_date = "vidardb_build_git_date:2020-04-08";
+    "vidardb_build_git_sha:33d2bf7960b150666d14d7159ed64780e9e554b3";
+const char* vidardb_build_git_date = "vidardb_build_git_date:2020-04-12";
 const char* vidardb_build_compile_date = __DATE__;

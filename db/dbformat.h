@@ -618,11 +618,13 @@ extern Status ReadRecordFromWriteBatch(Slice* input, char* tag,
                                        uint32_t* column_family, Slice* key,
                                        Slice* value, Slice* blob, Slice* xid);
 
-// Reformat the user value by specified column index.
+// Reformat the user value using buf as storage by specified column index
+// and buf must exist as long as the returned Slice exists.
 // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
 //       Index 0 means only querying the user keys, and
 //       the value column index is from 1 to MAX_COLUMN_INDEX.
-extern const std::string ReformatUserValue(const std::string& user_value,
-                                           const std::vector<uint32_t>& columns,
-                                           const Splitter* splitter);
+extern const Slice ReformatUserValue(const Slice& user_value,
+                                     const std::vector<uint32_t>& columns,
+                                     const Splitter* splitter,
+                                     std::string& buf);
 }  // namespace vidardb

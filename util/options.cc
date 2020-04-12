@@ -42,7 +42,7 @@ ImmutableCFOptions::ImmutableCFOptions(const Options& options)
       compaction_options_universal(options.compaction_options_universal),
       compaction_options_fifo(options.compaction_options_fifo),
       comparator(options.comparator),
-      splitter(options.splitter),
+      splitter(options.splitter.get()),
       info_log(options.info_log.get()),
       statistics(options.statistics.get()),
       env(options.env),
@@ -74,7 +74,7 @@ ImmutableCFOptions::ImmutableCFOptions(const Options& options)
 
 ColumnFamilyOptions::ColumnFamilyOptions()
     : comparator(BytewiseComparator()),
-      splitter(nullptr),
+      splitter(nullptr),  // compatible with row store
       write_buffer_size(64 << 20),
       max_write_buffer_number(2),
       min_write_buffer_number_to_merge(1),

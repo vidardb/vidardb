@@ -226,7 +226,7 @@ class MergingIterator : public InternalIterator {
     return current_->key();
   }
 
-  virtual Slice value() const override {
+  virtual Slice value() override {
     assert(Valid());
     return current_->value();
   }

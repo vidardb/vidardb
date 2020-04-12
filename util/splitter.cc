@@ -3,20 +3,52 @@
 //  LICENSE file in the root directory of this source tree. An additional grant
 //  of patent rights can be found in the PATENTS file in the same directory.
 
+#include "vidardb/splitter.h"
+
+#include <string.h>
+
 #include <string>
 #include <vector>
-#include "string_util.h"
+
 #include "coding.h"
-#include "vidardb/splitter.h"
+#include "vidardb/slice.h"
 
 namespace vidardb {
 
-std::vector<std::string> PipeSplitter::Split(const std::string& s) const {
-  return StringSplit(s, delim);
+std::vector<Slice> PipeSplitter::Split(const Slice& s) const {
+  const char* p = s.data();
+  std::vector<Slice> res;
+  for (auto i = 0u, j = 0u; i < s.size();) {
+    if (s[i] != delim && i + 1 < s.size()) {
+      i++;
+      continue;
+    }
+
+    size_t n = i - j;
+    if (i + 1 == s.size()) {
+      n = i + 1 - j;  // last
+    }
+
+    res.emplace_back(Slice(p + j, n));
+    j = ++i;
+  }
+  return res;
 }
 
-std::string PipeSplitter::Stitch(const std::vector<std::string>& v) const {
-  return StringStitch(v, delim);
+std::string PipeSplitter::Stitch(const std::vector<Slice>& v) const {
+  std::string res;  // RVO/NRVO/move
+  for (auto i = 0u; i < v.size(); i++) {
+    Append(res, v[i], i + 1 == v.size());
+  }
+  return res;
+}
+
+Slice PipeSplitter::Stitch(const std::vector<Slice>& v,
+                           std::string& buf) const {
+  for (auto i = 0u; i < v.size(); i++) {
+    Append(buf, v[i], i + 1 == v.size());
+  }
+  return Slice(buf);
 }
 
 void PipeSplitter::Append(std::string& ss, const Slice& s, bool last) const {
@@ -28,21 +60,29 @@ void PipeSplitter::Append(std::string& ss, const Slice& s, bool last) const {
 
 Splitter* NewPipeSplitter() { return new PipeSplitter(); }
 
-std::vector<std::string> EncodingSplitter::Split(const std::string& s) const {
-  Slice ss(s), val;
-  std::vector<std::string> result;
+std::vector<Slice> EncodingSplitter::Split(const Slice& s) const {
+  Slice val, ss(s.data_, s.size_);
+  std::vector<Slice> res;
   while (GetLengthPrefixedSlice(&ss, &val)) {
-    result.emplace_back(val.ToString());
+    res.emplace_back(val);
   }
-  return result;
+  return res;
 }
 
-std::string EncodingSplitter::Stitch(const std::vector<std::string>& v) const {
-  std::string result;
+std::string EncodingSplitter::Stitch(const std::vector<Slice>& v) const {
+  std::string res;  // RVO/NRVO/move
   for (const auto& s: v) {
-    Append(result, s, false);
+    Append(res, s, false);
   }
-  return result;
+  return res;
+}
+
+Slice EncodingSplitter::Stitch(const std::vector<Slice>& v,
+                               std::string& buf) const {
+  for (const auto& s : v) {
+    Append(buf, s, false);
+  }
+  return Slice(buf);
 }
 
 void EncodingSplitter::Append(std::string& ss, const Slice& s, bool last) const {

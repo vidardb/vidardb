@@ -24,9 +24,7 @@ int main(int argc, char* argv[]) {
   DB* db;
   Options options;
   options.create_if_missing = true;
-
-  const Splitter* splitter = NewEncodingSplitter();
-  options.splitter = splitter;
+  options.splitter.reset(NewEncodingSplitter());
 
   // column table
   TableFactory* table_factory = NewColumnTableFactory();
@@ -41,34 +39,34 @@ int main(int argc, char* argv[]) {
   // insert data
   WriteOptions write_options;
   // write_options.sync = true;
-  s = db->Put(write_options, "1", 
-      splitter->Stitch(vector<string>{"chen1", "33", "hangzhou"}));
+  s = db->Put(write_options, "1",
+              options.splitter->Stitch({"chen1", "33", "hangzhou"}));
   assert(s.ok());
-  s = db->Put(write_options, "2", 
-      splitter->Stitch(vector<string>{"wang2", "32", "wuhan"}));
+  s = db->Put(write_options, "2",
+              options.splitter->Stitch({"wang2", "32", "wuhan"}));
   assert(s.ok());
-  s = db->Put(write_options, "3", 
-      splitter->Stitch(vector<string>{"zhao3", "35", "nanjing"}));
+  s = db->Put(write_options, "3",
+              options.splitter->Stitch({"zhao3", "35", "nanjing"}));
   assert(s.ok());
-  s = db->Put(write_options, "4", 
-      splitter->Stitch(vector<string>{"liao4", "28", "beijing"}));
+  s = db->Put(write_options, "4",
+              options.splitter->Stitch({"liao4", "28", "beijing"}));
   assert(s.ok());
-  s = db->Put(write_options, "5", 
-      splitter->Stitch(vector<string>{"jiang5", "30", "shanghai"}));
+  s = db->Put(write_options, "5",
+              options.splitter->Stitch({"jiang5", "30", "shanghai"}));
   assert(s.ok());
-  s = db->Put(write_options, "6", 
-      splitter->Stitch(vector<string>{"lian6", "30", "changsha"}));
+  s = db->Put(write_options, "6",
+              options.splitter->Stitch({"lian6", "30", "changsha"}));
   assert(s.ok());
   s = db->Delete(write_options, "1");
   assert(s.ok());
-  s = db->Put(write_options, "3", 
-      splitter->Stitch(vector<string>{"zhao333", "35", "nanjing"}));
+  s = db->Put(write_options, "3",
+              options.splitter->Stitch({"zhao333", "35", "nanjing"}));
   assert(s.ok());
-  s = db->Put(write_options, "6", 
-      splitter->Stitch(vector<string>{"lian666", "30", "changsha"}));
+  s = db->Put(write_options, "6",
+              options.splitter->Stitch({"lian666", "30", "changsha"}));
   assert(s.ok());
-  s = db->Put(write_options, "1", 
-      splitter->Stitch(vector<string>{"chen1111", "33", "hangzhou"}));
+  s = db->Put(write_options, "1",
+              options.splitter->Stitch({"chen1111", "33", "hangzhou"}));
   assert(s.ok());
   s = db->Delete(write_options, "3");
   assert(s.ok());
@@ -99,9 +97,9 @@ int main(int argc, char* argv[]) {
       total_key_size += it.user_key.size();
       total_val_size += it.user_val.size();
       cout << it.user_key << "=[";
-      vector<string> vals(splitter->Split(it.user_val));
+      vector<Slice> vals(options.splitter->Split(it.user_val));
       for (auto i = 0u; i < vals.size(); i++) {
-        cout << vals[i];
+        cout << vals[i].ToString();
         if (i < vals.size() - 1) {
           cout << ", ";
         };
@@ -114,6 +112,6 @@ int main(int argc, char* argv[]) {
     assert(total_val_size == read_options.result_val_size);
   }
 
-  delete db, splitter;
+  delete db;
   return 0;
 }
