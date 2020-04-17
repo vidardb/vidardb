@@ -22,7 +22,7 @@ RUN set -xe && apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* PostgresForeignDataWrapper.tar.gz PostgresForeignDataWrapper-${FDW_VERSION}
 
 # Install AI Functionality
-ENV MADLIB_VERSION=1.16
+ENV MADLIB_VERSION=1.17.0
 RUN set -xe && apt-get update && \
     apt-get install -y --no-install-recommends wget ca-certificates postgresql-plpython-${POSTGRES_VERSION} python m4 && \
     wget --no-check-certificate -O apache-madlib-${MADLIB_VERSION}-bin-Linux.deb https://dist.apache.org/repos/dist/release/madlib/${MADLIB_VERSION}/apache-madlib-${MADLIB_VERSION}-bin-Linux.deb && \
