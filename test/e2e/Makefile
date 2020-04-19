@@ -1,6 +1,6 @@
 include ../../make_config.mk
 
-.PHONY: clean libvidardb
+.PHONY: clean libvidardb e2e-test
 
 all: simple_row_test simple_column_test range_query_row_test range_query_column_test adaptive_table_factory_test
 
@@ -24,3 +24,6 @@ clean:
 
 libvidardb:
 	cd ../.. && $(MAKE) static_lib
+
+e2e-test: all
+	sh run-e2e-tests.sh
