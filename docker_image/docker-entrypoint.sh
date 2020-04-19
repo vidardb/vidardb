@@ -220,7 +220,7 @@ pg_setup_shared_preload_libraries() {
 }
 
 pg_init_madlib() {
-	install-madlib.sh -U "${PGUSER:-postgres}" -D "${POSTGRES_DB}"
+	install-madlib.sh -U "${PGUSER:-postgres}" -D "${POSTGRES_DB}" --no-install-check
 }
 
 # start socket and $PGHOST postgresql server for setting up or running scripts

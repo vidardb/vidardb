@@ -15,6 +15,7 @@ PGPORT="5432"
 PGUSER="postgres"
 PGPASSWORD=""
 PGDATABASE="postgres"
+INSTALLCHECK="true"
 
 _usage() {
     cat << USAGE
@@ -47,6 +48,9 @@ _parse_args() {
             PGDATABASE=$2
             shift
             ;;
+        --no-install-check)
+            INSTALLCHECK="false"
+            ;;
         -h|--help)
             _usage
             ;;
@@ -68,7 +72,9 @@ _install_madlib() {
 
     echo "****************************************************"
     $MADPACK -c $conn -p postgres install
-    $MADPACK -c $conn -p postgres install-check
+    if [ "$INSTALLCHECK" = "true" ]; then
+        $MADPACK -c $conn -p postgres install-check
+    fi
     echo "****************************************************"
 }
 
