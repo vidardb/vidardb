@@ -31,7 +31,4 @@ RUN set -xe && apt-get update && \
     rm -rf /var/lib/apt/lists/* /tmp/* apache-madlib-${MADLIB_VERSION}-bin-Linux.deb
 
 # Add bootstrap entrypoint and util tools
-COPY docker-entrypoint.sh install-madlib.sh health-check.sh /usr/local/bin/
-
-# Add health check
-HEALTHCHECK --start-period=6s --interval=5s --timeout=5s CMD health-check.sh
+COPY docker-entrypoint.sh install-madlib.sh /usr/local/bin/
