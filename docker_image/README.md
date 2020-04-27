@@ -4,7 +4,7 @@ We can easily deploy VidarDB with Docker. This section will guide you to install
 
 ## Requirement
 
-Docker is the only requirement. Install it at [https://docs.docker.com/install/](https://docs.docker.com/install/) .
+Docker is the only requirement. Install it at [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/) .
 
 ## Run a VidarDB's Docker container
 
