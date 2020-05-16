@@ -1360,9 +1360,9 @@ struct ReadOptions {
   //       the value column index is from 1 to MAX_COLUMN_INDEX.
   std::vector<uint32_t> columns;
 
-  // If non-zero, RangeQuery will return the expected result keys of the given
-  // maximum size in every batch. Otherwise, it will return the all result keys
-  // in one batch.
+  // If non-zero, RangeQuery will return the expected result pairs of the given
+  // maximum size in every batch. Otherwise, it will return the all result pairs
+  // in one batch. Note: the size unit is Byte.
   // Default: 0
   size_t batch_capacity;
 
@@ -1371,7 +1371,7 @@ struct ReadOptions {
   void* range_query_meta;
 
   // Store the result key and value size in one batch for RangeQuery.
-  // Note: Caller should not set the value.
+  // Note: Caller should not set the value and the size unit is Byte.
   size_t result_key_size;
   size_t result_val_size;
   /***************************** Quanzhao *********************************/

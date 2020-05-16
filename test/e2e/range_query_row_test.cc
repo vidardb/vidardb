@@ -15,6 +15,8 @@ using namespace vidardb;
 const string kDBPath = "/tmp/vidardb_range_query_row_test";
 
 void TestRowRangeQuery(bool flush, size_t capacity) {
+  cout << ">> capacity: " << capacity << endl;
+
   int ret = system(string("rm -rf " + kDBPath).c_str());
 
   Options options;
@@ -77,22 +79,23 @@ void TestRowRangeQuery(bool flush, size_t capacity) {
     assert(total_key_size == ro.result_key_size);
     assert(total_val_size == ro.result_val_size);
     if (capacity > 0) {
-      assert(res.size() <= capacity);
+      assert(total_key_size + total_val_size <= capacity);
     }
   }
 
   delete db;
+  cout << endl;
 }
 
 int main() {
   TestRowRangeQuery(false, 0);
-  TestRowRangeQuery(false, 1);
-  TestRowRangeQuery(false, 2);
-  TestRowRangeQuery(false, 5);
+  TestRowRangeQuery(false, 10);
+  TestRowRangeQuery(false, 20);
+  TestRowRangeQuery(false, 50);
 
   TestRowRangeQuery(true, 0);
-  TestRowRangeQuery(true, 1);
-  TestRowRangeQuery(true, 2);
-  TestRowRangeQuery(true, 5);
+  TestRowRangeQuery(true, 10);
+  TestRowRangeQuery(true, 20);
+  TestRowRangeQuery(true, 50);
   return 0;
 }

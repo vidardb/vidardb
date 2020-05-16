@@ -3732,9 +3732,10 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
   delete meta->current_limit_key;
   meta->current_limit_key = nullptr;
 
-  size_t map_size = meta->map_res.size();
+  size_t result_total_size =
+      read_options.result_key_size + read_options.result_val_size;
   if (read_options.batch_capacity > 0 &&
-      map_size > read_options.batch_capacity) {
+      result_total_size > read_options.batch_capacity) {
     auto it = --(meta->map_res.end());
     meta->next_start_key = std::move(it->first);
     // Not include the next start key
@@ -3766,9 +3767,8 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
 
   // Check if have the next range query
   bool next_query = true;
-  if (map_size == 0 || read_options.batch_capacity == 0 ||
-      map_size <= read_options.batch_capacity) {  // map_size includes the extra
-    // no extra result
+  if (result_total_size == 0 || read_options.batch_capacity == 0 ||
+      result_total_size <= read_options.batch_capacity) {
     next_query = false;
     ReturnAndCleanupSuperVersion(cfd, sv);
     delete meta;

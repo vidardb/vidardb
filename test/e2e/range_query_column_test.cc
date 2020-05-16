@@ -18,6 +18,12 @@ const unsigned int kColumn = 3;
 const string kDBPath = "/tmp/vidardb_range_query_column_test";
 
 void TestColumnRangeQuery(bool flush, size_t capacity, vector<uint32_t> cols) {
+  cout << ">> capacity: " << capacity << ", cols: { ";
+  for (auto& col : cols) {
+    cout << col << " ";
+  }
+  cout << "}" << endl;
+
   int ret = system(string("rm -rf " + kDBPath).c_str());
 
   Options options;
@@ -104,24 +110,25 @@ void TestColumnRangeQuery(bool flush, size_t capacity, vector<uint32_t> cols) {
     assert(total_key_size == ro.result_key_size);
     assert(total_val_size == ro.result_val_size);
     if (capacity > 0) {
-      assert(res.size() <= capacity);
+      assert(total_key_size + total_val_size <= capacity);
     }
   }
 
   delete db;
+  cout << endl;
 }
 
 int main() {
   TestColumnRangeQuery(false, 0, {1, 3});
-  TestColumnRangeQuery(false, 1, {1, 3});
-  TestColumnRangeQuery(false, 2, {1, 3});
-  TestColumnRangeQuery(false, 5, {1, 3});
-  TestColumnRangeQuery(false, 2, {0});
+  TestColumnRangeQuery(false, 20, {1, 3});
+  TestColumnRangeQuery(false, 40, {1, 3});
+  TestColumnRangeQuery(false, 100, {1, 3});
+  TestColumnRangeQuery(false, 10, {0});
 
   TestColumnRangeQuery(true, 0, {1, 3});
-  TestColumnRangeQuery(true, 1, {1, 3});
-  TestColumnRangeQuery(true, 2, {1, 3});
-  TestColumnRangeQuery(true, 5, {1, 3});
-  TestColumnRangeQuery(true, 2, {0});
+  TestColumnRangeQuery(true, 20, {1, 3});
+  TestColumnRangeQuery(true, 40, {1, 3});
+  TestColumnRangeQuery(true, 100, {1, 3});
+  TestColumnRangeQuery(true, 10, {0});
   return 0;
 }
