@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
 
   ReadOptions read_options;
   // read_options.batch_capacity = 0; // full search
-  read_options.batch_capacity = 2; // in batch
+  read_options.batch_capacity = 35;  // in batch (byte)
   // read_options.columns = {0}; // only query keys
   read_options.columns = {1, 3};
 

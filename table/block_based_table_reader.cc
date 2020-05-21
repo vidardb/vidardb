@@ -956,11 +956,11 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
           if (parsed_key.type == kTypeDeletion) {
             meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
           }
+        }
 
-          if (CompressResultList(&res, read_options)
-              && meta->map_res.rbegin()->first <= user_key) {
-            break;  // Reach the batch capacity
-          }
+        auto crl = CompressResultList(&res, read_options);
+        if (crl.size() > 0 && meta->map_res.rbegin()->first <= user_key) {
+          break;  // Reach the batch capacity
         }
       }
     }

@@ -77,6 +77,7 @@ void TestSimpleRowStore(bool flush) {
 
   delete iter;
   delete db;
+  std::cout << std::endl;
 }
 
 int main() {

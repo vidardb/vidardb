@@ -540,12 +540,13 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
             if (type == kTypeDeletion) {
               meta->del_keys.insert({s->seq, it->second.iter_});
             }
+          }
 
-            if (CompressResultList(s->res, *(s->read_options))
-                && meta->map_res.rbegin()->first <= user_key) {
-              *(s->status) = Status::OK();
-              return false;  // Reach the batch capacity
-            }
+          auto crl = CompressResultList(s->res, *(s->read_options));
+          if (crl.size() > 0 && meta->map_res.rbegin()->first <= user_key) {
+            // Reach the batch capacity
+            *(s->status) = Status::OK();
+            return false;
           }
         }
       }

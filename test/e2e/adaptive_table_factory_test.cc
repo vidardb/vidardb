@@ -20,6 +20,12 @@ const string kDBPath = "/tmp/vidardb_adaptive_table_factory_test";
 
 void TestAdaptiveTableFactory(bool flush, kTableType table, size_t capacity,
                               vector<uint32_t> cols) {
+  cout << ">> capacity: " << capacity << ", cols: { ";
+  for (auto& col : cols) {
+    cout << col << " ";
+  }
+  cout << "}" << endl;
+
   int ret = system(string("rm -rf " + kDBPath).c_str());
 
   Options options;
@@ -103,38 +109,40 @@ void TestAdaptiveTableFactory(bool flush, kTableType table, size_t capacity,
       }
       cout << "] ";
     }
-    cout << endl;
+    cout << " key_size=" << ro.result_key_size;
+    cout << ", val_size=" << ro.result_val_size << endl;
 
     if (capacity > 0) {
-      assert(res.size() <= capacity);
+      assert(ro.result_key_size + ro.result_val_size <= capacity);
     }
   }
 
   delete db;
+  cout << endl;
 }
 
 int main() {
   TestAdaptiveTableFactory(false, ROW, 0, {1, 3});
-  TestAdaptiveTableFactory(false, ROW, 1, {1, 3});
-  TestAdaptiveTableFactory(false, ROW, 2, {1, 3});
-  TestAdaptiveTableFactory(false, ROW, 5, {1, 3});
-  TestAdaptiveTableFactory(false, ROW, 5, {0});
+  TestAdaptiveTableFactory(false, ROW, 20, {1, 3});
+  TestAdaptiveTableFactory(false, ROW, 40, {1, 3});
+  TestAdaptiveTableFactory(false, ROW, 100, {1, 3});
+  TestAdaptiveTableFactory(false, ROW, 10, {0});
   TestAdaptiveTableFactory(true, ROW, 0, {1, 3});
-  TestAdaptiveTableFactory(true, ROW, 1, {1, 3});
-  TestAdaptiveTableFactory(true, ROW, 2, {1, 3});
-  TestAdaptiveTableFactory(true, ROW, 5, {1, 3});
-  TestAdaptiveTableFactory(true, ROW, 5, {0});
+  TestAdaptiveTableFactory(true, ROW, 20, {1, 3});
+  TestAdaptiveTableFactory(true, ROW, 40, {1, 3});
+  TestAdaptiveTableFactory(true, ROW, 100, {1, 3});
+  TestAdaptiveTableFactory(true, ROW, 10, {0});
 
   TestAdaptiveTableFactory(false, COLUMN, 0, {1, 3});
-  TestAdaptiveTableFactory(false, COLUMN, 1, {1, 3});
-  TestAdaptiveTableFactory(false, COLUMN, 2, {1, 3});
-  TestAdaptiveTableFactory(false, COLUMN, 5, {1, 3});
-  TestAdaptiveTableFactory(false, COLUMN, 5, {0});
+  TestAdaptiveTableFactory(false, COLUMN, 20, {1, 3});
+  TestAdaptiveTableFactory(false, COLUMN, 40, {1, 3});
+  TestAdaptiveTableFactory(false, COLUMN, 100, {1, 3});
+  TestAdaptiveTableFactory(false, COLUMN, 10, {0});
   TestAdaptiveTableFactory(true, COLUMN, 0, {1, 3});
-  TestAdaptiveTableFactory(true, COLUMN, 1, {1, 3});
-  TestAdaptiveTableFactory(true, COLUMN, 2, {1, 3});
-  TestAdaptiveTableFactory(true, COLUMN, 5, {1, 3});
-  TestAdaptiveTableFactory(true, COLUMN, 5, {0});
+  TestAdaptiveTableFactory(true, COLUMN, 20, {1, 3});
+  TestAdaptiveTableFactory(true, COLUMN, 40, {1, 3});
+  TestAdaptiveTableFactory(true, COLUMN, 100, {1, 3});
+  TestAdaptiveTableFactory(true, COLUMN, 10, {0});
 
   return 0;
 }

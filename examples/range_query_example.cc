@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
 
   ReadOptions read_options;
   // read_options.batch_capacity = 0; // full search
-  read_options.batch_capacity = 2; // in batch
+  read_options.batch_capacity = 15;  // in batch (byte)
 
   // Range range; // full search
   // Range range("2", "4"); // [2, 4]

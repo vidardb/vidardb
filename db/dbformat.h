@@ -385,26 +385,33 @@ struct RangeQueryMeta {
     current_limit_key(limit_key), limit_sequence(limit_seq) {}
 };
 
-// Ensure the result size is no more than the expected capacity
-// which maybe include an extra limit user key.
-// Return true if the size has reached the capacity, else false.
-inline bool CompressResultList(std::list<RangeQueryKeyVal>* res,
-                               ReadOptions& read_options) {
+// Ensure the result size is no more than the expected capacity which
+// maybe include an extra limit user key and the size unit is Byte.
+// Return the deleted user key's sequence number list if the size has
+// reached the capacity, else an empty list.
+inline std::vector<SequenceNumber> CompressResultList(
+    std::list<RangeQueryKeyVal>* res, ReadOptions& read_options) {
   if (read_options.batch_capacity <= 0) {  // infinite
-    return false;
+    return {};
   }
 
   // reserve the next start key which is also the current limit key
   RangeQueryMeta* meta =
       static_cast<RangeQueryMeta*>(read_options.range_query_meta);
-  size_t ok_size = read_options.batch_capacity + 1;
-  if (meta->map_res.size() <= ok_size) {
-    return false;
+  // not include the next start kv size
+  auto next = --(meta->map_res.end());
+  size_t next_total_size =
+      next->second.iter_->user_key.size() + next->second.iter_->user_val.size();
+  size_t result_total_size =
+      read_options.result_key_size + read_options.result_val_size;
+  assert(result_total_size >= next_total_size);
+  if (result_total_size - next_total_size <= read_options.batch_capacity) {
+    return {};
   }
 
-  size_t diff_size = meta->map_res.size() - ok_size;
-  for (size_t i = 0u; i < diff_size; i++) {
-    auto it = --(meta->map_res.end());
+  std::vector<SequenceNumber> deleted_sequence_numbers;
+  for (; result_total_size - next_total_size > read_options.batch_capacity;) {
+    auto it = --(meta->map_res.end());  // get the next start kv
     size_t delta_key_size = it->second.iter_->user_key.size();
     size_t delta_val_size = it->second.iter_->user_val.size();
     res->erase(it->second.iter_);  // remove from list
@@ -416,14 +423,22 @@ inline bool CompressResultList(std::list<RangeQueryKeyVal>* res,
       // remove from unordered_map
       meta->del_keys.erase(it->second.seq_);
     }
-    meta->map_res.erase(it);       // remove from map
+    deleted_sequence_numbers.emplace_back(it->second.seq_);
+    meta->map_res.erase(it);  // remove from map
+
+    next = --(meta->map_res.end());  // get the next start kv
+    next_total_size = next->second.iter_->user_key.size() +
+                      next->second.iter_->user_val.size();
+    result_total_size =
+        read_options.result_key_size + read_options.result_val_size;
+    assert(result_total_size >= next_total_size);
   }
 
   // update the current range limit key
   delete meta->current_limit_key;
   Slice limit_key(meta->map_res.rbegin()->first);
   meta->current_limit_key = new LookupKey(limit_key, meta->limit_sequence);
-  return true;
+  return deleted_sequence_numbers;
 }
 
 inline int CompareRangeLimit(const InternalKeyComparator& comparator,

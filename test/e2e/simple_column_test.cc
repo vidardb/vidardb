@@ -88,6 +88,7 @@ void TestSimpleColumnStore(bool flush) {
 
   delete it;
   delete db;
+  std::cout << std::endl;
 }
 
 int main() {

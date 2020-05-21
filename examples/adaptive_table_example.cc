@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
 
   ReadOptions read_options;
   // read_options.batch_capacity = 0; // full search
-  read_options.batch_capacity = 2; // in batch
+  read_options.batch_capacity = 50;  // in batch (byte)
   read_options.columns = {1, 3};
 
   // Range range; // full search
@@ -114,7 +114,8 @@ int main(int argc, char* argv[]) {
       }
       cout << "] ";
     }
-    cout << endl;
+    cout << " key_size=" << read_options.result_key_size;
+    cout << ", val_size=" << read_options.result_val_size << endl;
   }
 
   delete db;
