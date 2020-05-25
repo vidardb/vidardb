@@ -195,9 +195,10 @@ InternalIterator* TableCache::NewIterator(
   size_t readahead = 0;
   bool create_new_table_reader = false;
   if (for_compaction) {
-    // when for_compaction && !os_cache true, it is range query
+    // when for_compaction && !os_cache = true, it is range query
     if (!os_cache) {
       readahead = options.readahead_size;  // Shichao
+      // TODO: create new table reader each time???
       create_new_table_reader = true;      // Shichao
     } else if (ioptions_.new_table_reader_for_compaction_inputs) {
       readahead = ioptions_.compaction_readahead_size;

@@ -159,6 +159,7 @@ class PosixEnv : public Env {
       int flags = O_RDONLY | O_DIRECT;
       TEST_SYNC_POINT_CALLBACK("NewSequentialFile:O_DIRECT", &flags);
 #endif
+      close(fileno(f));  // Quanzhao
       int fd = open(fname.c_str(), flags, 0644);
       if (fd < 0) {
         return IOError(fname, errno);
@@ -217,6 +218,7 @@ class PosixEnv : public Env {
       int flags = O_RDONLY | O_DIRECT;
       TEST_SYNC_POINT_CALLBACK("NewRandomAccessFile:O_DIRECT", &flags);
 #endif
+      close(fd);  // Quanzhao
       fd = open(fname.c_str(), flags, 0644);
       if (fd < 0) {
         s = IOError(fname, errno);
@@ -271,6 +273,7 @@ class PosixEnv : public Env {
         int flags = O_WRONLY | O_APPEND | O_TRUNC | O_CREAT | O_DIRECT;
 #endif
         TEST_SYNC_POINT_CALLBACK("NewWritableFile:O_DIRECT", &flags);
+        close(fd);  // Quanzhao
         fd = open(fname.c_str(), flags, 0644);
         if (fd < 0) {
           s = IOError(fname, errno);
