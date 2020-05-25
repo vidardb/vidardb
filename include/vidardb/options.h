@@ -187,8 +187,7 @@ struct ColumnFamilyOptions {
   // spend lots of memory for memtables.
   ColumnFamilyOptions* OptimizeForSmallDb();
 
-  // Use this if you don't need to keep the data sorted, i.e. you'll never use
-  // an iterator, only Put() and Get() API calls
+  // Adaptive table factory should not be enabled in this case.
   //
   // Not supported in VIDARDB_LITE
   ColumnFamilyOptions* OptimizeForPointLookup(
