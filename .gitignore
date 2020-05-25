@@ -3,3 +3,7 @@
 *.code-workspace
 *.vscode
 .settings/
+make_config.mk
+*.o
+*.d
+*.a

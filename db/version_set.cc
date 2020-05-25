@@ -220,40 +220,50 @@ class FilePicker {
         is_hit_file_last_in_level_ =
             curr_index_in_curr_level_ == curr_file_level_->num_files - 1;
 
-        bool valid = (start_.user_key().compare(kRangeQueryMin) == 0) ? false :
-                     (internal_comparator_->InternalKeyComparator::Compare(
-                         f->largest_key, start_.internal_key()) < 0);
-        if (is_hit_file_last_in_level_ && valid) {
-          break;
+        bool invalid =
+            (start_.user_key().compare(kRangeQueryMin) == 0)
+                ? false
+                : (internal_comparator_->InternalKeyComparator::Compare(
+                       f->largest_key, start_.internal_key()) < 0);
+        if (is_hit_file_last_in_level_ && invalid) {
+          break;  // all keys in curr_file_level < start_key
         }
 
-        int cmp_largest = -1;
+        int cmp_limit_ = -1;  // compare limit key
         if (num_levels_ > 1 || curr_file_level_->num_files > 3) {
-          int cmp_smallest = (limit_.user_key().compare(kRangeQueryMax) == 0) ?
-              1 : user_comparator_->Compare(limit_.user_key(),
-                                            ExtractUserKey(f->smallest_key));
-          if (cmp_smallest > 0) {
-            cmp_largest = (limit_.user_key().compare(kRangeQueryMax) == 0) ?
-                1 : user_comparator_->Compare(limit_.user_key(),
-                                              ExtractUserKey(f->largest_key));
-          } else {
-            if (curr_level_ == 0) {
+          cmp_limit_ =
+              (limit_.user_key().compare(kRangeQueryMax) == 0)
+                  ? 1
+                  : user_comparator_->Compare(limit_.user_key(),
+                                              ExtractUserKey(f->smallest_key));
+          if (cmp_limit_ > 0) {  // limit > f.smallest_key
+            cmp_limit_ =
+                (limit_.user_key().compare(kRangeQueryMax) == 0)
+                    ? 1
+                    : user_comparator_->Compare(limit_.user_key(),
+                                                ExtractUserKey(f->largest_key));
+          } else {                   // limit <= f.smallest_key
+            if (curr_level_ == 0) {  // overlap
               ++curr_index_in_curr_level_;
               continue;
-            } else {
+            } else {  // level-n sorted
               break;
             }
           }
         }
+
         returned_file_level_ = curr_level_;
-        if (curr_level_ > 0 && cmp_largest <= 0) {
+        if (curr_level_ > 0 && cmp_limit_ <= 0) {
+          // level-n [n>=1] and f.smallest_key < limit <= f.largest_key
+          // only the current sst is valid in the current level.
           search_left_bound_ = 0;
           search_right_bound_ = FileIndexer::kLevelMaxIndex;
-          search_ended_ = !PrepareNextLevel();
-        } else {
-          ++curr_index_in_curr_level_;
+          search_ended_ = !PrepareNextLevel();  // prepare next level
+        } else {                        // level-0 or limit > f.largest_key
+          ++curr_index_in_curr_level_;  // prepare the next sst
         }
-        return f;
+
+        return f;  // return the current valid sst
       }
 
       search_left_bound_ = 0;
@@ -343,6 +353,8 @@ class FilePicker {
                               start_.internal_key(),
                               static_cast<uint32_t>(search_left_bound_),
                               static_cast<uint32_t>(search_right_bound_));
+          // TODO: binary search to find the search_right_bound_ to
+          // further narrow the search range.
         } else {
           // search_left_bound > search_right_bound, key does not exist in
           // this level. Since no comparison is done in this level, it will

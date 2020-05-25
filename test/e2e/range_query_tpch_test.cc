@@ -3,13 +3,17 @@
 // LICENSE file in the root directory of this source tree. An additional grant
 // of patent rights can be found in the PATENTS file in the same directory.
 //
-// PREREQUISITE:
+// 1. PREREQUISITE:
 //
 // The tpch lineitem dataset should be prepared ahead of time.
 // You can run the following command in the VidarDB Benchmark repo
 // https://github.com/vidardb/Benchmark
 //
 // make gen-data
+//
+// 2. USAGE:
+//
+// DATASET=xxx/lineitem.tbl ./range_query_tpch_test
 //
 
 #include <stdlib.h>
@@ -161,6 +165,9 @@ void TestTpchRangeQuery(bool flush, kTableType table, size_t capacity,
     std::cout << "index=" << batch_index;
 
     next = db->RangeQuery(ro, range, res, &s);
+    if (!s.ok()) {
+      std::cout << s.ToString() << std::endl;
+    }
     assert(s.ok());
 
     for (auto it : res) {
@@ -197,8 +204,8 @@ void TestTpchRangeQuery(bool flush, kTableType table, size_t capacity,
 }
 
 int main() {
-  TestTpchRangeQuery(false, ROW, 4096 * 20, {});
-  // TestTpchRangeQuery(false, COLUMN, 4096 * 20, {});
+  // TestTpchRangeQuery(false, ROW, 4096 * 20, {});
+  TestTpchRangeQuery(false, COLUMN, 4096 * 20, {});
   // TestTpchRangeQuery(true, ROW, 4096 * 20, {});
   // TestTpchRangeQuery(true, COLUMN, 4096 * 20, {});
   return 0;
