@@ -1,6 +1,6 @@
 <img style="width:100%;" src="/github-banner.png">
 
-## VidarDB: the world's first unified database system, replacing multiple data tools with a single unified database.
+## VidarDB, the world's first polymorphic database. Similar to automatic transmission car where shifting gears and working a clutch are no longer needed, VidarDB matches your workload automatically. 
 
 [![Build Status](https://travis-ci.com/vidardb/vidardb.svg?branch=master)](https://travis-ci.com/github/vidardb/vidardb)
 
