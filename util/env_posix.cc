@@ -159,9 +159,7 @@ class PosixEnv : public Env {
       int flags = O_RDONLY | O_DIRECT;
       TEST_SYNC_POINT_CALLBACK("NewSequentialFile:O_DIRECT", &flags);
 #endif
-      if (f) {  // Quanzhao
-        close(fileno(f));
-      }
+      close(fileno(f));  // Quanzhao
       int fd = open(fname.c_str(), flags, 0644);
       if (fd < 0) {
         return IOError(fname, errno);

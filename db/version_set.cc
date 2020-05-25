@@ -353,8 +353,8 @@ class FilePicker {
                               start_.internal_key(),
                               static_cast<uint32_t>(search_left_bound_),
                               static_cast<uint32_t>(search_right_bound_));
-          // TODO: binary search to find the search_right_bound_ to
-          // further narrow the search range.
+          // TODO: early filter binary search to find the search_right_bound_
+          // to further narrow the search range.
         } else {
           // search_left_bound > search_right_bound, key does not exist in
           // this level. Since no comparison is done in this level, it will
