@@ -31,8 +31,9 @@ void TestAdaptiveTableFactory(bool flush, kTableType table, size_t capacity,
   Options options;
   options.create_if_missing = true;
   options.splitter.reset(NewEncodingSplitter());
+  #ifndef VIDARDB_LITE
   options.OptimizeAdaptiveLevelStyleCompaction();
-
+  #endif
   int knob = -1;  // row
   if (table == COLUMN) {
     knob = 0;

@@ -189,7 +189,6 @@ class TableFactory {
   virtual void* GetOptions() { return nullptr; }
 };
 
-#ifndef VIDARDB_LITE
 // Create a special table factory that can open either of the supported
 // table formats, based on setting inside the SST files. It should be used to
 // convert a DB from one table format to another.
@@ -205,6 +204,5 @@ extern TableFactory* NewAdaptiveTableFactory(
     std::shared_ptr<TableFactory> column_table_factory = nullptr,  // Shichao
     int knob = -1);                                                // Shichao
 
-#endif  // VIDARDB_LITE
 
 }  // namespace vidardb

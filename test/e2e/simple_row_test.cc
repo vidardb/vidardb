@@ -20,8 +20,10 @@ void TestSimpleRowStore(bool flush) {
   int ret = system(std::string("rm -rf " + kDBPath).c_str());
 
   Options options;
+  #ifndef VIDARDB_LITE
   options.IncreaseParallelism();
   options.OptimizeLevelStyleCompaction();
+  #endif
   options.create_if_missing = true;
   options.splitter.reset(NewPipeSplitter());
 

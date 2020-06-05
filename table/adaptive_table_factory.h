@@ -9,7 +9,6 @@
 
 #pragma once
 
-#ifndef VIDARDB_LITE
 
 #include <string>
 #include "vidardb/options.h"
@@ -81,4 +80,3 @@ class AdaptiveTableFactory : public TableFactory {
 };
 
 }  // namespace vidardb
-#endif  // VIDARDB_LITE

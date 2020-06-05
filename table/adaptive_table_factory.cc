@@ -7,7 +7,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file. See the AUTHORS file for names of contributors.
 
-#ifndef VIDARDB_LITE
 #include "table/adaptive_table_factory.h"
 
 #include "table/table_builder.h"
@@ -147,4 +146,3 @@ extern TableFactory* NewAdaptiveTableFactory(
 }
 
 }  // namespace vidardb
-#endif  // VIDARDB_LITE

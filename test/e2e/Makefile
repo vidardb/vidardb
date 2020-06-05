@@ -1,5 +1,7 @@
 include ../../make_config.mk
 
+CXXFLAGS += $(OPT)
+
 .PHONY: clean libvidardb e2e-test
 
 all: simple_row_test simple_column_test range_query_row_test range_query_column_test adaptive_table_factory_test
