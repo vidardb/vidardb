@@ -155,11 +155,6 @@ endif
 ifeq ($(PLATFORM), OS_SOLARIS)
 	PLATFORM_CXXFLAGS += -D _GLIBCXX_USE_C99
 endif
-ifneq ($(filter -DVIDARDB_LITE,$(OPT)),)
-	# found
-	CFLAGS += -fno-exceptions
-	CXXFLAGS += -fno-exceptions
-endif
 
 # ASAN doesn't work well with jemalloc. If we're compiling with ASAN, we should use regular malloc.
 ifdef COMPILE_WITH_ASAN
