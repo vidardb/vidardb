@@ -1,16 +1,10 @@
 include ../../make_config.mk
 
 CXXFLAGS += $(OPT)
-OBJS = simple_row_test \
-			 simple_column_test \
-			 range_query_row_test \
-			 range_query_column_test \
-			 adaptive_table_factory_test \
-			 comparator_test
 
 .PHONY: clean libvidardb e2e-test
 
-all: $(OBJS)
+all: simple_row_test simple_column_test range_query_row_test range_query_column_test adaptive_table_factory_test comparator_test
 
 simple_row_test: libvidardb simple_row_test.cc
 	$(CXX) $(CXXFLAGS) $@.cc -o$@ ../../libvidardb.a -I../../include -O2 -std=c++11 $(PLATFORM_LDFLAGS) $(PLATFORM_CXXFLAGS) $(EXEC_LDFLAGS)
@@ -34,7 +28,7 @@ comparator_test: libvidardb comparator_test.cc
 	$(CXX) $(CXXFLAGS) $@.cc -o$@ ../../libvidardb.a -I../../include -O2 -std=c++11 $(PLATFORM_LDFLAGS) $(PLATFORM_CXXFLAGS) $(EXEC_LDFLAGS)
 
 clean:
-	rm -rf $(OBJS)
+	rm -rf simple_row_test simple_column_test range_query_row_test range_query_column_test adaptive_table_factory_test comparator_test
 
 libvidardb:
 	cd ../.. && $(MAKE) static_lib
