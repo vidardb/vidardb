@@ -1,8 +1,17 @@
 include ../make_config.mk
 
+OBJS = simple_example \
+	   column_families_example \
+	   compact_files_example \
+	   simple_column_example \
+	   range_query_example \
+	   range_query_column_example \
+	   adaptive_table_example \
+	   comparator_example
+
 .PHONY: clean libvidardb
 
-all: simple_example column_families_example compact_files_example simple_column_example range_query_example range_query_column_example adaptive_table_example
+all: $(OBJS)
 
 simple_example: libvidardb simple_example.cc
 	$(CXX) $(CXXFLAGS) $@.cc -o$@ ../libvidardb.a -I../include -O2 -std=c++11 $(PLATFORM_LDFLAGS) $(PLATFORM_CXXFLAGS) $(EXEC_LDFLAGS)
@@ -28,8 +37,11 @@ range_query_column_example: libvidardb range_query_column_example.cc
 adaptive_table_example: libvidardb adaptive_table_example.cc
 	$(CXX) $(CXXFLAGS) $@.cc -o$@ ../libvidardb.a -I../include -O2 -std=c++11 $(PLATFORM_LDFLAGS) $(PLATFORM_CXXFLAGS) $(EXEC_LDFLAGS)
 
+comparator_example: libvidardb comparator_example.cc
+	$(CXX) $(CXXFLAGS) $@.cc -o$@ ../libvidardb.a -I../include -O2 -std=c++11 $(PLATFORM_LDFLAGS) $(PLATFORM_CXXFLAGS) $(EXEC_LDFLAGS)
+
 clean:
-	rm -rf ./simple_example ./column_families_example ./compact_files_example ./transaction_example ./simple_column_example ./range_query_example ./range_query_column_example ./adaptive_table_example
+	rm -rf $(OBJS)
 
 libvidardb:
 	cd .. && $(MAKE) static_lib
