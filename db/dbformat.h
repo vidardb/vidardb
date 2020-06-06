@@ -384,9 +384,11 @@ struct RangeQueryMeta {
                  const Comparator* comparator = nullptr):
     column_family_data(cfd), super_version(sv), snapshot(snap),
     current_limit_key(limit_key), limit_sequence(limit_seq) {
-      map_res = new std::map<std::string, SeqTypeVal, MapKeyComparator>(
+    map_res = new std::map<std::string, SeqTypeVal, MapKeyComparator>(
         MapKeyComparator(comparator));
-    }
+  }
+
+  ~RangeQueryMeta() { delete map_res; }
 };
 
 // Ensure the result size is no more than the expected capacity which

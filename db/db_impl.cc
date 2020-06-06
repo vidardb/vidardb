@@ -3772,7 +3772,6 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
       result_total_size <= read_options.batch_capacity) {
     next_query = false;
     ReturnAndCleanupSuperVersion(cfd, sv);
-    delete meta->map_res;
     delete meta;
     read_options.range_query_meta = nullptr;
   }
