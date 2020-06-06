@@ -10,8 +10,13 @@ using namespace std;
 #include "vidardb/status.h"
 #include "vidardb/options.h"
 #include "vidardb/comparator.h"
+#include "vidardb/table.h"
 using namespace vidardb;
 
+// #define ROW_STORE
+#define COLUMN_STORE
+
+unsigned int M = 3;
 string kDBPath = "/tmp/vidardb_comparator_example";
 
 // Customized Comparator provides the reversed lexicographic ordering for keys
@@ -105,9 +110,27 @@ int main(int argc, char* argv[]) {
   DB* db;
   Options options;
   options.create_if_missing = true;
+  options.splitter.reset(NewEncodingSplitter());
+  options.OptimizeAdaptiveLevelStyleCompaction();
+
+  // adaptive table factory
+  #ifdef ROW_STORE
+  const int knob = -1;
+  #endif
+  #ifdef COLUMN_STORE
+  const int knob = 0;
+  #endif
+
+  shared_ptr<TableFactory> block_based_table(NewBlockBasedTableFactory());
+  shared_ptr<TableFactory> column_table(NewColumnTableFactory());
+  ColumnTableOptions* column_opts =
+      static_cast<ColumnTableOptions*>(column_table->GetOptions());
+  column_opts->column_count = M;
+  options.table_factory.reset(NewAdaptiveTableFactory(block_based_table,
+      block_based_table, column_table, knob));
 
   // 1. expected key order: 1 2 4 5 6
-  //const Comparator* comparator = BytewiseComparator();
+  // const Comparator* comparator = BytewiseComparator();
   // 2. expected key order: 6 5 4 2 1
   const Comparator* comparator = new CustomizedComparator();
   // specify the customized comparator
@@ -118,44 +141,85 @@ int main(int argc, char* argv[]) {
 
   // insert data
   WriteOptions write_options;
-  s = db->Put(write_options, "1", "data1");
+  s = db->Put(write_options, "1",
+              options.splitter->Stitch({"chen1", "33", "hangzhou"}));
   assert(s.ok());
-  s = db->Put(write_options, "2", "data2");
+  s = db->Put(write_options, "2",
+              options.splitter->Stitch({"wang2", "32", "wuhan"}));
   assert(s.ok());
-  s = db->Put(write_options, "3", "data3");
+  s = db->Put(write_options, "3",
+              options.splitter->Stitch({"zhao3", "35", "nanjing"}));
   assert(s.ok());
-  s = db->Put(write_options, "4", "data4");
+  s = db->Put(write_options, "4",
+              options.splitter->Stitch({"liao4", "28", "beijing"}));
   assert(s.ok());
-  s = db->Put(write_options, "5", "data5");
+  s = db->Put(write_options, "5",
+              options.splitter->Stitch({"jiang5", "30", "shanghai"}));
   assert(s.ok());
-  s = db->Put(write_options, "6", "data6");
+  s = db->Put(write_options, "6",
+              options.splitter->Stitch({"lian6", "30", "changsha"}));
   assert(s.ok());
   s = db->Delete(write_options, "1");
   assert(s.ok());
-  s = db->Put(write_options, "3", "data333");
+  s = db->Put(write_options, "3",
+              options.splitter->Stitch({"zhao333", "35", "nanjing"}));
   assert(s.ok());
-  s = db->Put(write_options, "6", "data666");
+  s = db->Put(write_options, "6",
+              options.splitter->Stitch({"lian666", "30", "changsha"}));
   assert(s.ok());
-  s = db->Put(write_options, "1", "data1111");
+  s = db->Put(write_options, "1",
+              options.splitter->Stitch({"chen1111", "33", "hangzhou"}));
   assert(s.ok());
   s = db->Delete(write_options, "3");
   assert(s.ok());
 
-  // test blocked sstable or memtable
+  // test memtable or sstable
   s = db->Flush(FlushOptions());
   assert(s.ok());
 
+  // full scan
+  cout << "=> full scan:" << endl;
   ReadOptions ro;
   Iterator* iter = db->NewIterator(ro);
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-    cout << "key: " << iter->key().ToString()
-         << " value: " << iter->value().ToString() << endl;
-    ;
+    cout << "key: " << iter->key().ToString() << ", value: { ";
+    vector<Slice> vals(options.splitter->Split(iter->value()));
+    for (Slice& s: vals) {
+      cout << s.ToString() << " ";
+    }
+    cout << "}" << endl;
+  }
+  delete iter;
+
+  // range query
+  cout << "=> range query:" << endl;
+  ro.batch_capacity = 50;  // in batch (byte)
+  ro.columns = {1, 3};
+  Range range;
+
+  list<RangeQueryKeyVal> res;
+  bool next = true;
+  while (next) { // range query loop
+    next = db->RangeQuery(ro, range, res, &s);
+    assert(s.ok());
+    for (auto it : res) {
+      cout << it.user_key << "=[";
+      vector<Slice> vals(options.splitter->Split(it.user_val));
+      for (auto i = 0u; i < vals.size(); i++) {
+        cout << vals[i].ToString();
+        if (i < vals.size() - 1) {
+          cout << ", ";
+        };
+      }
+      cout << "] ";
+    }
+    cout << " key_size=" << ro.result_key_size;
+    cout << ", val_size=" << ro.result_val_size << endl;
   }
 
   if (comparator->Name() == "CustomizedComparator") {
     delete comparator;
   }
-  delete iter, db;
+  delete db;
   return 0;
 }

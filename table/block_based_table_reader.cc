@@ -898,7 +898,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
     SequenceNumber sequence_num = range.SequenceNum();
     RangeQueryMeta* meta =
         static_cast<RangeQueryMeta*>(read_options.range_query_meta);
-    auto prev_it = meta->map_res.end();  // record previous iterator
+    auto prev_it = meta->map_res->end();  // record previous iterator
     for (; iter_->Valid(); iter_->Next()) {
       if (CompareRangeLimit(internal_comparator_, iter_->key(),
                             meta->current_limit_key) > 0) {
@@ -915,10 +915,10 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
         SeqTypeVal stv(parsed_key.sequence, parsed_key.type, res.end());
 
         auto it = prev_it;
-        if (it != meta->map_res.end()) {
+        if (it != meta->map_res->end()) {
           it++;
         }
-        it = meta->map_res.emplace_hint(it, user_key, std::move(stv));
+        it = meta->map_res->emplace_hint(it, user_key, std::move(stv));
         prev_it = it;
 
         if (it->second.seq_ > parsed_key.sequence) {
@@ -959,7 +959,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
         }
 
         auto crl = CompressResultList(&res, read_options);
-        if (crl.size() > 0 && meta->map_res.rbegin()->first <= user_key) {
+        if (crl.size() > 0 && meta->map_res->rbegin()->first <= user_key) {
           break;  // Reach the batch capacity
         }
       }

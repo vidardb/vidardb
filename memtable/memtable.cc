@@ -498,10 +498,10 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
         SeqTypeVal stv(s->seq, type, s->res->end());
 
         auto it = s->prev_iter;
-        if (it != meta->map_res.end()) {
+        if (it != meta->map_res->end()) {
           it++;
         }
-        it = meta->map_res.emplace_hint(it, user_key, std::move(stv));
+        it = meta->map_res->emplace_hint(it, user_key, std::move(stv));
         s->prev_iter = it;
 
         if (it->second.seq_ <= s->seq) {
@@ -543,7 +543,7 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
           }
 
           auto crl = CompressResultList(s->res, *(s->read_options));
-          if (crl.size() > 0 && meta->map_res.rbegin()->first <= user_key) {
+          if (crl.size() > 0 && meta->map_res->rbegin()->first <= user_key) {
             // Reach the batch capacity
             *(s->status) = Status::OK();
             return false;
@@ -609,7 +609,7 @@ bool MemTable::RangeQuery(ReadOptions& read_options, const LookupRange& range,
   saver.status = s;
   saver.range = &range;
   saver.res = &res;
-  saver.prev_iter = meta->map_res.end();
+  saver.prev_iter = meta->map_res->end();
   saver.seq = kMaxSequenceNumber;
   saver.mem = this;
   saver.logger = moptions_.info_log;
