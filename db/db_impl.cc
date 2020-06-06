@@ -3690,7 +3690,8 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
     auto cfd = cfh->cfd();
 
     SuperVersion* sv = GetAndRefSuperVersion(cfd);
-    read_options.range_query_meta = new RangeQueryMeta(cfd, sv, snapshot);
+    read_options.range_query_meta = new RangeQueryMeta(cfd, sv, snapshot,
+      nullptr, 0UL, cfd->user_comparator());
     RangeQueryMeta* meta =
         static_cast<RangeQueryMeta*>(read_options.range_query_meta);
     meta->next_start_key.assign(range.start.data_, range.start.size_);
@@ -3736,7 +3737,7 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
       read_options.result_key_size + read_options.result_val_size;
   if (read_options.batch_capacity > 0 &&
       result_total_size > read_options.batch_capacity) {
-    auto it = --(meta->map_res.end());
+    auto it = --(meta->map_res->end());
     meta->next_start_key = std::move(it->first);
     // Not include the next start key
     size_t delta_key_size = it->second.iter_->user_key.size();
@@ -3749,9 +3750,9 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
     if (it->second.type_ == kTypeDeletion) {
       meta->del_keys.erase(it->second.seq_);
     }
-    meta->map_res.erase(it);
+    meta->map_res->erase(it);
   }
-  meta->map_res.clear();
+  meta->map_res->clear();
 
   // Hide deleted keys from users, erase them in list
   for (const auto& it : meta->del_keys) {
@@ -3771,6 +3772,7 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
       result_total_size <= read_options.batch_capacity) {
     next_query = false;
     ReturnAndCleanupSuperVersion(cfd, sv);
+    delete meta->map_res;
     delete meta;
     read_options.range_query_meta = nullptr;
   }

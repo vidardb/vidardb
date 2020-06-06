@@ -4,22 +4,20 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 
 #include <iostream>
-using namespace std;
 
 #include "vidardb/db.h"
 #include "vidardb/status.h"
 #include "vidardb/options.h"
 #include "vidardb/comparator.h"
 #include "vidardb/table.h"
+
+using namespace std;
 using namespace vidardb;
 
-// #define ROW_STORE
-#define COLUMN_STORE
+enum kTableType { ROW, COLUMN };
+const unsigned int kColumn = 3;
+const string kDBPath = "/tmp/vidardb_comparator_test";
 
-unsigned int M = 3;
-string kDBPath = "/tmp/vidardb_comparator_example";
-
-// Customized Comparator provides the reversed lexicographic ordering for keys
 class CustomizedComparator : public Comparator {
  public:
   CustomizedComparator() { }
@@ -102,44 +100,49 @@ class CustomizedComparator : public Comparator {
   }
 };
 
-int main(int argc, char* argv[]) {
-  // remove existed db path
+void ValidateKeysOrder(vector<string> keys, const Comparator* cmp) {
+  for (size_t i = 1; i < keys.size(); i++) {
+    if (cmp->Name() == "CustomizedComparator") { // descend
+      assert(keys[i-1] >= keys[i]);
+    } else { // ascend
+      assert(keys[i-1] <= keys[i]);
+    }
+  }
+}
+
+void TestCustomizedComparator(kTableType table, bool flush,
+  const Comparator* cmp) {
+  cout << " table: " << table << ", flush: " << flush
+       << " comparator: " << cmp->Name() << endl;
+
   int ret = system(string("rm -rf " + kDBPath).c_str());
 
-  // open database
   DB* db;
   Options options;
   options.create_if_missing = true;
   options.splitter.reset(NewEncodingSplitter());
+  #ifndef VIDARDB_LITE
   options.OptimizeAdaptiveLevelStyleCompaction();
+  #endif
 
-  // adaptive table factory
-  #ifdef ROW_STORE
-  const int knob = -1;
-  #endif
-  #ifdef COLUMN_STORE
-  const int knob = 0;
-  #endif
+  int knob = -1;  // row
+  if (table == COLUMN) {
+    knob = 0;
+  }
 
   shared_ptr<TableFactory> block_based_table(NewBlockBasedTableFactory());
   shared_ptr<TableFactory> column_table(NewColumnTableFactory());
   ColumnTableOptions* column_opts =
       static_cast<ColumnTableOptions*>(column_table->GetOptions());
-  column_opts->column_count = M;
+  column_opts->column_count = kColumn;
   options.table_factory.reset(NewAdaptiveTableFactory(block_based_table,
       block_based_table, column_table, knob));
-
-  // 1. expected key order: 1 2 4 5 6
-  // const Comparator* comparator = BytewiseComparator();
-  // 2. expected key order: 6 5 4 2 1
-  const Comparator* comparator = new CustomizedComparator();
-  // specify the customized comparator
-  options.comparator = comparator;
+  options.comparator = cmp;
 
   Status s = DB::Open(options, kDBPath, &db);
   assert(s.ok());
 
-  // insert data
+  // prepare dataset
   WriteOptions write_options;
   s = db->Put(write_options, "1",
               options.splitter->Stitch({"chen1", "33", "hangzhou"}));
@@ -173,13 +176,15 @@ int main(int argc, char* argv[]) {
   s = db->Delete(write_options, "3");
   assert(s.ok());
 
-  // test memtable or sstable
-  s = db->Flush(FlushOptions());
-  assert(s.ok());
+  if (flush) {  // flush to disk
+    s = db->Flush(FlushOptions());
+    assert(s.ok());
+  }
 
   // full scan
   cout << "=> full scan:" << endl;
   ReadOptions ro;
+  vector<string> keys;
   Iterator* iter = db->NewIterator(ro);
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
     cout << "key: " << iter->key().ToString() << ", value: { ";
@@ -188,15 +193,17 @@ int main(int argc, char* argv[]) {
       cout << s.ToString() << " ";
     }
     cout << "}" << endl;
+    keys.push_back(iter->key().ToString());
   }
   delete iter;
+  ValidateKeysOrder(keys, cmp);
 
   // range query
   cout << "=> range query:" << endl;
   ro.batch_capacity = 50;  // in batch (byte)
   ro.columns = {1, 3};
   Range range;
-
+  keys.clear();
   list<RangeQueryKeyVal> res;
   bool next = true;
   while (next) { // range query loop
@@ -212,14 +219,28 @@ int main(int argc, char* argv[]) {
         };
       }
       cout << "] ";
+      keys.push_back(it.user_key);
     }
     cout << " key_size=" << ro.result_key_size;
     cout << ", val_size=" << ro.result_val_size << endl;
   }
+  ValidateKeysOrder(keys, cmp);
 
-  if (comparator->Name() == "CustomizedComparator") {
-    delete comparator;
+  if (cmp->Name() == "CustomizedComparator") {
+    delete cmp;
   }
   delete db;
+  cout << endl;
+}
+
+int main() {
+  TestCustomizedComparator(ROW, false, BytewiseComparator());
+  TestCustomizedComparator(ROW, false, new CustomizedComparator());
+  TestCustomizedComparator(ROW, true, BytewiseComparator());
+  TestCustomizedComparator(ROW, true, new CustomizedComparator());
+  TestCustomizedComparator(COLUMN, false, BytewiseComparator());
+  TestCustomizedComparator(COLUMN, false, new CustomizedComparator());
+  TestCustomizedComparator(COLUMN, true, BytewiseComparator());
+  TestCustomizedComparator(COLUMN, true, new CustomizedComparator());
   return 0;
 }

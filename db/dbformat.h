@@ -375,14 +375,18 @@ struct RangeQueryMeta {
   LookupKey* current_limit_key;              // Current limit key
   SequenceNumber limit_sequence;             // Limit sequence
   std::string next_start_key;                // Next start key
-  std::map<std::string, SeqTypeVal> map_res; // Temp result map
+  std::map<std::string, SeqTypeVal, MapKeyComparator>* map_res; // Temp map
   std::unordered_map<SequenceNumber,
       std::list<RangeQueryKeyVal>::iterator> del_keys;  // store delete keys
 
   RangeQueryMeta(ColumnFamilyData* cfd, SuperVersion* sv, SequenceNumber snap,
-                 LookupKey* limit_key = nullptr, SequenceNumber limit_seq = 0):
+                 LookupKey* limit_key = nullptr, SequenceNumber limit_seq = 0,
+                 const Comparator* comparator = nullptr):
     column_family_data(cfd), super_version(sv), snapshot(snap),
-    current_limit_key(limit_key), limit_sequence(limit_seq) {}
+    current_limit_key(limit_key), limit_sequence(limit_seq) {
+      map_res = new std::map<std::string, SeqTypeVal, MapKeyComparator>(
+        MapKeyComparator(comparator));
+    }
 };
 
 // Ensure the result size is no more than the expected capacity which
@@ -399,7 +403,7 @@ inline std::vector<SequenceNumber> CompressResultList(
   RangeQueryMeta* meta =
       static_cast<RangeQueryMeta*>(read_options.range_query_meta);
   // not include the next start kv size
-  auto next = --(meta->map_res.end());
+  auto next = --(meta->map_res->end());
   size_t next_total_size =
       next->second.iter_->user_key.size() + next->second.iter_->user_val.size();
   size_t result_total_size =
@@ -411,7 +415,7 @@ inline std::vector<SequenceNumber> CompressResultList(
 
   std::vector<SequenceNumber> deleted_sequence_numbers;
   for (; result_total_size - next_total_size > read_options.batch_capacity;) {
-    auto it = --(meta->map_res.end());  // get the next start kv
+    auto it = --(meta->map_res->end());  // get the next start kv
     size_t delta_key_size = it->second.iter_->user_key.size();
     size_t delta_val_size = it->second.iter_->user_val.size();
     res->erase(it->second.iter_);  // remove from list
@@ -424,9 +428,9 @@ inline std::vector<SequenceNumber> CompressResultList(
       meta->del_keys.erase(it->second.seq_);
     }
     deleted_sequence_numbers.emplace_back(it->second.seq_);
-    meta->map_res.erase(it);  // remove from map
+    meta->map_res->erase(it);  // remove from map
 
-    next = --(meta->map_res.end());  // get the next start kv
+    next = --(meta->map_res->end());  // get the next start kv
     next_total_size = next->second.iter_->user_key.size() +
                       next->second.iter_->user_val.size();
     result_total_size =
@@ -436,7 +440,7 @@ inline std::vector<SequenceNumber> CompressResultList(
 
   // update the current range limit key
   delete meta->current_limit_key;
-  Slice limit_key(meta->map_res.rbegin()->first);
+  Slice limit_key(meta->map_res->rbegin()->first);
   meta->current_limit_key = new LookupKey(limit_key, meta->limit_sequence);
   return deleted_sequence_numbers;
 }

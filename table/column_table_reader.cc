@@ -1034,12 +1034,12 @@ class ColumnTable::ColumnIterator : public InternalIterator {
             }
 
             // give accurate hint
-            auto it = meta->map_res.end();
+            auto it = meta->map_res->end();
             if (!user_vals.empty()) {
               it = user_vals.back();
               it++;
             }
-            it = meta->map_res.emplace_hint(it, user_key, std::move(stv));
+            it = meta->map_res->emplace_hint(it, user_key, std::move(stv));
             if (it->second.seq_ > parsed_key.sequence) {
               // already exists the same user key, which shadows the current
               sub_key_bs.push_back(false);
@@ -1079,8 +1079,8 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 
               // check the result size only by key size
               auto crl = CompressResultList(&res, read_options);
-              if (crl.size() > 0 && meta->map_res.rbegin()->first <= user_key) {
-                if (meta->map_res.rbegin()->first < user_key) {
+              if (crl.size() > 0 && meta->map_res->rbegin()->first <= user_key) {
+                if (meta->map_res->rbegin()->first < user_key) {
                   for (auto& seq : crl) {
                     // element added but popped out in map
                     // remove in bits as well
