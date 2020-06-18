@@ -73,7 +73,6 @@ static std::string PrintContents(WriteBatch* b) {
   }
   EXPECT_EQ(b->HasPut(), put_count > 0);
   EXPECT_EQ(b->HasDelete(), delete_count > 0);
-  EXPECT_EQ(b->HasMerge(), merge_count > 0);
   if (!s.ok()) {
     state.append(s.ToString());
   } else if (count != WriteBatchInternal::Count(b)) {

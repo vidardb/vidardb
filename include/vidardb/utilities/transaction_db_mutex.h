@@ -52,7 +52,7 @@ class TransactionDBCondVar {
 
   // Block current thread until condition variable is notified by a call to
   // Notify() or NotifyAll(), or if the timeout is reached.
-  // Wait() will be called with mutex locked.
+  // WaitFor() will be called with mutex locked.
   //
   // If timeout is non-negative, operation should be failed after this many
   // microseconds.

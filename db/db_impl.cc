@@ -4517,14 +4517,12 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
     // 2. Puts are not okay if inplace_update_support
     // 3. Deletes or SingleDeletes are not okay if filtering deletes
     //    (controlled by both batch and memtable setting)
-    // 4. Merges are not okay
     //
     // Rules 1..3 are enforced by checking the options
     // during startup (CheckConcurrentWritesSupported), so if
     // options.allow_concurrent_memtable_write is true then they can be
-    // assumed to be true.  Rule 4 is checked for each batch.  We could
-    // relax rules 2 and 3 if we could prevent write batches from referring
-    // more than once to a particular key.
+    // assumed to be true. We could relax rules 2 and 3 if we could prevent
+    // write batches from referring more than once to a particular key.
     bool parallel =
         db_options_.allow_concurrent_memtable_write && write_group.size() > 1;
     int total_count = 0;
@@ -4532,7 +4530,6 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
     for (auto writer : write_group) {
       if (writer->ShouldWriteToMemtable()) {
         total_count += WriteBatchInternal::Count(writer->batch);
-        parallel = parallel && !writer->batch->HasMerge();
       }
 
       if (writer->ShouldWriteToWAL()) {

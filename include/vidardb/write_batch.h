@@ -76,8 +76,8 @@ class WriteBatch : public WriteBatchBase {
   // be stored in the transaction log but not in any other file. In particular,
   // it will not be persisted to the SST files. When iterating over this
   // WriteBatch, WriteBatch::Handler::LogData will be called with the contents
-  // of the blob as it is encountered. Blobs, puts, deletes, and merges will be
-  // encountered in the same order in thich they were inserted. The blob will
+  // of the blob as it is encountered. Blobs, puts, and deletes will be
+  // encountered in the same order in which they were inserted. The blob will
   // NOT consume sequence number(s) and will NOT increase the count of the batch
   //
   // Example application: add timestamps to the transaction log for use in
@@ -92,7 +92,7 @@ class WriteBatch : public WriteBatchBase {
   // May be called multiple times to set multiple save points.
   void SetSavePoint() override;
 
-  // Remove all entries in this batch (Put, Merge, Delete, PutLogData) since the
+  // Remove all entries in this batch (Put, Delete, PutLogData) since the
   // most recent call to SetSavePoint() and removes the most recent save point.
   // If there is no previous call to SetSavePoint(), Status::NotFound()
   // will be returned.
@@ -129,30 +129,6 @@ class WriteBatch : public WriteBatchBase {
           "non-default column family and DeleteCF not implemented");
     }
     virtual void Delete(const Slice& /*key*/) {}
-
-    virtual Status SingleDeleteCF(uint32_t column_family_id, const Slice& key) {
-      if (column_family_id == 0) {
-        SingleDelete(key);
-        return Status::OK();
-      }
-      return Status::InvalidArgument(
-          "non-default column family and SingleDeleteCF not implemented");
-    }
-    virtual void SingleDelete(const Slice& /*key*/) {}
-
-    // Merge and LogData are not pure virtual. Otherwise, we would break
-    // existing clients of Handler on a source code level. The default
-    // implementation of Merge does nothing.
-    virtual Status MergeCF(uint32_t column_family_id, const Slice& key,
-                           const Slice& value) {
-      if (column_family_id == 0) {
-        Merge(key, value);
-        return Status::OK();
-      }
-      return Status::InvalidArgument(
-          "non-default column family and MergeCF not implemented");
-    }
-    virtual void Merge(const Slice& /*key*/, const Slice& /*value*/) {}
 
     // The default implementation of LogData does nothing.
     virtual void LogData(const Slice& blob);
@@ -196,9 +172,6 @@ class WriteBatch : public WriteBatchBase {
   // Returns true if DeleteCF will be called during Iterate
   bool HasDelete() const;
 
-  // Returns trie if MergeCF will be called during Iterate
-  bool HasMerge() const;
-
   // Returns true if MarkBeginPrepare will be called during Iterate
   bool HasBeginPrepare() const;
 
@@ -226,7 +199,7 @@ class WriteBatch : public WriteBatchBase {
   friend class WriteBatchInternal;
   SavePoints* save_points_;
 
-  // For HasXYZ.  Mutable to allow lazy computation of results
+  // For HasXYZ. Mutable to allow lazy computation of results
   mutable std::atomic<uint32_t> content_flags_;
 
   // Performs deferred computation of content_flags if necessary

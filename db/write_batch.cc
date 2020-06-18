@@ -14,12 +14,8 @@
 // record :=
 //    kTypeValue varstring varstring
 //    kTypeDeletion varstring
-//    kTypeSingleDeletion varstring
-//    kTypeMerge varstring varstring
 //    kTypeColumnFamilyValue varint32 varstring varstring
 //    kTypeColumnFamilyDeletion varint32 varstring varstring
-//    kTypeColumnFamilySingleDeletion varint32 varstring varstring
-//    kTypeColumnFamilyMerge varint32 varstring varstring
 //    kTypeBeginPrepareXID varstring
 //    kTypeEndPrepareXID
 //    kTypeCommitXID varstring
@@ -55,7 +51,6 @@ enum ContentFlags : uint32_t {
   DEFERRED = 1 << 0,
   HAS_PUT = 1 << 1,
   HAS_DELETE = 1 << 2,
-  HAS_MERGE = 1 << 4,
   HAS_BEGIN_PREPARE = 1 << 5,
   HAS_END_PREPARE = 1 << 6,
   HAS_COMMIT = 1 << 7,
@@ -72,11 +67,6 @@ struct BatchContentClassifier : public WriteBatch::Handler {
 
   Status DeleteCF(uint32_t, const Slice&) override {
     content_flags |= ContentFlags::HAS_DELETE;
-    return Status::OK();
-  }
-
-  Status MergeCF(uint32_t, const Slice&, const Slice&) override {
-    content_flags |= ContentFlags::HAS_MERGE;
     return Status::OK();
   }
 
@@ -204,10 +194,6 @@ bool WriteBatch::HasPut() const {
 
 bool WriteBatch::HasDelete() const {
   return (ComputeContentFlags() & ContentFlags::HAS_DELETE) != 0;
-}
-
-bool WriteBatch::HasMerge() const {
-  return (ComputeContentFlags() & ContentFlags::HAS_MERGE) != 0;
 }
 
 bool ReadKeyFromWriteBatchEntry(Slice* input, Slice* key, bool cf_record) {
@@ -648,7 +634,7 @@ class MemTableInserter : public WriteBatch::Handler {
 
     MemTable* mem = cf_mems_->GetMemTable();
 
-      mem->Add(sequence_, kTypeValue, key, value, concurrent_memtable_writes_);
+    mem->Add(sequence_, kTypeValue, key, value, concurrent_memtable_writes_);
 
     // Since all Puts are logged in transaction logs (if enabled), always bump
     // sequence number. Even if the update eventually fails and does not result
@@ -762,7 +748,7 @@ class MemTableInserter : public WriteBatch::Handler {
       // and commit.
       auto trx = db_->GetRecoveredTransaction(name.ToString());
 
-      // the log contaiting the prepared section may have
+      // the log containing the prepared section may have
       // been released in the last incarnation because the
       // data was flushed to L0
       if (trx != nullptr) {
