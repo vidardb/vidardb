@@ -136,7 +136,7 @@ WriteBatchWithIndexInternal::Result WriteBatchWithIndexInternal::GetFromBatch(
   // TODO(agiardullo): consider adding support for reverse iteration
   iter->Seek(key);
   while (iter->Valid()) {
-    const WriteEntry& entry = iter->Entry();
+    const WriteEntry entry = iter->Entry();
     if (cmp->CompareKey(cf_id, entry.key, key) != 0) {
       break;
     }
@@ -155,9 +155,9 @@ WriteBatchWithIndexInternal::Result WriteBatchWithIndexInternal::GetFromBatch(
     iter->Prev();
   }
 
-  const Slice* entry_value = nullptr;
+  Slice entry_value;
   while (iter->Valid()) {
-    const WriteEntry& entry = iter->Entry();
+    const WriteEntry entry = iter->Entry();
     if (cmp->CompareKey(cf_id, entry.key, key) != 0) {
       // Unexpected error or we've reached a different next key
       break;
@@ -166,7 +166,7 @@ WriteBatchWithIndexInternal::Result WriteBatchWithIndexInternal::GetFromBatch(
     switch (entry.type) {
       case kPutRecord: {
         result = WriteBatchWithIndexInternal::Result::kFound;
-        entry_value = &entry.value;
+        entry_value = entry.value;
         break;
       }
       case kDeleteRecord: {
@@ -195,15 +195,8 @@ WriteBatchWithIndexInternal::Result WriteBatchWithIndexInternal::GetFromBatch(
     iter->Prev();
   }
 
-  if ((*s).ok()) {
-    if (result == WriteBatchWithIndexInternal::Result::kFound ||
-        result == WriteBatchWithIndexInternal::Result::kDeleted) {
-      // Found a Put or Delete.  Merge if necessary.
-      // nothing to merge
-      if (result == WriteBatchWithIndexInternal::Result::kFound) {  // PUT
-        value->assign(entry_value->data(), entry_value->size());
-      }
-    }
+  if ((*s).ok() && result == WriteBatchWithIndexInternal::Result::kFound) {
+    value->assign(entry_value.data(), entry_value.size());  // PUT
   }
 
   return result;
