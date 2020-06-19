@@ -107,6 +107,8 @@ LIB_SOURCES =                                                   \
   util/thread_status_updater_debug.cc                           \
   util/thread_status_util.cc                                    \
   util/thread_status_util_debug.cc                              \
+  utilities/write_batch_with_index/write_batch_with_index.cc    \
+  utilities/write_batch_with_index/write_batch_with_index_internal.cc    \
   utilities/transactions/transaction_db_mutex_impl.cc           \
 
 TOOL_SOURCES = \
