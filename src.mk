@@ -110,6 +110,7 @@ LIB_SOURCES =                                                   \
   utilities/write_batch_with_index/write_batch_with_index.cc    \
   utilities/write_batch_with_index/write_batch_with_index_internal.cc    \
   utilities/transactions/transaction_db_mutex_impl.cc           \
+  utilities/transactions/transaction_util.cc                    \
 
 TOOL_SOURCES = \
 
