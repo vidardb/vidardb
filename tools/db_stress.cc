@@ -169,14 +169,6 @@ DEFINE_int32(level0_file_num_compaction_trigger,
              vidardb::Options().level0_file_num_compaction_trigger,
              "Level0 compaction start trigger");
 
-DEFINE_int32(level0_slowdown_writes_trigger,
-             vidardb::Options().level0_slowdown_writes_trigger,
-             "Number of files in level-0 that will slow down writes");
-
-DEFINE_int32(level0_stop_writes_trigger,
-             vidardb::Options().level0_stop_writes_trigger,
-             "Number of files in level-0 that will trigger put stop.");
-
 DEFINE_int32(block_size,
              static_cast<int32_t>(vidardb::BlockBasedTableOptions().block_size),
              "Number of bytes in a block.");
@@ -361,14 +353,6 @@ enum vidardb::CompressionType StringToCompressionType(const char* ctype) {
     return vidardb::kZlibCompression;
   else if (!strcasecmp(ctype, "bzip2"))
     return vidardb::kBZip2Compression;
-  else if (!strcasecmp(ctype, "lz4"))
-    return vidardb::kLZ4Compression;
-  else if (!strcasecmp(ctype, "lz4hc"))
-    return vidardb::kLZ4HCCompression;
-  else if (!strcasecmp(ctype, "xpress"))
-    return vidardb::kXpressCompression;
-  else if (!strcasecmp(ctype, "zstd"))
-    return vidardb::kZSTDNotFinalCompression;
 
   fprintf(stdout, "Cannot parse compression type '%s'\n", ctype);
   return vidardb::kSnappyCompression; //default value
@@ -1047,18 +1031,6 @@ class StressTest {
              ToString(FLAGS_level0_file_num_compaction_trigger),
              ToString(FLAGS_level0_file_num_compaction_trigger + 2),
              ToString(FLAGS_level0_file_num_compaction_trigger + 4),
-         }},
-        {"level0_slowdown_writes_trigger",
-         {
-             ToString(FLAGS_level0_slowdown_writes_trigger),
-             ToString(FLAGS_level0_slowdown_writes_trigger + 2),
-             ToString(FLAGS_level0_slowdown_writes_trigger + 4),
-         }},
-        {"level0_stop_writes_trigger",
-         {
-             ToString(FLAGS_level0_stop_writes_trigger),
-             ToString(FLAGS_level0_stop_writes_trigger + 2),
-             ToString(FLAGS_level0_stop_writes_trigger + 4),
          }},
         {"max_grandparent_overlap_factor",
          {
@@ -2025,20 +1997,14 @@ class StressTest {
     options_.max_bytes_for_level_base = FLAGS_max_bytes_for_level_base;
     options_.max_bytes_for_level_multiplier =
         FLAGS_max_bytes_for_level_multiplier;
-    options_.level0_stop_writes_trigger = FLAGS_level0_stop_writes_trigger;
-    options_.level0_slowdown_writes_trigger =
-        FLAGS_level0_slowdown_writes_trigger;
     options_.level0_file_num_compaction_trigger =
         FLAGS_level0_file_num_compaction_trigger;
     options_.compression = FLAGS_compression_type_e;
     options_.create_if_missing = true;
     options_.max_manifest_file_size = 10 * 1024;
-    options_.filter_deletes = FLAGS_filter_deletes;
     options_.max_subcompactions = static_cast<uint32_t>(FLAGS_subcompactions);
     options_.allow_concurrent_memtable_write =
         FLAGS_allow_concurrent_memtable_write;
-    options_.enable_write_thread_adaptive_yield =
-        FLAGS_enable_write_thread_adaptive_yield;
 
     if (FLAGS_prefix_size == 0 && FLAGS_rep_factory == kHashSkipList) {
       fprintf(stderr,
@@ -2174,7 +2140,6 @@ class StressTest {
  private:
   std::shared_ptr<Cache> cache_;
   std::shared_ptr<Cache> compressed_cache_;
-  std::shared_ptr<const FilterPolicy> filter_policy_;
   DB* db_;
   Options options_;
   std::vector<ColumnFamilyHandle*> column_families_;

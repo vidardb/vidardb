@@ -147,10 +147,6 @@ enum Tickers : uint32_t {
   BLOOM_FILTER_PREFIX_CHECKED,
   BLOOM_FILTER_PREFIX_USEFUL,
 
-  // Number of times we had to reseek inside an iteration to skip
-  // over large number of keys with same userkey.
-  NUMBER_OF_RESEEKS_IN_ITERATION,
-
   // Record the number of calls to GetUpadtesSince. Useful to keep track of
   // transaction log iterator refreshes
   GET_UPDATES_SINCE_CALLS,
@@ -249,7 +245,6 @@ const std::vector<std::pair<Tickers, std::string>> TickersNameMap = {
     {SEQUENCE_NUMBER, "vidardb.sequence.number"},
     {BLOOM_FILTER_PREFIX_CHECKED, "vidardb.bloom.filter.prefix.checked"},
     {BLOOM_FILTER_PREFIX_USEFUL, "vidardb.bloom.filter.prefix.useful"},
-    {NUMBER_OF_RESEEKS_IN_ITERATION, "vidardb.number.reseeks.iteration"},
     {GET_UPDATES_SINCE_CALLS, "vidardb.getupdatessince.calls"},
     {BLOCK_CACHE_COMPRESSED_MISS, "vidardb.block.cachecompressed.miss"},
     {BLOCK_CACHE_COMPRESSED_HIT, "vidardb.block.cachecompressed.hit"},

@@ -193,9 +193,6 @@ class TestFlushListener : public EventListener {
       DB* db, const FlushJobInfo& info) override {
     flushed_dbs_.push_back(db);
     flushed_column_family_names_.push_back(info.cf_name);
-    if (info.triggered_writes_slowdown) {
-      slowdown_count++;
-    }
     if (info.triggered_writes_stop) {
       stop_count++;
     }
@@ -212,7 +209,6 @@ class TestFlushListener : public EventListener {
 
   std::vector<std::string> flushed_column_family_names_;
   std::vector<DB*> flushed_dbs_;
-  int slowdown_count;
   int stop_count;
   bool db_closing;
   std::atomic_bool db_closed;

@@ -189,38 +189,6 @@ Slice CompressBlock(const Slice& raw,
         return *compressed_output;
       }
       break;  // fall back to no compression.
-    case kLZ4Compression:
-      if (LZ4_Compress(
-              compression_options,
-              GetCompressFormatForVersion(kLZ4Compression),
-              raw.data(), raw.size(), compressed_output, compression_dict) &&
-          GoodCompressionRatio(compressed_output->size(), raw.size())) {
-        return *compressed_output;
-      }
-      break;  // fall back to no compression.
-    case kLZ4HCCompression:
-      if (LZ4HC_Compress(
-              compression_options,
-              GetCompressFormatForVersion(kLZ4HCCompression),
-              raw.data(), raw.size(), compressed_output, compression_dict) &&
-          GoodCompressionRatio(compressed_output->size(), raw.size())) {
-        return *compressed_output;
-      }
-      break;     // fall back to no compression.
-    case kXpressCompression:
-      if (XPRESS_Compress(raw.data(), raw.size(),
-          compressed_output) &&
-          GoodCompressionRatio(compressed_output->size(), raw.size())) {
-        return *compressed_output;
-      }
-      break;
-    case kZSTDNotFinalCompression:
-      if (ZSTD_Compress(compression_options, raw.data(), raw.size(),
-                        compressed_output, compression_dict) &&
-          GoodCompressionRatio(compressed_output->size(), raw.size())) {
-        return *compressed_output;
-      }
-      break;     // fall back to no compression.
     default: {}  // Do not recognize this compression type
   }
 

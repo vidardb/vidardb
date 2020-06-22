@@ -644,12 +644,6 @@ class DB {
     return MaxMemCompactionLevel(DefaultColumnFamily());
   }
 
-  // Number of files in level-0 that would stop writes.
-  virtual int Level0StopWriteTrigger(ColumnFamilyHandle* column_family) = 0;
-  virtual int Level0StopWriteTrigger() {
-    return Level0StopWriteTrigger(DefaultColumnFamily());
-  }
-
   // Get DB name -- the exact same name that was provided as an argument to
   // DB::Open()
   virtual const std::string& GetName() const = 0;

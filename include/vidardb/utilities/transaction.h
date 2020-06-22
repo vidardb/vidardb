@@ -151,11 +151,10 @@ class Transaction {
   // DB but will NOT change which keys are read from this transaction (the keys
   // in this transaction do not yet belong to any snapshot and will be fetched
   // regardless).
-  virtual Status Get(const ReadOptions& options,
-                     ColumnFamilyHandle* column_family, const Slice& key,
-                     std::string* value) = 0;
+  virtual Status Get(ReadOptions& options, ColumnFamilyHandle* column_family,
+                     const Slice& key, std::string* value) = 0;
 
-  virtual Status Get(const ReadOptions& options, const Slice& key,
+  virtual Status Get(ReadOptions& options, const Slice& key,
                      std::string* value) = 0;
 
   // Read this key and ensure that this transaction will only
@@ -176,11 +175,11 @@ class Transaction {
   // Status::TryAgain() if the memtable history size is not large enough
   //  (See max_write_buffer_number_to_maintain)
   // or other errors if this key could not be read.
-  virtual Status GetForUpdate(const ReadOptions& options,
+  virtual Status GetForUpdate(ReadOptions& options,
                               ColumnFamilyHandle* column_family,
                               const Slice& key, std::string* value) = 0;
 
-  virtual Status GetForUpdate(const ReadOptions& options, const Slice& key,
+  virtual Status GetForUpdate(ReadOptions& options, const Slice& key,
                               std::string* value) = 0;
 
   // Returns an iterator that will iterate on all keys in the default

@@ -70,22 +70,10 @@ void MutableCFOptions::Dump(Logger* log) const {
       max_write_buffer_number);
   Log(log, "                         arena_block_size: %" VIDARDB_PRIszt,
       arena_block_size);
-  Log(log, "                    max_successive_merges: %" VIDARDB_PRIszt,
-      max_successive_merges);
-  Log(log, "                           filter_deletes: %d",
-      filter_deletes);
   Log(log, "                 disable_auto_compactions: %d",
       disable_auto_compactions);
-  Log(log, "      soft_pending_compaction_bytes_limit: %" PRIu64,
-      soft_pending_compaction_bytes_limit);
-  Log(log, "      hard_pending_compaction_bytes_limit: %" PRIu64,
-      hard_pending_compaction_bytes_limit);
   Log(log, "       level0_file_num_compaction_trigger: %d",
       level0_file_num_compaction_trigger);
-  Log(log, "           level0_slowdown_writes_trigger: %d",
-      level0_slowdown_writes_trigger);
-  Log(log, "               level0_stop_writes_trigger: %d",
-      level0_stop_writes_trigger);
   Log(log, "           max_grandparent_overlap_factor: %d",
       max_grandparent_overlap_factor);
   Log(log, "               expanded_compaction_factor: %d",
@@ -110,8 +98,6 @@ void MutableCFOptions::Dump(Logger* log) const {
   Log(log, "max_bytes_for_level_multiplier_additional: %s", result.c_str());
   Log(log, "           verify_checksums_in_compaction: %d",
       verify_checksums_in_compaction);
-  Log(log, "        max_sequential_skip_in_iterations: %" PRIu64,
-      max_sequential_skip_in_iterations);
 }
 
 }  // namespace vidardb

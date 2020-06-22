@@ -416,10 +416,6 @@ bool ParseMemtableOptions(const std::string& name, const std::string& value,
     new_options->write_buffer_size = ParseSizeT(value);
   } else if (name == "arena_block_size") {
     new_options->arena_block_size = ParseSizeT(value);
-  } else if (name == "max_successive_merges") {
-    new_options->max_successive_merges = ParseSizeT(value);
-  } else if (name == "filter_deletes") {
-    new_options->filter_deletes = ParseBoolean(name, value);
   } else if (name == "max_write_buffer_number") {
     new_options->max_write_buffer_number = ParseInt(value);
   } else {
@@ -433,22 +429,8 @@ bool ParseCompactionOptions(const std::string& name, const std::string& value,
                             OptionsType* new_options) {
   if (name == "disable_auto_compactions") {
     new_options->disable_auto_compactions = ParseBoolean(name, value);
-  } else if (name == "soft_rate_limit") {
-    // Deprecated options but still leave it here to avoid older options
-    // strings can be consumed.
-  } else if (name == "soft_pending_compaction_bytes_limit") {
-    new_options->soft_pending_compaction_bytes_limit = ParseUint64(value);
-  } else if (name == "hard_pending_compaction_bytes_limit") {
-    new_options->hard_pending_compaction_bytes_limit = ParseUint64(value);
-  } else if (name == "hard_rate_limit") {
-    // Deprecated options but still leave it here to avoid older options
-    // strings can be consumed.
   } else if (name == "level0_file_num_compaction_trigger") {
     new_options->level0_file_num_compaction_trigger = ParseInt(value);
-  } else if (name == "level0_slowdown_writes_trigger") {
-    new_options->level0_slowdown_writes_trigger = ParseInt(value);
-  } else if (name == "level0_stop_writes_trigger") {
-    new_options->level0_stop_writes_trigger = ParseInt(value);
   } else if (name == "max_grandparent_overlap_factor") {
     new_options->max_grandparent_overlap_factor = ParseInt(value);
   } else if (name == "expanded_compaction_factor") {
@@ -489,9 +471,7 @@ bool ParseCompactionOptions(const std::string& name, const std::string& value,
 template<typename OptionsType>
 bool ParseMiscOptions(const std::string& name, const std::string& value,
                       OptionsType* new_options) {
-  if (name == "max_sequential_skip_in_iterations") {
-    new_options->max_sequential_skip_in_iterations = ParseUint64(value);
-  } else if (name == "paranoid_file_checks") {
+  if (name == "paranoid_file_checks") {
     new_options->paranoid_file_checks = ParseBoolean(name, value);
   } else if (name == "report_bg_io_stats") {
     new_options->report_bg_io_stats = ParseBoolean(name, value);
@@ -501,8 +481,6 @@ bool ParseMiscOptions(const std::string& name, const std::string& value,
     if (!is_ok) {
       return false;
     }
-  } else if (name == "min_partial_merge_operands") {
-    new_options->min_partial_merge_operands = ParseUint32(value);
   } else {
     return false;
   }
@@ -1165,18 +1143,12 @@ ColumnFamilyOptions BuildColumnFamilyOptions(
   cf_opts.write_buffer_size = mutable_cf_options.write_buffer_size;
   cf_opts.max_write_buffer_number = mutable_cf_options.max_write_buffer_number;
   cf_opts.arena_block_size = mutable_cf_options.arena_block_size;
-  cf_opts.max_successive_merges = mutable_cf_options.max_successive_merges;
-  cf_opts.filter_deletes = mutable_cf_options.filter_deletes;
 
   // Compaction related options
   cf_opts.disable_auto_compactions =
       mutable_cf_options.disable_auto_compactions;
   cf_opts.level0_file_num_compaction_trigger =
       mutable_cf_options.level0_file_num_compaction_trigger;
-  cf_opts.level0_slowdown_writes_trigger =
-      mutable_cf_options.level0_slowdown_writes_trigger;
-  cf_opts.level0_stop_writes_trigger =
-      mutable_cf_options.level0_stop_writes_trigger;
   cf_opts.max_grandparent_overlap_factor =
       mutable_cf_options.max_grandparent_overlap_factor;
   cf_opts.expanded_compaction_factor =
@@ -1201,8 +1173,6 @@ ColumnFamilyOptions BuildColumnFamilyOptions(
       mutable_cf_options.verify_checksums_in_compaction;
 
   // Misc options
-  cf_opts.max_sequential_skip_in_iterations =
-      mutable_cf_options.max_sequential_skip_in_iterations;
   cf_opts.paranoid_file_checks = mutable_cf_options.paranoid_file_checks;
   cf_opts.report_bg_io_stats = mutable_cf_options.report_bg_io_stats;
 

@@ -17,17 +17,9 @@ struct MutableCFOptions {
       : write_buffer_size(options.write_buffer_size),
         max_write_buffer_number(options.max_write_buffer_number),
         arena_block_size(options.arena_block_size),
-        max_successive_merges(options.max_successive_merges),
-        filter_deletes(options.filter_deletes),
         disable_auto_compactions(options.disable_auto_compactions),
-        soft_pending_compaction_bytes_limit(
-            options.soft_pending_compaction_bytes_limit),
-        hard_pending_compaction_bytes_limit(
-            options.hard_pending_compaction_bytes_limit),
         level0_file_num_compaction_trigger(
             options.level0_file_num_compaction_trigger),
-        level0_slowdown_writes_trigger(options.level0_slowdown_writes_trigger),
-        level0_stop_writes_trigger(options.level0_stop_writes_trigger),
         compaction_pri(options.compaction_pri),
         max_grandparent_overlap_factor(options.max_grandparent_overlap_factor),
         expanded_compaction_factor(options.expanded_compaction_factor),
@@ -40,12 +32,9 @@ struct MutableCFOptions {
             options.max_bytes_for_level_multiplier_additional),
         verify_checksums_in_compaction(options.verify_checksums_in_compaction),
         max_subcompactions(options.max_subcompactions),
-        max_sequential_skip_in_iterations(
-            options.max_sequential_skip_in_iterations),
         paranoid_file_checks(options.paranoid_file_checks),
         report_bg_io_stats(options.report_bg_io_stats),
         compression(options.compression),
-        min_partial_merge_operands(options.min_partial_merge_operands),
         compaction_options_fifo(ioptions.compaction_options_fifo) {
     RefreshDerivedOptions(ioptions);
   }
@@ -53,14 +42,8 @@ struct MutableCFOptions {
       : write_buffer_size(0),
         max_write_buffer_number(0),
         arena_block_size(0),
-        max_successive_merges(0),
-        filter_deletes(false),
         disable_auto_compactions(false),
-        soft_pending_compaction_bytes_limit(0),
-        hard_pending_compaction_bytes_limit(0),
         level0_file_num_compaction_trigger(0),
-        level0_slowdown_writes_trigger(0),
-        level0_stop_writes_trigger(0),
         compaction_pri(kByCompensatedSize),
         max_grandparent_overlap_factor(0),
         expanded_compaction_factor(0),
@@ -71,11 +54,9 @@ struct MutableCFOptions {
         max_bytes_for_level_multiplier(0),
         verify_checksums_in_compaction(false),
         max_subcompactions(1),
-        max_sequential_skip_in_iterations(0),
         paranoid_file_checks(false),
         report_bg_io_stats(false),
-        compression(Snappy_Supported() ? kSnappyCompression : kNoCompression),
-        min_partial_merge_operands(2) {}
+        compression(Snappy_Supported() ? kSnappyCompression : kNoCompression) {}
 
   // Must be called after any change to MutableCFOptions
   void RefreshDerivedOptions(const ImmutableCFOptions& ioptions);
@@ -101,16 +82,10 @@ struct MutableCFOptions {
   size_t write_buffer_size;
   int max_write_buffer_number;
   size_t arena_block_size;
-  size_t max_successive_merges;
-  bool filter_deletes;
 
   // Compaction related options
   bool disable_auto_compactions;
-  uint64_t soft_pending_compaction_bytes_limit;
-  uint64_t hard_pending_compaction_bytes_limit;
   int level0_file_num_compaction_trigger;
-  int level0_slowdown_writes_trigger;
-  int level0_stop_writes_trigger;
   CompactionPri compaction_pri;
   int max_grandparent_overlap_factor;
   int expanded_compaction_factor;
@@ -124,11 +99,9 @@ struct MutableCFOptions {
   int max_subcompactions;
 
   // Misc options
-  uint64_t max_sequential_skip_in_iterations;
   bool paranoid_file_checks;
   bool report_bg_io_stats;
   CompressionType compression;
-  uint32_t min_partial_merge_operands;
   CompactionOptionsFIFO compaction_options_fifo;
 
   // Derived options

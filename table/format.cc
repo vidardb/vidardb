@@ -316,52 +316,6 @@ Status UncompressBlockContents(const char* data, size_t n,
       *contents =
           BlockContents(std::move(ubuf), decompress_size, true, kNoCompression);
       break;
-    case kLZ4Compression:
-      ubuf.reset(LZ4_Uncompress(
-          data, n, &decompress_size,
-          GetCompressFormatForVersion(kLZ4Compression),
-          compression_dict));
-      if (!ubuf) {
-        static char lz4_corrupt_msg[] =
-          "LZ4 not supported or corrupted LZ4 compressed block contents";
-        return Status::Corruption(lz4_corrupt_msg);
-      }
-      *contents =
-          BlockContents(std::move(ubuf), decompress_size, true, kNoCompression);
-      break;
-    case kLZ4HCCompression:
-      ubuf.reset(LZ4_Uncompress(
-          data, n, &decompress_size,
-          GetCompressFormatForVersion(kLZ4HCCompression),
-          compression_dict));
-      if (!ubuf) {
-        static char lz4hc_corrupt_msg[] =
-          "LZ4HC not supported or corrupted LZ4HC compressed block contents";
-        return Status::Corruption(lz4hc_corrupt_msg);
-      }
-      *contents =
-          BlockContents(std::move(ubuf), decompress_size, true, kNoCompression);
-      break;
-    case kXpressCompression:
-      ubuf.reset(XPRESS_Uncompress(data, n, &decompress_size));
-      if (!ubuf) {
-        static char xpress_corrupt_msg[] =
-          "XPRESS not supported or corrupted XPRESS compressed block contents";
-        return Status::Corruption(xpress_corrupt_msg);
-      }
-      *contents =
-        BlockContents(std::move(ubuf), decompress_size, true, kNoCompression);
-      break;
-    case kZSTDNotFinalCompression:
-      ubuf.reset(ZSTD_Uncompress(data, n, &decompress_size, compression_dict));
-      if (!ubuf) {
-        static char zstd_corrupt_msg[] =
-            "ZSTD not supported or corrupted ZSTD compressed block contents";
-        return Status::Corruption(zstd_corrupt_msg);
-      }
-      *contents =
-          BlockContents(std::move(ubuf), decompress_size, true, kNoCompression);
-      break;
     default:
       return Status::Corruption("bad block type");
   }

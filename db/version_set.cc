@@ -1058,14 +1058,6 @@ void Version::RangeQuery(ReadOptions& read_options,
 }
 /******************************** Shichao ********************************/
 
-bool Version::IsFilterSkipped(int level, bool is_file_last_in_level) {
-  // Reaching the bottom level implies misses at all upper levels, so we'll
-  // skip checking the filters when we predict a hit.
-  return cfd_->ioptions()->optimize_filters_for_hits &&
-         (level > 0 || is_file_last_in_level) &&
-         level == storage_info_.num_non_empty_levels() - 1;
-}
-
 void VersionStorageInfo::GenerateLevelFilesBrief() {
   level_files_brief_.resize(num_non_empty_levels_);
   for (int level = 0; level < num_non_empty_levels_; level++) {
@@ -2325,8 +2317,7 @@ Status VersionSet::LogAndApply(ColumnFamilyData* column_family_data,
       // unlimited table cache. Pre-load table handle now.
       // Need to do it out of the mutex.
       builder_guard->version_builder()->LoadTableHandlers(
-          column_family_data->internal_stats(),
-          column_family_data->ioptions()->optimize_filters_for_hits);
+          column_family_data->internal_stats());
     }
 
     // This is fine because everything inside of this block is serialized --

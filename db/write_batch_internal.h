@@ -140,7 +140,6 @@ class WriteBatchInternal {
                            FlushScheduler* flush_scheduler,
                            bool ignore_missing_column_families = false,
                            uint64_t log_number = 0, DB* db = nullptr,
-                           const bool dont_filter_deletes = true,
                            bool concurrent_memtable_writes = false);
 
   // Convenience form of InsertInto when you have only one batch
@@ -150,7 +149,6 @@ class WriteBatchInternal {
                            FlushScheduler* flush_scheduler,
                            bool ignore_missing_column_families = false,
                            uint64_t log_number = 0, DB* db = nullptr,
-                           const bool dont_filter_deletes = true,
                            bool concurrent_memtable_writes = false,
                            SequenceNumber* last_seq_used = nullptr);
 
@@ -159,7 +157,6 @@ class WriteBatchInternal {
                            FlushScheduler* flush_scheduler,
                            bool ignore_missing_column_families = false,
                            uint64_t log_number = 0, DB* db = nullptr,
-                           const bool dont_filter_deletes = true,
                            bool concurrent_memtable_writes = false);
 
   static void Append(WriteBatch* dst, const WriteBatch* src);

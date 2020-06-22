@@ -70,7 +70,6 @@ class BlockHandle {
 inline uint32_t GetCompressFormatForVersion(CompressionType compression_type) {
   // snappy is not versioned
   assert(compression_type != kSnappyCompression &&
-         compression_type != kXpressCompression &&
          compression_type != kNoCompression);
   // As of version 2, we encode compressed block with
   // compress_format_version == 2. Before that, the version is 1.

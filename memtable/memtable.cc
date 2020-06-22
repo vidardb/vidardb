@@ -45,8 +45,6 @@ MemTableOptions::MemTableOptions(const ImmutableCFOptions& ioptions,
                                  const MutableCFOptions& mutable_cf_options)
     : write_buffer_size(mutable_cf_options.write_buffer_size),
       arena_block_size(mutable_cf_options.arena_block_size),
-      max_successive_merges(mutable_cf_options.max_successive_merges),
-      filter_deletes(mutable_cf_options.filter_deletes),
       statistics(ioptions.statistics),
       info_log(ioptions.info_log),
       splitter(ioptions.splitter) {}

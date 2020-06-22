@@ -122,11 +122,6 @@ Status CheckCompressionSupported(const ColumnFamilyOptions& cf_options) {
 }
 
 Status CheckConcurrentWritesSupported(const ColumnFamilyOptions& cf_options) {
-  if (cf_options.filter_deletes) {
-    return Status::InvalidArgument(
-        "Delete filtering (filter_deletes) is not compatible with concurrent "
-        "memtable writes (allow_concurrent_memtable_writes)");
-  }
   if (!cf_options.memtable_factory->IsInsertConcurrentlySupported()) {
     return Status::InvalidArgument(
         "Memtable doesn't concurrent writes (allow_concurrent_memtable_write)");
@@ -175,66 +170,12 @@ ColumnFamilyOptions SanitizeOptions(const DBOptions& db_options,
     // since we delete level0 files in FIFO compaction when there are too many
     // of them, these options don't really mean anything
     result.level0_file_num_compaction_trigger = std::numeric_limits<int>::max();
-    result.level0_slowdown_writes_trigger = std::numeric_limits<int>::max();
-    result.level0_stop_writes_trigger = std::numeric_limits<int>::max();
   }
 
   if (result.level0_file_num_compaction_trigger == 0) {
     Warn(db_options.info_log.get(),
          "level0_file_num_compaction_trigger cannot be 0");
     result.level0_file_num_compaction_trigger = 1;
-  }
-
-  if (result.level0_stop_writes_trigger <
-          result.level0_slowdown_writes_trigger ||
-      result.level0_slowdown_writes_trigger <
-          result.level0_file_num_compaction_trigger) {
-    Warn(db_options.info_log.get(),
-         "This condition must be satisfied: "
-         "level0_stop_writes_trigger(%d) >= "
-         "level0_slowdown_writes_trigger(%d) >= "
-         "level0_file_num_compaction_trigger(%d)",
-         result.level0_stop_writes_trigger,
-         result.level0_slowdown_writes_trigger,
-         result.level0_file_num_compaction_trigger);
-    if (result.level0_slowdown_writes_trigger <
-        result.level0_file_num_compaction_trigger) {
-      result.level0_slowdown_writes_trigger =
-          result.level0_file_num_compaction_trigger;
-    }
-    if (result.level0_stop_writes_trigger <
-        result.level0_slowdown_writes_trigger) {
-      result.level0_stop_writes_trigger = result.level0_slowdown_writes_trigger;
-    }
-    Warn(db_options.info_log.get(),
-         "Adjust the value to "
-         "level0_stop_writes_trigger(%d)"
-         "level0_slowdown_writes_trigger(%d)"
-         "level0_file_num_compaction_trigger(%d)",
-         result.level0_stop_writes_trigger,
-         result.level0_slowdown_writes_trigger,
-         result.level0_file_num_compaction_trigger);
-  }
-
-  if (result.soft_pending_compaction_bytes_limit == 0) {
-    result.soft_pending_compaction_bytes_limit =
-        result.hard_pending_compaction_bytes_limit;
-  } else if (result.hard_pending_compaction_bytes_limit > 0 &&
-             result.soft_pending_compaction_bytes_limit >
-                 result.hard_pending_compaction_bytes_limit) {
-    result.soft_pending_compaction_bytes_limit =
-        result.hard_pending_compaction_bytes_limit;
-  }
-
-  if (result.level_compaction_dynamic_level_bytes) {
-    if (result.compaction_style != kCompactionStyleLevel ||
-        db_options.db_paths.size() > 1U) {
-      // 1. level_compaction_dynamic_level_bytes only makes sense for
-      //    level-based compaction.
-      // 2. we don't yet know how to make both of this feature and multiple
-      //    DB path work.
-      result.level_compaction_dynamic_level_bytes = false;
-    }
   }
 
   return result;
@@ -501,19 +442,11 @@ std::unique_ptr<WriteControllerToken> SetupDelay(
   return write_controller->GetDelayToken(write_rate);
 }
 
-int GetL0ThresholdSpeedupCompaction(int level0_file_num_compaction_trigger,
-                                    int level0_slowdown_writes_trigger) {
-  // SanitizeOptions() ensures it.
-  assert(level0_file_num_compaction_trigger <= level0_slowdown_writes_trigger);
-
+int GetL0ThresholdSpeedupCompaction(int level0_file_num_compaction_trigger) {
   // 1/4 of the way between L0 compaction trigger threshold and slowdown
   // condition.
   // Or twice as compaction trigger, if it is smaller.
-  return std::min(level0_file_num_compaction_trigger * 2,
-                  level0_file_num_compaction_trigger +
-                      (level0_slowdown_writes_trigger -
-                       level0_file_num_compaction_trigger) /
-                          4);
+  return level0_file_num_compaction_trigger * 2;
 }
 }  // namespace
 
@@ -533,27 +466,6 @@ void ColumnFamilyData::RecalculateWriteStallConditions(
           "(waiting for flush), max_write_buffer_number is set to %d",
           name_.c_str(), imm()->NumNotFlushed(),
           mutable_cf_options.max_write_buffer_number);
-    } else if (vstorage->l0_delay_trigger_count() >=
-               mutable_cf_options.level0_stop_writes_trigger) {
-      write_controller_token_ = write_controller->GetStopToken();
-      internal_stats_->AddCFStats(InternalStats::LEVEL0_NUM_FILES_TOTAL, 1);
-      if (compaction_picker_->IsLevel0CompactionInProgress()) {
-        internal_stats_->AddCFStats(
-            InternalStats::LEVEL0_NUM_FILES_WITH_COMPACTION, 1);
-      }
-      Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
-          "[%s] Stopping writes because we have %d level-0 files",
-          name_.c_str(), vstorage->l0_delay_trigger_count());
-    } else if (mutable_cf_options.hard_pending_compaction_bytes_limit > 0 &&
-               compaction_needed_bytes >=
-                   mutable_cf_options.hard_pending_compaction_bytes_limit) {
-      write_controller_token_ = write_controller->GetStopToken();
-      internal_stats_->AddCFStats(
-          InternalStats::HARD_PENDING_COMPACTION_BYTES_LIMIT, 1);
-      Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
-          "[%s] Stopping writes because of estimated pending compaction "
-          "bytes %" PRIu64,
-          name_.c_str(), compaction_needed_bytes);
     } else if (mutable_cf_options.max_write_buffer_number > 3 &&
                imm()->NumNotFlushed() >=
                    mutable_cf_options.max_write_buffer_number - 1) {
@@ -569,62 +481,17 @@ void ColumnFamilyData::RecalculateWriteStallConditions(
           name_.c_str(), imm()->NumNotFlushed(),
           mutable_cf_options.max_write_buffer_number,
           write_controller->delayed_write_rate());
-    } else if (mutable_cf_options.level0_slowdown_writes_trigger >= 0 &&
-               vstorage->l0_delay_trigger_count() >=
-                   mutable_cf_options.level0_slowdown_writes_trigger) {
-      write_controller_token_ =
-          SetupDelay(ioptions_.delayed_write_rate, write_controller,
-                     compaction_needed_bytes, prev_compaction_needed_bytes_,
-                     mutable_cf_options.disable_auto_compactions);
-      internal_stats_->AddCFStats(InternalStats::LEVEL0_SLOWDOWN_TOTAL, 1);
-      if (compaction_picker_->IsLevel0CompactionInProgress()) {
-        internal_stats_->AddCFStats(
-            InternalStats::LEVEL0_SLOWDOWN_WITH_COMPACTION, 1);
-      }
-      Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
-          "[%s] Stalling writes because we have %d level-0 files "
-          "rate %" PRIu64,
-          name_.c_str(), vstorage->l0_delay_trigger_count(),
-          write_controller->delayed_write_rate());
-    } else if (mutable_cf_options.soft_pending_compaction_bytes_limit > 0 &&
-               vstorage->estimated_compaction_needed_bytes() >=
-                   mutable_cf_options.soft_pending_compaction_bytes_limit) {
-      write_controller_token_ =
-          SetupDelay(ioptions_.delayed_write_rate, write_controller,
-                     compaction_needed_bytes, prev_compaction_needed_bytes_,
-                     mutable_cf_options.disable_auto_compactions);
-      internal_stats_->AddCFStats(
-          InternalStats::SOFT_PENDING_COMPACTION_BYTES_LIMIT, 1);
-      Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
-          "[%s] Stalling writes because of estimated pending compaction "
-          "bytes %" PRIu64 " rate %" PRIu64,
-          name_.c_str(), vstorage->estimated_compaction_needed_bytes(),
-          write_controller->delayed_write_rate());
     } else if (vstorage->l0_delay_trigger_count() >=
                GetL0ThresholdSpeedupCompaction(
-                   mutable_cf_options.level0_file_num_compaction_trigger,
-                   mutable_cf_options.level0_slowdown_writes_trigger)) {
+                   mutable_cf_options.level0_file_num_compaction_trigger)) {
       write_controller_token_ = write_controller->GetCompactionPressureToken();
       Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
           "[%s] Increasing compaction threads because we have %d level-0 "
           "files ",
           name_.c_str(), vstorage->l0_delay_trigger_count());
-    } else if (vstorage->estimated_compaction_needed_bytes() >=
-               mutable_cf_options.soft_pending_compaction_bytes_limit / 4) {
-      // Increase compaction threads if bytes needed for compaction exceeds
-      // 1/4 of threshold for slowing down.
-      // If soft pending compaction byte limit is not set, always speed up
-      // compaction.
-      write_controller_token_ = write_controller->GetCompactionPressureToken();
-      if (mutable_cf_options.soft_pending_compaction_bytes_limit > 0) {
-        Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
-            "[%s] Increasing compaction threads because of estimated pending "
-            "compaction "
-            "bytes %" PRIu64,
-            name_.c_str(), vstorage->estimated_compaction_needed_bytes());
-      }
     } else {
-      write_controller_token_.reset();
+      // Increase compaction threads.
+      write_controller_token_ = write_controller->GetCompactionPressureToken();
     }
     prev_compaction_needed_bytes_ = compaction_needed_bytes;
   }

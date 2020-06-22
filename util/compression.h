@@ -95,14 +95,6 @@ inline bool CompressionTypeSupported(CompressionType compression_type) {
       return Zlib_Supported();
     case kBZip2Compression:
       return BZip2_Supported();
-    case kLZ4Compression:
-      return LZ4_Supported();
-    case kLZ4HCCompression:
-      return LZ4_Supported();
-    case kXpressCompression:
-      return XPRESS_Supported();
-    case kZSTDNotFinalCompression:
-      return ZSTD_Supported();
     default:
       assert(false);
       return false;
@@ -119,14 +111,6 @@ inline std::string CompressionTypeToString(CompressionType compression_type) {
       return "Zlib";
     case kBZip2Compression:
       return "BZip2";
-    case kLZ4Compression:
-      return "LZ4";
-    case kLZ4HCCompression:
-      return "LZ4HC";
-    case kXpressCompression:
-      return "Xpress";
-    case kZSTDNotFinalCompression:
-      return "ZSTD";
     default:
       assert(false);
       return "";
