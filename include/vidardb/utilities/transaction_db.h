@@ -1,8 +1,3 @@
-//  Copyright (c) 2019-present, VidarDB, Inc.  All rights reserved.
-//  This source code is licensed under the BSD-style license found in the
-//  LICENSE file in the root directory of this source tree. An additional grant
-//  of patent rights can be found in the PATENTS file in the same directory.
-//
 //  Copyright (c) 2011-present, Facebook, Inc.  All rights reserved.
 //  This source code is licensed under the BSD-style license found in the
 //  LICENSE file in the root directory of this source tree. An additional grant
@@ -16,6 +11,7 @@
 
 #include "vidardb/comparator.h"
 #include "vidardb/db.h"
+#include "vidardb/utilities/stackable_db.h"
 #include "vidardb/utilities/transaction.h"
 
 // Database with Transaction support.
@@ -89,7 +85,7 @@ struct TransactionOptions {
   int64_t expiration = -1;
 };
 
-class TransactionDB : public DB {
+class TransactionDB : public StackableDB {
  public:
   // Open a TransactionDB similar to DB::Open().
   static Status Open(const Options& options,
@@ -123,14 +119,12 @@ class TransactionDB : public DB {
 
  protected:
   // To Create an TransactionDB, call Open()
-  explicit TransactionDB(DB* db) : db_(db) {}
+  explicit TransactionDB(DB* db) : StackableDB(db) {}
 
  private:
   // No copying allowed
   TransactionDB(const TransactionDB&);
   void operator=(const TransactionDB&);
-
-  DB* db_;
 };
 
 }  // namespace vidardb
