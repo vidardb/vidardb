@@ -18,7 +18,7 @@ struct SliceParts;
 
 // Abstract base class that defines the basic interface for a write batch.
 // See WriteBatch for a basic implementation and WrithBatchWithIndex for an
-// indexed implemenation.
+// indexed implementation.
 class WriteBatchBase {
  public:
   virtual ~WriteBatchBase() {}
@@ -35,7 +35,7 @@ class WriteBatchBase {
                    const SliceParts& value);
   virtual void Put(const SliceParts& key, const SliceParts& value);
 
-  // If the database contains a mapping for "key", erase it.  Else do nothing.
+  // If the database contains a mapping for "key", erase it. Else do nothing.
   virtual void Delete(ColumnFamilyHandle* column_family, const Slice& key) = 0;
   virtual void Delete(const Slice& key) = 0;
 
@@ -47,8 +47,8 @@ class WriteBatchBase {
   // be stored in the transaction log but not in any other file. In particular,
   // it will not be persisted to the SST files. When iterating over this
   // WriteBatch, WriteBatch::Handler::LogData will be called with the contents
-  // of the blob as it is encountered. Blobs, puts, deletes, and merges will be
-  // encountered in the same order in thich they were inserted. The blob will
+  // of the blob as it is encountered. Blobs, puts, and deletes will be
+  // encountered in the same order in which they were inserted. The blob will
   // NOT consume sequence number(s) and will NOT increase the count of the batch
   //
   // Example application: add timestamps to the transaction log for use in
@@ -58,7 +58,7 @@ class WriteBatchBase {
   // Clear all updates buffered in this batch.
   virtual void Clear() = 0;
 
-  // Covert this batch into a WriteBatch.  This is an abstracted way of
+  // Covert this batch into a WriteBatch. This is an abstracted way of
   // converting any WriteBatchBase(eg WriteBatchWithIndex) into a basic
   // WriteBatch.
   virtual WriteBatch* GetWriteBatch() = 0;
@@ -67,7 +67,7 @@ class WriteBatchBase {
   // May be called multiple times to set multiple save points.
   virtual void SetSavePoint() = 0;
 
-  // Remove all entries in this batch (Put, Merge, Delete, PutLogData) since the
+  // Remove all entries in this batch (Put, Delete, PutLogData) since the
   // most recent call to SetSavePoint() and removes the most recent save point.
   // If there is no previous call to SetSavePoint(), behaves the same as
   // Clear().

@@ -301,10 +301,7 @@ DBImpl::DBImpl(const DBOptions& options, const std::string& dbname)
       max_total_in_memory_state_(0),
       is_snapshot_supported_(true),
       write_buffer_(options.db_write_buffer_size),
-      write_thread_(options.enable_write_thread_adaptive_yield
-                        ? options.write_thread_max_yield_usec
-                        : 0,
-                    options.write_thread_slow_yield_usec),
+      write_thread_(0, options.write_thread_slow_yield_usec),
       write_controller_(options.delayed_write_rate),
       last_batch_group_size_(0),
       unscheduled_flushes_(0),
@@ -1501,7 +1498,7 @@ Status DBImpl::RecoverLogFiles(const std::vector<uint64_t>& log_numbers,
       // That's why we set ignore missing column families to true
       status = WriteBatchInternal::InsertInto(
           &batch, column_family_memtables_.get(), &flush_scheduler_, true,
-          log_number, this, true, false, next_sequence);
+          log_number, this, false, next_sequence);
       MaybeIgnoreError(&status);
       if (!status.ok()) {
         // We are treating this as a failure while reading since we read valid
@@ -1779,12 +1776,7 @@ void DBImpl::NotifyOnFlushCompleted(ColumnFamilyData* cfd,
   if (shutting_down_.load(std::memory_order_acquire)) {
     return;
   }
-  bool triggered_writes_slowdown =
-      (cfd->current()->storage_info()->NumLevelFiles(0) >=
-       mutable_cf_options.level0_slowdown_writes_trigger);
-  bool triggered_writes_stop =
-      (cfd->current()->storage_info()->NumLevelFiles(0) >=
-       mutable_cf_options.level0_stop_writes_trigger);
+
   // release lock while notifying events
   mutex_.Unlock();
   {
@@ -1796,8 +1788,6 @@ void DBImpl::NotifyOnFlushCompleted(ColumnFamilyData* cfd,
                                        file_meta->fd.GetNumber());
     info.thread_id = env_->GetThreadID();
     info.job_id = job_id;
-    info.triggered_writes_slowdown = triggered_writes_slowdown;
-    info.triggered_writes_stop = triggered_writes_stop;
     info.smallest_seqno = file_meta->smallest_seqno;
     info.largest_seqno = file_meta->largest_seqno;
     info.table_properties = prop;
@@ -2383,13 +2373,6 @@ int DBImpl::NumberLevels(ColumnFamilyHandle* column_family) {
 
 int DBImpl::MaxMemCompactionLevel(ColumnFamilyHandle* column_family) {
   return 0;
-}
-
-int DBImpl::Level0StopWriteTrigger(ColumnFamilyHandle* column_family) {
-  auto cfh = reinterpret_cast<ColumnFamilyHandleImpl*>(column_family);
-  InstrumentedMutexLock l(&mutex_);
-  return cfh->cfd()->GetSuperVersion()->
-      mutable_cf_options.level0_stop_writes_trigger;
 }
 
 Status DBImpl::Flush(const FlushOptions& flush_options,
@@ -4189,12 +4172,10 @@ Iterator* DBImpl::NewIterator(const ReadOptions& read_options,
 #else
     SuperVersion* sv = cfd->GetReferencedSuperVersion(&mutex_);
     auto iter = new ForwardIterator(this, read_options, cfd, sv);
-    return NewDBIterator(
-        env_, *cfd->ioptions(), cfd->user_comparator(), iter,
-        kMaxSequenceNumber,
-        sv->mutable_cf_options.max_sequential_skip_in_iterations,
-        sv->version_number, read_options.iterate_upper_bound,
-        read_options.pin_data);
+    return NewDBIterator(env_, *cfd->ioptions(), cfd->user_comparator(), iter,
+                         kMaxSequenceNumber, sv->version_number,
+                         read_options.iterate_upper_bound,
+                         read_options.pin_data);
 #endif
   } else {
     SequenceNumber latest_snapshot = versions_->LastSequence();
@@ -4250,7 +4231,6 @@ Iterator* DBImpl::NewIterator(const ReadOptions& read_options,
     // that they are likely to be in the same cache line and/or page.
     ArenaWrappedDBIter* db_iter = NewArenaWrappedDbIterator(
         env_, *cfd->ioptions(), cfd->user_comparator(), snapshot,
-        sv->mutable_cf_options.max_sequential_skip_in_iterations,
         sv->version_number, read_options.iterate_upper_bound,
         read_options.pin_data);
 
@@ -4318,9 +4298,6 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
   if (my_batch == nullptr) {
     return Status::Corruption("Batch is nullptr!");
   }
-  if (write_options.timeout_hint_us != 0) {
-    return Status::InvalidArgument("timeout_hint_us is deprecated");
-  }
 
   Status status;
 
@@ -4355,7 +4332,7 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
       w.status = WriteBatchInternal::InsertInto(
           &w, &column_family_memtables, &flush_scheduler_,
           write_options.ignore_missing_column_families, 0 /*log_number*/, this,
-          true /*dont_filter_deletes*/, true /*concurrent_memtable_writes*/);
+          true /*concurrent_memtable_writes*/);
     }
 
     if (write_thread_.CompleteParallelWorker(&w)) {
@@ -4517,14 +4494,12 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
     // 2. Puts are not okay if inplace_update_support
     // 3. Deletes or SingleDeletes are not okay if filtering deletes
     //    (controlled by both batch and memtable setting)
-    // 4. Merges are not okay
     //
     // Rules 1..3 are enforced by checking the options
     // during startup (CheckConcurrentWritesSupported), so if
     // options.allow_concurrent_memtable_write is true then they can be
-    // assumed to be true.  Rule 4 is checked for each batch.  We could
-    // relax rules 2 and 3 if we could prevent write batches from referring
-    // more than once to a particular key.
+    // assumed to be true. We could relax rules 2 and 3 if we could prevent
+    // write batches from referring more than once to a particular key.
     bool parallel =
         db_options_.allow_concurrent_memtable_write && write_group.size() > 1;
     int total_count = 0;
@@ -4532,7 +4507,6 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
     for (auto writer : write_group) {
       if (writer->ShouldWriteToMemtable()) {
         total_count += WriteBatchInternal::Count(writer->batch);
-        parallel = parallel && !writer->batch->HasMerge();
       }
 
       if (writer->ShouldWriteToWAL()) {
@@ -4673,8 +4647,7 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
           w.status = WriteBatchInternal::InsertInto(
               &w, &column_family_memtables, &flush_scheduler_,
               write_options.ignore_missing_column_families, 0 /*log_number*/,
-              this, true /*dont_filter_deletes*/,
-              true /*concurrent_memtable_writes*/);
+              this, true /*concurrent_memtable_writes*/);
         }
 
         // CompleteParallelWorker returns true if this thread should

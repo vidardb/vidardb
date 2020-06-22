@@ -144,9 +144,6 @@ class DBImpl : public DB {
   virtual int NumberLevels(ColumnFamilyHandle* column_family) override;
   using DB::MaxMemCompactionLevel;
   virtual int MaxMemCompactionLevel(ColumnFamilyHandle* column_family) override;
-  using DB::Level0StopWriteTrigger;
-  virtual int Level0StopWriteTrigger(
-      ColumnFamilyHandle* column_family) override;
   virtual const std::string& GetName() const override;
   virtual Env* GetEnv() const override;
   using DB::GetOptions;

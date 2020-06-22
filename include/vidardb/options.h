@@ -37,7 +37,6 @@ class Comparator;
 class Env;
 enum InfoLogLevel : unsigned char;
 class SstFileManager;
-class FilterPolicy;
 class Logger;
 class Snapshot;
 class TableFactory;
@@ -60,11 +59,6 @@ enum CompressionType : char {
   kSnappyCompression = 0x1,
   kZlibCompression = 0x2,
   kBZip2Compression = 0x3,
-  kLZ4Compression = 0x4,
-  kLZ4HCCompression = 0x5,
-  kXpressCompression = 0x6,
-  // zstd format is not finalized yet so it's subject to changes.
-  kZSTDNotFinalCompression = 0x40,
 
   // kDisableCompressionOption is used to disable some compression options.
   kDisableCompressionOption = -1,
@@ -160,12 +154,6 @@ struct CompressionOptions {
         max_dict_bytes(_max_dict_bytes) {}
 };
 
-enum UpdateStatus {    // Return status For inplace update callback
-  UPDATE_FAILED   = 0, // Nothing to update
-  UPDATED_INPLACE = 1, // Value updated inplace
-  UPDATED         = 2, // No inplace update. Merged value set
-};
-
 struct DbPath {
   std::string path;
   uint64_t target_size;  // Target size of total files under the path, in byte.
@@ -177,11 +165,6 @@ struct DbPath {
 struct Options;
 
 struct ColumnFamilyOptions {
-  // The function recovers options to a previous version. Only 4.6 or later
-  // versions are supported.
-  ColumnFamilyOptions* OldDefaults(int vidardb_major_version = 4,
-                                   int vidardb_minor_version = 6);
-
   // Some functions that make it easier to optimize VidarDB
   // Use this if your DB is very small (like under 1GB) and you don't want to
   // spend lots of memory for memtables.
@@ -299,7 +282,7 @@ struct ColumnFamilyOptions {
   // If this value is set to -1, 'max_write_buffer_number' will be used.
   //
   // Default:
-  // If using a TransactionDB/OptimisticTransactionDB, the default value will
+  // If using a TransactionDB, the default value will
   // be set to the value of 'max_write_buffer_number' if it is not explicitly
   // set by the user.  Otherwise, the default is 0.
   int max_write_buffer_number_to_maintain;
@@ -364,21 +347,6 @@ struct ColumnFamilyOptions {
   // Dynamically changeable through SetOptions() API
   int level0_file_num_compaction_trigger;
 
-  // Soft limit on number of level-0 files. We start slowing down writes at this
-  // point. A value <0 means that no writing slow down will be triggered by
-  // number of files in level-0.
-  //
-  // Dynamically changeable through SetOptions() API
-  int level0_slowdown_writes_trigger;
-
-  // Maximum number of level-0 files.  We stop writes at this point.
-  //
-  // Dynamically changeable through SetOptions() API
-  int level0_stop_writes_trigger;
-
-  // This does not do anything anymore. Deprecated.
-  int max_mem_compaction_level;
-
   // Target file size for compaction.
   // target_file_size_base is per-file size for level-1.
   // Target file size for level L can be calculated by
@@ -412,65 +380,6 @@ struct ColumnFamilyOptions {
   //
   // Dynamically changeable through SetOptions() API
   uint64_t max_bytes_for_level_base;
-
-  // If true, VidarDB will pick target size of each level dynamically.
-  // We will pick a base level b >= 1. L0 will be directly merged into level b,
-  // instead of always into level 1. Level 1 to b-1 need to be empty.
-  // We try to pick b and its target size so that
-  // 1. target size is in the range of
-  //   (max_bytes_for_level_base / max_bytes_for_level_multiplier,
-  //    max_bytes_for_level_base]
-  // 2. target size of the last level (level num_levels-1) equals to extra size
-  //    of the level.
-  // At the same time max_bytes_for_level_multiplier and
-  // max_bytes_for_level_multiplier_additional are still satisfied.
-  //
-  // With this option on, from an empty DB, we make last level the base level,
-  // which means merging L0 data into the last level, until it exceeds
-  // max_bytes_for_level_base. And then we make the second last level to be
-  // base level, to start to merge L0 data to second last level, with its
-  // target size to be 1/max_bytes_for_level_multiplier of the last level's
-  // extra size. After the data accumulates more so that we need to move the
-  // base level to the third last one, and so on.
-  //
-  // For example, assume max_bytes_for_level_multiplier=10, num_levels=6,
-  // and max_bytes_for_level_base=10MB.
-  // Target sizes of level 1 to 5 starts with:
-  // [- - - - 10MB]
-  // with base level is level. Target sizes of level 1 to 4 are not applicable
-  // because they will not be used.
-  // Until the size of Level 5 grows to more than 10MB, say 11MB, we make
-  // base target to level 4 and now the targets looks like:
-  // [- - - 1.1MB 11MB]
-  // While data are accumulated, size targets are tuned based on actual data
-  // of level 5. When level 5 has 50MB of data, the target is like:
-  // [- - - 5MB 50MB]
-  // Until level 5's actual size is more than 100MB, say 101MB. Now if we keep
-  // level 4 to be the base level, its target size needs to be 10.1MB, which
-  // doesn't satisfy the target size range. So now we make level 3 the target
-  // size and the target sizes of the levels look like:
-  // [- - 1.01MB 10.1MB 101MB]
-  // In the same way, while level 5 further grows, all levels' targets grow,
-  // like
-  // [- - 5MB 50MB 500MB]
-  // Until level 5 exceeds 1000MB and becomes 1001MB, we make level 2 the
-  // base level and make levels' target sizes like this:
-  // [- 1.001MB 10.01MB 100.1MB 1001MB]
-  // and go on...
-  //
-  // By doing it, we give max_bytes_for_level_multiplier a priority against
-  // max_bytes_for_level_base, for a more predictable LSM tree shape. It is
-  // useful to limit worse case space amplification.
-  //
-  // max_bytes_for_level_multiplier_additional is ignored with this flag on.
-  //
-  // Turning this feature on or off for an existing DB can cause unexpected
-  // LSM tree structure so it's not recommended.
-  //
-  // NOTE: this option is experimental
-  //
-  // Default: false
-  bool level_compaction_dynamic_level_bytes;
 
   // Default: 10.
   //
@@ -511,33 +420,6 @@ struct ColumnFamilyOptions {
   // Dynamically changeable through SetOptions() API
   int max_grandparent_overlap_factor;
 
-  // DEPRECATED -- this options is no longer used
-  // Puts are delayed to options.delayed_write_rate when any level has a
-  // compaction score that exceeds soft_rate_limit. This is ignored when == 0.0.
-  //
-  // Default: 0 (disabled)
-  //
-  // Dynamically changeable through SetOptions() API
-  double soft_rate_limit;
-
-  // DEPRECATED -- this options is no longer used
-  double hard_rate_limit;
-
-  // All writes will be slowed down to at least delayed_write_rate if estimated
-  // bytes needed to be compaction exceed this threshold.
-  //
-  // Default: 64GB
-  uint64_t soft_pending_compaction_bytes_limit;
-
-  // All writes are stopped if estimated bytes needed to be compaction exceed
-  // this threshold.
-  //
-  // Default: 256GB
-  uint64_t hard_pending_compaction_bytes_limit;
-
-  // DEPRECATED -- this options is no longer used
-  unsigned int rate_limit_delay_max_milliseconds;
-
   // size of one block in arena memory allocation.
   // If <= 0, a proper value is automatically calculated (usually 1/8 of
   // writer_buffer_size, rounded up to a multiple of 4KB).
@@ -561,10 +443,6 @@ struct ColumnFamilyOptions {
   // Dynamically changeable through SetOptions() API
   bool disable_auto_compactions;
 
-  // DEPREACTED
-  // Does not have any effect.
-  bool purge_redundant_kvs_while_flush;
-
   // The compaction style. Default: kCompactionStyleLevel
   CompactionStyle compaction_style;
 
@@ -586,26 +464,6 @@ struct ColumnFamilyOptions {
 
   // The options for FIFO compaction style
   CompactionOptionsFIFO compaction_options_fifo;
-
-  // Use KeyMayExist API to filter deletes when this is true.
-  // If KeyMayExist returns false, i.e. the key definitely does not exist, then
-  // the delete is a noop. KeyMayExist only incurs in-memory look up.
-  // This optimization avoids writing the delete to storage when appropriate.
-  //
-  // Default: false
-  //
-  // Dynamically changeable through SetOptions() API
-  bool filter_deletes;
-
-  // An iteration->Next() sequentially skips over keys with the same
-  // user-key unless this option is set. This number specifies the number
-  // of keys (with the same userkey) that will be sequentially
-  // skipped before a reseek is issued.
-  //
-  // Default: 8
-  //
-  // Dynamically changeable through SetOptions() API
-  uint64_t max_sequential_skip_in_iterations;
 
   // This is a factory that provides MemTableRep objects.
   // Default: a factory that provides a skip-list-based implementation of
@@ -639,44 +497,6 @@ struct ColumnFamilyOptions {
       TablePropertiesCollectorFactories;
   TablePropertiesCollectorFactories table_properties_collector_factories;
 
-  // Maximum number of successive merge operations on a key in the memtable.
-  //
-  // When a merge operation is added to the memtable and the maximum number of
-  // successive merges is reached, the value of the key will be calculated and
-  // inserted into the memtable instead of the merge operation. This will
-  // ensure that there are never more than max_successive_merges merge
-  // operations in the memtable.
-  //
-  // Default: 0 (disabled)
-  //
-  // Dynamically changeable through SetOptions() API
-  size_t max_successive_merges;
-
-  // The number of partial merge operands to accumulate before partial
-  // merge will be performed. Partial merge will not be called
-  // if the list of values to merge is less than min_partial_merge_operands.
-  //
-  // If min_partial_merge_operands < 2, then it will be treated as 2.
-  //
-  // Default: 2
-  uint32_t min_partial_merge_operands;
-
-  // This flag specifies that the implementation should optimize the filters
-  // mainly for cases where keys are found rather than also optimize for keys
-  // missed. This would be used in cases where the application knows that
-  // there are very few misses or the performance in the case of misses is not
-  // important.
-  //
-  // For now, this flag allows us to not store filters for the last level i.e
-  // the largest level which contains data of the LSM store. For keys which
-  // are hits, the filters in this level are not useful because we will search
-  // for the data anyway. NOTE: the filters in other levels are still useful
-  // even for key hit because they tell us whether to look in that level or go
-  // to the higher level.
-  //
-  // Default: false
-  bool optimize_filters_for_hits;
-
   // After writing every SST file, reopen it and read all the keys.
   // Default: false
   bool paranoid_file_checks;
@@ -694,10 +514,6 @@ struct ColumnFamilyOptions {
 };
 
 struct DBOptions {
-  // The function recovers options to the option as in version 4.6.
-  DBOptions* OldDefaults(int vidardb_major_version = 4,
-                         int vidardb_minor_version = 6);
-
   // Some functions that make it easier to optimize VidarDB
 
   // Use this if your DB is very small (like under 1GB) and you don't want to
@@ -726,7 +542,7 @@ struct DBOptions {
   bool error_if_exists;
 
   // If true, VidarDB will aggressively check consistency of the data.
-  // Also, if any of the  writes to the database fails (Put, Delete, Merge,
+  // Also, if any of the writes to the database fails (Put, Delete,
   // Write), the database will switch to read-only mode and fail all other
   // Write operations.
   // In most cases you want this to be set to true.
@@ -927,9 +743,6 @@ struct DBOptions {
   // Number of shards used for table cache.
   int table_cache_numshardbits;
 
-  // DEPRECATED
-  // int table_cache_remove_scan_count_limit;
-
   // The following two fields affect how archived logs will be deleted.
   // 1. If both set to 0, logs will be deleted asap and will not get into
   //    the archive.
@@ -984,9 +797,6 @@ struct DBOptions {
 
   // Disable child process inherit open files. Default: true
   bool is_fd_close_on_exec;
-
-  // DEPRECATED -- this options is no longer used
-  bool skip_log_error_on_recovery;
 
   // if not zero, dump vidardb.stats to LOG every stats_dump_period_sec
   // Default: 600 (10 min)
@@ -1066,7 +876,6 @@ struct DBOptions {
   // Default: 1024 * 1024 (1 MB)
   size_t writable_file_max_buffer_size;
 
-
   // Use adaptive mutex, which spins in the user space before resorting
   // to kernel. This could reduce context switch when the mutex is not
   // heavily contended. However, if the mutex is hot, we could end up
@@ -1121,9 +930,8 @@ struct DBOptions {
   uint64_t delayed_write_rate;
 
   // If true, allow multi-writers to update mem tables in parallel.
-  // Only some memtable_factory-s support concurrent writes; currently it
-  // is implemented only for SkipListFactory.  Concurrent memtable writes
-  // are not compatible with inplace_update_support or filter_deletes.
+  // Concurrent memtable writes are not compatible with inplace_update_support
+  // or filter_deletes.
   // It is strongly recommended to set enable_write_thread_adaptive_yield
   // if you are going to use this feature.
   //
@@ -1131,25 +939,6 @@ struct DBOptions {
   //
   // Default: false
   bool allow_concurrent_memtable_write;
-
-  // If true, threads synchronizing with the write batch group leader will
-  // wait for up to write_thread_max_yield_usec before blocking on a mutex.
-  // This can substantially improve throughput for concurrent workloads,
-  // regardless of whether allow_concurrent_memtable_write is enabled.
-  //
-  // THIS FEATURE IS NOT STABLE YET.
-  //
-  // Default: false
-  bool enable_write_thread_adaptive_yield;
-
-  // The maximum number of microseconds that a write operation will use
-  // a yielding spin loop to coordinate with other write threads before
-  // blocking on a mutex.  (Assuming write_thread_slow_yield_usec is
-  // set properly) increasing this value is likely to increase VidarDB
-  // throughput at the expense of increased CPU usage.
-  //
-  // Default: 100
-  uint64_t write_thread_max_yield_usec;
 
   // The latency in microseconds after which a std::this_thread::yield
   // call (sched_yield on Linux) is considered to be a signal that
@@ -1220,10 +1009,6 @@ struct Options : public DBOptions, public ColumnFamilyOptions {
           const ColumnFamilyOptions& column_family_options)
       : DBOptions(db_options), ColumnFamilyOptions(column_family_options) {}
 
-  // The function recovers options to the option as in version 4.6.
-  Options* OldDefaults(int vidardb_major_version = 4,
-                       int vidardb_minor_version = 6);
-
   void Dump(Logger* log) const;
 
   void DumpCFOptions(Logger* log) const;
@@ -1277,9 +1062,6 @@ struct ReadOptions {
   // If this option is set and memtable implementation allows, Seek
   // might only return keys with the same prefix as the seek-key
   //
-  // ! DEPRECATED: prefix_seek is on by default when prefix_extractor
-  // is configured
-  // bool prefix_seek;
 
   // If "snapshot" is non-nullptr, read as of the supplied snapshot
   // (which must belong to the DB that is being read and which must
@@ -1287,21 +1069,6 @@ struct ReadOptions {
   // snapshot of the state at the beginning of this read operation.
   // Default: nullptr
   const Snapshot* snapshot;
-
-  // If "prefix" is non-nullptr, and ReadOptions is being passed to
-  // db.NewIterator, only return results when the key begins with this
-  // prefix.  This field is ignored by other calls (e.g., Get).
-  // Options.prefix_extractor must also be set, and
-  // prefix_extractor.InRange(prefix) must be true.  The iterator
-  // returned by NewIterator when this option is set will behave just
-  // as if the underlying store did not contain any non-matching keys,
-  // with two exceptions.  Seek() only accepts keys starting with the
-  // prefix, and SeekToLast() is not supported.  prefix filter with this
-  // option will sometimes reduce the number of read IOPs.
-  // Default: nullptr
-  //
-  // ! DEPRECATED
-  // const Slice* prefix;
 
   // "iterate_upper_bound" defines the extent upto which the forward iterator
   // can returns entries. Once the bound is reached, Valid() will be false.
@@ -1403,11 +1170,8 @@ struct WriteOptions {
   // and the write may got lost after a crash.
   bool disableWAL;
 
-  // The option is deprecated. It's not used anymore.
-  uint64_t timeout_hint_us;
-
   // If true and if user is trying to write to column families that don't exist
-  // (they were dropped),  ignore the write (don't return an error). If there
+  // (they were dropped), ignore the write (don't return an error). If there
   // are multiple writes in a WriteBatch, other writes will succeed.
   // Default: false
   bool ignore_missing_column_families;
@@ -1415,7 +1179,6 @@ struct WriteOptions {
   WriteOptions()
       : sync(false),
         disableWAL(false),
-        timeout_hint_us(0),
         ignore_missing_column_families(false) {}
 };
 

@@ -447,16 +447,6 @@ static std::vector<int> FLAGS_max_bytes_for_level_multiplier_additional_v;
 DEFINE_string(max_bytes_for_level_multiplier_additional, "",
               "A vector that specifies additional fanout per level");
 
-DEFINE_int32(level0_stop_writes_trigger,
-             vidardb::Options().level0_stop_writes_trigger,
-             "Number of files in level-0"
-             " that will trigger put stop.");
-
-DEFINE_int32(level0_slowdown_writes_trigger,
-             vidardb::Options().level0_slowdown_writes_trigger,
-             "Number of files in level-0"
-             " that will slow down writes.");
-
 DEFINE_int32(level0_file_num_compaction_trigger,
              vidardb::Options().level0_file_num_compaction_trigger,
              "Number of files in level-0"
@@ -551,14 +541,6 @@ enum vidardb::CompressionType StringToCompressionType(const char* ctype) {
     return vidardb::kZlibCompression;
   else if (!strcasecmp(ctype, "bzip2"))
     return vidardb::kBZip2Compression;
-  else if (!strcasecmp(ctype, "lz4"))
-    return vidardb::kLZ4Compression;
-  else if (!strcasecmp(ctype, "lz4hc"))
-    return vidardb::kLZ4HCCompression;
-  else if (!strcasecmp(ctype, "xpress"))
-    return vidardb::kXpressCompression;
-  else if (!strcasecmp(ctype, "zstd"))
-    return vidardb::kZSTDNotFinalCompression;
 
   fprintf(stdout, "Cannot parse compression type '%s'\n", ctype);
   return vidardb::kSnappyCompression;  // default value
@@ -1555,7 +1537,6 @@ class Benchmark {
  private:
   std::shared_ptr<Cache> cache_;
   std::shared_ptr<Cache> compressed_cache_;
-  std::shared_ptr<const FilterPolicy> filter_policy_;
   DBWithColumnFamilies db_;
   std::vector<DBWithColumnFamilies> multi_dbs_;
   int64_t num_;
@@ -1596,22 +1577,6 @@ class Benchmark {
       case vidardb::kBZip2Compression:
         ok = BZip2_Compress(Options().compression_opts, 2, input.data(),
                             input.size(), compressed);
-        break;
-      case vidardb::kLZ4Compression:
-        ok = LZ4_Compress(Options().compression_opts, 2, input.data(),
-                          input.size(), compressed);
-        break;
-      case vidardb::kLZ4HCCompression:
-        ok = LZ4HC_Compress(Options().compression_opts, 2, input.data(),
-                            input.size(), compressed);
-        break;
-      case vidardb::kXpressCompression:
-        ok = XPRESS_Compress(input.data(),
-          input.size(), compressed);
-        break;
-      case vidardb::kZSTDNotFinalCompression:
-        ok = ZSTD_Compress(Options().compression_opts, input.data(),
-                           input.size(), compressed);
         break;
       default:
         ok = false;
@@ -2246,26 +2211,6 @@ class Benchmark {
                                         &decompress_size, 2);
         ok = uncompressed != nullptr;
         break;
-      case vidardb::kLZ4Compression:
-        uncompressed = LZ4_Uncompress(compressed.data(), compressed.size(),
-                                      &decompress_size, 2);
-        ok = uncompressed != nullptr;
-        break;
-      case vidardb::kLZ4HCCompression:
-        uncompressed = LZ4_Uncompress(compressed.data(), compressed.size(),
-                                      &decompress_size, 2);
-        ok = uncompressed != nullptr;
-        break;
-      case vidardb::kXpressCompression:
-        uncompressed = XPRESS_Uncompress(compressed.data(), compressed.size(),
-          &decompress_size);
-        ok = uncompressed != nullptr;
-        break;
-      case vidardb::kZSTDNotFinalCompression:
-        uncompressed = ZSTD_Uncompress(compressed.data(), compressed.size(),
-                                       &decompress_size);
-        ok = uncompressed != nullptr;
-        break;
       default:
         ok = false;
       }
@@ -2326,11 +2271,8 @@ class Benchmark {
     options.target_file_size_base = FLAGS_target_file_size_base;
     options.target_file_size_multiplier = FLAGS_target_file_size_multiplier;
     options.max_bytes_for_level_base = FLAGS_max_bytes_for_level_base;
-    options.level_compaction_dynamic_level_bytes =
-        FLAGS_level_compaction_dynamic_level_bytes;
     options.max_bytes_for_level_multiplier =
         FLAGS_max_bytes_for_level_multiplier;
-    options.filter_deletes = FLAGS_filter_deletes;
     if ((FLAGS_prefix_size == 0) && (FLAGS_rep_factory == kPrefixHash)) {
       fprintf(stderr, "prefix_size should be non-zero if PrefixHash or "
                       "HashLinkedList memtablerep is used\n");
@@ -2368,11 +2310,8 @@ class Benchmark {
       options.max_bytes_for_level_multiplier_additional =
         FLAGS_max_bytes_for_level_multiplier_additional_v;
     }
-    options.level0_stop_writes_trigger = FLAGS_level0_stop_writes_trigger;
     options.level0_file_num_compaction_trigger =
         FLAGS_level0_file_num_compaction_trigger;
-    options.level0_slowdown_writes_trigger =
-      FLAGS_level0_slowdown_writes_trigger;
     options.compression = FLAGS_compression_type_e;
     options.compression_opts.level = FLAGS_compression_level;
     options.compression_opts.max_dict_bytes = FLAGS_compression_max_dict_bytes;
@@ -2391,27 +2330,15 @@ class Benchmark {
         options.compression_per_level[i] = FLAGS_compression_type_e;
       }
     }
-    options.soft_rate_limit = FLAGS_soft_rate_limit;
-    options.hard_rate_limit = FLAGS_hard_rate_limit;
-    options.soft_pending_compaction_bytes_limit =
-        FLAGS_soft_pending_compaction_bytes_limit;
-    options.hard_pending_compaction_bytes_limit =
-        FLAGS_hard_pending_compaction_bytes_limit;
     options.delayed_write_rate = FLAGS_delayed_write_rate;
     options.allow_concurrent_memtable_write =
         FLAGS_allow_concurrent_memtable_write;
-    options.enable_write_thread_adaptive_yield =
-        FLAGS_enable_write_thread_adaptive_yield;
-    options.write_thread_max_yield_usec = FLAGS_write_thread_max_yield_usec;
     options.write_thread_slow_yield_usec = FLAGS_write_thread_slow_yield_usec;
-    options.rate_limit_delay_max_milliseconds =
-      FLAGS_rate_limit_delay_max_milliseconds;
     options.table_cache_numshardbits = FLAGS_table_cache_numshardbits;
     options.max_grandparent_overlap_factor =
       FLAGS_max_grandparent_overlap_factor;
     options.disable_auto_compactions = FLAGS_disable_auto_compactions;
     options.source_compaction_factor = FLAGS_source_compaction_factor;
-    options.optimize_filters_for_hits = FLAGS_optimize_filters_for_hits;
 
     // fill storage options
     options.allow_os_buffer = FLAGS_bufferedio;
@@ -2423,7 +2350,6 @@ class Benchmark {
     options.bytes_per_sync = FLAGS_bytes_per_sync;
     options.wal_bytes_per_sync = FLAGS_wal_bytes_per_sync;
 
-    options.max_successive_merges = FLAGS_max_successive_merges;
     options.report_bg_io_stats = FLAGS_report_bg_io_stats;
 
     // set universal style compaction configurations, if applicable

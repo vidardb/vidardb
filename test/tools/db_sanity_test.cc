@@ -152,45 +152,6 @@ class SanityTestZlibCompressionVersion2 : public SanityTest {
   Options options_;
 };
 
-class SanityTestLZ4Compression : public SanityTest {
- public:
-  explicit SanityTestLZ4Compression(const std::string& path)
-      : SanityTest(path) {
-    options_.compression = kLZ4Compression;
-  }
-  virtual Options GetOptions() const override { return options_; }
-  virtual std::string Name() const override { return "LZ4Compression"; }
-
- private:
-  Options options_;
-};
-
-class SanityTestLZ4HCCompression : public SanityTest {
- public:
-  explicit SanityTestLZ4HCCompression(const std::string& path)
-      : SanityTest(path) {
-    options_.compression = kLZ4HCCompression;
-  }
-  virtual Options GetOptions() const override { return options_; }
-  virtual std::string Name() const override { return "LZ4HCCompression"; }
-
- private:
-  Options options_;
-};
-
-class SanityTestZSTDCompression : public SanityTest {
- public:
-  explicit SanityTestZSTDCompression(const std::string& path)
-      : SanityTest(path) {
-    options_.compression = kZSTDNotFinalCompression;
-  }
-  virtual Options GetOptions() const override { return options_; }
-  virtual std::string Name() const override { return "ZSTDCompression"; }
-
- private:
-  Options options_;
-};
-
 class SanityTestBloomFilter : public SanityTest {
  public:
   explicit SanityTestBloomFilter(const std::string& path) : SanityTest(path) {
@@ -212,9 +173,6 @@ bool RunSanityTests(const std::string& command, const std::string& path) {
       new SanityTestSpecialComparator(path),
       new SanityTestZlibCompression(path),
       new SanityTestZlibCompressionVersion2(path),
-      new SanityTestLZ4Compression(path),
-      new SanityTestLZ4HCCompression(path),
-      new SanityTestZSTDCompression(path),
       new SanityTestBloomFilter(path)};
 
   if (command == "create") {

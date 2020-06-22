@@ -45,8 +45,6 @@ struct MemTableOptions {
       const MutableCFOptions& mutable_cf_options);
   size_t write_buffer_size;
   size_t arena_block_size;
-  size_t max_successive_merges;
-  bool filter_deletes;
   Statistics* statistics;
   Logger* info_log;
   const Splitter* splitter;

@@ -93,10 +93,10 @@ class WriteBatchInternal {
   // Set the count for the number of entries in the batch.
   static void SetCount(WriteBatch* batch, int n);
 
-  // Return the seqeunce number for the start of this batch.
+  // Return the sequence number for the start of this batch.
   static SequenceNumber Sequence(const WriteBatch* batch);
 
-  // Store the specified number as the seqeunce number for the start of
+  // Store the specified number as the sequence number for the start of
   // this batch.
   static void SetSequence(WriteBatch* batch, SequenceNumber seq);
 
@@ -123,7 +123,7 @@ class WriteBatchInternal {
   // referencing non-existing column family will be ignored.
   // If ignore_missing_column_families == false, processing of the
   // batches will be stopped if a reference is found to a non-existing
-  // column family and InvalidArgument() will be returned.  The writes
+  // column family and InvalidArgument() will be returned. The writes
   // in batches may be only partially applied at that point.
   //
   // If log_number is non-zero, the memtable will be updated only if
@@ -140,17 +140,15 @@ class WriteBatchInternal {
                            FlushScheduler* flush_scheduler,
                            bool ignore_missing_column_families = false,
                            uint64_t log_number = 0, DB* db = nullptr,
-                           const bool dont_filter_deletes = true,
                            bool concurrent_memtable_writes = false);
 
   // Convenience form of InsertInto when you have only one batch
-  // last_seq_used returns the last sequnce number used in a MemTable insert
+  // last_seq_used returns the last sequence number used in a MemTable insert
   static Status InsertInto(const WriteBatch* batch,
                            ColumnFamilyMemTables* memtables,
                            FlushScheduler* flush_scheduler,
                            bool ignore_missing_column_families = false,
                            uint64_t log_number = 0, DB* db = nullptr,
-                           const bool dont_filter_deletes = true,
                            bool concurrent_memtable_writes = false,
                            SequenceNumber* last_seq_used = nullptr);
 
@@ -159,7 +157,6 @@ class WriteBatchInternal {
                            FlushScheduler* flush_scheduler,
                            bool ignore_missing_column_families = false,
                            uint64_t log_number = 0, DB* db = nullptr,
-                           const bool dont_filter_deletes = true,
                            bool concurrent_memtable_writes = false);
 
   static void Append(WriteBatch* dst, const WriteBatch* src);

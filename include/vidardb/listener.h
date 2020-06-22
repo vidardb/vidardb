@@ -96,16 +96,6 @@ struct FlushJobInfo {
   uint64_t thread_id;
   // the job id, which is unique in the same thread.
   int job_id;
-  // If true, then vidardb is currently slowing-down all writes to prevent
-  // creating too many Level 0 files as compaction seems not able to
-  // catch up the write request speed.  This indicates that there are
-  // too many files in Level 0.
-  bool triggered_writes_slowdown;
-  // If true, then vidardb is currently blocking any writes to prevent
-  // creating more L0 files.  This indicates that there are too many
-  // files in level 0.  Compactions should try to compact L0 files down
-  // to lower levels as soon as possible.
-  bool triggered_writes_stop;
   // The smallest sequence number in the newly created file
   SequenceNumber smallest_seqno;
   // The largest sequence number in the newly created file

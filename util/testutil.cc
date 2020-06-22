@@ -211,7 +211,6 @@ void RandomInitDBOptions(DBOptions* db_opt, Random* rnd) {
   db_opt->error_if_exists = rnd->Uniform(2);
   db_opt->is_fd_close_on_exec = rnd->Uniform(2);
   db_opt->paranoid_checks = rnd->Uniform(2);
-  db_opt->skip_log_error_on_recovery = rnd->Uniform(2);
   db_opt->skip_stats_update_on_db_open = rnd->Uniform(2);
   db_opt->use_adaptive_mutex = rnd->Uniform(2);
   db_opt->use_fsync = rnd->Uniform(2);
@@ -259,25 +258,14 @@ void RandomInitCFOptions(ColumnFamilyOptions* cf_opt, Random* rnd) {
   // boolean options
   cf_opt->report_bg_io_stats = rnd->Uniform(2);
   cf_opt->disable_auto_compactions = rnd->Uniform(2);
-  cf_opt->filter_deletes = rnd->Uniform(2);
-  cf_opt->level_compaction_dynamic_level_bytes = rnd->Uniform(2);
-  cf_opt->optimize_filters_for_hits = rnd->Uniform(2);
   cf_opt->paranoid_file_checks = rnd->Uniform(2);
-  cf_opt->purge_redundant_kvs_while_flush = rnd->Uniform(2);
   cf_opt->verify_checksums_in_compaction = rnd->Uniform(2);
-
-  // double options
-  cf_opt->hard_rate_limit = static_cast<double>(rnd->Uniform(10000)) / 13;
-  cf_opt->soft_rate_limit = static_cast<double>(rnd->Uniform(10000)) / 13;
 
   // int options
   cf_opt->expanded_compaction_factor = rnd->Uniform(100);
   cf_opt->level0_file_num_compaction_trigger = rnd->Uniform(100);
-  cf_opt->level0_slowdown_writes_trigger = rnd->Uniform(100);
-  cf_opt->level0_stop_writes_trigger = rnd->Uniform(100);
   cf_opt->max_bytes_for_level_multiplier = rnd->Uniform(100);
   cf_opt->max_grandparent_overlap_factor = rnd->Uniform(100);
-  cf_opt->max_mem_compaction_level = rnd->Uniform(100);
   cf_opt->max_write_buffer_number = rnd->Uniform(100);
   cf_opt->max_write_buffer_number_to_maintain = rnd->Uniform(100);
   cf_opt->min_write_buffer_number_to_merge = rnd->Uniform(100);
@@ -287,20 +275,14 @@ void RandomInitCFOptions(ColumnFamilyOptions* cf_opt, Random* rnd) {
 
   // size_t options
   cf_opt->arena_block_size = rnd->Uniform(10000);
-  cf_opt->max_successive_merges = rnd->Uniform(10000);
   cf_opt->write_buffer_size = rnd->Uniform(10000);
 
   // uint32_t options
-  cf_opt->min_partial_merge_operands = rnd->Uniform(10000);
   cf_opt->max_bytes_for_level_base = rnd->Uniform(10000);
 
   // uint64_t options
   static const uint64_t uint_max = static_cast<uint64_t>(UINT_MAX);
-  cf_opt->max_sequential_skip_in_iterations = uint_max + rnd->Uniform(10000);
   cf_opt->target_file_size_base = uint_max + rnd->Uniform(10000);
-
-  // unsigned int options
-  cf_opt->rate_limit_delay_max_milliseconds = rnd->Uniform(10000);
 
   // pointer typed options
   cf_opt->table_factory.reset(RandomTableFactory(rnd));

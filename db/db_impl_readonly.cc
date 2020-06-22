@@ -54,7 +54,6 @@ Iterator* DBImplReadOnly::NewIterator(const ReadOptions& read_options,
            ? reinterpret_cast<const SnapshotImpl*>(read_options.snapshot)
                  ->number_
            : latest_snapshot),
-      super_version->mutable_cf_options.max_sequential_skip_in_iterations,
       super_version->version_number);
   auto internal_iter = NewInternalIterator(
       read_options, cfd, super_version, db_iter->GetArena());

@@ -74,9 +74,6 @@ class FullCompactor : public Compactor {
       DB* db, const FlushJobInfo& info) override {
     CompactionTask* task = PickCompaction(db, info.cf_name);
     if (task != nullptr) {
-      if (info.triggered_writes_stop) {
-        task->retry_on_fail = true;
-      }
       // Schedule compaction in a different thread.
       ScheduleCompaction(task);
     }
@@ -137,9 +134,6 @@ int main() {
   options.create_if_missing = true;
   // Disable VidarDB background compaction.
   options.compaction_style = kCompactionStyleNone;
-  // Small slowdown and stop trigger for experimental purpose.
-  options.level0_slowdown_writes_trigger = 3;
-  options.level0_stop_writes_trigger = 5;
   options.IncreaseParallelism(5);
   options.listeners.emplace_back(new FullCompactor(options));
 
