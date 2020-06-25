@@ -55,7 +55,6 @@ struct LockMapStripe {
   std::shared_ptr<TransactionDBCondVar> stripe_cv;
 
   // Locked keys mapped to the info about the transactions that locked them.
-  // TODO(agiardullo): Explore performance of other data structures.
   std::unordered_map<std::string, LockInfo> keys;
 };
 
@@ -77,7 +76,7 @@ struct LockMap {
     }
   }
 
-  // Number of sepearate LockMapStripes to create, each with their own Mutex
+  // Number of separate LockMapStripes to create, each with their own Mutex
   const size_t num_stripes_;
 
   // Count of keys that are currently locked in this column family.
@@ -133,7 +132,7 @@ void TransactionLockMgr::AddColumnFamily(uint32_t column_family_id) {
 }
 
 void TransactionLockMgr::RemoveColumnFamily(uint32_t column_family_id) {
-  // Remove lock_map for this column family.  Since the lock map is stored
+  // Remove lock_map for this column family. Since the lock map is stored
   // as a shared ptr, concurrent transactions can still keep using it
   // until they release their references to it.
   {
@@ -154,7 +153,7 @@ void TransactionLockMgr::RemoveColumnFamily(uint32_t column_family_id) {
 }
 
 // Look up the LockMap shared_ptr for a given column_family_id.
-// Note:  The LockMap is only valid as long as the caller is still holding on
+// Note: The LockMap is only valid as long as the caller is still holding on
 //   to the returned shared_ptr.
 std::shared_ptr<LockMap> TransactionLockMgr::GetLockMap(
     uint32_t column_family_id) {
@@ -178,7 +177,7 @@ std::shared_ptr<LockMap> TransactionLockMgr::GetLockMap(
   if (lock_map_iter == lock_maps_.end()) {
     return std::shared_ptr<LockMap>(nullptr);
   } else {
-    // Found lock map.  Store in thread-local cache and return.
+    // Found lock map. Store in thread-local cache and return.
     std::shared_ptr<LockMap>& lock_map = lock_map_iter->second;
     lock_maps_cache->insert({column_family_id, lock_map});
 
@@ -244,11 +243,10 @@ Status TransactionLockMgr::AcquireWithTimeout(LockMap* lock_map,
                                               int64_t timeout,
                                               const LockInfo& lock_info) {
   Status result;
-  uint64_t start_time = 0;
   uint64_t end_time = 0;
 
   if (timeout > 0) {
-    start_time = env->NowMicros();
+    uint64_t start_time = env->NowMicros();
     end_time = start_time + timeout;
   }
 
@@ -332,7 +330,7 @@ Status TransactionLockMgr::AcquireLocked(LockMap* lock_map,
 
     LockInfo& lock_info = stripe->keys.at(key);
     if (lock_info.txn_id != txn_lock_info.txn_id) {
-      // locked by another txn.  Check if it's expired
+      // locked by another txn. Check if it's expired
       if (IsLockExpired(lock_info, env, expire_time)) {
         // lock is expired, can steal it
         lock_info.txn_id = txn_lock_info.txn_id;
@@ -381,7 +379,7 @@ void TransactionLockMgr::UnLock(TransactionImpl* txn, uint32_t column_family_id,
 
   const auto& iter = stripe->keys.find(key);
   if (iter != stripe->keys.end() && iter->second.txn_id == txn_id) {
-    // Found the key we locked.  unlock it.
+    // Found the key we locked. unlock it.
     stripe->keys.erase(iter);
     if (max_num_locks_ > 0) {
       // Maintain lock count if there is a limit on the number of locks.
@@ -389,7 +387,7 @@ void TransactionLockMgr::UnLock(TransactionImpl* txn, uint32_t column_family_id,
       lock_map->lock_cnt--;
     }
   } else {
-    // This key is either not locked or locked by someone else.  This should
+    // This key is either not locked or locked by someone else. This should
     // only happen if the unlocking transaction has expired.
     assert(txn->GetExpirationTime() > 0 &&
            txn->GetExpirationTime() < env->NowMicros());
@@ -441,7 +439,7 @@ void TransactionLockMgr::UnLock(const TransactionImpl* txn,
       for (const std::string* key : stripe_keys) {
         const auto& iter = stripe->keys.find(*key);
         if (iter != stripe->keys.end() && iter->second.txn_id == txn_id) {
-          // Found the key we locked.  unlock it.
+          // Found the key we locked. unlock it.
           stripe->keys.erase(iter);
           if (max_num_locks_ > 0) {
             // Maintain lock count if there is a limit on the number of locks.
@@ -450,8 +448,7 @@ void TransactionLockMgr::UnLock(const TransactionImpl* txn,
           }
         } else {
           // This key is either not locked or locked by someone else.  This
-          // should only
-          // happen if the unlocking transaction has expired.
+          // should only happen if the unlocking transaction has expired.
           assert(txn->GetExpirationTime() > 0 &&
                  txn->GetExpirationTime() < env->NowMicros());
         }

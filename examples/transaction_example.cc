@@ -32,7 +32,7 @@ int main() {
 
   ////////////////////////////////////////////////////////
   //
-  // Simple OptimisticTransaction Example ("Read Committed")
+  // Simple Transaction Example ("Read Committed")
   //
   ////////////////////////////////////////////////////////
 
@@ -52,7 +52,7 @@ int main() {
   s = txn_db->Get(read_options, "abc", &value);
 
   // Write a key OUTSIDE of this transaction.
-  // Does not affect txn since this is an unrelated key.  If we wrote key 'abc'
+  // Does not affect txn since this is an unrelated key. If we wrote key 'abc'
   // here, the transaction would fail to commit.
   s = txn_db->Put(write_options, "xyz", "zzz");
 
@@ -78,7 +78,7 @@ int main() {
   s = txn_db->Put(write_options, "abc", "xyz");
   assert(s.ok());
 
-  // Attempt to read a key using the snapshot.  This will fail since
+  // Attempt to read a key using the snapshot. This will fail since
   // the previous write outside this txn conflicts with this read.
   read_options.snapshot = snapshot;
   s = txn->GetForUpdate(read_options, "abc", &value);

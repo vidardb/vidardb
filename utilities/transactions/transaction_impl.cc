@@ -167,7 +167,7 @@ Status TransactionImpl::Prepare() {
   bool can_prepare = false;
 
   if (expiration_time_ > 0) {
-    // must concern ourselves with expiraton and/or lock stealing
+    // must concern ourselves with expiration and/or lock stealing
     // need to compare/exchange bc locks could be stolen under us here
     ExecutionStatus expected = STARTED;
     can_prepare = std::atomic_compare_exchange_strong(&exec_status_, &expected,
@@ -345,7 +345,7 @@ Status TransactionImpl::LockBatch(WriteBatch* batch,
    public:
     // Sorted map of column_family_id to sorted set of keys.
     // Since LockBatch() always locks keys in sorted order, it cannot deadlock
-    // with itself.  We're not using a comparator here since it doesn't matter
+    // with itself. We're not using a comparator here since it doesn't matter
     // what the sorting is as long as it's consistent.
     std::map<uint32_t, std::set<std::string>> keys_;
 
@@ -409,7 +409,7 @@ Status TransactionImpl::LockBatch(WriteBatch* batch,
 }
 
 // Attempt to lock this key.
-// Returns OK if the key has been successfully locked.  Non-ok, otherwise.
+// Returns OK if the key has been successfully locked. Non-ok, otherwise.
 // If check_shapshot is true and this transaction has a snapshot set,
 // this key will only be locked if there have been no writes to this key since
 // the snapshot time.
@@ -448,15 +448,14 @@ Status TransactionImpl::TryLock(ColumnFamilyHandle* column_family,
 
   // Even though we do not care about doing conflict checking for this write,
   // we still need to take a lock to make sure we do not cause a conflict with
-  // some other write.  However, we do not need to check if there have been
+  // some other write. However, we do not need to check if there have been
   // any writes since this transaction's snapshot.
   // TODO(agiardullo): could optimize by supporting shared txn locks in the
   // future
   if (untracked || snapshot_ == nullptr) {
     // Need to remember the earliest sequence number that we know that this
-    // key has not been modified after.  This is useful if this same
-    // transaction
-    // later tries to lock this key again.
+    // key has not been modified after. This is useful if this same
+    // transaction later tries to lock this key again.
     if (current_seqno == kMaxSequenceNumber) {
       // Since we haven't checked a snapshot, we only know this key has not
       // been modified since after we locked it.
@@ -466,7 +465,7 @@ Status TransactionImpl::TryLock(ColumnFamilyHandle* column_family,
     }
   } else {
     // If a snapshot is set, we need to make sure the key hasn't been modified
-    // since the snapshot.  This must be done after we locked the key.
+    // since the snapshot. This must be done after we locked the key.
     if (s.ok()) {
       s = ValidateSnapshot(column_family, key, current_seqno, &new_seqno);
 

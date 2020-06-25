@@ -13,7 +13,6 @@
 #include <unordered_map>
 #include <vector>
 
-//#include "db/write_callback.h"
 #include "utilities/transactions/transaction_base.h"
 #include "utilities/transactions/transaction_util.h"
 #include "vidardb/db.h"
@@ -117,26 +116,6 @@ class TransactionImpl : public TransactionBaseImpl {
   TransactionImpl(const TransactionImpl&);
   void operator=(const TransactionImpl&);
 };
-
-// Used at commit time to check whether transaction is committing before its
-// expiration time.
-// class TransactionCallback : public WriteCallback {
-// public:
-//  explicit TransactionCallback(TransactionImpl* txn) : txn_(txn) {}
-//
-//  Status Callback(DB* db) override {
-//    if (txn_->IsExpired()) {
-//      return Status::Expired();
-//    } else {
-//      return Status::OK();
-//    }
-//  }
-//
-//  bool AllowWriteBatching() override { return true; }
-//
-// private:
-//  TransactionImpl* txn_;
-//};
 
 }  // namespace vidardb
 
