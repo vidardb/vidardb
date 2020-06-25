@@ -44,87 +44,29 @@
 
 namespace vidardb {
 
-// anon namespace for file-local types
-namespace {
-
-enum ContentFlags : uint32_t {
-  DEFERRED = 1 << 0,
-  HAS_PUT = 1 << 1,
-  HAS_DELETE = 1 << 2,
-  HAS_BEGIN_PREPARE = 1 << 5,
-  HAS_END_PREPARE = 1 << 6,
-  HAS_COMMIT = 1 << 7,
-  HAS_ROLLBACK = 1 << 8,
-};
-
-struct BatchContentClassifier : public WriteBatch::Handler {
-  uint32_t content_flags = 0;
-
-  Status PutCF(uint32_t, const Slice&, const Slice&) override {
-    content_flags |= ContentFlags::HAS_PUT;
-    return Status::OK();
-  }
-
-  Status DeleteCF(uint32_t, const Slice&) override {
-    content_flags |= ContentFlags::HAS_DELETE;
-    return Status::OK();
-  }
-
-  Status MarkBeginPrepare() override {
-    content_flags |= ContentFlags::HAS_BEGIN_PREPARE;
-    return Status::OK();
-  }
-
-  Status MarkEndPrepare(const Slice&) override {
-    content_flags |= ContentFlags::HAS_END_PREPARE;
-    return Status::OK();
-  }
-
-  Status MarkCommit(const Slice&) override {
-    content_flags |= ContentFlags::HAS_COMMIT;
-    return Status::OK();
-  }
-
-  Status MarkRollback(const Slice&) override {
-    content_flags |= ContentFlags::HAS_ROLLBACK;
-    return Status::OK();
-  }
-};
-
-}  // anon namespace
-
-
 struct SavePoint {
   size_t size;  // size of rep_
   int count;    // count of elements in rep_
-  uint32_t content_flags;
 };
 
 struct SavePoints {
   std::stack<SavePoint> stack;
 };
 
-WriteBatch::WriteBatch(size_t reserved_bytes)
-    : save_points_(nullptr), content_flags_(0), rep_() {
+WriteBatch::WriteBatch(size_t reserved_bytes) : save_points_(nullptr), rep_() {
   rep_.reserve((reserved_bytes > WriteBatchInternal::kHeader) ?
     reserved_bytes : WriteBatchInternal::kHeader);
   rep_.resize(WriteBatchInternal::kHeader);
 }
 
 WriteBatch::WriteBatch(const std::string& rep)
-    : save_points_(nullptr),
-      content_flags_(ContentFlags::DEFERRED),
-      rep_(rep) {}
+    : save_points_(nullptr), rep_(rep) {}
 
 WriteBatch::WriteBatch(const WriteBatch& src)
-    : save_points_(src.save_points_),
-      content_flags_(src.content_flags_.load(std::memory_order_relaxed)),
-      rep_(src.rep_) {}
+    : save_points_(src.save_points_), rep_(src.rep_) {}
 
 WriteBatch::WriteBatch(WriteBatch&& src)
-    : save_points_(std::move(src.save_points_)),
-      content_flags_(src.content_flags_.load(std::memory_order_relaxed)),
-      rep_(std::move(src.rep_)) {}
+    : save_points_(std::move(src.save_points_)), rep_(std::move(src.rep_)) {}
 
 WriteBatch& WriteBatch::operator=(const WriteBatch& src) {
   if (&src != this) {
@@ -159,8 +101,6 @@ void WriteBatch::Clear() {
   rep_.clear();
   rep_.resize(WriteBatchInternal::kHeader);
 
-  content_flags_.store(0, std::memory_order_relaxed);
-
   if (save_points_ != nullptr) {
     while (!save_points_->stack.empty()) {
       save_points_->stack.pop();
@@ -170,30 +110,6 @@ void WriteBatch::Clear() {
 
 int WriteBatch::Count() const {
   return WriteBatchInternal::Count(this);
-}
-
-uint32_t WriteBatch::ComputeContentFlags() const {
-  auto rv = content_flags_.load(std::memory_order_relaxed);
-  if ((rv & ContentFlags::DEFERRED) != 0) {
-    BatchContentClassifier classifier;
-    Iterate(&classifier);
-    rv = classifier.content_flags;
-
-    // this method is conceptually const, because it is performing a lazy
-    // computation that doesn't affect the abstract state of the batch.
-    // content_flags_ is marked mutable so that we can perform the
-    // following assignment
-    content_flags_.store(rv, std::memory_order_relaxed);
-  }
-  return rv;
-}
-
-bool WriteBatch::HasPut() const {
-  return (ComputeContentFlags() & ContentFlags::HAS_PUT) != 0;
-}
-
-bool WriteBatch::HasDelete() const {
-  return (ComputeContentFlags() & ContentFlags::HAS_DELETE) != 0;
 }
 
 bool ReadKeyFromWriteBatchEntry(Slice* input, Slice* key, bool cf_record) {
@@ -211,22 +127,6 @@ bool ReadKeyFromWriteBatchEntry(Slice* input, Slice* key, bool cf_record) {
 
   // Extract key
   return GetLengthPrefixedSlice(input, key);
-}
-
-bool WriteBatch::HasBeginPrepare() const {
-  return (ComputeContentFlags() & ContentFlags::HAS_BEGIN_PREPARE) != 0;
-}
-
-bool WriteBatch::HasEndPrepare() const {
-  return (ComputeContentFlags() & ContentFlags::HAS_END_PREPARE) != 0;
-}
-
-bool WriteBatch::HasCommit() const {
-  return (ComputeContentFlags() & ContentFlags::HAS_COMMIT) != 0;
-}
-
-bool WriteBatch::HasRollback() const {
-  return (ComputeContentFlags() & ContentFlags::HAS_ROLLBACK) != 0;
 }
 
 Status ReadRecordFromWriteBatch(Slice* input, char* tag,
@@ -308,15 +208,11 @@ Status WriteBatch::Iterate(Handler* handler) const {
     switch (tag) {
       case kTypeColumnFamilyValue:
       case kTypeValue:
-        assert(content_flags_.load(std::memory_order_relaxed) &
-               (ContentFlags::DEFERRED | ContentFlags::HAS_PUT));
         s = handler->PutCF(column_family, key, value);
         found++;
         break;
       case kTypeColumnFamilyDeletion:
       case kTypeDeletion:
-        assert(content_flags_.load(std::memory_order_relaxed) &
-               (ContentFlags::DEFERRED | ContentFlags::HAS_DELETE));
         s = handler->DeleteCF(column_family, key);
         found++;
         break;
@@ -324,23 +220,15 @@ Status WriteBatch::Iterate(Handler* handler) const {
         handler->LogData(blob);
         break;
       case kTypeBeginPrepareXID:
-        assert(content_flags_.load(std::memory_order_relaxed) &
-               (ContentFlags::DEFERRED | ContentFlags::HAS_BEGIN_PREPARE));
         handler->MarkBeginPrepare();
         break;
       case kTypeEndPrepareXID:
-        assert(content_flags_.load(std::memory_order_relaxed) &
-               (ContentFlags::DEFERRED | ContentFlags::HAS_END_PREPARE));
         handler->MarkEndPrepare(xid);
         break;
       case kTypeCommitXID:
-        assert(content_flags_.load(std::memory_order_relaxed) &
-               (ContentFlags::DEFERRED | ContentFlags::HAS_COMMIT));
         handler->MarkCommit(xid);
         break;
       case kTypeRollbackXID:
-        assert(content_flags_.load(std::memory_order_relaxed) &
-               (ContentFlags::DEFERRED | ContentFlags::HAS_ROLLBACK));
         handler->MarkRollback(xid);
         break;
       case kTypeNoop:
@@ -390,9 +278,6 @@ void WriteBatchInternal::Put(WriteBatch* b, uint32_t column_family_id,
   }
   PutLengthPrefixedSlice(&b->rep_, key);
   PutLengthPrefixedSlice(&b->rep_, value);
-  b->content_flags_.store(
-      b->content_flags_.load(std::memory_order_relaxed) | ContentFlags::HAS_PUT,
-      std::memory_order_relaxed);
 }
 
 void WriteBatch::Put(ColumnFamilyHandle* column_family, const Slice& key,
@@ -411,9 +296,6 @@ void WriteBatchInternal::Put(WriteBatch* b, uint32_t column_family_id,
   }
   PutLengthPrefixedSliceParts(&b->rep_, key);
   PutLengthPrefixedSliceParts(&b->rep_, value);
-  b->content_flags_.store(
-      b->content_flags_.load(std::memory_order_relaxed) | ContentFlags::HAS_PUT,
-      std::memory_order_relaxed);
 }
 
 void WriteBatch::Put(ColumnFamilyHandle* column_family, const SliceParts& key,
@@ -440,26 +322,16 @@ void WriteBatchInternal::MarkEndPrepare(WriteBatch* b, const Slice& xid) {
   b->rep_[12] = static_cast<char>(kTypeBeginPrepareXID);
   b->rep_.push_back(static_cast<char>(kTypeEndPrepareXID));
   PutLengthPrefixedSlice(&b->rep_, xid);
-  b->content_flags_.store(b->content_flags_.load(std::memory_order_relaxed) |
-                              ContentFlags::HAS_END_PREPARE |
-                              ContentFlags::HAS_BEGIN_PREPARE,
-                          std::memory_order_relaxed);
 }
 
 void WriteBatchInternal::MarkCommit(WriteBatch* b, const Slice& xid) {
   b->rep_.push_back(static_cast<char>(kTypeCommitXID));
   PutLengthPrefixedSlice(&b->rep_, xid);
-  b->content_flags_.store(b->content_flags_.load(std::memory_order_relaxed) |
-                              ContentFlags::HAS_COMMIT,
-                          std::memory_order_relaxed);
 }
 
 void WriteBatchInternal::MarkRollback(WriteBatch* b, const Slice& xid) {
   b->rep_.push_back(static_cast<char>(kTypeRollbackXID));
   PutLengthPrefixedSlice(&b->rep_, xid);
-  b->content_flags_.store(b->content_flags_.load(std::memory_order_relaxed) |
-                              ContentFlags::HAS_ROLLBACK,
-                          std::memory_order_relaxed);
 }
 
 void WriteBatchInternal::Delete(WriteBatch* b, uint32_t column_family_id,
@@ -472,9 +344,6 @@ void WriteBatchInternal::Delete(WriteBatch* b, uint32_t column_family_id,
     PutVarint32(&b->rep_, column_family_id);
   }
   PutLengthPrefixedSlice(&b->rep_, key);
-  b->content_flags_.store(b->content_flags_.load(std::memory_order_relaxed) |
-                              ContentFlags::HAS_DELETE,
-                          std::memory_order_relaxed);
 }
 
 void WriteBatch::Delete(ColumnFamilyHandle* column_family, const Slice& key) {
@@ -491,9 +360,6 @@ void WriteBatchInternal::Delete(WriteBatch* b, uint32_t column_family_id,
     PutVarint32(&b->rep_, column_family_id);
   }
   PutLengthPrefixedSliceParts(&b->rep_, key);
-  b->content_flags_.store(b->content_flags_.load(std::memory_order_relaxed) |
-                              ContentFlags::HAS_DELETE,
-                          std::memory_order_relaxed);
 }
 
 void WriteBatch::Delete(ColumnFamilyHandle* column_family,
@@ -511,8 +377,7 @@ void WriteBatch::SetSavePoint() {
     save_points_ = new SavePoints();
   }
   // Record length and count of current batch of writes.
-  save_points_->stack.push(SavePoint{
-      GetDataSize(), Count(), content_flags_.load(std::memory_order_relaxed)});
+  save_points_->stack.push(SavePoint{GetDataSize(), Count()});
 }
 
 Status WriteBatch::RollbackToSavePoint() {
@@ -535,7 +400,6 @@ Status WriteBatch::RollbackToSavePoint() {
   } else {
     rep_.resize(savepoint.size);
     WriteBatchInternal::SetCount(this, savepoint.count);
-    content_flags_.store(savepoint.content_flags, std::memory_order_relaxed);
   }
 
   return Status::OK();
@@ -834,7 +698,6 @@ Status WriteBatchInternal::InsertInto(const WriteBatch* batch,
 void WriteBatchInternal::SetContents(WriteBatch* b, const Slice& contents) {
   assert(contents.size() >= WriteBatchInternal::kHeader);
   b->rep_.assign(contents.data(), contents.size());
-  b->content_flags_.store(ContentFlags::DEFERRED, std::memory_order_relaxed);
 }
 
 void WriteBatchInternal::Append(WriteBatch* dst, const WriteBatch* src) {
@@ -842,10 +705,6 @@ void WriteBatchInternal::Append(WriteBatch* dst, const WriteBatch* src) {
   assert(src->rep_.size() >= WriteBatchInternal::kHeader);
   dst->rep_.append(src->rep_.data() + WriteBatchInternal::kHeader,
     src->rep_.size() - WriteBatchInternal::kHeader);
-  dst->content_flags_.store(
-      dst->content_flags_.load(std::memory_order_relaxed) |
-          src->content_flags_.load(std::memory_order_relaxed),
-      std::memory_order_relaxed);
 }
 
 size_t WriteBatchInternal::AppendedByteSize(size_t leftByteSize,

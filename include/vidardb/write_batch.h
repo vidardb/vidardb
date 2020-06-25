@@ -88,6 +88,9 @@ class WriteBatch : public WriteBatchBase {
   // Clear all updates buffered in this batch.
   void Clear() override;
 
+  using WriteBatchBase::GetWriteBatch;
+  WriteBatch* GetWriteBatch() override { return this; }
+
   // Records the state of the batch for future calls to RollbackToSavePoint().
   // May be called multiple times to set multiple save points.
   void SetSavePoint() override;
@@ -96,7 +99,7 @@ class WriteBatch : public WriteBatchBase {
   // most recent call to SetSavePoint() and removes the most recent save point.
   // If there is no previous call to SetSavePoint(), Status::NotFound()
   // will be returned.
-  // Oterwise returns Status::OK().
+  // Otherwise returns Status::OK().
   Status RollbackToSavePoint() override;
 
   // Support for iterating over the contents of a batch.
@@ -118,7 +121,7 @@ class WriteBatch : public WriteBatchBase {
       return Status::InvalidArgument(
           "non-default column family and PutCF not implemented");
     }
-    virtual void Put(const Slice& /*key*/, const Slice& /*value*/) {}
+    virtual void Put(const Slice& key, const Slice& value) {}
 
     virtual Status DeleteCF(uint32_t column_family_id, const Slice& key) {
       if (column_family_id == 0) {
@@ -128,7 +131,7 @@ class WriteBatch : public WriteBatchBase {
       return Status::InvalidArgument(
           "non-default column family and DeleteCF not implemented");
     }
-    virtual void Delete(const Slice& /*key*/) {}
+    virtual void Delete(const Slice& key) {}
 
     // The default implementation of LogData does nothing.
     virtual void LogData(const Slice& blob);
@@ -166,27 +169,6 @@ class WriteBatch : public WriteBatchBase {
   // Returns the number of updates in the batch
   int Count() const;
 
-  // Returns true if PutCF will be called during Iterate
-  bool HasPut() const;
-
-  // Returns true if DeleteCF will be called during Iterate
-  bool HasDelete() const;
-
-  // Returns true if MarkBeginPrepare will be called during Iterate
-  bool HasBeginPrepare() const;
-
-  // Returns true if MarkEndPrepare will be called during Iterate
-  bool HasEndPrepare() const;
-
-  // Returns trie if MarkCommit will be called during Iterate
-  bool HasCommit() const;
-
-  // Returns trie if MarkRollback will be called during Iterate
-  bool HasRollback() const;
-
-  using WriteBatchBase::GetWriteBatch;
-  WriteBatch* GetWriteBatch() override { return this; }
-
   // Constructor with a serialized string object
   explicit WriteBatch(const std::string& rep);
 
@@ -198,12 +180,6 @@ class WriteBatch : public WriteBatchBase {
  private:
   friend class WriteBatchInternal;
   SavePoints* save_points_;
-
-  // For HasXYZ. Mutable to allow lazy computation of results
-  mutable std::atomic<uint32_t> content_flags_;
-
-  // Performs deferred computation of content_flags if necessary
-  uint32_t ComputeContentFlags() const;
 
  protected:
   std::string rep_;  // See comment in write_batch.cc for the format of rep_
