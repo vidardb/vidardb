@@ -236,24 +236,22 @@ Transaction* TransactionDBImpl::BeginInternalTransaction(
 
 // All user Put, Delete, and Write requests must be intercepted to make
 // sure that they lock all keys that they are writing to avoid causing conflicts
-// with any concurent transactions. The easiest way to do this is to wrap all
+// with any concurrent transactions. The easiest way to do this is to wrap all
 // write operations in a transaction.
 //
 // Put() and Delete() only lock a single key per call.  Write() will
-// sort its keys before locking them.  This guarantees that TransactionDB write
+// sort its keys before locking them. This guarantees that TransactionDB write
 // methods cannot deadlock with each other (but still could deadlock with a
 // Transaction).
 Status TransactionDBImpl::Put(const WriteOptions& options,
                               ColumnFamilyHandle* column_family,
                               const Slice& key, const Slice& val) {
-  Status s;
-
   Transaction* txn = BeginInternalTransaction(options);
   txn->DisableIndexing();
 
   // Since the client didn't create a transaction, they don't care about
-  // conflict checking for this write.  So we just need to do PutUntracked().
-  s = txn->PutUntracked(column_family, key, val);
+  // conflict checking for this write. So we just need to do PutUntracked().
+  Status s = txn->PutUntracked(column_family, key, val);
 
   if (s.ok()) {
     s = txn->Commit();
@@ -267,15 +265,12 @@ Status TransactionDBImpl::Put(const WriteOptions& options,
 Status TransactionDBImpl::Delete(const WriteOptions& wopts,
                                  ColumnFamilyHandle* column_family,
                                  const Slice& key) {
-  Status s;
-
   Transaction* txn = BeginInternalTransaction(wopts);
   txn->DisableIndexing();
 
   // Since the client didn't create a transaction, they don't care about
-  // conflict checking for this write.  So we just need to do
-  // DeleteUntracked().
-  s = txn->DeleteUntracked(column_family, key);
+  // conflict checking for this write. So we just need to do DeleteUntracked().
+  Status s = txn->DeleteUntracked(column_family, key);
 
   if (s.ok()) {
     s = txn->Commit();

@@ -34,20 +34,20 @@ class TransactionLockMgr {
 
   ~TransactionLockMgr();
 
-  // Creates a new LockMap for this column family.  Caller should guarantee
+  // Creates a new LockMap for this column family. Caller should guarantee
   // that this column family does not already exist.
   void AddColumnFamily(uint32_t column_family_id);
 
-  // Deletes the LockMap for this column family.  Caller should guarantee that
+  // Deletes the LockMap for this column family. Caller should guarantee that
   // this column family is no longer in use.
   void RemoveColumnFamily(uint32_t column_family_id);
 
-  // Attempt to lock key.  If OK status is returned, the caller is responsible
+  // Attempt to lock key. If OK status is returned, the caller is responsible
   // for calling UnLock() on this key.
   Status TryLock(const TransactionImpl* txn, uint32_t column_family_id,
                  const std::string& key, Env* env);
 
-  // Unlock a key locked by TryLock().  txn must be the same Transaction that
+  // Unlock a key locked by TryLock(). txn must be the same Transaction that
   // locked this key.
   void UnLock(const TransactionImpl* txn, const TransactionKeyMap* keys,
               Env* env);
@@ -73,7 +73,7 @@ class TransactionLockMgr {
   using LockMaps = std::unordered_map<uint32_t, std::shared_ptr<LockMap>>;
   LockMaps lock_maps_;
 
-  // Thread-local cache of entries in lock_maps_.  This is an optimization
+  // Thread-local cache of entries in lock_maps_. This is an optimization
   // to avoid acquiring a mutex in order to look up a LockMap
   std::unique_ptr<ThreadLocalPtr> lock_maps_cache_;
 
