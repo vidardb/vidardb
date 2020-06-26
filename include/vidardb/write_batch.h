@@ -129,13 +129,13 @@ class WriteBatch : public WriteBatchBase {
       return Status::InvalidArgument("MarkEndPrepare() handler not defined.");
     }
 
+    virtual Status MarkCommit(const Slice& xid) {
+      return Status::InvalidArgument("MarkCommit() handler not defined.");
+    }
+
     virtual Status MarkRollback(const Slice& xid) {
       return Status::InvalidArgument(
           "MarkRollbackPrepare() handler not defined.");
-    }
-
-    virtual Status MarkCommit(const Slice& xid) {
-      return Status::InvalidArgument("MarkCommit() handler not defined.");
     }
 
     // Continue is called by WriteBatch::Iterate. If it returns false,

@@ -75,9 +75,9 @@ class WriteBatchInternal {
 
   static void MarkEndPrepare(WriteBatch* batch, const Slice& xid);
 
-  static void MarkRollback(WriteBatch* batch, const Slice& xid);
-
   static void MarkCommit(WriteBatch* batch, const Slice& xid);
+
+  static void MarkRollback(WriteBatch* batch, const Slice& xid);
 
   static void InsertNoop(WriteBatch* batch);
 

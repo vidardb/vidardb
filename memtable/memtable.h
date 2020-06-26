@@ -268,7 +268,7 @@ class MemTable {
   // if this memtable contains data from a committed
   // two phase transaction we must take note of the
   // log which contains that data so we can know
-  // when to relese that log
+  // when to release that log
   void RefLogContainingPrepSection(uint64_t log);
   uint64_t GetMinLogContainingPrepSection();
 

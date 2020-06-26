@@ -97,6 +97,98 @@ bool WriteBatch::Handler::Continue() {
   return true;
 }
 
+int WriteBatch::Count() const { return WriteBatchInternal::Count(this); }
+
+int WriteBatchInternal::Count(const WriteBatch* b) {
+  return DecodeFixed32(b->rep_.data() + 8);
+}
+
+void WriteBatchInternal::SetCount(WriteBatch* b, int n) {
+  EncodeFixed32(&b->rep_[8], n);
+}
+
+SequenceNumber WriteBatchInternal::Sequence(const WriteBatch* b) {
+  return SequenceNumber(DecodeFixed64(b->rep_.data()));
+}
+
+void WriteBatchInternal::SetSequence(WriteBatch* b, SequenceNumber seq) {
+  EncodeFixed64(&b->rep_[0], seq);
+}
+
+size_t WriteBatchInternal::GetFirstOffset(WriteBatch* b) {
+  return WriteBatchInternal::kHeader;
+}
+
+void WriteBatchInternal::Put(WriteBatch* b, uint32_t column_family_id,
+                             const Slice& key, const Slice& value) {
+  WriteBatchInternal::SetCount(b, WriteBatchInternal::Count(b) + 1);
+  if (column_family_id == 0) {
+    b->rep_.push_back(static_cast<char>(kTypeValue));
+  } else {
+    b->rep_.push_back(static_cast<char>(kTypeColumnFamilyValue));
+    PutVarint32(&b->rep_, column_family_id);
+  }
+  PutLengthPrefixedSlice(&b->rep_, key);
+  PutLengthPrefixedSlice(&b->rep_, value);
+}
+
+void WriteBatch::Put(ColumnFamilyHandle* column_family, const Slice& key,
+                     const Slice& value) {
+  WriteBatchInternal::Put(this, GetColumnFamilyID(column_family), key, value);
+}
+
+void WriteBatchInternal::Delete(WriteBatch* b, uint32_t column_family_id,
+                                const Slice& key) {
+  WriteBatchInternal::SetCount(b, WriteBatchInternal::Count(b) + 1);
+  if (column_family_id == 0) {
+    b->rep_.push_back(static_cast<char>(kTypeDeletion));
+  } else {
+    b->rep_.push_back(static_cast<char>(kTypeColumnFamilyDeletion));
+    PutVarint32(&b->rep_, column_family_id);
+  }
+  PutLengthPrefixedSlice(&b->rep_, key);
+}
+
+void WriteBatch::Delete(ColumnFamilyHandle* column_family, const Slice& key) {
+  WriteBatchInternal::Delete(this, GetColumnFamilyID(column_family), key);
+}
+
+void WriteBatchInternal::InsertNoop(WriteBatch* b) {
+  b->rep_.push_back(static_cast<char>(kTypeNoop));
+}
+
+void WriteBatchInternal::MarkEndPrepare(WriteBatch* b, const Slice& xid) {
+  // a manually constructed batch can only contain one prepare section
+  assert(b->rep_[12] == static_cast<char>(kTypeNoop));
+
+  // all savepoints up to this point are cleared
+  if (b->save_points_ != nullptr) {
+    while (!b->save_points_->stack.empty()) {
+      b->save_points_->stack.pop();
+    }
+  }
+
+  // rewrite noop as begin marker
+  b->rep_[12] = static_cast<char>(kTypeBeginPrepareXID);
+  b->rep_.push_back(static_cast<char>(kTypeEndPrepareXID));
+  PutLengthPrefixedSlice(&b->rep_, xid);
+}
+
+void WriteBatchInternal::MarkCommit(WriteBatch* b, const Slice& xid) {
+  b->rep_.push_back(static_cast<char>(kTypeCommitXID));
+  PutLengthPrefixedSlice(&b->rep_, xid);
+}
+
+void WriteBatchInternal::MarkRollback(WriteBatch* b, const Slice& xid) {
+  b->rep_.push_back(static_cast<char>(kTypeRollbackXID));
+  PutLengthPrefixedSlice(&b->rep_, xid);
+}
+
+void WriteBatch::PutLogData(const Slice& blob) {
+  rep_.push_back(static_cast<char>(kTypeLogData));
+  PutLengthPrefixedSlice(&rep_, blob);
+}
+
 void WriteBatch::Clear() {
   rep_.clear();
   rep_.resize(WriteBatchInternal::kHeader);
@@ -108,8 +200,37 @@ void WriteBatch::Clear() {
   }
 }
 
-int WriteBatch::Count() const {
-  return WriteBatchInternal::Count(this);
+void WriteBatch::SetSavePoint() {
+  if (save_points_ == nullptr) {
+    save_points_ = new SavePoints();
+  }
+  // Record length and count of current batch of writes.
+  save_points_->stack.push(SavePoint{GetDataSize(), Count()});
+}
+
+Status WriteBatch::RollbackToSavePoint() {
+  if (save_points_ == nullptr || save_points_->stack.size() == 0) {
+    return Status::NotFound();
+  }
+
+  // Pop the most recent savepoint off the stack
+  SavePoint savepoint = save_points_->stack.top();
+  save_points_->stack.pop();
+
+  assert(savepoint.size <= rep_.size());
+  assert(savepoint.count <= Count());
+
+  if (savepoint.size == rep_.size()) {
+    // No changes to rollback
+  } else if (savepoint.size == 0) {
+    // Rollback everything
+    Clear();
+  } else {
+    rep_.resize(savepoint.size);
+    WriteBatchInternal::SetCount(this, savepoint.count);
+  }
+
+  return Status::OK();
 }
 
 bool ReadKeyFromWriteBatchEntry(Slice* input, Slice* key, bool cf_record) {
@@ -247,129 +368,6 @@ Status WriteBatch::Iterate(Handler* handler) const {
   }
 }
 
-int WriteBatchInternal::Count(const WriteBatch* b) {
-  return DecodeFixed32(b->rep_.data() + 8);
-}
-
-void WriteBatchInternal::SetCount(WriteBatch* b, int n) {
-  EncodeFixed32(&b->rep_[8], n);
-}
-
-SequenceNumber WriteBatchInternal::Sequence(const WriteBatch* b) {
-  return SequenceNumber(DecodeFixed64(b->rep_.data()));
-}
-
-void WriteBatchInternal::SetSequence(WriteBatch* b, SequenceNumber seq) {
-  EncodeFixed64(&b->rep_[0], seq);
-}
-
-size_t WriteBatchInternal::GetFirstOffset(WriteBatch* b) {
-  return WriteBatchInternal::kHeader;
-}
-
-void WriteBatchInternal::Put(WriteBatch* b, uint32_t column_family_id,
-                             const Slice& key, const Slice& value) {
-  WriteBatchInternal::SetCount(b, WriteBatchInternal::Count(b) + 1);
-  if (column_family_id == 0) {
-    b->rep_.push_back(static_cast<char>(kTypeValue));
-  } else {
-    b->rep_.push_back(static_cast<char>(kTypeColumnFamilyValue));
-    PutVarint32(&b->rep_, column_family_id);
-  }
-  PutLengthPrefixedSlice(&b->rep_, key);
-  PutLengthPrefixedSlice(&b->rep_, value);
-}
-
-void WriteBatch::Put(ColumnFamilyHandle* column_family, const Slice& key,
-                     const Slice& value) {
-  WriteBatchInternal::Put(this, GetColumnFamilyID(column_family), key, value);
-}
-
-void WriteBatchInternal::Delete(WriteBatch* b, uint32_t column_family_id,
-                                const Slice& key) {
-  WriteBatchInternal::SetCount(b, WriteBatchInternal::Count(b) + 1);
-  if (column_family_id == 0) {
-    b->rep_.push_back(static_cast<char>(kTypeDeletion));
-  } else {
-    b->rep_.push_back(static_cast<char>(kTypeColumnFamilyDeletion));
-    PutVarint32(&b->rep_, column_family_id);
-  }
-  PutLengthPrefixedSlice(&b->rep_, key);
-}
-
-void WriteBatch::Delete(ColumnFamilyHandle* column_family, const Slice& key) {
-  WriteBatchInternal::Delete(this, GetColumnFamilyID(column_family), key);
-}
-
-void WriteBatchInternal::InsertNoop(WriteBatch* b) {
-  b->rep_.push_back(static_cast<char>(kTypeNoop));
-}
-
-void WriteBatchInternal::MarkEndPrepare(WriteBatch* b, const Slice& xid) {
-  // a manually constructed batch can only contain one prepare section
-  assert(b->rep_[12] == static_cast<char>(kTypeNoop));
-
-  // all savepoints up to this point are cleared
-  if (b->save_points_ != nullptr) {
-    while (!b->save_points_->stack.empty()) {
-      b->save_points_->stack.pop();
-    }
-  }
-
-  // rewrite noop as begin marker
-  b->rep_[12] = static_cast<char>(kTypeBeginPrepareXID);
-  b->rep_.push_back(static_cast<char>(kTypeEndPrepareXID));
-  PutLengthPrefixedSlice(&b->rep_, xid);
-}
-
-void WriteBatchInternal::MarkCommit(WriteBatch* b, const Slice& xid) {
-  b->rep_.push_back(static_cast<char>(kTypeCommitXID));
-  PutLengthPrefixedSlice(&b->rep_, xid);
-}
-
-void WriteBatchInternal::MarkRollback(WriteBatch* b, const Slice& xid) {
-  b->rep_.push_back(static_cast<char>(kTypeRollbackXID));
-  PutLengthPrefixedSlice(&b->rep_, xid);
-}
-
-void WriteBatch::PutLogData(const Slice& blob) {
-  rep_.push_back(static_cast<char>(kTypeLogData));
-  PutLengthPrefixedSlice(&rep_, blob);
-}
-
-void WriteBatch::SetSavePoint() {
-  if (save_points_ == nullptr) {
-    save_points_ = new SavePoints();
-  }
-  // Record length and count of current batch of writes.
-  save_points_->stack.push(SavePoint{GetDataSize(), Count()});
-}
-
-Status WriteBatch::RollbackToSavePoint() {
-  if (save_points_ == nullptr || save_points_->stack.size() == 0) {
-    return Status::NotFound();
-  }
-
-  // Pop the most recent savepoint off the stack
-  SavePoint savepoint = save_points_->stack.top();
-  save_points_->stack.pop();
-
-  assert(savepoint.size <= rep_.size());
-  assert(savepoint.count <= Count());
-
-  if (savepoint.size == rep_.size()) {
-    // No changes to rollback
-  } else if (savepoint.size == 0) {
-    // Rollback everything
-    Clear();
-  } else {
-    rep_.resize(savepoint.size);
-    WriteBatchInternal::SetCount(this, savepoint.count);
-  }
-
-  return Status::OK();
-}
-
 class MemTableInserter : public WriteBatch::Handler {
  public:
   SequenceNumber sequence_;
@@ -409,7 +407,7 @@ class MemTableInserter : public WriteBatch::Handler {
   bool SeekToColumnFamily(uint32_t column_family_id, Status* s) {
     // If we are in a concurrent mode, it is the caller's responsibility
     // to clone the original ColumnFamilyMemTables so that each thread
-    // has its own instance.  Otherwise, it must be guaranteed that there
+    // has its own instance. Otherwise, it must be guaranteed that there
     // is no concurrent access
     bool found = cf_mems_->Seek(column_family_id);
     if (!found) {
@@ -424,13 +422,11 @@ class MemTableInserter : public WriteBatch::Handler {
     if (recovering_log_number_ != 0 &&
         recovering_log_number_ < cf_mems_->GetLogNumber()) {
       // This is true only in recovery environment (recovering_log_number_ is
-      // always 0 in
-      // non-recovery, regular write code-path)
+      // always 0 in non-recovery, regular write code-path)
       // * If recovering_log_number_ < cf_mems_->GetLogNumber(), this means that
-      // column
-      // family already contains updates from this log. We can't apply updates
-      // twice because of update-in-place or merge workloads -- ignore the
-      // update
+      // column family already contains updates from this log. We can't apply
+      // updates twice because of update-in-place or merge workloads -- ignore
+      // the update
       *s = Status::OK();
       return false;
     }
@@ -467,15 +463,6 @@ class MemTableInserter : public WriteBatch::Handler {
     return Status::OK();
   }
 
-  Status DeleteImpl(uint32_t column_family_id, const Slice& key,
-                    ValueType delete_type) {
-    MemTable* mem = cf_mems_->GetMemTable();
-    mem->Add(sequence_, delete_type, key, Slice(), concurrent_memtable_writes_);
-    sequence_++;
-    CheckMemtableFull();
-    return Status::OK();
-  }
-
   virtual Status DeleteCF(uint32_t column_family_id,
                           const Slice& key) override {
     if (rebuilding_trx_ != nullptr) {
@@ -489,7 +476,12 @@ class MemTableInserter : public WriteBatch::Handler {
       return seek_status;
     }
 
-    return DeleteImpl(column_family_id, key, kTypeDeletion);
+    MemTable* mem = cf_mems_->GetMemTable();
+    mem->Add(sequence_, kTypeDeletion, key, Slice(),
+             concurrent_memtable_writes_);
+    sequence_++;
+    CheckMemtableFull();
+    return Status::OK();
   }
 
   void CheckMemtableFull() {
