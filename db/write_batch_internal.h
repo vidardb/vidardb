@@ -70,12 +70,6 @@ class WriteBatchInternal {
   static void Put(WriteBatch* batch, uint32_t column_family_id,
                   const Slice& key, const Slice& value);
 
-  static void Put(WriteBatch* batch, uint32_t column_family_id,
-                  const SliceParts& key, const SliceParts& value);
-
-  static void Delete(WriteBatch* batch, uint32_t column_family_id,
-                     const SliceParts& key);
-
   static void Delete(WriteBatch* batch, uint32_t column_family_id,
                      const Slice& key);
 
@@ -115,9 +109,6 @@ class WriteBatchInternal {
   static void SetContents(WriteBatch* batch, const Slice& contents);
 
   // Inserts batches[i] into memtable, for i in 0..num_batches-1 inclusive.
-  //
-  // If dont_filter_deletes is false AND options.filter_deletes is true
-  // AND db->KeyMayExist is false, then a Delete won't modify the memtable.
   //
   // If ignore_missing_column_families == true. WriteBatch
   // referencing non-existing column family will be ignored.

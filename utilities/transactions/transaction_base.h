@@ -70,17 +70,8 @@ class TransactionBaseImpl : public Transaction {
     return Put(nullptr, key, value);
   }
 
-  Status Put(ColumnFamilyHandle* column_family, const SliceParts& key,
-             const SliceParts& value) override;
-  Status Put(const SliceParts& key, const SliceParts& value) override {
-    return Put(nullptr, key, value);
-  }
-
   Status Delete(ColumnFamilyHandle* column_family, const Slice& key) override;
   Status Delete(const Slice& key) override { return Delete(nullptr, key); }
-  Status Delete(ColumnFamilyHandle* column_family,
-                const SliceParts& key) override;
-  Status Delete(const SliceParts& key) override { return Delete(nullptr, key); }
 
   Status PutUntracked(ColumnFamilyHandle* column_family, const Slice& key,
                       const Slice& value) override;
@@ -88,20 +79,9 @@ class TransactionBaseImpl : public Transaction {
     return PutUntracked(nullptr, key, value);
   }
 
-  Status PutUntracked(ColumnFamilyHandle* column_family, const SliceParts& key,
-                      const SliceParts& value) override;
-  Status PutUntracked(const SliceParts& key, const SliceParts& value) override {
-    return PutUntracked(nullptr, key, value);
-  }
-
   Status DeleteUntracked(ColumnFamilyHandle* column_family,
                          const Slice& key) override;
   Status DeleteUntracked(const Slice& key) override {
-    return DeleteUntracked(nullptr, key);
-  }
-  Status DeleteUntracked(ColumnFamilyHandle* column_family,
-                         const SliceParts& key) override;
-  Status DeleteUntracked(const SliceParts& key) override {
     return DeleteUntracked(nullptr, key);
   }
 
@@ -253,9 +233,6 @@ class TransactionBaseImpl : public Transaction {
   // SetSnapshotOnNextOperation() has been called and the caller would like
   // a notification through the TransactionNotifier interface
   std::shared_ptr<TransactionNotifier> snapshot_notifier_ = nullptr;
-
-  Status TryLock(ColumnFamilyHandle* column_family, const SliceParts& key,
-                 bool read_only, bool untracked = false);
 
   WriteBatchBase* GetBatchForWrite();
 

@@ -215,16 +215,10 @@ class Transaction {
   virtual Status Put(ColumnFamilyHandle* column_family, const Slice& key,
                      const Slice& value) = 0;
   virtual Status Put(const Slice& key, const Slice& value) = 0;
-  virtual Status Put(ColumnFamilyHandle* column_family, const SliceParts& key,
-                     const SliceParts& value) = 0;
-  virtual Status Put(const SliceParts& key, const SliceParts& value) = 0;
 
   virtual Status Delete(ColumnFamilyHandle* column_family,
                         const Slice& key) = 0;
   virtual Status Delete(const Slice& key) = 0;
-  virtual Status Delete(ColumnFamilyHandle* column_family,
-                        const SliceParts& key) = 0;
-  virtual Status Delete(const SliceParts& key) = 0;
 
   // PutUntracked() will write a Put to the batch of operations to be committed
   // in this transaction.  This write will only happen if this transaction
@@ -237,19 +231,11 @@ class Transaction {
   virtual Status PutUntracked(ColumnFamilyHandle* column_family,
                               const Slice& key, const Slice& value) = 0;
   virtual Status PutUntracked(const Slice& key, const Slice& value) = 0;
-  virtual Status PutUntracked(ColumnFamilyHandle* column_family,
-                              const SliceParts& key,
-                              const SliceParts& value) = 0;
-  virtual Status PutUntracked(const SliceParts& key,
-                              const SliceParts& value) = 0;
 
   virtual Status DeleteUntracked(ColumnFamilyHandle* column_family,
                                  const Slice& key) = 0;
 
   virtual Status DeleteUntracked(const Slice& key) = 0;
-  virtual Status DeleteUntracked(ColumnFamilyHandle* column_family,
-                                 const SliceParts& key) = 0;
-  virtual Status DeleteUntracked(const SliceParts& key) = 0;
 
   // Similar to WriteBatch::PutLogData
   virtual void PutLogData(const Slice& blob) = 0;

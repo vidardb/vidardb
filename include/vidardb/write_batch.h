@@ -37,7 +37,6 @@ namespace vidardb {
 class Slice;
 class ColumnFamilyHandle;
 struct SavePoints;
-struct SliceParts;
 
 class WriteBatch : public WriteBatchBase {
  public:
@@ -52,24 +51,10 @@ class WriteBatch : public WriteBatchBase {
     Put(nullptr, key, value);
   }
 
-  // Variant of Put() that gathers output like writev(2).  The key and value
-  // that will be written to the database are concatentations of arrays of
-  // slices.
-  void Put(ColumnFamilyHandle* column_family, const SliceParts& key,
-           const SliceParts& value) override;
-  void Put(const SliceParts& key, const SliceParts& value) override {
-    Put(nullptr, key, value);
-  }
-
   using WriteBatchBase::Delete;
   // If the database contains a mapping for "key", erase it.  Else do nothing.
   void Delete(ColumnFamilyHandle* column_family, const Slice& key) override;
   void Delete(const Slice& key) override { Delete(nullptr, key); }
-
-  // variant that takes SliceParts
-  void Delete(ColumnFamilyHandle* column_family,
-              const SliceParts& key) override;
-  void Delete(const SliceParts& key) override { Delete(nullptr, key); }
 
   using WriteBatchBase::PutLogData;
   // Append a blob of arbitrary size to the records in this batch. The blob will

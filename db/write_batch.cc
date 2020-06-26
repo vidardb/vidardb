@@ -285,22 +285,20 @@ void WriteBatch::Put(ColumnFamilyHandle* column_family, const Slice& key,
   WriteBatchInternal::Put(this, GetColumnFamilyID(column_family), key, value);
 }
 
-void WriteBatchInternal::Put(WriteBatch* b, uint32_t column_family_id,
-                             const SliceParts& key, const SliceParts& value) {
+void WriteBatchInternal::Delete(WriteBatch* b, uint32_t column_family_id,
+                                const Slice& key) {
   WriteBatchInternal::SetCount(b, WriteBatchInternal::Count(b) + 1);
   if (column_family_id == 0) {
-    b->rep_.push_back(static_cast<char>(kTypeValue));
+    b->rep_.push_back(static_cast<char>(kTypeDeletion));
   } else {
-    b->rep_.push_back(static_cast<char>(kTypeColumnFamilyValue));
+    b->rep_.push_back(static_cast<char>(kTypeColumnFamilyDeletion));
     PutVarint32(&b->rep_, column_family_id);
   }
-  PutLengthPrefixedSliceParts(&b->rep_, key);
-  PutLengthPrefixedSliceParts(&b->rep_, value);
+  PutLengthPrefixedSlice(&b->rep_, key);
 }
 
-void WriteBatch::Put(ColumnFamilyHandle* column_family, const SliceParts& key,
-                     const SliceParts& value) {
-  WriteBatchInternal::Put(this, GetColumnFamilyID(column_family), key, value);
+void WriteBatch::Delete(ColumnFamilyHandle* column_family, const Slice& key) {
+  WriteBatchInternal::Delete(this, GetColumnFamilyID(column_family), key);
 }
 
 void WriteBatchInternal::InsertNoop(WriteBatch* b) {
@@ -332,39 +330,6 @@ void WriteBatchInternal::MarkCommit(WriteBatch* b, const Slice& xid) {
 void WriteBatchInternal::MarkRollback(WriteBatch* b, const Slice& xid) {
   b->rep_.push_back(static_cast<char>(kTypeRollbackXID));
   PutLengthPrefixedSlice(&b->rep_, xid);
-}
-
-void WriteBatchInternal::Delete(WriteBatch* b, uint32_t column_family_id,
-                                const Slice& key) {
-  WriteBatchInternal::SetCount(b, WriteBatchInternal::Count(b) + 1);
-  if (column_family_id == 0) {
-    b->rep_.push_back(static_cast<char>(kTypeDeletion));
-  } else {
-    b->rep_.push_back(static_cast<char>(kTypeColumnFamilyDeletion));
-    PutVarint32(&b->rep_, column_family_id);
-  }
-  PutLengthPrefixedSlice(&b->rep_, key);
-}
-
-void WriteBatch::Delete(ColumnFamilyHandle* column_family, const Slice& key) {
-  WriteBatchInternal::Delete(this, GetColumnFamilyID(column_family), key);
-}
-
-void WriteBatchInternal::Delete(WriteBatch* b, uint32_t column_family_id,
-                                const SliceParts& key) {
-  WriteBatchInternal::SetCount(b, WriteBatchInternal::Count(b) + 1);
-  if (column_family_id == 0) {
-    b->rep_.push_back(static_cast<char>(kTypeDeletion));
-  } else {
-    b->rep_.push_back(static_cast<char>(kTypeColumnFamilyDeletion));
-    PutVarint32(&b->rep_, column_family_id);
-  }
-  PutLengthPrefixedSliceParts(&b->rep_, key);
-}
-
-void WriteBatch::Delete(ColumnFamilyHandle* column_family,
-                        const SliceParts& key) {
-  WriteBatchInternal::Delete(this, GetColumnFamilyID(column_family), key);
 }
 
 void WriteBatch::PutLogData(const Slice& blob) {
