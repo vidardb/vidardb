@@ -191,7 +191,6 @@ TEST_BENCH_SOURCES =                                                         \
   test/util/mock_env_test.cc                                                 \
   test/util/options_test.cc                                                  \
   test/util/event_logger_test.cc                                             \
-  test/util/rate_limiter_test.cc                                             \
   test/util/testharness.cc                                                   \
   test/util/testutil.cc                                                      \
   test/util/thread_list_test.cc                                              \
