@@ -6,7 +6,7 @@
 #     Run the build commands from within the Developer Command Prompt window to have paths to the compiler and runtime libraries set.
 #     You must have git.exe in your %PATH% environment variable.
 #
-# To build Vidardb for Windows is as easy as 1-2-3-4-5:
+# To build VidarDB for Windows is as easy as 1-2-3-4-5:
 #
 # 1. Update paths to third-party libraries in thirdparty.inc file
 # 2. Create a new directory for build artifacts
@@ -195,7 +195,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-memcmp")
 endif()
 
-option(VIDARDB_LITE "Build VidardbLite version" OFF)
+option(VIDARDB_LITE "Build VidarDBLite version" OFF)
 if(VIDARDB_LITE)
   add_definitions(-DVIDARDB_LITE)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
