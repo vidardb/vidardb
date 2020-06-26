@@ -14,7 +14,7 @@
 
 namespace vidardb {
 
-// This class contains APIs to stack vidardb wrappers.Eg. Stack TTL over base d
+// This class contains APIs to stack vidardb wrappers.Eg. Stack TTL over base
 class StackableDB : public DB {
  public:
   // StackableDB is the owner of db now!

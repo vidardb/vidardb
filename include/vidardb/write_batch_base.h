@@ -28,7 +28,7 @@ class WriteBatchBase {
                    const Slice& value) = 0;
   virtual void Put(const Slice& key, const Slice& value) = 0;
 
-  // Variant of Put() that gathers output like writev(2).  The key and value
+  // Variant of Put() that gathers output like writev(2). The key and value
   // that will be written to the database are concatentations of arrays of
   // slices.
   virtual void Put(ColumnFamilyHandle* column_family, const SliceParts& key,
