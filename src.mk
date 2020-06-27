@@ -37,7 +37,6 @@ LIB_SOURCES =                                                   \
   db/version_set.cc                                             \
   db/wal_manager.cc                                             \
   db/write_batch.cc                                             \
-  db/write_batch_base.cc                                        \
   db/write_controller.cc                                        \
   db/write_thread.cc                                            \
   memtable/skiplistrep.cc                                       \

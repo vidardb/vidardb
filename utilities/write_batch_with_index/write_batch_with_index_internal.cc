@@ -125,8 +125,7 @@ WriteBatchWithIndexInternal::Result WriteBatchWithIndexInternal::GetFromBatch(
     Status* s) {
   uint32_t cf_id = GetColumnFamilyID(column_family);
   *s = Status::OK();
-  WriteBatchWithIndexInternal::Result result =
-      WriteBatchWithIndexInternal::Result::kNotFound;
+  auto result = WriteBatchWithIndexInternal::Result::kNotFound;
 
   std::unique_ptr<WBWIIterator> iter(batch->NewIterator(column_family));
 

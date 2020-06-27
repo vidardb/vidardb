@@ -28,20 +28,9 @@ class WriteBatchBase {
                    const Slice& value) = 0;
   virtual void Put(const Slice& key, const Slice& value) = 0;
 
-  // Variant of Put() that gathers output like writev(2). The key and value
-  // that will be written to the database are concatentations of arrays of
-  // slices.
-  virtual void Put(ColumnFamilyHandle* column_family, const SliceParts& key,
-                   const SliceParts& value);
-  virtual void Put(const SliceParts& key, const SliceParts& value);
-
   // If the database contains a mapping for "key", erase it. Else do nothing.
   virtual void Delete(ColumnFamilyHandle* column_family, const Slice& key) = 0;
   virtual void Delete(const Slice& key) = 0;
-
-  // variant that takes SliceParts
-  virtual void Delete(ColumnFamilyHandle* column_family, const SliceParts& key);
-  virtual void Delete(const SliceParts& key);
 
   // Append a blob of arbitrary size to the records in this batch. The blob will
   // be stored in the transaction log but not in any other file. In particular,

@@ -7,3 +7,4 @@ make_config.mk
 *.o
 *.d
 *.a
+util/build_version.cc
