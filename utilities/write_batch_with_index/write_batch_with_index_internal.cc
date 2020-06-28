@@ -121,8 +121,7 @@ int WriteBatchEntryComparator::CompareKey(uint32_t column_family,
 WriteBatchWithIndexInternal::Result WriteBatchWithIndexInternal::GetFromBatch(
     const DBOptions& options, WriteBatchWithIndex* batch,
     ColumnFamilyHandle* column_family, const Slice& key,
-    WriteBatchEntryComparator* cmp, std::string* value, bool overwrite_key,
-    Status* s) {
+    const WriteBatchEntryComparator& cmp, std::string* value, Status* s) {
   uint32_t cf_id = GetColumnFamilyID(column_family);
   *s = Status::OK();
   auto result = WriteBatchWithIndexInternal::Result::kNotFound;
@@ -134,7 +133,7 @@ WriteBatchWithIndexInternal::Result WriteBatchWithIndexInternal::GetFromBatch(
   iter->Seek(key);
   while (iter->Valid()) {
     const WriteEntry entry = iter->Entry();
-    if (cmp->CompareKey(cf_id, entry.key, key) != 0) {
+    if (cmp.CompareKey(cf_id, entry.key, key) != 0) {
       break;
     }
 
@@ -146,7 +145,7 @@ WriteBatchWithIndexInternal::Result WriteBatchWithIndexInternal::GetFromBatch(
   }
 
   if (!iter->Valid()) {
-    // Read past end of results.  Reposition on last result.
+    // Read past end of results. Reposition on last result.
     iter->SeekToLast();
   } else {
     iter->Prev();
@@ -155,7 +154,7 @@ WriteBatchWithIndexInternal::Result WriteBatchWithIndexInternal::GetFromBatch(
   Slice entry_value;
   while (iter->Valid()) {
     const WriteEntry entry = iter->Entry();
-    if (cmp->CompareKey(cf_id, entry.key, key) != 0) {
+    if (cmp.CompareKey(cf_id, entry.key, key) != 0) {
       // Unexpected error or we've reached a different next key
       break;
     }

@@ -100,8 +100,7 @@ class WriteBatchWithIndexInternal {
   static WriteBatchWithIndexInternal::Result GetFromBatch(
       const DBOptions& options, WriteBatchWithIndex* batch,
       ColumnFamilyHandle* column_family, const Slice& key,
-      WriteBatchEntryComparator* cmp, std::string* value, bool overwrite_key,
-      Status* s);
+      const WriteBatchEntryComparator& cmp, std::string* value, Status* s);
 };
 
 }  // namespace vidardb

@@ -156,39 +156,6 @@ class BaseDeltaIterator : public Iterator {
   }
 
  private:
-  void AssertInvariants() {
-#ifndef NDEBUG
-    if (!Valid()) {
-      return;
-    }
-    if (!BaseValid()) {
-      assert(!current_at_base_ && delta_iterator_->Valid());
-      return;
-    }
-    if (!DeltaValid()) {
-      assert(current_at_base_ && base_iterator_->Valid());
-      return;
-    }
-    // we don't support those yet
-    assert(delta_iterator_->Entry().type != kLogDataRecord);
-    int compare = comparator_->Compare(delta_iterator_->Entry().key,
-                                       base_iterator_->key());
-    if (forward_) {
-      // current_at_base -> compare < 0
-      assert(!current_at_base_ || compare < 0);
-      // !current_at_base -> compare <= 0
-      assert(current_at_base_ && compare >= 0);
-    } else {
-      // current_at_base -> compare > 0
-      assert(!current_at_base_ || compare > 0);
-      // !current_at_base -> compare <= 0
-      assert(current_at_base_ && compare <= 0);
-    }
-    // equal_keys_ <=> compare == 0
-    assert((equal_keys_ || compare != 0) && (!equal_keys_ || compare == 0));
-#endif
-  }
-
   void Advance() {
     if (equal_keys_) {
       assert(BaseValid() && DeltaValid());
@@ -249,7 +216,7 @@ class BaseDeltaIterator : public Iterator {
         int compare =
             (forward_ ? 1 : -1) *
             comparator_->Compare(delta_entry.key, base_iterator_->key());
-        if (compare <= 0) {  // delta bigger or equal
+        if (compare <= 0) {
           if (compare == 0) {
             equal_keys_ = true;
           }
@@ -268,8 +235,6 @@ class BaseDeltaIterator : public Iterator {
         }
       }
     }
-
-    AssertInvariants();
   }
 
   bool forward_;
@@ -545,38 +510,6 @@ WriteBatchWithIndex::WriteBatchWithIndex(
 
 WriteBatchWithIndex::~WriteBatchWithIndex() { delete rep; }
 
-WriteBatch* WriteBatchWithIndex::GetWriteBatch() { return &rep->write_batch; }
-
-WBWIIterator* WriteBatchWithIndex::NewIterator() {
-  return new WBWIIteratorImpl(0, &(rep->skip_list), &rep->write_batch);
-}
-
-WBWIIterator* WriteBatchWithIndex::NewIterator(
-    ColumnFamilyHandle* column_family) {
-  return new WBWIIteratorImpl(GetColumnFamilyID(column_family),
-                              &(rep->skip_list), &rep->write_batch);
-}
-
-Iterator* WriteBatchWithIndex::NewIteratorWithBase(
-    ColumnFamilyHandle* column_family, Iterator* base_iterator) {
-  if (rep->overwrite_key == false) {
-    assert(false);
-    return nullptr;
-  }
-  return new BaseDeltaIterator(base_iterator, NewIterator(column_family),
-                               GetColumnFamilyUserComparator(column_family));
-}
-
-Iterator* WriteBatchWithIndex::NewIteratorWithBase(Iterator* base_iterator) {
-  if (rep->overwrite_key == false) {
-    assert(false);
-    return nullptr;
-  }
-  // default column family's comparator
-  return new BaseDeltaIterator(base_iterator, NewIterator(),
-                               rep->comparator.default_comparator());
-}
-
 void WriteBatchWithIndex::Put(ColumnFamilyHandle* column_family,
                               const Slice& key, const Slice& value) {
   rep->SetLastEntryOffset();
@@ -609,30 +542,48 @@ void WriteBatchWithIndex::PutLogData(const Slice& blob) {
 
 void WriteBatchWithIndex::Clear() { rep->Clear(); }
 
-Status WriteBatchWithIndex::GetFromBatch(ColumnFamilyHandle* column_family,
-                                         const DBOptions& options,
-                                         const Slice& key, std::string* value) {
-  Status s;
+WriteBatch* WriteBatchWithIndex::GetWriteBatch() { return &rep->write_batch; }
 
-  WriteBatchWithIndexInternal::Result result =
-      WriteBatchWithIndexInternal::GetFromBatch(options, this, column_family,
-                                                key, &rep->comparator, value,
-                                                rep->overwrite_key, &s);
+void WriteBatchWithIndex::SetSavePoint() { rep->write_batch.SetSavePoint(); }
 
-  switch (result) {
-    case WriteBatchWithIndexInternal::Result::kFound:
-    case WriteBatchWithIndexInternal::Result::kError:
-      // use returned status
-      break;
-    case WriteBatchWithIndexInternal::Result::kDeleted:
-    case WriteBatchWithIndexInternal::Result::kNotFound:
-      s = Status::NotFound();
-      break;
-    default:
-      assert(false);
+Status WriteBatchWithIndex::RollbackToSavePoint() {
+  Status s = rep->write_batch.RollbackToSavePoint();
+
+  if (s.ok()) {
+    s = rep->ReBuildIndex();
   }
 
   return s;
+}
+
+WBWIIterator* WriteBatchWithIndex::NewIterator() {
+  return new WBWIIteratorImpl(0, &(rep->skip_list), &rep->write_batch);
+}
+
+WBWIIterator* WriteBatchWithIndex::NewIterator(
+    ColumnFamilyHandle* column_family) {
+  return new WBWIIteratorImpl(GetColumnFamilyID(column_family),
+                              &(rep->skip_list), &rep->write_batch);
+}
+
+Iterator* WriteBatchWithIndex::NewIteratorWithBase(
+    ColumnFamilyHandle* column_family, Iterator* base_iterator) {
+  if (rep->overwrite_key == false) {
+    assert(false);
+    return nullptr;
+  }
+  return new BaseDeltaIterator(base_iterator, NewIterator(column_family),
+                               GetColumnFamilyUserComparator(column_family));
+}
+
+Iterator* WriteBatchWithIndex::NewIteratorWithBase(Iterator* base_iterator) {
+  if (rep->overwrite_key == false) {
+    assert(false);
+    return nullptr;
+  }
+  // default column family's comparator
+  return new BaseDeltaIterator(base_iterator, NewIterator(),
+                               rep->comparator.default_comparator());
 }
 
 Status WriteBatchWithIndex::GetFromBatchAndDB(DB* db, ReadOptions& read_options,
@@ -650,10 +601,8 @@ Status WriteBatchWithIndex::GetFromBatchAndDB(DB* db, ReadOptions& read_options,
   const DBOptions& options = db->GetDBOptions();
 
   std::string batch_value;
-  WriteBatchWithIndexInternal::Result result =
-      WriteBatchWithIndexInternal::GetFromBatch(
-          options, this, column_family, key, &rep->comparator, &batch_value,
-          rep->overwrite_key, &s);
+  auto result = WriteBatchWithIndexInternal::GetFromBatch(
+      options, this, column_family, key, rep->comparator, &batch_value, &s);
 
   if (result == WriteBatchWithIndexInternal::Result::kFound) {
     value->assign(batch_value.data(), batch_value.size());
@@ -670,18 +619,6 @@ Status WriteBatchWithIndex::GetFromBatchAndDB(DB* db, ReadOptions& read_options,
 
   // Did not find key in batch. Try DB.
   s = db->Get(read_options, column_family, key, value);
-
-  return s;
-}
-
-void WriteBatchWithIndex::SetSavePoint() { rep->write_batch.SetSavePoint(); }
-
-Status WriteBatchWithIndex::RollbackToSavePoint() {
-  Status s = rep->write_batch.RollbackToSavePoint();
-
-  if (s.ok()) {
-    s = rep->ReBuildIndex();
-  }
 
   return s;
 }

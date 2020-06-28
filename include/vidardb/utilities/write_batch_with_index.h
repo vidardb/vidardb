@@ -93,7 +93,6 @@ class WriteBatchWithIndex : public WriteBatchBase {
   using WriteBatchBase::Put;
   void Put(ColumnFamilyHandle* column_family, const Slice& key,
            const Slice& value) override;
-
   void Put(const Slice& key, const Slice& value) override;
 
   using WriteBatchBase::Delete;
@@ -108,6 +107,22 @@ class WriteBatchWithIndex : public WriteBatchBase {
 
   using WriteBatchBase::GetWriteBatch;
   WriteBatch* GetWriteBatch() override;
+
+  // Records the state of the batch for future calls to RollbackToSavePoint().
+  // May be called multiple times to set multiple save points.
+  void SetSavePoint() override;
+
+  // Remove all entries in this batch (Put, Delete, PutLogData) since the most
+  // recent call to SetSavePoint() and removes the most recent save point.
+  // If there is no previous call to SetSavePoint(), behaves the same as
+  // Clear().
+  //
+  // Calling RollbackToSavePoint invalidates any open iterators on this batch.
+  //
+  // Returns Status::OK() on success,
+  //         Status::NotFound() if no previous call to SetSavePoint(),
+  //         or other Status on corruption.
+  Status RollbackToSavePoint() override;
 
   // Create an iterator of a column family. User can call iterator.Seek() to
   // search to the next entry of or after a key. Keys will be iterated in the
@@ -134,17 +149,6 @@ class WriteBatchWithIndex : public WriteBatchBase {
   // default column family
   Iterator* NewIteratorWithBase(Iterator* base_iterator);
 
-  // Similar to DB::Get() but will only read the key from this batch.
-  Status GetFromBatch(ColumnFamilyHandle* column_family,
-                      const DBOptions& options, const Slice& key,
-                      std::string* value);
-
-  // Similar to previous function but does not require a column_family.
-  Status GetFromBatch(const DBOptions& options, const Slice& key,
-                      std::string* value) {
-    return GetFromBatch(nullptr, options, key, value);
-  }
-
   // Similar to DB::Get() but will also read writes from this batch.
   //
   // This function will query both this batch and the DB.
@@ -158,22 +162,6 @@ class WriteBatchWithIndex : public WriteBatchBase {
   Status GetFromBatchAndDB(DB* db, ReadOptions& read_options,
                            ColumnFamilyHandle* column_family, const Slice& key,
                            std::string* value);
-
-  // Records the state of the batch for future calls to RollbackToSavePoint().
-  // May be called multiple times to set multiple save points.
-  void SetSavePoint() override;
-
-  // Remove all entries in this batch (Put, Delete, PutLogData) since the most
-  // recent call to SetSavePoint() and removes the most recent save point.
-  // If there is no previous call to SetSavePoint(), behaves the same as
-  // Clear().
-  //
-  // Calling RollbackToSavePoint invalidates any open iterators on this batch.
-  //
-  // Returns Status::OK() on success,
-  //         Status::NotFound() if no previous call to SetSavePoint(),
-  //         or other Status on corruption.
-  Status RollbackToSavePoint() override;
 
  private:
   struct Rep;
