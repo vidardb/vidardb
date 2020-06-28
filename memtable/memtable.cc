@@ -568,7 +568,6 @@ bool MemTable::Get(ReadOptions& read_options, const LookupKey& key,
   PERF_TIMER_GUARD(get_from_memtable_time);
 
   bool found_final_value = false;
-  bool merge_in_progress = s->IsMergeInProgress();
 
   Saver saver;
   saver.status = s;
@@ -586,9 +585,7 @@ bool MemTable::Get(ReadOptions& read_options, const LookupKey& key,
   *seq = saver.seq;
 
   // No change to value, since we have not yet found a Put/Delete
-  if (!found_final_value && merge_in_progress) {
-    *s = Status::MergeInProgress();
-  }
+
   PERF_COUNTER_ADD(get_from_memtable_count, 1);
   return found_final_value;
 }

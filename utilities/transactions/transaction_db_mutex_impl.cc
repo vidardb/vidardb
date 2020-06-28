@@ -33,6 +33,35 @@ class TransactionDBMutexImpl : public TransactionDBMutex {
   std::mutex mutex_;
 };
 
+Status TransactionDBMutexImpl::Lock() {
+  mutex_.lock();
+  return Status::OK();
+}
+
+Status TransactionDBMutexImpl::TryLockFor(int64_t timeout_time) {
+  bool locked = true;
+
+  if (timeout_time == 0) {
+    locked = mutex_.try_lock();
+  } else {
+    // Previously, this code used a std::timed_mutex. However, this was changed
+    // due to known bugs in gcc versions < 4.9.
+    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54562
+    //
+    // Since this mutex isn't held for long and only a single mutex is ever
+    // held at a time, it is reasonable to ignore the lock timeout_time here
+    // and only check it when waiting on the condition_variable.
+    mutex_.lock();
+  }
+
+  if (!locked) {
+    // timeout acquiring mutex
+    return Status::TimedOut(Status::SubCode::kMutexTimeout);
+  }
+
+  return Status::OK();
+}
+
 class TransactionDBCondVarImpl : public TransactionDBCondVar {
  public:
   TransactionDBCondVarImpl() {}
@@ -50,45 +79,6 @@ class TransactionDBCondVarImpl : public TransactionDBCondVar {
  private:
   std::condition_variable cv_;
 };
-
-std::shared_ptr<TransactionDBMutex>
-TransactionDBMutexFactoryImpl::AllocateMutex() {
-  return std::shared_ptr<TransactionDBMutex>(new TransactionDBMutexImpl());
-}
-
-std::shared_ptr<TransactionDBCondVar>
-TransactionDBMutexFactoryImpl::AllocateCondVar() {
-  return std::shared_ptr<TransactionDBCondVar>(new TransactionDBCondVarImpl());
-}
-
-Status TransactionDBMutexImpl::Lock() {
-  mutex_.lock();
-  return Status::OK();
-}
-
-Status TransactionDBMutexImpl::TryLockFor(int64_t timeout_time) {
-  bool locked = true;
-
-  if (timeout_time == 0) {
-    locked = mutex_.try_lock();
-  } else {
-    // Previously, this code used a std::timed_mutex.  However, this was changed
-    // due to known bugs in gcc versions < 4.9.
-    // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54562
-    //
-    // Since this mutex isn't held for long and only a single mutex is ever
-    // held at a time, it is reasonable to ignore the lock timeout_time here
-    // and only check it when waiting on the condition_variable.
-    mutex_.lock();
-  }
-
-  if (!locked) {
-    // timeout acquiring mutex
-    return Status::TimedOut(Status::SubCode::kMutexTimeout);
-  }
-
-  return Status::OK();
-}
 
 Status TransactionDBCondVarImpl::Wait(
     std::shared_ptr<TransactionDBMutex> mutex) {
@@ -128,6 +118,16 @@ Status TransactionDBCondVarImpl::WaitFor(
 
   // CV was signaled, or we spuriously woke up (but didn't time out)
   return s;
+}
+
+std::shared_ptr<TransactionDBMutex>
+TransactionDBMutexFactoryImpl::AllocateMutex() {
+  return std::shared_ptr<TransactionDBMutex>(new TransactionDBMutexImpl());
+}
+
+std::shared_ptr<TransactionDBCondVar>
+TransactionDBMutexFactoryImpl::AllocateCondVar() {
+  return std::shared_ptr<TransactionDBCondVar>(new TransactionDBCondVarImpl());
 }
 
 }  // namespace vidardb

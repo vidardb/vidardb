@@ -51,7 +51,6 @@ class Status {
     kNotSupported = 3,
     kInvalidArgument = 4,
     kIOError = 5,
-    kMergeInProgress = 6,
     kIncomplete = 7,
     kShutdownInProgress = 8,
     kTimedOut = 9,
@@ -109,13 +108,6 @@ class Status {
   }
   static Status IOError(SubCode msg = kNone) { return Status(kIOError, msg); }
 
-  static Status MergeInProgress(const Slice& msg, const Slice& msg2 = Slice()) {
-    return Status(kMergeInProgress, msg, msg2);
-  }
-  static Status MergeInProgress(SubCode msg = kNone) {
-    return Status(kMergeInProgress, msg);
-  }
-
   static Status Incomplete(const Slice& msg, const Slice& msg2 = Slice()) {
     return Status(kIncomplete, msg, msg2);
   }
@@ -172,9 +164,6 @@ class Status {
 
   // Returns true iff the status indicates an IOError.
   bool IsIOError() const { return code() == kIOError; }
-
-  // Returns true iff the status indicates an MergeInProgress.
-  bool IsMergeInProgress() const { return code() == kMergeInProgress; }
 
   // Returns true iff the status indicates Incomplete
   bool IsIncomplete() const { return code() == kIncomplete; }

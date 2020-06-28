@@ -49,10 +49,10 @@ class TransactionLockMgr {
 
   // Unlock a key locked by TryLock(). txn must be the same Transaction that
   // locked this key.
-  void UnLock(const TransactionImpl* txn, const TransactionKeyMap* keys,
-              Env* env);
   void UnLock(TransactionImpl* txn, uint32_t column_family_id,
               const std::string& key, Env* env);
+  void UnLock(const TransactionImpl* txn, const TransactionKeyMap* keys,
+              Env* env);
 
  private:
   TransactionDBImpl* txn_db_impl_;
@@ -77,17 +77,17 @@ class TransactionLockMgr {
   // to avoid acquiring a mutex in order to look up a LockMap
   std::unique_ptr<ThreadLocalPtr> lock_maps_cache_;
 
-  bool IsLockExpired(const LockInfo& lock_info, Env* env, uint64_t* wait_time);
-
   std::shared_ptr<LockMap> GetLockMap(uint32_t column_family_id);
 
-  Status AcquireWithTimeout(LockMap* lock_map, LockMapStripe* stripe,
-                            const std::string& key, Env* env, int64_t timeout,
-                            const LockInfo& lock_info);
+  bool IsLockExpired(const LockInfo& lock_info, Env* env, uint64_t* wait_time);
 
   Status AcquireLocked(LockMap* lock_map, LockMapStripe* stripe,
                        const std::string& key, Env* env,
                        const LockInfo& lock_info, uint64_t* wait_time);
+
+  Status AcquireWithTimeout(LockMap* lock_map, LockMapStripe* stripe,
+                            const std::string& key, Env* env, int64_t timeout,
+                            const LockInfo& lock_info);
 
   // No copying allowed
   TransactionLockMgr(const TransactionLockMgr&);

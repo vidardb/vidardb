@@ -23,34 +23,6 @@
 
 namespace vidardb {
 
-Status TransactionUtil::CheckKeyForConflicts(DBImpl* db_impl,
-                                             ColumnFamilyHandle* column_family,
-                                             const std::string& key,
-                                             SequenceNumber key_seq,
-                                             bool cache_only) {
-  Status result;
-
-  auto cfh = reinterpret_cast<ColumnFamilyHandleImpl*>(column_family);
-  auto cfd = cfh->cfd();
-  SuperVersion* sv = db_impl->GetAndRefSuperVersion(cfd);
-
-  if (sv == nullptr) {
-    result = Status::InvalidArgument("Could not access column family " +
-                                     cfh->GetName());
-  }
-
-  if (result.ok()) {
-    SequenceNumber earliest_seq =
-        db_impl->GetEarliestMemTableSequenceNumber(sv, true);
-
-    result = CheckKey(db_impl, sv, earliest_seq, key_seq, key, cache_only);
-
-    db_impl->ReturnAndCleanupSuperVersion(cfd, sv);
-  }
-
-  return result;
-}
-
 Status TransactionUtil::CheckKey(DBImpl* db_impl, SuperVersion* sv,
                                  SequenceNumber earliest_seq,
                                  SequenceNumber key_seq, const std::string& key,
@@ -64,7 +36,7 @@ Status TransactionUtil::CheckKey(DBImpl* db_impl, SuperVersion* sv,
   // Memtables do not contain a long enough history, we must fail the
   // transaction.
   if (earliest_seq == kMaxSequenceNumber) {
-    // The age of this memtable is unknown.  Cannot rely on it to check
+    // The age of this memtable is unknown. Cannot rely on it to check
     // for recent writes. This error shouldn't happen often in practice as
     // the Memtable should have a valid earliest sequence number except in some
     // corner cases (such as error cases during recovery).
@@ -104,12 +76,40 @@ Status TransactionUtil::CheckKey(DBImpl* db_impl, SuperVersion* sv,
     Status s = db_impl->GetLatestSequenceForKey(ro, sv, key, !need_to_read_sst,
                                                 &seq, &found_record_for_key);
 
-    if (!(s.ok() || s.IsNotFound() || s.IsMergeInProgress())) {
+    if (!(s.ok() || s.IsNotFound())) {
       result = s;
     } else if (found_record_for_key && (seq > key_seq)) {
       // Write Conflict
       result = Status::Busy();
     }
+  }
+
+  return result;
+}
+
+Status TransactionUtil::CheckKeyForConflicts(DBImpl* db_impl,
+                                             ColumnFamilyHandle* column_family,
+                                             const std::string& key,
+                                             SequenceNumber key_seq,
+                                             bool cache_only) {
+  Status result;
+
+  auto cfh = reinterpret_cast<ColumnFamilyHandleImpl*>(column_family);
+  auto cfd = cfh->cfd();
+  SuperVersion* sv = db_impl->GetAndRefSuperVersion(cfd);
+
+  if (sv == nullptr) {
+    result = Status::InvalidArgument("Could not access column family " +
+                                     cfh->GetName());
+  }
+
+  if (result.ok()) {
+    SequenceNumber earliest_seq =
+        db_impl->GetEarliestMemTableSequenceNumber(sv, true);
+
+    result = CheckKey(db_impl, sv, earliest_seq, key_seq, key, cache_only);
+
+    db_impl->ReturnAndCleanupSuperVersion(cfd, sv);
   }
 
   return result;

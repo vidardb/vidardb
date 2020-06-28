@@ -59,9 +59,6 @@ std::string Status::ToString() const {
     case kIOError:
       type = "IO error: ";
       break;
-    case kMergeInProgress:
-      type = "Merge in progress: ";
-      break;
     case kIncomplete:
       type = "Result incomplete: ";
       break;

@@ -5965,7 +5965,7 @@ Status DBImpl::GetLatestSequenceForKey(ReadOptions& options, SuperVersion* sv,
   // Check if there is a record for this key in the latest memtable
   sv->mem->Get(options, lkey, nullptr, &s, seq);
 
-  if (!(s.ok() || s.IsNotFound() || s.IsMergeInProgress())) {
+  if (!(s.ok() || s.IsNotFound())) {
     // unexpected error reading memtable.
     Log(InfoLogLevel::ERROR_LEVEL, db_options_.info_log,
         "Unexpected status returned from MemTable::Get: %s\n",
@@ -5983,7 +5983,7 @@ Status DBImpl::GetLatestSequenceForKey(ReadOptions& options, SuperVersion* sv,
   // Check if there is a record for this key in the immutable memtables
   sv->imm->Get(options, lkey, nullptr, &s, seq);
 
-  if (!(s.ok() || s.IsNotFound() || s.IsMergeInProgress())) {
+  if (!(s.ok() || s.IsNotFound())) {
     // unexpected error reading memtable.
     Log(InfoLogLevel::ERROR_LEVEL, db_options_.info_log,
         "Unexpected status returned from MemTableList::Get: %s\n",
@@ -6001,7 +6001,7 @@ Status DBImpl::GetLatestSequenceForKey(ReadOptions& options, SuperVersion* sv,
   // Check if there is a record for this key in the immutable memtables
   sv->imm->GetFromHistory(options, lkey, nullptr, &s, seq);
 
-  if (!(s.ok() || s.IsNotFound() || s.IsMergeInProgress())) {
+  if (!(s.ok() || s.IsNotFound())) {
     // unexpected error reading memtable.
     Log(InfoLogLevel::ERROR_LEVEL, db_options_.info_log,
         "Unexpected status returned from MemTableList::GetFromHistory: %s\n",
@@ -6025,7 +6025,7 @@ Status DBImpl::GetLatestSequenceForKey(ReadOptions& options, SuperVersion* sv,
     sv->current->Get(read_options, lkey, nullptr, &s, nullptr /* value_found */,
                      found_record_for_key, seq);
 
-    if (!(s.ok() || s.IsNotFound() || s.IsMergeInProgress())) {
+    if (!(s.ok() || s.IsNotFound())) {
       // unexpected error reading SST files
       Log(InfoLogLevel::ERROR_LEVEL, db_options_.info_log,
           "Unexpected status returned from Version::Get: %s\n",

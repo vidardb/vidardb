@@ -966,7 +966,7 @@ void Version::Get(const ReadOptions& read_options, const LookupKey& k,
   Slice ikey = k.internal_key();
   Slice user_key = k.user_key();
 
-  assert(status->ok() || status->IsMergeInProgress());
+  assert(status->ok());
 
   if (key_exists != nullptr) {
     // will falsify below if not found
