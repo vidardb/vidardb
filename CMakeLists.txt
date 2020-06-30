@@ -273,24 +273,24 @@ set(SOURCES
         db/compaction_job.cc
         db/compaction_picker.cc
         db/convenience.cc
-        db/dbformat.cc
         db/db_filesnapshot.cc
+        db/dbformat.cc
         db/db_impl.cc
         db/db_impl_debug.cc
         db/db_impl_readonly.cc
         db/db_info_dumper.cc
         db/db_iter.cc
         db/event_helpers.cc
-        db/filename.cc
         db/file_indexer.cc
+        db/filename.cc
         db/flush_job.cc
         db/flush_scheduler.cc
         db/forward_iterator.cc
         db/internal_stats.cc
         db/log_reader.cc
         db/log_writer.cc
-        memtable/memtable.cc
         memtable/memtable_allocator.cc
+        memtable/memtable.cc
         memtable/memtable_list.cc
         db/repair.cc
         db/snapshot_impl.cc
@@ -307,48 +307,49 @@ set(SOURCES
         memtable/skiplistrep.cc
         port/stack_trace.cc
         table/adaptive_table_factory.cc
-        table/block.cc
         table/block_based_table_builder.cc
         table/block_based_table_factory.cc
         table/block_based_table_reader.cc
         table/column_table_builder.cc
         table/column_table_factory.cc
         table/column_table_reader.cc
-        table/column_block_builder.cc
         table/block_builder.cc
+        table/block.cc
+        table/column_block_builder.cc
         table/flush_block_policy.cc
         table/format.cc
         table/get_context.cc
         table/iterator.cc
-        table/sst_file_writer.cc
         table/merger.cc
         table/meta_blocks.cc
+        table/sst_file_writer.cc
         table/table_properties.cc
         table/two_level_iterator.cc
         util/arena.cc
         util/build_version.cc
-        util/mutable_cf_options.cc
         util/cache.cc
         util/coding.cc
-        util/compaction_job_stats_impl.cc
         util/comparator.cc
         util/splitter.cc
+        util/compaction_job_stats_impl.cc
         util/concurrent_arena.cc
         util/crc32c.cc
         util/delete_scheduler.cc
         util/env.cc
-        util/event_logger.cc
+        util/threadpool.cc
+        util/sst_file_manager_impl.cc
         util/file_util.cc
         util/file_reader_writer.cc
-        util/sst_file_manager_impl.cc
         util/hash.cc
         util/histogram.cc
         util/instrumented_mutex.cc
         util/iostats_context.cc
-        
-        util/logging.cc
+        util/event_logger.cc
+
         util/log_buffer.cc
+        util/logging.cc
         util/murmurhash.cc
+        util/mutable_cf_options.cc
         util/options.cc
         util/options_helper.cc
         util/options_parser.cc
@@ -365,17 +366,17 @@ set(SOURCES
         util/thread_local.cc
         util/thread_status_impl.cc
         util/thread_status_updater.cc
+        util/thread_status_updater_debug.cc
         util/thread_status_util.cc
         util/thread_status_util_debug.cc
-
-        utilities/transactions/transaction_base.cc
-        utilities/transactions/transaction_impl.cc
-        utilities/transactions/transaction_db_impl.cc
-        utilities/transactions/transaction_db_mutex_impl.cc
-        utilities/transactions/transaction_lock_mgr.cc
-        utilities/transactions/transaction_util.cc
         utilities/write_batch_with_index/write_batch_with_index.cc
         utilities/write_batch_with_index/write_batch_with_index_internal.cc
+        utilities/transactions/transaction_db_mutex_impl.cc
+        utilities/transactions/transaction_util.cc
+        utilities/transactions/transaction_base.cc
+        utilities/transactions/transaction_impl.cc
+        utilities/transactions/transaction_lock_mgr.cc
+        utilities/transactions/transaction_db_impl.cc
         $<TARGET_OBJECTS:build_version>)
 
 if(WIN32)
