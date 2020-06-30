@@ -221,8 +221,8 @@ class Transaction {
   virtual Status Delete(const Slice& key) = 0;
 
   // PutUntracked() will write a Put to the batch of operations to be committed
-  // in this transaction.  This write will only happen if this transaction
-  // gets committed successfully.  But unlike Transaction::Put(),
+  // in this transaction. This write will only happen if this transaction
+  // gets committed successfully. But unlike Transaction::Put(),
   // no conflict checking will be done for this key.
   //
   // If this Transaction was created on a TransactionDB, this function will

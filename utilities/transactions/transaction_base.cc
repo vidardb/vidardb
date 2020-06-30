@@ -32,40 +32,10 @@ TransactionBaseImpl::TransactionBaseImpl(DB* db,
   }
 }
 
-TransactionBaseImpl::~TransactionBaseImpl() {
-  // Release snapshot if snapshot is set
-  SetSnapshotInternal(nullptr);
-}
-
-void TransactionBaseImpl::Clear() {
-  save_points_.reset(nullptr);
-  write_batch_.Clear();
-  commit_time_batch_.Clear();
-  tracked_keys_.clear();
-  num_puts_ = 0;
-  num_deletes_ = 0;
-
-  if (dbimpl_->allow_2pc()) {
-    WriteBatchInternal::InsertNoop(write_batch_.GetWriteBatch());
+void TransactionBaseImpl::ReleaseSnapshot(const Snapshot* snapshot, DB* db) {
+  if (snapshot != nullptr) {
+    db->ReleaseSnapshot(snapshot);
   }
-}
-
-void TransactionBaseImpl::Reinitialize(DB* db,
-                                       const WriteOptions& write_options) {
-  Clear();
-  ClearSnapshot();
-  db_ = db;
-  name_.clear();
-  log_number_ = 0;
-  write_options_ = write_options;
-  start_time_ = db_->GetEnv()->NowMicros();
-  indexing_enabled_ = true;
-  cmp_ = GetColumnFamilyUserComparator(db_->DefaultColumnFamily());
-}
-
-void TransactionBaseImpl::SetSnapshot() {
-  const Snapshot* snapshot = dbimpl_->GetSnapshotForWriteConflictBoundary();
-  SetSnapshotInternal(snapshot);
 }
 
 void TransactionBaseImpl::SetSnapshotInternal(const Snapshot* snapshot) {
@@ -77,20 +47,20 @@ void TransactionBaseImpl::SetSnapshotInternal(const Snapshot* snapshot) {
   snapshot_notifier_ = nullptr;
 }
 
+TransactionBaseImpl::~TransactionBaseImpl() {
+  // Release snapshot if snapshot is set
+  SetSnapshotInternal(nullptr);
+}
+
+void TransactionBaseImpl::SetSnapshot() {
+  const Snapshot* snapshot = dbimpl_->GetSnapshotForWriteConflictBoundary();
+  SetSnapshotInternal(snapshot);
+}
+
 void TransactionBaseImpl::SetSnapshotOnNextOperation(
     std::shared_ptr<TransactionNotifier> notifier) {
   snapshot_needed_ = true;
   snapshot_notifier_ = notifier;
-}
-
-void TransactionBaseImpl::SetSnapshotIfNeeded() {
-  if (snapshot_needed_) {
-    std::shared_ptr<TransactionNotifier> notifier = snapshot_notifier_;
-    SetSnapshot();
-    if (notifier != nullptr) {
-      notifier->SnapshotCreated(GetSnapshot());
-    }
-  }
 }
 
 void TransactionBaseImpl::SetSavePoint() {
@@ -191,6 +161,20 @@ Iterator* TransactionBaseImpl::GetIterator(const ReadOptions& read_options,
   return write_batch_.NewIteratorWithBase(column_family, db_iter);
 }
 
+// Gets the write batch that should be used for Put/Deletes.
+//
+// Returns either a WriteBatch or WriteBatchWithIndex depending on whether
+// DisableIndexing() has been called.
+WriteBatchBase* TransactionBaseImpl::GetBatchForWrite() {
+  if (indexing_enabled_) {
+    // Use WriteBatchWithIndex
+    return &write_batch_;
+  } else {
+    // Don't use WriteBatchWithIndex. Return base WriteBatch.
+    return write_batch_.GetWriteBatch();
+  }
+}
+
 Status TransactionBaseImpl::Put(ColumnFamilyHandle* column_family,
                                 const Slice& key, const Slice& value) {
   Status s = TryLock(column_family, key, false /* read_only */);
@@ -245,18 +229,6 @@ void TransactionBaseImpl::PutLogData(const Slice& blob) {
   write_batch_.PutLogData(blob);
 }
 
-WriteBatchWithIndex* TransactionBaseImpl::GetWriteBatch() {
-  return &write_batch_;
-}
-
-uint64_t TransactionBaseImpl::GetElapsedTime() const {
-  return (db_->GetEnv()->NowMicros() - start_time_) / 1000;
-}
-
-uint64_t TransactionBaseImpl::GetNumPuts() const { return num_puts_; }
-
-uint64_t TransactionBaseImpl::GetNumDeletes() const { return num_deletes_; }
-
 uint64_t TransactionBaseImpl::GetNumKeys() const {
   uint64_t count = 0;
 
@@ -269,95 +241,16 @@ uint64_t TransactionBaseImpl::GetNumKeys() const {
   return count;
 }
 
-void TransactionBaseImpl::TrackKey(uint32_t cfh_id, const std::string& key,
-                                   SequenceNumber seq, bool read_only) {
-  // Update map of all tracked keys for this transaction
-  TrackKey(&tracked_keys_, cfh_id, key, seq, read_only);
+uint64_t TransactionBaseImpl::GetNumPuts() const { return num_puts_; }
 
-  if (save_points_ != nullptr && !save_points_->empty()) {
-    // Update map of tracked keys in this SavePoint
-    TrackKey(&save_points_->top().new_keys_, cfh_id, key, seq, read_only);
-  }
+uint64_t TransactionBaseImpl::GetNumDeletes() const { return num_deletes_; }
+
+uint64_t TransactionBaseImpl::GetElapsedTime() const {
+  return (db_->GetEnv()->NowMicros() - start_time_) / 1000;
 }
 
-// Add a key to the given TransactionKeyMap
-void TransactionBaseImpl::TrackKey(TransactionKeyMap* key_map, uint32_t cfh_id,
-                                   const std::string& key, SequenceNumber seq,
-                                   bool read_only) {
-  auto& cf_key_map = (*key_map)[cfh_id];
-  auto iter = cf_key_map.find(key);
-  if (iter == cf_key_map.end()) {
-    auto result = cf_key_map.insert({key, TransactionKeyMapInfo(seq)});
-    iter = result.first;
-  } else if (seq < iter->second.seq) {
-    // Now tracking this key with an earlier sequence number
-    iter->second.seq = seq;
-  }
-
-  if (read_only) {
-    iter->second.num_reads++;
-  } else {
-    iter->second.num_writes++;
-  }
-}
-
-std::unique_ptr<TransactionKeyMap>
-TransactionBaseImpl::GetTrackedKeysSinceSavePoint() {
-  if (save_points_ != nullptr && !save_points_->empty()) {
-    // Examine the number of reads/writes performed on all keys written
-    // since the last SavePoint and compare to the total number of reads/writes
-    // for each key.
-    TransactionKeyMap* result = new TransactionKeyMap();
-    for (const auto& key_map_iter : save_points_->top().new_keys_) {
-      uint32_t column_family_id = key_map_iter.first;
-      auto& keys = key_map_iter.second;
-
-      auto& cf_tracked_keys = tracked_keys_[column_family_id];
-
-      for (const auto& key_iter : keys) {
-        const std::string& key = key_iter.first;
-        uint32_t num_reads = key_iter.second.num_reads;
-        uint32_t num_writes = key_iter.second.num_writes;
-
-        auto total_key_info = cf_tracked_keys.find(key);
-        assert(total_key_info != cf_tracked_keys.end());
-        assert(total_key_info->second.num_reads >= num_reads);
-        assert(total_key_info->second.num_writes >= num_writes);
-
-        if (total_key_info->second.num_reads == num_reads &&
-            total_key_info->second.num_writes == num_writes) {
-          // All the reads/writes to this key were done in the last savepoint.
-          bool read_only = (num_writes == 0);
-          TrackKey(result, column_family_id, key, key_iter.second.seq,
-                   read_only);
-        }
-      }
-    }
-    return std::unique_ptr<TransactionKeyMap>(result);
-  }
-
-  // No SavePoint
-  return nullptr;
-}
-
-// Gets the write batch that should be used for Put/Deletes.
-//
-// Returns either a WriteBatch or WriteBatchWithIndex depending on whether
-// DisableIndexing() has been called.
-WriteBatchBase* TransactionBaseImpl::GetBatchForWrite() {
-  if (indexing_enabled_) {
-    // Use WriteBatchWithIndex
-    return &write_batch_;
-  } else {
-    // Don't use WriteBatchWithIndex. Return base WriteBatch.
-    return write_batch_.GetWriteBatch();
-  }
-}
-
-void TransactionBaseImpl::ReleaseSnapshot(const Snapshot* snapshot, DB* db) {
-  if (snapshot != nullptr) {
-    db->ReleaseSnapshot(snapshot);
-  }
+WriteBatchWithIndex* TransactionBaseImpl::GetWriteBatch() {
+  return &write_batch_;
 }
 
 void TransactionBaseImpl::UndoGetForUpdate(ColumnFamilyHandle* column_family,
@@ -456,6 +349,114 @@ Status TransactionBaseImpl::RebuildFromWriteBatch(WriteBatch* src_batch) {
 WriteBatch* TransactionBaseImpl::GetCommitTimeWriteBatch() {
   return &commit_time_batch_;
 }
+
+void TransactionBaseImpl::Clear() {
+  save_points_.reset(nullptr);
+  write_batch_.Clear();
+  commit_time_batch_.Clear();
+  tracked_keys_.clear();
+  num_puts_ = 0;
+  num_deletes_ = 0;
+
+  if (dbimpl_->allow_2pc()) {
+    WriteBatchInternal::InsertNoop(write_batch_.GetWriteBatch());
+  }
+}
+
+void TransactionBaseImpl::Reinitialize(DB* db,
+                                       const WriteOptions& write_options) {
+  Clear();
+  ClearSnapshot();
+  db_ = db;
+  name_.clear();
+  log_number_ = 0;
+  write_options_ = write_options;
+  start_time_ = db_->GetEnv()->NowMicros();
+  indexing_enabled_ = true;
+  cmp_ = GetColumnFamilyUserComparator(db_->DefaultColumnFamily());
+}
+
+void TransactionBaseImpl::SetSnapshotIfNeeded() {
+  if (snapshot_needed_) {
+    std::shared_ptr<TransactionNotifier> notifier = snapshot_notifier_;
+    SetSnapshot();
+    if (notifier != nullptr) {
+      notifier->SnapshotCreated(GetSnapshot());
+    }
+  }
+}
+
+// Add a key to the given TransactionKeyMap
+void TransactionBaseImpl::TrackKey(TransactionKeyMap* key_map, uint32_t cfh_id,
+                                   const std::string& key, SequenceNumber seq,
+                                   bool read_only) {
+  auto& cf_key_map = (*key_map)[cfh_id];
+  auto iter = cf_key_map.find(key);
+  if (iter == cf_key_map.end()) {
+    auto result = cf_key_map.insert({key, TransactionKeyMapInfo(seq)});
+    iter = result.first;
+  } else if (seq < iter->second.seq) {
+    // Now tracking this key with an earlier sequence number
+    iter->second.seq = seq;
+  }
+
+  if (read_only) {
+    iter->second.num_reads++;
+  } else {
+    iter->second.num_writes++;
+  }
+}
+
+void TransactionBaseImpl::TrackKey(uint32_t cfh_id, const std::string& key,
+                                   SequenceNumber seq, bool read_only) {
+  // Update map of all tracked keys for this transaction
+  TrackKey(&tracked_keys_, cfh_id, key, seq, read_only);
+
+  if (save_points_ != nullptr && !save_points_->empty()) {
+    // Update map of tracked keys in this SavePoint
+    TrackKey(&save_points_->top().new_keys_, cfh_id, key, seq, read_only);
+  }
+}
+
+std::unique_ptr<TransactionKeyMap>
+TransactionBaseImpl::GetTrackedKeysSinceSavePoint() {
+  if (save_points_ != nullptr && !save_points_->empty()) {
+    // Examine the number of reads/writes performed on all keys written
+    // since the last SavePoint and compare to the total number of reads/writes
+    // for each key.
+    TransactionKeyMap* result = new TransactionKeyMap();
+    for (const auto& key_map_iter : save_points_->top().new_keys_) {
+      uint32_t column_family_id = key_map_iter.first;
+      auto& keys = key_map_iter.second;
+
+      auto& cf_tracked_keys = tracked_keys_[column_family_id];
+
+      for (const auto& key_iter : keys) {
+        const std::string& key = key_iter.first;
+        uint32_t num_reads = key_iter.second.num_reads;
+        uint32_t num_writes = key_iter.second.num_writes;
+
+        auto total_key_info = cf_tracked_keys.find(key);
+        assert(total_key_info != cf_tracked_keys.end());
+        assert(total_key_info->second.num_reads >= num_reads);
+        assert(total_key_info->second.num_writes >= num_writes);
+
+        if (total_key_info->second.num_reads == num_reads &&
+            total_key_info->second.num_writes == num_writes) {
+          // All the reads/writes to this key were done in the last savepoint.
+          bool read_only = (num_writes == 0);
+          TrackKey(result, column_family_id, key, key_iter.second.seq,
+                   read_only);
+        }
+      }
+    }
+    return std::unique_ptr<TransactionKeyMap>(result);
+  }
+
+  // No SavePoint
+  return nullptr;
+}
+
 }  // namespace vidardb
 
 #endif  // VIDARDB_LITE

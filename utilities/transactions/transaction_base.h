@@ -29,16 +29,20 @@ class TransactionBaseImpl : public Transaction {
 
   virtual ~TransactionBaseImpl();
 
-  // Remove pending operations queued in this transaction.
-  virtual void Clear();
+  void SetSnapshot() override;
 
-  void Reinitialize(DB* db, const WriteOptions& write_options);
+  void SetSnapshotOnNextOperation(
+      std::shared_ptr<TransactionNotifier> notifier = nullptr) override;
 
-  // Called before executing Put, Delete, and GetForUpdate. If TryLock
-  // returns non-OK, the Put/Delete/GetForUpdate will be failed.
-  // untracked will be true if called from PutUntracked, DeleteUntracked.
-  virtual Status TryLock(ColumnFamilyHandle* column_family, const Slice& key,
-                         bool read_only, bool untracked = false) = 0;
+  const Snapshot* GetSnapshot() const override {
+    return snapshot_ ? snapshot_.get() : nullptr;
+  }
+
+  void ClearSnapshot() override {
+    snapshot_.reset();
+    snapshot_needed_ = false;
+    snapshot_notifier_ = nullptr;
+  }
 
   void SetSavePoint() override;
 
@@ -46,7 +50,6 @@ class TransactionBaseImpl : public Transaction {
 
   Status Get(ReadOptions& options, ColumnFamilyHandle* column_family,
              const Slice& key, std::string* value) override;
-
   Status Get(ReadOptions& options, const Slice& key,
              std::string* value) override {
     return Get(options, db_->DefaultColumnFamily(), key, value);
@@ -54,7 +57,6 @@ class TransactionBaseImpl : public Transaction {
 
   Status GetForUpdate(ReadOptions& options, ColumnFamilyHandle* column_family,
                       const Slice& key, std::string* value) override;
-
   Status GetForUpdate(ReadOptions& options, const Slice& key,
                       std::string* value) override {
     return GetForUpdate(options, db_->DefaultColumnFamily(), key, value);
@@ -87,46 +89,19 @@ class TransactionBaseImpl : public Transaction {
 
   void PutLogData(const Slice& blob) override;
 
+  void DisableIndexing() override { indexing_enabled_ = false; }
+  void EnableIndexing() override { indexing_enabled_ = true; }
+
+  uint64_t GetNumKeys() const override;
+  uint64_t GetNumPuts() const override;
+  uint64_t GetNumDeletes() const override;
+
+  uint64_t GetElapsedTime() const override;
+
   WriteBatchWithIndex* GetWriteBatch() override;
 
   virtual void SetLockTimeout(int64_t timeout) override { /* Do nothing */
   }
-
-  const Snapshot* GetSnapshot() const override {
-    return snapshot_ ? snapshot_.get() : nullptr;
-  }
-
-  void SetSnapshot() override;
-  void SetSnapshotOnNextOperation(
-      std::shared_ptr<TransactionNotifier> notifier = nullptr) override;
-
-  void ClearSnapshot() override {
-    snapshot_.reset();
-    snapshot_needed_ = false;
-    snapshot_notifier_ = nullptr;
-  }
-
-  void DisableIndexing() override { indexing_enabled_ = false; }
-
-  void EnableIndexing() override { indexing_enabled_ = true; }
-
-  uint64_t GetElapsedTime() const override;
-
-  uint64_t GetNumPuts() const override;
-
-  uint64_t GetNumDeletes() const override;
-
-  uint64_t GetNumKeys() const override;
-
-  void UndoGetForUpdate(ColumnFamilyHandle* column_family,
-                        const Slice& key) override;
-  void UndoGetForUpdate(const Slice& key) override {
-    return UndoGetForUpdate(nullptr, key);
-  };
-
-  // Get list of keys in this transaction that must not have any conflicts
-  // with writes in other transactions.
-  const TransactionKeyMap& GetTrackedKeys() const { return tracked_keys_; }
 
   const WriteOptions* GetWriteOptions() override { return &write_options_; }
 
@@ -134,8 +109,11 @@ class TransactionBaseImpl : public Transaction {
     write_options_ = write_options;
   }
 
-  // Used for memory management for snapshot_
-  void ReleaseSnapshot(const Snapshot* snapshot, DB* db);
+  void UndoGetForUpdate(ColumnFamilyHandle* column_family,
+                        const Slice& key) override;
+  void UndoGetForUpdate(const Slice& key) override {
+    return UndoGetForUpdate(nullptr, key);
+  };
 
   // iterates over the given batch and makes the appropriate inserts.
   // used for rebuilding prepared transactions after recovery.
@@ -144,6 +122,23 @@ class TransactionBaseImpl : public Transaction {
   WriteBatch* GetCommitTimeWriteBatch() override;
 
  protected:
+  // Remove pending operations queued in this transaction.
+  virtual void Clear();
+
+  void Reinitialize(DB* db, const WriteOptions& write_options);
+
+  // Sets a snapshot if SetSnapshotOnNextOperation() has been called.
+  void SetSnapshotIfNeeded();
+
+  // Get list of keys in this transaction that must not have any conflicts
+  // with writes in other transactions.
+  const TransactionKeyMap& GetTrackedKeys() const { return tracked_keys_; }
+
+  // Helper function to add a key to the given TransactionKeyMap
+  static void TrackKey(TransactionKeyMap* key_map, uint32_t cfh_id,
+                       const std::string& key, SequenceNumber seqno,
+                       bool readonly);
+
   // Add a key to the list of tracked keys.
   //
   // seqno is the earliest seqno this key was involved with this transaction.
@@ -151,19 +146,17 @@ class TransactionBaseImpl : public Transaction {
   void TrackKey(uint32_t cfh_id, const std::string& key, SequenceNumber seqno,
                 bool readonly);
 
-  // Helper function to add a key to the given TransactionKeyMap
-  static void TrackKey(TransactionKeyMap* key_map, uint32_t cfh_id,
-                       const std::string& key, SequenceNumber seqno,
-                       bool readonly);
+  std::unique_ptr<TransactionKeyMap> GetTrackedKeysSinceSavePoint();
+
+  // Called before executing Put, Delete, and GetForUpdate. If TryLock
+  // returns non-OK, the Put/Delete/GetForUpdate will be failed.
+  // untracked will be true if called from PutUntracked, DeleteUntracked.
+  virtual Status TryLock(ColumnFamilyHandle* column_family, const Slice& key,
+                         bool read_only, bool untracked = false) = 0;
 
   // Called when UndoGetForUpdate determines that this key can be unlocked.
   virtual void UnlockGetForUpdate(ColumnFamilyHandle* column_family,
                                   const Slice& key) = 0;
-
-  std::unique_ptr<TransactionKeyMap> GetTrackedKeysSinceSavePoint();
-
-  // Sets a snapshot if SetSnapshotOnNextOperation() has been called.
-  void SetSnapshotIfNeeded();
 
   DB* db_;
   DBImpl* dbimpl_;
@@ -220,8 +213,7 @@ class TransactionBaseImpl : public Transaction {
   // by calling TrackKey().
   TransactionKeyMap tracked_keys_;
 
-  // If true, future Put/Deletes will be indexed in the
-  // WriteBatchWithIndex.
+  // If true, future Put/Deletes will be indexed in the WriteBatchWithIndex.
   // If false, future Put/Deletes will be inserted directly into the
   // underlying WriteBatch and not indexed in the WriteBatchWithIndex.
   bool indexing_enabled_;
@@ -235,6 +227,9 @@ class TransactionBaseImpl : public Transaction {
   std::shared_ptr<TransactionNotifier> snapshot_notifier_ = nullptr;
 
   WriteBatchBase* GetBatchForWrite();
+
+  // Used for memory management for snapshot_
+  void ReleaseSnapshot(const Snapshot* snapshot, DB* db);
 
   void SetSnapshotInternal(const Snapshot* snapshot);
 };
