@@ -34,23 +34,6 @@ TransactionID TransactionImpl::GenTxnID() {
   return txn_id_counter_.fetch_add(1);
 }
 
-TransactionImpl::TransactionImpl(TransactionDB* txn_db,
-                                 const WriteOptions& write_options,
-                                 const TransactionOptions& txn_options)
-    : TransactionBaseImpl(txn_db->GetBaseDB(), write_options),
-      txn_db_impl_(nullptr),
-      txn_id_(0),
-      expiration_time_(0),
-      lock_timeout_(0) {
-  txn_db_impl_ = dynamic_cast<TransactionDBImpl*>(txn_db);
-  assert(txn_db_impl_);
-
-  db_impl_ = dynamic_cast<DBImpl*>(txn_db->GetBaseDB());
-  assert(db_impl_);
-
-  Initialize(txn_options);
-}
-
 void TransactionImpl::Initialize(const TransactionOptions& txn_options) {
   txn_id_ = GenTxnID();
 
@@ -78,6 +61,23 @@ void TransactionImpl::Initialize(const TransactionOptions& txn_options) {
   }
 }
 
+TransactionImpl::TransactionImpl(TransactionDB* txn_db,
+                                 const WriteOptions& write_options,
+                                 const TransactionOptions& txn_options)
+    : TransactionBaseImpl(txn_db->GetBaseDB(), write_options),
+      txn_db_impl_(nullptr),
+      txn_id_(0),
+      expiration_time_(0),
+      lock_timeout_(0) {
+  txn_db_impl_ = dynamic_cast<TransactionDBImpl*>(txn_db);
+  assert(txn_db_impl_);
+
+  db_impl_ = dynamic_cast<DBImpl*>(txn_db->GetBaseDB());
+  assert(db_impl_);
+
+  Initialize(txn_options);
+}
+
 TransactionImpl::~TransactionImpl() {
   txn_db_impl_->UnLock(this, &GetTrackedKeys());
   if (expiration_time_ > 0) {
@@ -86,21 +86,6 @@ TransactionImpl::~TransactionImpl() {
   if (!name_.empty() && exec_status_ != COMMITED) {
     txn_db_impl_->UnregisterTransaction(this);
   }
-}
-
-void TransactionImpl::Clear() {
-  txn_db_impl_->UnLock(this, &GetTrackedKeys());
-  TransactionBaseImpl::Clear();
-}
-
-void TransactionImpl::Reinitialize(TransactionDB* txn_db,
-                                   const WriteOptions& write_options,
-                                   const TransactionOptions& txn_options) {
-  if (!name_.empty() && exec_status_ != COMMITED) {
-    txn_db_impl_->UnregisterTransaction(this);
-  }
-  TransactionBaseImpl::Reinitialize(txn_db->GetBaseDB(), write_options);
-  Initialize(txn_options);
 }
 
 bool TransactionImpl::IsExpired() const {
@@ -112,44 +97,6 @@ bool TransactionImpl::IsExpired() const {
   }
 
   return false;
-}
-
-Status TransactionImpl::CommitBatch(WriteBatch* batch) {
-  TransactionKeyMap keys_to_unlock;
-  Status s = LockBatch(batch, &keys_to_unlock);
-
-  if (!s.ok()) {
-    return s;
-  }
-
-  bool can_commit = false;
-
-  if (IsExpired()) {
-    s = Status::Expired();
-  } else if (expiration_time_ > 0) {
-    ExecutionStatus expected = STARTED;
-    can_commit = std::atomic_compare_exchange_strong(&exec_status_, &expected,
-                                                     AWAITING_COMMIT);
-  } else if (exec_status_ == STARTED) {
-    // lock stealing is not a concern
-    can_commit = true;
-  }
-
-  if (can_commit) {
-    exec_status_.store(AWAITING_COMMIT);
-    s = db_->Write(write_options_, batch);
-    if (s.ok()) {
-      exec_status_.store(COMMITED);
-    }
-  } else if (exec_status_ == LOCKS_STOLEN) {
-    s = Status::Expired();
-  } else {
-    s = Status::InvalidArgument("Transaction is not in state for commit.");
-  }
-
-  txn_db_impl_->UnLock(this, &keys_to_unlock);
-
-  return s;
 }
 
 Status TransactionImpl::Prepare() {
@@ -174,11 +121,11 @@ Status TransactionImpl::Prepare() {
                                                       AWAITING_PREPARE);
   } else if (exec_status_ == STARTED) {
     // expiration and lock stealing is not possible
+    exec_status_.store(AWAITING_PREPARE);
     can_prepare = true;
   }
 
   if (can_prepare) {
-    exec_status_.store(AWAITING_PREPARE);
     // transaction can't expire after preparation
     expiration_time_ = 0;
     WriteOptions write_options = write_options_;
@@ -207,6 +154,11 @@ Status TransactionImpl::Prepare() {
   return s;
 }
 
+void TransactionImpl::Clear() {
+  txn_db_impl_->UnLock(this, &GetTrackedKeys());
+  TransactionBaseImpl::Clear();
+}
+
 Status TransactionImpl::Commit() {
   Status s;
   bool commit_single = false;
@@ -217,7 +169,7 @@ Status TransactionImpl::Commit() {
   }
 
   if (expiration_time_ > 0) {
-    // we must atomicaly compare and exchange the state here because at
+    // we must atomically compare and exchange the state here because at
     // this state in the transaction it is possible for another thread
     // to change our state out from under us in the even that we expire and have
     // our locks stolen. In this case the only valid state is STARTED because
@@ -294,49 +246,6 @@ Status TransactionImpl::Commit() {
   return s;
 }
 
-Status TransactionImpl::Rollback() {
-  Status s;
-  if (exec_status_ == PREPARED) {
-    WriteBatch rollback_marker;
-    WriteBatchInternal::MarkRollback(&rollback_marker, name_);
-    exec_status_.store(AWAITING_ROLLBACK);
-    s = db_impl_->WriteImpl(write_options_, &rollback_marker);
-    if (s.ok()) {
-      // we do not need to keep our prepared section around
-      assert(log_number_ > 0);
-      dbimpl_->MarkLogAsHavingPrepSectionFlushed(log_number_);
-      Clear();
-      exec_status_.store(ROLLEDBACK);
-    }
-  } else if (exec_status_ == STARTED) {
-    // prepare couldn't have taken place
-    Clear();
-  } else if (exec_status_ == COMMITED) {
-    s = Status::InvalidArgument("This transaction has already been committed.");
-  } else {
-    s = Status::InvalidArgument(
-        "Two phase transaction is not in state for rollback.");
-  }
-
-  return s;
-}
-
-Status TransactionImpl::RollbackToSavePoint() {
-  if (exec_status_ != STARTED) {
-    return Status::InvalidArgument("Transaction is beyond state for rollback.");
-  }
-
-  // Unlock any keys locked since last transaction
-  const std::unique_ptr<TransactionKeyMap>& keys =
-      GetTrackedKeysSinceSavePoint();
-
-  if (keys) {
-    txn_db_impl_->UnLock(this, keys.get());
-  }
-
-  return TransactionBaseImpl::RollbackToSavePoint();
-}
-
 // Lock all keys in this batch.
 // On success, caller should unlock keys_to_unlock
 Status TransactionImpl::LockBatch(WriteBatch* batch,
@@ -408,124 +317,85 @@ Status TransactionImpl::LockBatch(WriteBatch* batch,
   return s;
 }
 
-// Attempt to lock this key.
-// Returns OK if the key has been successfully locked. Non-ok, otherwise.
-// If check_shapshot is true and this transaction has a snapshot set,
-// this key will only be locked if there have been no writes to this key since
-// the snapshot time.
-Status TransactionImpl::TryLock(ColumnFamilyHandle* column_family,
-                                const Slice& key, bool read_only,
-                                bool untracked) {
-  uint32_t cfh_id = GetColumnFamilyID(column_family);
-  std::string key_str = key.ToString();
-  bool previously_locked;
-  Status s;
+Status TransactionImpl::CommitBatch(WriteBatch* batch) {
+  TransactionKeyMap keys_to_unlock;
+  Status s = LockBatch(batch, &keys_to_unlock);
 
-  // lock this key if this transactions hasn't already locked it
-  SequenceNumber current_seqno = kMaxSequenceNumber;
-  SequenceNumber new_seqno = kMaxSequenceNumber;
-
-  const auto& tracked_keys = GetTrackedKeys();
-  const auto tracked_keys_cf = tracked_keys.find(cfh_id);
-  if (tracked_keys_cf == tracked_keys.end()) {
-    previously_locked = false;
-  } else {
-    auto iter = tracked_keys_cf->second.find(key_str);
-    if (iter == tracked_keys_cf->second.end()) {
-      previously_locked = false;
-    } else {
-      previously_locked = true;
-      current_seqno = iter->second.seq;
-    }
+  if (!s.ok()) {
+    return s;
   }
 
-  // lock this key if this transactions hasn't already locked it
-  if (!previously_locked) {
-    s = txn_db_impl_->TryLock(this, cfh_id, key_str);
+  bool can_commit = false;
+
+  if (IsExpired()) {
+    s = Status::Expired();
+  } else if (expiration_time_ > 0) {
+    ExecutionStatus expected = STARTED;
+    can_commit = std::atomic_compare_exchange_strong(&exec_status_, &expected,
+                                                     AWAITING_COMMIT);
+  } else if (exec_status_ == STARTED) {
+    // lock stealing is not a concern
+    exec_status_.store(AWAITING_COMMIT);
+    can_commit = true;
   }
 
-  SetSnapshotIfNeeded();
-
-  // Even though we do not care about doing conflict checking for this write,
-  // we still need to take a lock to make sure we do not cause a conflict with
-  // some other write. However, we do not need to check if there have been
-  // any writes since this transaction's snapshot.
-  // TODO(agiardullo): could optimize by supporting shared txn locks in the
-  // future
-  if (untracked || snapshot_ == nullptr) {
-    // Need to remember the earliest sequence number that we know that this
-    // key has not been modified after. This is useful if this same
-    // transaction later tries to lock this key again.
-    if (current_seqno == kMaxSequenceNumber) {
-      // Since we haven't checked a snapshot, we only know this key has not
-      // been modified since after we locked it.
-      new_seqno = db_->GetLatestSequenceNumber();
-    } else {
-      new_seqno = current_seqno;
-    }
-  } else {
-    // If a snapshot is set, we need to make sure the key hasn't been modified
-    // since the snapshot. This must be done after we locked the key.
+  if (can_commit) {
+    s = db_->Write(write_options_, batch);
     if (s.ok()) {
-      s = ValidateSnapshot(column_family, key, current_seqno, &new_seqno);
-
-      if (!s.ok()) {
-        // Failed to validate key
-        if (!previously_locked) {
-          // Unlock key we just locked
-          txn_db_impl_->UnLock(this, cfh_id, key.ToString());
-        }
-      }
+      exec_status_.store(COMMITED);
     }
+  } else if (exec_status_ == LOCKS_STOLEN) {
+    s = Status::Expired();
+  } else {
+    s = Status::InvalidArgument("Transaction is not in state for commit.");
   }
 
-  if (s.ok()) {
-    // Let base class know we've conflict checked this key.
-    TrackKey(cfh_id, key_str, new_seqno, read_only);
+  txn_db_impl_->UnLock(this, &keys_to_unlock);
+
+  return s;
+}
+
+Status TransactionImpl::Rollback() {
+  Status s;
+  if (exec_status_ == PREPARED) {
+    WriteBatch rollback_marker;
+    WriteBatchInternal::MarkRollback(&rollback_marker, name_);
+    exec_status_.store(AWAITING_ROLLBACK);
+    s = db_impl_->WriteImpl(write_options_, &rollback_marker);
+    if (s.ok()) {
+      // we do not need to keep our prepared section around
+      assert(log_number_ > 0);
+      dbimpl_->MarkLogAsHavingPrepSectionFlushed(log_number_);
+      Clear();
+      exec_status_.store(ROLLEDBACK);
+    }
+  } else if (exec_status_ == STARTED) {
+    // prepare couldn't have taken place
+    Clear();
+  } else if (exec_status_ == COMMITED) {
+    s = Status::InvalidArgument("This transaction has already been committed.");
+  } else {
+    s = Status::InvalidArgument(
+        "Two phase transaction is not in state for rollback.");
   }
 
   return s;
 }
 
-// Return OK() if this key has not been modified more recently than the
-// transaction snapshot_.
-Status TransactionImpl::ValidateSnapshot(ColumnFamilyHandle* column_family,
-                                         const Slice& key,
-                                         SequenceNumber prev_seqno,
-                                         SequenceNumber* new_seqno) {
-  assert(snapshot_);
-
-  SequenceNumber seq = snapshot_->GetSequenceNumber();
-  if (prev_seqno <= seq) {
-    // If the key has been previous validated at a sequence number earlier
-    // than the curent snapshot's sequence number, we already know it has not
-    // been modified.
-    return Status::OK();
+Status TransactionImpl::RollbackToSavePoint() {
+  if (exec_status_ != STARTED) {
+    return Status::InvalidArgument("Transaction is beyond state for rollback.");
   }
 
-  *new_seqno = seq;
+  // Unlock any keys locked since last transaction
+  const std::unique_ptr<TransactionKeyMap>& keys =
+      GetTrackedKeysSinceSavePoint();
 
-  assert(dynamic_cast<DBImpl*>(db_) != nullptr);
-  auto db_impl = reinterpret_cast<DBImpl*>(db_);
+  if (keys) {
+    txn_db_impl_->UnLock(this, keys.get());
+  }
 
-  ColumnFamilyHandle* cfh =
-      column_family ? column_family : db_impl->DefaultColumnFamily();
-
-  return TransactionUtil::CheckKeyForConflicts(db_impl, cfh, key.ToString(),
-                                               snapshot_->GetSequenceNumber(),
-                                               false /* cache_only */);
-}
-
-bool TransactionImpl::TryStealingLocks() {
-  assert(IsExpired());
-  ExecutionStatus expected = STARTED;
-  return std::atomic_compare_exchange_strong(&exec_status_, &expected,
-                                             LOCKS_STOLEN);
-}
-
-void TransactionImpl::UnlockGetForUpdate(ColumnFamilyHandle* column_family,
-                                         const Slice& key) {
-  txn_db_impl_->UnLock(this, GetColumnFamilyID(column_family), key.ToString());
+  return TransactionBaseImpl::RollbackToSavePoint();
 }
 
 Status TransactionImpl::SetName(const TransactionName& name) {
@@ -546,6 +416,130 @@ Status TransactionImpl::SetName(const TransactionName& name) {
     s = Status::InvalidArgument("Transaction is beyond state for naming.");
   }
   return s;
+}
+
+void TransactionImpl::Reinitialize(TransactionDB* txn_db,
+                                   const WriteOptions& write_options,
+                                   const TransactionOptions& txn_options) {
+  if (!name_.empty() && exec_status_ != COMMITED) {
+    txn_db_impl_->UnregisterTransaction(this);
+  }
+  TransactionBaseImpl::Reinitialize(txn_db->GetBaseDB(), write_options);
+  Initialize(txn_options);
+}
+
+bool TransactionImpl::TryStealingLocks() {
+  assert(IsExpired());
+  ExecutionStatus expected = STARTED;
+  return std::atomic_compare_exchange_strong(&exec_status_, &expected,
+                                             LOCKS_STOLEN);
+}
+
+// Return OK() if this key has not been modified more recently than the
+// transaction snapshot_.
+Status TransactionImpl::ValidateSnapshot(ColumnFamilyHandle* column_family,
+                                         const Slice& key,
+                                         SequenceNumber prev_seqno,
+                                         SequenceNumber* new_seqno) {
+  assert(snapshot_);
+
+  SequenceNumber seq = snapshot_->GetSequenceNumber();
+  if (prev_seqno <= seq) {
+    // If the key has been previous validated at a sequence number earlier
+    // than the current snapshot's sequence number, we already know it has not
+    // been modified.
+    return Status::OK();
+  }
+
+  *new_seqno = seq;
+
+  assert(dynamic_cast<DBImpl*>(db_) != nullptr);
+  auto db_impl = reinterpret_cast<DBImpl*>(db_);
+
+  ColumnFamilyHandle* cfh =
+      column_family ? column_family : db_impl->DefaultColumnFamily();
+
+  return TransactionUtil::CheckKeyForConflicts(db_impl, cfh, key.ToString(),
+                                               snapshot_->GetSequenceNumber(),
+                                               false /* cache_only */);
+}
+
+// Attempt to lock this key.
+// Returns OK if the key has been successfully locked. Non-ok, otherwise.
+// If check_shapshot is true and this transaction has a snapshot set,
+// this key will only be locked if there have been no writes to this key since
+// the snapshot time.
+Status TransactionImpl::TryLock(ColumnFamilyHandle* column_family,
+                                const Slice& key, bool read_only,
+                                bool untracked) {
+  uint32_t cfh_id = GetColumnFamilyID(column_family);
+  std::string key_str = key.ToString();
+  bool previously_locked;
+
+  SequenceNumber current_seqno = kMaxSequenceNumber;
+  SequenceNumber new_seqno = kMaxSequenceNumber;
+
+  const auto& tracked_keys = GetTrackedKeys();
+  const auto tracked_keys_cf = tracked_keys.find(cfh_id);
+  if (tracked_keys_cf == tracked_keys.end()) {
+    previously_locked = false;
+  } else {
+    auto iter = tracked_keys_cf->second.find(key_str);
+    if (iter == tracked_keys_cf->second.end()) {
+      previously_locked = false;
+    } else {
+      previously_locked = true;
+      current_seqno = iter->second.seq;
+    }
+  }
+
+  Status s;
+  // lock this key if this transactions hasn't already locked it
+  if (!previously_locked) {
+    s = txn_db_impl_->TryLock(this, cfh_id, key_str);
+  }
+
+  SetSnapshotIfNeeded();
+
+  // Even though we do not care about doing conflict checking for this write,
+  // we still need to take a lock to make sure we do not cause a conflict with
+  // some other write. However, we do not need to check if there have been
+  // any writes since this transaction's snapshot.
+  if (untracked || snapshot_ == nullptr) {
+    // Need to remember the earliest sequence number that we know that this
+    // key has not been modified after. This is useful if this same
+    // transaction later tries to lock this key again.
+    if (current_seqno == kMaxSequenceNumber) {
+      // Since we haven't checked a snapshot, we only know this key has not
+      // been modified since after we locked it.
+      new_seqno = db_->GetLatestSequenceNumber();
+    } else {
+      new_seqno = current_seqno;
+    }
+  } else {
+    // If a snapshot is set, we need to make sure the key hasn't been modified
+    // since the snapshot. This must be done after we locked the key.
+    if (s.ok()) {
+      s = ValidateSnapshot(column_family, key, current_seqno, &new_seqno);
+
+      if (!s.ok() && !previously_locked) {
+        // Failed to validate key, and unlock key we just locked
+        txn_db_impl_->UnLock(this, cfh_id, key.ToString());
+      }
+    }
+  }
+
+  if (s.ok()) {
+    // Let base class know we've conflict checked this key.
+    TrackKey(cfh_id, key_str, new_seqno, read_only);
+  }
+
+  return s;
+}
+
+void TransactionImpl::UnlockGetForUpdate(ColumnFamilyHandle* column_family,
+                                         const Slice& key) {
+  txn_db_impl_->UnLock(this, GetColumnFamilyID(column_family), key.ToString());
 }
 
 }  // namespace vidardb

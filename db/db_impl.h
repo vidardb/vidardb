@@ -924,12 +924,12 @@ class DBImpl : public DB {
   // to prepared_section_completed_ which maps LOG -> instance_count
   // since a log could contain multiple prepared sections
   //
-  // when trying to determine the minmum log still active we first
+  // when trying to determine the minimum log still active we first
   // consult min_log_with_prep_. while that root value maps to
   // a value > 0 in prepared_section_completed_ we decrement the
   // instance_count for that log and pop the root value in
   // min_log_with_prep_. This will work the same as a min_heap
-  // where we are deleteing arbitrary elements and the up heaping.
+  // where we are deleting arbitrary elements and the up heaping.
   std::unordered_map<uint64_t, uint64_t> prepared_section_completed_;
   std::mutex prep_heap_mutex_;
 

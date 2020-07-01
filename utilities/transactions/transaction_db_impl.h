@@ -31,6 +31,11 @@ class TransactionDBImpl : public TransactionDB {
                                 const TransactionOptions& txn_options,
                                 Transaction* old_txn) override;
 
+  Transaction* GetTransactionByName(const TransactionName& name) override;
+
+  // not thread safe. current use case is during recovery (single thread)
+  void GetAllPreparedTransactions(std::vector<Transaction*>* txns) override;
+
   using StackableDB::Put;
   virtual Status Put(const WriteOptions& options,
                      ColumnFamilyHandle* column_family, const Slice& key,
@@ -52,11 +57,6 @@ class TransactionDBImpl : public TransactionDB {
   using StackableDB::DropColumnFamily;
   virtual Status DropColumnFamily(ColumnFamilyHandle* column_family) override;
 
-  Status TryLock(TransactionImpl* txn, uint32_t cfh_id, const std::string& key);
-
-  void UnLock(TransactionImpl* txn, const TransactionKeyMap* keys);
-  void UnLock(TransactionImpl* txn, uint32_t cfh_id, const std::string& key);
-
   void AddColumnFamily(const ColumnFamilyHandle* handle);
 
   static TransactionDBOptions ValidateTxnDBOptions(
@@ -65,6 +65,11 @@ class TransactionDBImpl : public TransactionDB {
   const TransactionDBOptions& GetTxnDBOptions() const {
     return txn_db_options_;
   }
+
+  Status TryLock(TransactionImpl* txn, uint32_t cfh_id, const std::string& key);
+
+  void UnLock(TransactionImpl* txn, const TransactionKeyMap* keys);
+  void UnLock(TransactionImpl* txn, uint32_t cfh_id, const std::string& key);
 
   void InsertExpirableTransaction(TransactionID tx_id, TransactionImpl* tx);
   void RemoveExpirableTransaction(TransactionID tx_id);
@@ -75,18 +80,15 @@ class TransactionDBImpl : public TransactionDB {
   // is expirable (GetExpirationTime() > 0) and that it is expired.
   bool TryStealingExpiredTransactionLocks(TransactionID tx_id);
 
-  Transaction* GetTransactionByName(const TransactionName& name) override;
-
   void RegisterTransaction(Transaction* txn);
   void UnregisterTransaction(Transaction* txn);
-
-  // not thread safe. current use case is during recovery (single thread)
-  void GetAllPreparedTransactions(std::vector<Transaction*>* trans) override;
 
  private:
   void ReinitializeTransaction(
       Transaction* txn, const WriteOptions& write_options,
       const TransactionOptions& txn_options = TransactionOptions());
+
+  Transaction* BeginInternalTransaction(const WriteOptions& options);
 
   DBImpl* db_impl_;
   const TransactionDBOptions txn_db_options_;
@@ -94,15 +96,12 @@ class TransactionDBImpl : public TransactionDB {
 
   // Must be held when adding/dropping column families.
   InstrumentedMutex column_family_mutex_;
-  Transaction* BeginInternalTransaction(const WriteOptions& options);
-  Status WriteHelper(WriteBatch* updates, TransactionImpl* txn_impl);
 
   // Used to ensure that no locks are stolen from an expirable transaction
   // that has started a commit. Only transactions with an expiration time
   // should be in this map.
-  std::mutex map_mutex_;
-  std::unordered_map<TransactionID, TransactionImpl*>
-      expirable_transactions_map_;
+  std::mutex expire_txn_map_mutex_;
+  std::unordered_map<TransactionID, TransactionImpl*> expirable_transactions_;
 
   // map from name to two phase transaction instance
   std::mutex name_map_mutex_;

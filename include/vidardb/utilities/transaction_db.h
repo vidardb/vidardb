@@ -99,7 +99,7 @@ class TransactionDB : public StackableDB {
                      std::vector<ColumnFamilyHandle*>* handles,
                      TransactionDB** dbptr);
 
-  virtual ~TransactionDB() { delete db_; }
+  virtual ~TransactionDB() {}
 
   // Starts a new Transaction.
   //
@@ -115,7 +115,7 @@ class TransactionDB : public StackableDB {
       Transaction* old_txn = nullptr) = 0;
 
   virtual Transaction* GetTransactionByName(const TransactionName& name) = 0;
-  virtual void GetAllPreparedTransactions(std::vector<Transaction*>* trans) = 0;
+  virtual void GetAllPreparedTransactions(std::vector<Transaction*>* txns) = 0;
 
  protected:
   // To Create an TransactionDB, call Open()

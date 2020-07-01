@@ -37,9 +37,6 @@ class TransactionImpl : public TransactionBaseImpl {
 
   virtual ~TransactionImpl();
 
-  void Reinitialize(TransactionDB* txn_db, const WriteOptions& write_options,
-                    const TransactionOptions& txn_options);
-
   Status Prepare() override;
 
   Status Commit() override;
@@ -52,6 +49,19 @@ class TransactionImpl : public TransactionBaseImpl {
 
   Status SetName(const TransactionName& name) override;
 
+  // Returns the number of microseconds a transaction can wait on acquiring a
+  // lock or -1 if there is no timeout.
+  int64_t GetLockTimeout() const { return lock_timeout_; }
+  void SetLockTimeout(int64_t timeout) override {
+    lock_timeout_ = timeout * 1000;
+  }
+
+  void Reinitialize(TransactionDB* txn_db, const WriteOptions& write_options,
+                    const TransactionOptions& txn_options);
+
+  // Returns true if locks were stolen successfully, false otherwise.
+  bool TryStealingLocks();
+
   // Generate a new unique transaction identifier
   static TransactionID GenTxnID();
 
@@ -61,19 +71,6 @@ class TransactionImpl : public TransactionBaseImpl {
   // that this transaction will be expired. Returns 0 if this transaction does
   // not expire.
   uint64_t GetExpirationTime() const { return expiration_time_; }
-
-  // returns true if this transaction has an expiration_time and has expired.
-  bool IsExpired() const;
-
-  // Returns the number of microseconds a transaction can wait on acquiring a
-  // lock or -1 if there is no timeout.
-  int64_t GetLockTimeout() const { return lock_timeout_; }
-  void SetLockTimeout(int64_t timeout) override {
-    lock_timeout_ = timeout * 1000;
-  }
-
-  // Returns true if locks were stolen successfully, false otherwise.
-  bool TryStealingLocks();
 
  protected:
   Status TryLock(ColumnFamilyHandle* column_family, const Slice& key,
@@ -96,18 +93,17 @@ class TransactionImpl : public TransactionBaseImpl {
   // Timeout in microseconds when locking a key or -1 if there is no timeout.
   int64_t lock_timeout_;
 
-  void Clear() override;
-
   void Initialize(const TransactionOptions& txn_options);
 
-  Status ValidateSnapshot(ColumnFamilyHandle* column_family, const Slice& key,
-                          SequenceNumber prev_seqno, SequenceNumber* new_seqno);
+  // returns true if this transaction has an expiration_time and has expired.
+  bool IsExpired() const;
+
+  void Clear() override;
 
   Status LockBatch(WriteBatch* batch, TransactionKeyMap* keys_to_unlock);
 
-  Status DoCommit(WriteBatch* batch);
-
-  void RollbackLastN(size_t num);
+  Status ValidateSnapshot(ColumnFamilyHandle* column_family, const Slice& key,
+                          SequenceNumber prev_seqno, SequenceNumber* new_seqno);
 
   void UnlockGetForUpdate(ColumnFamilyHandle* column_family,
                           const Slice& key) override;
