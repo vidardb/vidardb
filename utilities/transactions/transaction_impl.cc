@@ -518,7 +518,8 @@ Status TransactionImpl::TryLock(ColumnFamilyHandle* column_family,
     }
   } else {
     // If a snapshot is set, we need to make sure the key hasn't been modified
-    // since the snapshot. This must be done after we locked the key.
+    // outside of the transaction since the snapshot. This must be done after
+    // we locked the key.
     if (s.ok()) {
       s = ValidateSnapshot(column_family, key, current_seqno, &new_seqno);
 

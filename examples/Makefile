@@ -3,6 +3,7 @@ include ../make_config.mk
 OBJS = simple_example \
 	   column_families_example \
 	   compact_files_example \
+	   transaction_example \
 	   simple_column_example \
 	   range_query_example \
 	   range_query_column_example \
