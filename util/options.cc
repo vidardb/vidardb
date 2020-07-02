@@ -606,12 +606,8 @@ ColumnFamilyOptions* ColumnFamilyOptions::OptimizeLevelStyleCompaction(
   // only compress levels >= 2
   compression_per_level.resize(num_levels);
   for (int i = 0; i < num_levels; ++i) {
-    if (i < 2) {
-      compression_per_level[i] = kNoCompression;
-    } else {
-      compression_per_level[i] =
-          Snappy_Supported() ? kSnappyCompression : kNoCompression;
-    }
+    compression_per_level[i] =
+        Snappy_Supported() ? kSnappyCompression : kNoCompression;
   }
   return this;
 }
