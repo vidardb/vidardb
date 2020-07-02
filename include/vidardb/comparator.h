@@ -83,16 +83,16 @@ extern const Comparator* ReverseBytewiseComparator();
 
 // Customized map key comparator wraps the user key comparator
 struct MapKeyComparator {
-  const Comparator* _cmp;  // user key comparator
+  const Comparator* cmp_;  // user key comparator
 
   bool operator()(const std::string& x, const std::string& y) const {
-    if (_cmp) {
-      return _cmp->Compare(x, y) < 0;
+    if (cmp_) {
+      return cmp_->Compare(x, y) < 0;
     }
     return x < y; // refer to std::less
   }
 
-  MapKeyComparator(const Comparator* cmp): _cmp(cmp) {}
+  MapKeyComparator(const Comparator* cmp) : cmp_(cmp) {}
 };
 
 }  // namespace vidardb

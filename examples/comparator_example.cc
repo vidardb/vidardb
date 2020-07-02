@@ -209,7 +209,7 @@ int main(int argc, char* argv[]) {
         cout << vals[i].ToString();
         if (i < vals.size() - 1) {
           cout << ", ";
-        };
+        }
       }
       cout << "] ";
     }

@@ -72,7 +72,6 @@ int main() {
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
     cout << "key: " << iter->key().ToString()
          << " value: " << iter->value().ToString() << endl;
-    ;
   }
   delete iter;
 
