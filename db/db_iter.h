@@ -28,9 +28,7 @@ extern Iterator* NewDBIterator(Env* env, const ImmutableCFOptions& options,
                                const Comparator* user_key_comparator,
                                InternalIterator* internal_iter,
                                const SequenceNumber& sequence,
-                               uint64_t version_number,
-                               const Slice* iterate_upper_bound = nullptr,
-                               bool pin_data = false);
+                               uint64_t version_number, bool pin_data = false);
 
 // A wrapper iterator which wraps DB Iterator and the arena, with which the DB
 // iterator is supposed be allocated. This class is used as an entry point of
@@ -74,7 +72,6 @@ class ArenaWrappedDBIter : public Iterator {
 extern ArenaWrappedDBIter* NewArenaWrappedDbIterator(
     Env* env, const ImmutableCFOptions& options,
     const Comparator* user_key_comparator, const SequenceNumber& sequence,
-    uint64_t version_number, const Slice* iterate_upper_bound = nullptr,
-    bool pin_data = false);
+    uint64_t version_number, bool pin_data = false);
 
 }  // namespace vidardb

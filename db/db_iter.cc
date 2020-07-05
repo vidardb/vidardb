@@ -100,8 +100,7 @@ class DBIter: public Iterator {
 
   DBIter(Env* env, const ImmutableCFOptions& ioptions, const Comparator* cmp,
          InternalIterator* iter, SequenceNumber s, bool arena_mode,
-         uint64_t version_number, const Slice* iterate_upper_bound = nullptr,
-         bool pin_data = false)
+         uint64_t version_number, bool pin_data = false)
       : arena_mode_(arena_mode),
         env_(env),
         logger_(ioptions.info_log),
@@ -113,7 +112,6 @@ class DBIter: public Iterator {
         current_entry_is_merged_(false),
         statistics_(ioptions.statistics),
         version_number_(version_number),
-        iterate_upper_bound_(iterate_upper_bound),
         pin_thru_lifetime_(pin_data) {
     RecordTick(statistics_, NO_ITERATORS);
     if (pin_thru_lifetime_) {
@@ -241,7 +239,6 @@ class DBIter: public Iterator {
   bool current_entry_is_merged_;
   Statistics* statistics_;
   uint64_t version_number_;
-  const Slice* iterate_upper_bound_;
   // Means that we will pin all data blocks we read as long the Iterator
   // is not deleted, will be true if ReadOptions::pin_data is true
   const bool pin_thru_lifetime_;
@@ -331,11 +328,6 @@ void DBIter::FindNextUserEntryInternal(bool skipping) {
     ParsedInternalKey ikey;
 
     if (ParseKey(&ikey)) {
-      if (iterate_upper_bound_ != nullptr &&
-          user_comparator_->Compare(ikey.user_key, *iterate_upper_bound_) >= 0) {
-        break;
-      }
-
       if (ikey.sequence <= sequence_) {
         if (skipping &&
            user_comparator_->Compare(ikey.user_key, saved_key_.GetKey()) <= 0) {
@@ -606,28 +598,6 @@ void DBIter::SeekToLast() {
     PERF_TIMER_GUARD(seek_internal_seek_time);
     iter_->SeekToLast();
   }
-  // When the iterate_upper_bound is set to a value,
-  // it will seek to the last key before the
-  // ReadOptions.iterate_upper_bound
-  if (iter_->Valid() && iterate_upper_bound_ != nullptr) {
-    saved_key_.SetKey(*iterate_upper_bound_, false /* copy */);
-    std::string last_key;
-    AppendInternalKey(&last_key,
-                      ParsedInternalKey(saved_key_.GetKey(), kMaxSequenceNumber,
-                                        kValueTypeForSeek));
-
-    iter_->Seek(last_key);
-
-    if (!iter_->Valid()) {
-      iter_->SeekToLast();
-    } else {
-      iter_->Prev();
-      if (!iter_->Valid()) {
-        valid_ = false;
-        return;
-      }
-    }
-  }
   PrevInternal();
   if (statistics_ != nullptr) {
     RecordTick(statistics_, NUMBER_DB_SEEK);
@@ -641,12 +611,11 @@ void DBIter::SeekToLast() {
 Iterator* NewDBIterator(Env* env, const ImmutableCFOptions& ioptions,
                         const Comparator* user_key_comparator,
                         InternalIterator* internal_iter,
-                        const SequenceNumber& sequence,
-                        uint64_t version_number,
-                        const Slice* iterate_upper_bound, bool pin_data) {
+                        const SequenceNumber& sequence, uint64_t version_number,
+                        bool pin_data) {
   DBIter* db_iter =
       new DBIter(env, ioptions, user_key_comparator, internal_iter, sequence,
-                 false, version_number, iterate_upper_bound, pin_data);
+                 false, version_number, /*iterate_upper_bound,*/ pin_data);
   return db_iter;
 }
 
@@ -681,13 +650,13 @@ void ArenaWrappedDBIter::RegisterCleanup(CleanupFunction function, void* arg1,
 ArenaWrappedDBIter* NewArenaWrappedDbIterator(
     Env* env, const ImmutableCFOptions& ioptions,
     const Comparator* user_key_comparator, const SequenceNumber& sequence,
-    uint64_t version_number, const Slice* iterate_upper_bound, bool pin_data) {
+    uint64_t version_number, bool pin_data) {
   ArenaWrappedDBIter* iter = new ArenaWrappedDBIter();
   Arena* arena = iter->GetArena();
   auto mem = arena->AllocateAligned(sizeof(DBIter));
   DBIter* db_iter =
       new (mem) DBIter(env, ioptions, user_key_comparator, nullptr, sequence,
-                       true, version_number, iterate_upper_bound, pin_data);
+                       true, version_number, pin_data);
 
   iter->SetDBIter(db_iter);
 

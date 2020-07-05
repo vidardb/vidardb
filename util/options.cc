@@ -603,7 +603,7 @@ ColumnFamilyOptions* ColumnFamilyOptions::OptimizeLevelStyleCompaction(
   // level style compaction
   compaction_style = kCompactionStyleLevel;
 
-  // only compress levels >= 2
+  // try to compress all levels with Snappy
   compression_per_level.resize(num_levels);
   for (int i = 0; i < num_levels; ++i) {
     compression_per_level[i] =
@@ -644,8 +644,8 @@ ColumnFamilyOptions* ColumnFamilyOptions::OptimizeAdaptiveLevelStyleCompaction(
 
   compression_per_level.resize(num_levels);
   for (int i = 0; i < num_levels; ++i) {
-    compression_per_level[i] = Snappy_Supported() ?
-        kSnappyCompression : kNoCompression;
+    compression_per_level[i] =
+        Snappy_Supported() ? kSnappyCompression : kNoCompression;
   }
   return this;
 }
@@ -665,7 +665,6 @@ ReadOptions::ReadOptions()
     : verify_checksums(true),
       fill_cache(true),
       snapshot(nullptr),
-      iterate_upper_bound(nullptr),
       read_tier(kReadAllTier),
       tailing(false),
       total_order_seek(false),
@@ -680,7 +679,6 @@ ReadOptions::ReadOptions(bool cksum, bool cache)
     : verify_checksums(cksum),
       fill_cache(cache),
       snapshot(nullptr),
-      iterate_upper_bound(nullptr),
       read_tier(kReadAllTier),
       tailing(false),
       total_order_seek(false),

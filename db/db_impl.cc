@@ -4174,7 +4174,6 @@ Iterator* DBImpl::NewIterator(const ReadOptions& read_options,
     auto iter = new ForwardIterator(this, read_options, cfd, sv);
     return NewDBIterator(env_, *cfd->ioptions(), cfd->user_comparator(), iter,
                          kMaxSequenceNumber, sv->version_number,
-                         read_options.iterate_upper_bound,
                          read_options.pin_data);
 #endif
   } else {
@@ -4231,8 +4230,7 @@ Iterator* DBImpl::NewIterator(const ReadOptions& read_options,
     // that they are likely to be in the same cache line and/or page.
     ArenaWrappedDBIter* db_iter = NewArenaWrappedDbIterator(
         env_, *cfd->ioptions(), cfd->user_comparator(), snapshot,
-        sv->version_number, read_options.iterate_upper_bound,
-        read_options.pin_data);
+        sv->version_number, read_options.pin_data);
 
     InternalIterator* internal_iter =
         NewInternalIterator(read_options, cfd, sv, db_iter->GetArena());

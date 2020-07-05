@@ -85,12 +85,9 @@ class ForwardIterator : public InternalIterator {
   void SeekInternal(const Slice& internal_key, bool seek_to_first);
   void UpdateCurrent();
   bool NeedToSeekImmutable(const Slice& internal_key);
-  void DeleteCurrentIter();
   uint32_t FindFileInRange(
     const std::vector<FileMetaData*>& files, const Slice& internal_key,
     uint32_t left, uint32_t right);
-
-  bool IsOverUpperBound(const Slice& internal_key) const;
 
   DBImpl* const db_;
   const ReadOptions read_options_;
@@ -111,13 +108,6 @@ class ForwardIterator : public InternalIterator {
   // Status of immutable iterators, maintained here to avoid iterating over
   // all of them in status().
   Status immutable_status_;
-  // Indicates that at least one of the immutable iterators pointed to a key
-  // larger than iterate_upper_bound and was therefore destroyed. Seek() may
-  // need to rebuild such iterators.
-  bool has_iter_trimmed_for_upper_bound_;
-  // Is current key larger than iterate_upper_bound? If so, makes Valid()
-  // return false.
-  bool current_over_upper_bound_;
 
   // Left endpoint of the range of keys that immutable iterators currently
   // cover. When Seek() is called with a key that's within that range, immutable
