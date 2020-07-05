@@ -20,7 +20,6 @@ int main() {
 
   DB* db;
   Options options;
-  options.create_if_missing = true;
   options.splitter.reset(NewPipeSplitter());
 
   TableFactory* table_factory = NewColumnTableFactory();

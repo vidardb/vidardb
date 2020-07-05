@@ -22,7 +22,6 @@ int main() {
   options.IncreaseParallelism();
   options.OptimizeLevelStyleCompaction();
   // create the DB if it's not already present
-  options.create_if_missing = true;
   options.splitter.reset(NewPipeSplitter());
 
   // open DB

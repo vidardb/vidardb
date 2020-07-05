@@ -19,10 +19,7 @@ int main(int argc, char* argv[]) {
 
   // open database
   DB* db;
-  Options options;
-  options.create_if_missing = true;
-
-  Status s = DB::Open(options, kDBPath, &db);
+  Status s = DB::Open(Options(), kDBPath, &db);
   assert(s.ok());
 
   // insert data

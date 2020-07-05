@@ -131,7 +131,6 @@ class FullCompactor : public Compactor {
 
 int main() {
   Options options;
-  options.create_if_missing = true;
   // Disable VidarDB background compaction.
   options.compaction_style = kCompactionStyleNone;
   options.IncreaseParallelism(5);

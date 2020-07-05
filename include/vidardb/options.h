@@ -526,7 +526,7 @@ struct DBOptions {
 #endif  // VIDARDB_LITE
 
   // If true, the database will be created if it is missing.
-  // Default: false
+  // Default: true
   bool create_if_missing;
 
   // If true, missing column families will be automatically created.

@@ -21,7 +21,6 @@ int main() {
   DestroyDB(kDBPath, options);
 
   TransactionDBOptions txn_db_options;
-  options.create_if_missing = true;
   TransactionDB* txn_db;
 
   Status s = TransactionDB::Open(options, txn_db_options, kDBPath, &txn_db);

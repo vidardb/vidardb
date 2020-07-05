@@ -26,7 +26,6 @@ int main(int argc, char* argv[]) {
   // open database
   DB* db;
   Options options;
-  options.create_if_missing = true;
   options.splitter.reset(NewEncodingSplitter());
   options.OptimizeAdaptiveLevelStyleCompaction();
 

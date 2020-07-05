@@ -146,7 +146,7 @@ ColumnFamilyOptions::ColumnFamilyOptions(const Options& options)
 }
 
 DBOptions::DBOptions()
-    : create_if_missing(false),
+    : create_if_missing(true),
       create_missing_column_families(false),
       error_if_exists(false),
       paranoid_checks(true),
