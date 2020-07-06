@@ -10,6 +10,7 @@
 #include "util/testutil.h"
 
 #include <cctype>
+#include <climits>
 #include <sstream>
 
 #include "port/port.h"

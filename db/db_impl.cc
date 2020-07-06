@@ -219,11 +219,10 @@ static Status ValidateOptions(
       return s;
     }
     if (db_options.db_paths.size() > 1) {
-      if ((cfd.options.compaction_style != kCompactionStyleUniversal) &&
-          (cfd.options.compaction_style != kCompactionStyleLevel)) {
+      if (cfd.options.compaction_style != kCompactionStyleLevel) {
         return Status::NotSupported(
             "More than one DB paths are only supported in "
-            "universal and level compaction styles. ");
+            "level compaction styles. ");
       }
     }
   }
@@ -250,16 +249,9 @@ CompressionType GetCompressionFlush(
   // optimization is used for leveled compaction. Otherwise the CPU and
   // latency overhead is not offset by saving much space.
 
-  bool can_compress;
-
-  if (ioptions.compaction_style == kCompactionStyleUniversal) {
-    can_compress =
-        (ioptions.compaction_options_universal.compression_size_percent < 0);
-  } else {
-    // For leveled compress when min_level_to_compress == 0.
-    can_compress = ioptions.compression_per_level.empty() ||
-                   ioptions.compression_per_level[0] != kNoCompression;
-  }
+  // For leveled compress when min_level_to_compress == 0.
+  bool can_compress = ioptions.compression_per_level.empty() ||
+                      ioptions.compression_per_level[0] != kNoCompression;
 
   if (can_compress) {
     return mutable_cf_options.compression;
@@ -1831,56 +1823,41 @@ Status DBImpl::CompactRange(const CompactRangeOptions& options,
   }
 
   int final_output_level = 0;
-  if (cfd->ioptions()->compaction_style == kCompactionStyleUniversal &&
-      cfd->NumberLevels() > 1) {
-    // Always compact all files together.
-    s = RunManualCompaction(cfd, ColumnFamilyData::kCompactAllLevels,
-                            cfd->NumberLevels() - 1, options.target_path_id,
-                            begin, end, exclusive);
-    final_output_level = cfd->NumberLevels() - 1;
-  } else {
-    for (int level = 0; level <= max_level_with_files; level++) {
-      int output_level;
-      // in case the compaction is universal or if we're compacting the
-      // bottom-most level, the output level will be the same as input one.
-      // level 0 can never be the bottommost level (i.e. if all files are in
-      // level 0, we will compact to level 1)
-      if (cfd->ioptions()->compaction_style == kCompactionStyleUniversal ||
-          cfd->ioptions()->compaction_style == kCompactionStyleFIFO) {
-        output_level = level;
-      } else if (level == max_level_with_files && level > 0) {
-        if (options.bottommost_level_compaction ==
-            BottommostLevelCompaction::kSkip) {
-          // Skip bottommost level compaction
-          continue;
-        } else if (options.bottommost_level_compaction ==
-                       BottommostLevelCompaction::kIfHaveCompactionFilter) {
-          // Skip bottommost level compaction since we don't have a compaction
-          // filter
-          continue;
-        }
-        output_level = level;
-      } else {
-        output_level = level + 1;
-        if (cfd->ioptions()->compaction_style == kCompactionStyleLevel &&
-            cfd->ioptions()->level_compaction_dynamic_level_bytes &&
-            level == 0) {
-          output_level = ColumnFamilyData::kCompactToBaseLevel;
-        }
+  for (int level = 0; level <= max_level_with_files; level++) {
+    int output_level;
+    // in case if we're compacting the bottom-most level,
+    // the output level will be the same as input one.
+    // level 0 can never be the bottommost level (i.e. if all files are in
+    // level 0, we will compact to level 1)
+    if (cfd->ioptions()->compaction_style == kCompactionStyleFIFO) {
+      output_level = level;
+    } else if (level == max_level_with_files && level > 0) {
+      if (options.bottommost_level_compaction ==
+          BottommostLevelCompaction::kSkip) {
+        // Skip bottommost level compaction
+        continue;
+      } else if (options.bottommost_level_compaction ==
+                 BottommostLevelCompaction::kIfHaveCompactionFilter) {
+        // Skip bottommost level compaction since we don't have a compaction
+        // filter
+        continue;
       }
-      s = RunManualCompaction(cfd, level, output_level, options.target_path_id,
-                              begin, end, exclusive);
-      if (!s.ok()) {
-        break;
-      }
-      if (output_level == ColumnFamilyData::kCompactToBaseLevel) {
-        final_output_level = cfd->NumberLevels() - 1;
-      } else if (output_level > final_output_level) {
-        final_output_level = output_level;
-      }
-      TEST_SYNC_POINT("DBImpl::RunManualCompaction()::1");
-      TEST_SYNC_POINT("DBImpl::RunManualCompaction()::2");
+      output_level = level;
+    } else {
+      output_level = level + 1;
     }
+    s = RunManualCompaction(cfd, level, output_level, options.target_path_id,
+                            begin, end, exclusive);
+    if (!s.ok()) {
+      break;
+    }
+    if (output_level == ColumnFamilyData::kCompactToBaseLevel) {
+      final_output_level = cfd->NumberLevels() - 1;
+    } else if (output_level > final_output_level) {
+      final_output_level = output_level;
+    }
+    TEST_SYNC_POINT("DBImpl::RunManualCompaction()::1");
+    TEST_SYNC_POINT("DBImpl::RunManualCompaction()::2");
   }
   if (!s.ok()) {
     LogFlush(db_options_.info_log);
@@ -2495,7 +2472,6 @@ Status DBImpl::RunManualCompaction(ColumnFamilyData* cfd, int input_level,
   // For universal compaction, we enforce every manual compaction to compact
   // all files.
   if (begin == nullptr ||
-      cfd->ioptions()->compaction_style == kCompactionStyleUniversal ||
       cfd->ioptions()->compaction_style == kCompactionStyleFIFO) {
     manual.begin = nullptr;
   } else {
@@ -2503,7 +2479,6 @@ Status DBImpl::RunManualCompaction(ColumnFamilyData* cfd, int input_level,
     manual.begin = &begin_storage;
   }
   if (end == nullptr ||
-      cfd->ioptions()->compaction_style == kCompactionStyleUniversal ||
       cfd->ioptions()->compaction_style == kCompactionStyleFIFO) {
     manual.end = nullptr;
   } else {
@@ -3376,10 +3351,7 @@ Status DBImpl::BackgroundCompaction(bool* made_progress,
     if (!m->done) {
       // We only compacted part of the requested range.  Update *m
       // to the range that is left to be compacted.
-      // Universal and FIFO compactions should always compact the whole range
-      assert(m->cfd->ioptions()->compaction_style !=
-                 kCompactionStyleUniversal ||
-             m->cfd->ioptions()->num_levels > 1);
+      // FIFO compactions should always compact the whole range
       assert(m->cfd->ioptions()->compaction_style != kCompactionStyleFIFO);
       m->tmp_storage = *m->manual_end;
       m->begin = &m->tmp_storage;

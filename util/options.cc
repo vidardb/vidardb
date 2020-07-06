@@ -39,7 +39,6 @@ namespace vidardb {
 
 ImmutableCFOptions::ImmutableCFOptions(const Options& options)
     : compaction_style(options.compaction_style),
-      compaction_options_universal(options.compaction_options_universal),
       compaction_options_fifo(options.compaction_options_fifo),
       comparator(options.comparator),
       splitter(options.splitter.get()),
@@ -71,7 +70,7 @@ ImmutableCFOptions::ImmutableCFOptions(const Options& options)
 ColumnFamilyOptions::ColumnFamilyOptions()
     : comparator(BytewiseComparator()),
       splitter(nullptr),  // compatible with row store
-      write_buffer_size(64 << 20),
+      write_buffer_size(512 << 20),
       max_write_buffer_number(2),
       min_write_buffer_number_to_merge(1),
       max_write_buffer_number_to_maintain(0),
@@ -130,7 +129,6 @@ ColumnFamilyOptions::ColumnFamilyOptions(const Options& options)
       compaction_style(options.compaction_style),
       compaction_pri(options.compaction_pri),
       verify_checksums_in_compaction(options.verify_checksums_in_compaction),
-      compaction_options_universal(options.compaction_options_universal),
       compaction_options_fifo(options.compaction_options_fifo),
       memtable_factory(options.memtable_factory),
       table_factory(options.table_factory),
@@ -472,18 +470,6 @@ void ColumnFamilyOptions::Dump(Logger* log) const {
         compaction_style);
     Header(log, "                          Options.compaction_pri: %d",
            compaction_pri);
-    Header(log, " Options.compaction_options_universal.size_ratio: %u",
-        compaction_options_universal.size_ratio);
-    Header(log, "Options.compaction_options_universal.min_merge_width: %u",
-        compaction_options_universal.min_merge_width);
-    Header(log, "Options.compaction_options_universal.max_merge_width: %u",
-        compaction_options_universal.max_merge_width);
-    Header(log, "Options.compaction_options_universal."
-            "max_size_amplification_percent: %u",
-        compaction_options_universal.max_size_amplification_percent);
-    Header(log,
-        "Options.compaction_options_universal.compression_size_percent: %d",
-        compaction_options_universal.compression_size_percent);
     Header(log,
         "Options.compaction_options_fifo.max_table_files_size: %" PRIu64,
         compaction_options_fifo.max_table_files_size);
@@ -609,20 +595,6 @@ ColumnFamilyOptions* ColumnFamilyOptions::OptimizeLevelStyleCompaction(
     compression_per_level[i] =
         Snappy_Supported() ? kSnappyCompression : kNoCompression;
   }
-  return this;
-}
-
-ColumnFamilyOptions* ColumnFamilyOptions::OptimizeUniversalStyleCompaction(
-    uint64_t memtable_memory_budget) {
-  write_buffer_size = static_cast<size_t>(memtable_memory_budget / 4);
-  // merge two memtables when flushing to L0
-  min_write_buffer_number_to_merge = 2;
-  // this means we'll use 50% extra memory in the worst case, but will reduce
-  // write stalls.
-  max_write_buffer_number = 6;
-  // universal style compaction
-  compaction_style = kCompactionStyleUniversal;
-  compaction_options_universal.compression_size_percent = 80;
   return this;
 }
 

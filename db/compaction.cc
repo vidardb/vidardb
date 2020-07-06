@@ -252,13 +252,6 @@ bool Compaction::IsTrivialMove() const {
   }
   /****************************** Shichao ****************************/
 
-  // Used in universal compaction, where trivial move can be done if the
-  // input files are non overlapping
-  if ((cfd_->ioptions()->compaction_options_universal.allow_trivial_move) &&
-      (output_level_ != 0)) {
-    return is_trivial_move_;
-  }
-
   return (start_level_ != output_level_ && num_input_levels() == 1 &&
           input(0, 0)->fd.GetPathId() == output_path_id() &&
           InputCompressionMatchesOutput() &&
@@ -279,9 +272,7 @@ bool Compaction::KeyNotExistsBeyondOutputLevel(
   assert(level_ptrs != nullptr);
   assert(level_ptrs->size() == static_cast<size_t>(number_levels_));
   assert(cfd_->ioptions()->compaction_style != kCompactionStyleFIFO);
-  if (cfd_->ioptions()->compaction_style == kCompactionStyleUniversal) {
-    return bottommost_level_;
-  }
+
   // Maybe use binary search to find right entry instead of linear search?
   const Comparator* user_cmp = cfd_->user_comparator();
   for (int lvl = output_level_ + 1; lvl < number_levels_; lvl++) {
@@ -434,8 +425,6 @@ bool Compaction::ShouldFormSubcompactions() const {
   }
   if (cfd_->ioptions()->compaction_style == kCompactionStyleLevel) {
     return start_level_ == 0 && !IsOutputLevelEmpty();
-  } else if (cfd_->ioptions()->compaction_style == kCompactionStyleUniversal) {
-    return number_levels_ > 1 && output_level_ > 0;
   } else {
     return false;
   }

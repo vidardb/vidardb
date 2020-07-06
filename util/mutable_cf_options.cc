@@ -39,9 +39,7 @@ void MutableCFOptions::RefreshDerivedOptions(
     const ImmutableCFOptions& ioptions) {
   max_file_size.resize(ioptions.num_levels);
   for (int i = 0; i < ioptions.num_levels; ++i) {
-    if (i == 0 && ioptions.compaction_style == kCompactionStyleUniversal) {
-      max_file_size[i] = ULLONG_MAX;
-    } else if (i > 1) {
+    if (i > 1) {
       max_file_size[i] = MultiplyCheckOverflow(max_file_size[i - 1],
                                                target_file_size_multiplier);
     } else {

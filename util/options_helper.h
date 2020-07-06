@@ -435,7 +435,6 @@ static std::unordered_map<std::string, CompressionType>
 static std::unordered_map<std::string, CompactionStyle>
     compaction_style_string_map = {
         {"kCompactionStyleLevel", kCompactionStyleLevel},
-        {"kCompactionStyleUniversal", kCompactionStyleUniversal},
         {"kCompactionStyleFIFO", kCompactionStyleFIFO},
         {"kCompactionStyleNone", kCompactionStyleNone}};
 

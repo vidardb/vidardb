@@ -1326,16 +1326,6 @@ void VersionStorageInfo::ComputeCompactionScore(
           num_sorted_runs++;
         }
       }
-      if (compaction_style_ == kCompactionStyleUniversal) {
-        // For universal compaction, we use level0 score to indicate
-        // compaction score for the whole DB. Adding other levels as if
-        // they are L0 files.
-        for (int i = 1; i < num_levels(); i++) {
-          if (!files_[i].empty() && !files_[i][0]->being_compacted) {
-            num_sorted_runs++;
-          }
-        }
-      }
 
       if (compaction_style_ == kCompactionStyleFIFO) {
         score = static_cast<double>(total_size) /
@@ -1540,8 +1530,7 @@ void SortFileByOverlappingRatio(
 
 void VersionStorageInfo::UpdateFilesByCompactionPri(
     const MutableCFOptions& mutable_cf_options) {
-  if (compaction_style_ == kCompactionStyleFIFO ||
-      compaction_style_ == kCompactionStyleUniversal) {
+  if (compaction_style_ == kCompactionStyleFIFO) {
     // don't need this
     return;
   }
@@ -1959,112 +1948,22 @@ void VersionStorageInfo::CalculateBaseBytes(const ImmutableCFOptions& ioptions,
   // Special logic to set number of sorted runs.
   // It is to match the previous behavior when all files are in L0.
   int num_l0_count = static_cast<int>(files_[0].size());
-  if (compaction_style_ == kCompactionStyleUniversal) {
-    // For universal compaction, we use level0 score to indicate
-    // compaction score for the whole DB. Adding other levels as if
-    // they are L0 files.
-    for (int i = 1; i < num_levels(); i++) {
-      if (!files_[i].empty()) {
-        num_l0_count++;
-      }
-    }
-  }
+
   set_l0_delay_trigger_count(num_l0_count);
 
   level_max_bytes_.resize(ioptions.num_levels);
-  if (!ioptions.level_compaction_dynamic_level_bytes) {
-    base_level_ = (ioptions.compaction_style == kCompactionStyleLevel) ? 1 : -1;
 
-    // Calculate for static bytes base case
-    for (int i = 0; i < ioptions.num_levels; ++i) {
-      if (i == 0 && ioptions.compaction_style == kCompactionStyleUniversal) {
-        level_max_bytes_[i] = options.max_bytes_for_level_base;
-      } else if (i > 1) {
-        level_max_bytes_[i] = MultiplyCheckOverflow(
-            MultiplyCheckOverflow(level_max_bytes_[i - 1],
-                                  options.max_bytes_for_level_multiplier),
-            options.MaxBytesMultiplerAdditional(i - 1));
-      } else {
-        level_max_bytes_[i] = options.max_bytes_for_level_base;
-      }
-    }
-  } else {
-    uint64_t max_level_size = 0;
+  base_level_ = (ioptions.compaction_style == kCompactionStyleLevel) ? 1 : -1;
 
-    int first_non_empty_level = -1;
-    // Find size of non-L0 level of most data.
-    // Cannot use the size of the last level because it can be empty or less
-    // than previous levels after compaction.
-    for (int i = 1; i < num_levels_; i++) {
-      uint64_t total_size = 0;
-      for (const auto& f : files_[i]) {
-        total_size += f->fd.GetFileSize();
-      }
-      if (total_size > 0 && first_non_empty_level == -1) {
-        first_non_empty_level = i;
-      }
-      if (total_size > max_level_size) {
-        max_level_size = total_size;
-      }
-    }
-
-    // Prefill every level's max bytes to disallow compaction from there.
-    for (int i = 0; i < num_levels_; i++) {
-      level_max_bytes_[i] = std::numeric_limits<uint64_t>::max();
-    }
-
-    if (max_level_size == 0) {
-      // No data for L1 and up. L0 compacts to last level directly.
-      // No compaction from L1+ needs to be scheduled.
-      base_level_ = num_levels_ - 1;
+  // Calculate for static bytes base case
+  for (int i = 0; i < ioptions.num_levels; ++i) {
+    if (i > 1) {
+      level_max_bytes_[i] = MultiplyCheckOverflow(
+          MultiplyCheckOverflow(level_max_bytes_[i - 1],
+                                options.max_bytes_for_level_multiplier),
+          options.MaxBytesMultiplerAdditional(i - 1));
     } else {
-      uint64_t base_bytes_max = options.max_bytes_for_level_base;
-      uint64_t base_bytes_min =
-          base_bytes_max / options.max_bytes_for_level_multiplier;
-
-      // Try whether we can make last level's target size to be max_level_size
-      uint64_t cur_level_size = max_level_size;
-      for (int i = num_levels_ - 2; i >= first_non_empty_level; i--) {
-        // Round up after dividing
-        cur_level_size /= options.max_bytes_for_level_multiplier;
-      }
-
-      // Calculate base level and its size.
-      uint64_t base_level_size;
-      if (cur_level_size <= base_bytes_min) {
-        // Case 1. If we make target size of last level to be max_level_size,
-        // target size of the first non-empty level would be smaller than
-        // base_bytes_min. We set it be base_bytes_min.
-        base_level_size = base_bytes_min + 1U;
-        base_level_ = first_non_empty_level;
-        Warn(ioptions.info_log,
-             "More existing levels in DB than needed. "
-             "max_bytes_for_level_multiplier may not be guaranteed.");
-      } else {
-        // Find base level (where L0 data is compacted to).
-        base_level_ = first_non_empty_level;
-        while (base_level_ > 1 && cur_level_size > base_bytes_max) {
-          --base_level_;
-          cur_level_size =
-              cur_level_size / options.max_bytes_for_level_multiplier;
-        }
-        if (cur_level_size > base_bytes_max) {
-          // Even L1 will be too large
-          assert(base_level_ == 1);
-          base_level_size = base_bytes_max;
-        } else {
-          base_level_size = cur_level_size;
-        }
-      }
-
-      uint64_t level_size = base_level_size;
-      for (int i = base_level_; i < num_levels_; i++) {
-        if (i > base_level_) {
-          level_size = MultiplyCheckOverflow(
-              level_size, options.max_bytes_for_level_multiplier);
-        }
-        level_max_bytes_[i] = level_size;
-      }
+      level_max_bytes_[i] = options.max_bytes_for_level_base;
     }
   }
 }

@@ -48,8 +48,6 @@ TEST_F(ManualCompactionTest, CompactTouchesAllKeys) {
     if (iter == 0) { // level compaction
       options.num_levels = 3;
       options.compaction_style = kCompactionStyleLevel;
-    } else { // universal compaction
-      options.compaction_style = kCompactionStyleUniversal;
     }
     options.create_if_missing = true;
     options.compression = vidardb::kNoCompression;

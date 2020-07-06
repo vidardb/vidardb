@@ -29,7 +29,6 @@ struct ImmutableCFOptions {
 
   CompactionStyle compaction_style;
 
-  CompactionOptionsUniversal compaction_options_universal;
   CompactionOptionsFIFO compaction_options_fifo;
 
   const Comparator* comparator;
@@ -74,8 +73,6 @@ struct ImmutableCFOptions {
   CompressionType bottommost_compression;
 
   CompressionOptions compression_opts;
-
-  bool level_compaction_dynamic_level_bytes;
 
   Options::AccessHint access_hint_on_compaction_start;
 

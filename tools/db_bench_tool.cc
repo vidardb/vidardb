@@ -2352,29 +2352,6 @@ class Benchmark {
 
     options.report_bg_io_stats = FLAGS_report_bg_io_stats;
 
-    // set universal style compaction configurations, if applicable
-    if (FLAGS_universal_size_ratio != 0) {
-      options.compaction_options_universal.size_ratio =
-        FLAGS_universal_size_ratio;
-    }
-    if (FLAGS_universal_min_merge_width != 0) {
-      options.compaction_options_universal.min_merge_width =
-        FLAGS_universal_min_merge_width;
-    }
-    if (FLAGS_universal_max_merge_width != 0) {
-      options.compaction_options_universal.max_merge_width =
-        FLAGS_universal_max_merge_width;
-    }
-    if (FLAGS_universal_max_size_amplification_percent != 0) {
-      options.compaction_options_universal.max_size_amplification_percent =
-        FLAGS_universal_max_size_amplification_percent;
-    }
-    if (FLAGS_universal_compression_size_percent != -1) {
-      options.compaction_options_universal.compression_size_percent =
-        FLAGS_universal_compression_size_percent;
-    }
-    options.compaction_options_universal.allow_trivial_move =
-        FLAGS_universal_allow_trivial_move;
     if (FLAGS_thread_status_per_interval > 0) {
       options.enable_thread_tracking = true;
     }

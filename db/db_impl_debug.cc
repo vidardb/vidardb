@@ -65,11 +65,9 @@ Status DBImpl::TEST_CompactRange(int level, const Slice* begin,
     auto cfh = reinterpret_cast<ColumnFamilyHandleImpl*>(column_family);
     cfd = cfh->cfd();
   }
-  int output_level =
-      (cfd->ioptions()->compaction_style == kCompactionStyleUniversal ||
-       cfd->ioptions()->compaction_style == kCompactionStyleFIFO)
-          ? level
-          : level + 1;
+  int output_level = cfd->ioptions()->compaction_style == kCompactionStyleFIFO
+                         ? level
+                         : level + 1;
   return RunManualCompaction(cfd, level, output_level, 0, begin, end, true,
                              disallow_trivial_move);
 }

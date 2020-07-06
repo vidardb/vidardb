@@ -25,7 +25,6 @@
 
 #include "vidardb/listener.h"
 #include "vidardb/splitter.h"
-#include "vidardb/universal_compaction.h"
 #include "vidardb/version.h"
 
 namespace vidardb {
@@ -67,9 +66,6 @@ enum CompressionType : char {
 enum CompactionStyle : char {
   // level based compaction style
   kCompactionStyleLevel = 0x0,
-  // Universal compaction style
-  // Not supported in VIDARDB_LITE.
-  kCompactionStyleUniversal = 0x1,
   // FIFO compaction style
   // Not supported in VIDARDB_LITE
   kCompactionStyleFIFO = 0x2,
@@ -181,20 +177,14 @@ struct ColumnFamilyOptions {
   // observe write stalls under some conditions. As a starting point for tuning
   // VidarDB options, use the following three functions:
   // * OptimizeLevelStyleCompaction -- optimizes level style compaction
-  // * OptimizeUniversalStyleCompaction -- optimizes universal style compaction
   // * OptimizeAdaptiveLevelStyleCompaction -- optimizes level style compaction
   //                                           for adaptive table storage
-  // Universal style compaction is focused on reducing Write Amplification
-  // Factor for big data sets, but increases Space Amplification.
   // Make sure to also call IncreaseParallelism(), which will provide the
   // biggest performance gains.
   // Note: we might use more memory than memtable_memory_budget during high
   // write rate period
   //
-  // OptimizeUniversalStyleCompaction is not supported in VIDARDB_LITE
   ColumnFamilyOptions* OptimizeLevelStyleCompaction(
-      uint64_t memtable_memory_budget = 512 * 1024 * 1024);
-  ColumnFamilyOptions* OptimizeUniversalStyleCompaction(
       uint64_t memtable_memory_budget = 512 * 1024 * 1024);
   /********************* Shichao ***************************/
   ColumnFamilyOptions* OptimizeAdaptiveLevelStyleCompaction(
@@ -234,7 +224,7 @@ struct ColumnFamilyOptions {
   // Note that write_buffer_size is enforced per column family.
   // See db_write_buffer_size for sharing memory across column families.
   //
-  // Default: 64MB
+  // Default: 512MB
   //
   // Dynamically changeable through SetOptions() API
   size_t write_buffer_size;
@@ -454,9 +444,6 @@ struct ColumnFamilyOptions {
   //
   // Dynamically changeable through SetOptions() API
   bool verify_checksums_in_compaction;
-
-  // The options needed to support Universal Style compactions
-  CompactionOptionsUniversal compaction_options_universal;
 
   // The options for FIFO compaction style
   CompactionOptionsFIFO compaction_options_fifo;
@@ -914,8 +901,7 @@ struct DBOptions {
   // Default: false
   bool enable_thread_tracking;
 
-  // The limited write rate to DB if soft_pending_compaction_bytes_limit or
-  // level0_slowdown_writes_trigger is triggered, or we are writing to the
+  // The limited write rate to DB if we are writing to the
   // last mem table allowed and we allow more than 3 mem tables. It is
   // calculated using size of user write requests before compression.
   // VidarDB may decide to slow down more if the compaction still

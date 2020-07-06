@@ -287,9 +287,6 @@ ColumnFamilyData::ColumnFamilyData(
       compaction_picker_.reset(
           new LevelCompactionPicker(ioptions_, &internal_comparator_));
 #ifndef VIDARDB_LITE
-    } else if (ioptions_.compaction_style == kCompactionStyleUniversal) {
-      compaction_picker_.reset(
-          new UniversalCompactionPicker(ioptions_, &internal_comparator_));
     } else if (ioptions_.compaction_style == kCompactionStyleFIFO) {
       compaction_picker_.reset(
           new FIFOCompactionPicker(ioptions_, &internal_comparator_));
