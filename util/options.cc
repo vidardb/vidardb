@@ -30,7 +30,6 @@
 #include "vidardb/slice.h"
 #include "vidardb/table.h"
 #include "vidardb/table_properties.h"
-#include "vidardb/wal_filter.h"
 #include "table/block_based_table_factory.h"
 #include "util/compression.h"
 #include "util/statistics.h"

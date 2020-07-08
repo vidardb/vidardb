@@ -71,7 +71,6 @@
 #include "vidardb/status.h"
 #include "vidardb/table.h"
 #include "vidardb/version.h"
-#include "vidardb/wal_filter.h"
 #include "table/block.h"
 #include "table/block_based_table_factory.h"
 #include "table/merger.h"
