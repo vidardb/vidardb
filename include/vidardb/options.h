@@ -30,8 +30,6 @@
 namespace vidardb {
 
 class Cache;
-class CompactionFilter;
-class CompactionFilterFactory;
 class Comparator;
 class Env;
 enum InfoLogLevel : unsigned char;
@@ -44,7 +42,6 @@ class TablePropertiesCollectorFactory;
 class Slice;
 class Statistics;
 class InternalKeyComparator;
-class WalFilter;
 class Splitter;
 
 // DB contents are stored in a set of blocks, each of which holds a
@@ -953,15 +950,6 @@ struct DBOptions {
   // Not supported in VIDARDB_LITE mode!
   std::shared_ptr<Cache> row_cache;
 
-#ifndef VIDARDB_LITE
-  // A filter object supplied to be invoked while processing write-ahead-logs
-  // (WALs) during recovery. The filter provides a way to inspect log
-  // records, ignoring a particular record or skipping replay.
-  // The filter is invoked at startup and is invoked from a single-thread
-  // currently.
-  WalFilter* wal_filter;
-#endif  // VIDARDB_LITE
-
   // If true, then DB::Open / CreateColumnFamily / DropColumnFamily
   // / SetOptions will fail if options file is not detected or properly
   // persisted.
@@ -1180,18 +1168,6 @@ struct CompactionOptions {
         output_file_size_limit(std::numeric_limits<uint64_t>::max()) {}
 };
 
-// For level based compaction, we can configure if we want to skip/force
-// bottommost level compaction.
-enum class BottommostLevelCompaction {
-  // Skip bottommost level compaction
-  kSkip,
-  // Only compact bottommost level if there is a compaction filter
-  // This is the default option
-  kIfHaveCompactionFilter,
-  // Always compact bottommost level
-  kForce,
-};
-
 // CompactRangeOptions is used by CompactRange() call.
 struct CompactRangeOptions {
   // If true, no other compaction will run at the same time as this
@@ -1206,10 +1182,6 @@ struct CompactRangeOptions {
   // Compaction outputs will be placed in options.db_paths[target_path_id].
   // Behavior is undefined if target_path_id is out of range.
   uint32_t target_path_id = 0;
-  // By default level based compaction will only compact the bottommost level
-  // if there is a compaction filter
-  BottommostLevelCompaction bottommost_level_compaction =
-      BottommostLevelCompaction::kIfHaveCompactionFilter;
 };
 
 }  // namespace vidardb

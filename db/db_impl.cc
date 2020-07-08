@@ -1314,23 +1314,6 @@ Status DBImpl::RecoverLogFiles(const std::vector<uint64_t>& log_numbers,
     stream.EndArray();
   }
 
-#ifndef VIDARDB_LITE
-  if (db_options_.wal_filter != nullptr) {
-    std::map<std::string, uint32_t> cf_name_id_map;
-    std::map<uint32_t, uint64_t> cf_lognumber_map;
-    for (auto cfd : *versions_->GetColumnFamilySet()) {
-      cf_name_id_map.insert(
-        std::make_pair(cfd->GetName(), cfd->GetID()));
-      cf_lognumber_map.insert(
-        std::make_pair(cfd->GetID(), cfd->GetLogNumber()));
-    }
-
-    db_options_.wal_filter->ColumnFamilyLogNumberMap(
-      cf_lognumber_map,
-      cf_name_id_map);
-  }
-#endif
-
   bool continue_replay_log = true;
   for (auto log_number : log_numbers) {
     // The previous incarnation may not have written any MANIFEST
@@ -1403,80 +1386,6 @@ Status DBImpl::RecoverLogFiles(const std::vector<uint64_t>& log_numbers,
         continue;
       }
       WriteBatchInternal::SetContents(&batch, record);
-
-#ifndef VIDARDB_LITE
-      if (db_options_.wal_filter != nullptr) {
-        WriteBatch new_batch;
-        bool batch_changed = false;
-
-        WalFilter::WalProcessingOption wal_processing_option =
-            db_options_.wal_filter->LogRecordFound(log_number, fname, batch,
-                                              &new_batch, &batch_changed);
-
-        switch (wal_processing_option) {
-          case WalFilter::WalProcessingOption::kContinueProcessing:
-            // do nothing, proceeed normally
-            break;
-          case WalFilter::WalProcessingOption::kIgnoreCurrentRecord:
-            // skip current record
-            continue;
-          case WalFilter::WalProcessingOption::kStopReplay:
-            // skip current record and stop replay
-            continue_replay_log = false;
-            continue;
-          case WalFilter::WalProcessingOption::kCorruptedRecord: {
-            status = Status::Corruption("Corruption reported by Wal Filter ",
-                                        db_options_.wal_filter->Name());
-            MaybeIgnoreError(&status);
-            if (!status.ok()) {
-              reporter.Corruption(record.size(), status);
-              continue;
-            }
-            break;
-          }
-          default: {
-            assert(false);  // unhandled case
-            status = Status::NotSupported(
-                "Unknown WalProcessingOption returned"
-                " by Wal Filter ",
-                db_options_.wal_filter->Name());
-            MaybeIgnoreError(&status);
-            if (!status.ok()) {
-              return status;
-            } else {
-              // Ignore the error with current record processing.
-              continue;
-            }
-          }
-        }
-
-        if (batch_changed) {
-          // Make sure that the count in the new batch is
-          // within the orignal count.
-          int new_count = WriteBatchInternal::Count(&new_batch);
-          int original_count = WriteBatchInternal::Count(&batch);
-          if (new_count > original_count) {
-            Log(InfoLogLevel::FATAL_LEVEL, db_options_.info_log,
-                "Recovering log #%" PRIu64
-                " mode %d log filter %s returned "
-                "more records (%d) than original (%d) which is not allowed. "
-                "Aborting recovery.",
-                log_number, db_options_.wal_recovery_mode,
-                db_options_.wal_filter->Name(), new_count, original_count);
-            status = Status::NotSupported(
-                "More than original # of records "
-                "returned by Wal Filter ",
-                db_options_.wal_filter->Name());
-            return status;
-          }
-          // Set the same sequence number in the new_batch
-          // as the original batch.
-          WriteBatchInternal::SetSequence(&new_batch,
-                                          WriteBatchInternal::Sequence(&batch));
-          batch = new_batch;
-        }
-      }
-#endif  // VIDARDB_LITE
 
       if (*next_sequence == kMaxSequenceNumber) {
         *next_sequence = WriteBatchInternal::Sequence(&batch);
@@ -1832,17 +1741,7 @@ Status DBImpl::CompactRange(const CompactRangeOptions& options,
     if (cfd->ioptions()->compaction_style == kCompactionStyleFIFO) {
       output_level = level;
     } else if (level == max_level_with_files && level > 0) {
-      if (options.bottommost_level_compaction ==
-          BottommostLevelCompaction::kSkip) {
-        // Skip bottommost level compaction
-        continue;
-      } else if (options.bottommost_level_compaction ==
-                 BottommostLevelCompaction::kIfHaveCompactionFilter) {
-        // Skip bottommost level compaction since we don't have a compaction
-        // filter
-        continue;
-      }
-      output_level = level;
+      continue;
     } else {
       output_level = level + 1;
     }

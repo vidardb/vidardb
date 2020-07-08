@@ -578,8 +578,6 @@ void RandomCompressionTypeVector(const size_t count,
                                  std::vector<CompressionType>* types,
                                  Random* rnd);
 
-CompactionFilterFactory* RandomCompactionFilterFactory(Random* rnd);
-
 TableFactory* RandomTableFactory(Random* rnd, int pre_defined = -1);
 
 std::string RandomName(Random* rnd, const size_t len);

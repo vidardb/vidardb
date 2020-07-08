@@ -202,9 +202,6 @@ DBOptions::DBOptions()
       skip_stats_update_on_db_open(false),
       wal_recovery_mode(WALRecoveryMode::kPointInTimeRecovery),
       row_cache(nullptr),
-#ifndef VIDARDB_LITE
-      wal_filter(nullptr),
-#endif  // VIDARDB_LITE
       fail_if_options_file_error(false),
       dump_malloc_stats(false),
       show_key_fun(nullptr),  // Shichao
@@ -269,9 +266,6 @@ DBOptions::DBOptions(const Options& options)
       skip_stats_update_on_db_open(options.skip_stats_update_on_db_open),
       wal_recovery_mode(options.wal_recovery_mode),
       row_cache(options.row_cache),
-#ifndef VIDARDB_LITE
-      wal_filter(options.wal_filter),
-#endif  // VIDARDB_LITE
       fail_if_options_file_error(options.fail_if_options_file_error),
       dump_malloc_stats(options.dump_malloc_stats),
       show_key_fun(options.show_key_fun),  // Shichao
@@ -390,10 +384,6 @@ void DBOptions::Dump(Logger* log) const {
     } else {
       Header(log, "                               Options.row_cache: None");
     }
-#ifndef VIDARDB_LITE
-    Header(log, "       Options.wal_filter: %s",
-           wal_filter ? wal_filter->Name() : "None");
-#endif  // VIDARDB_LITE
 }  // DBOptions::Dump
 
 void ColumnFamilyOptions::Dump(Logger* log) const {
