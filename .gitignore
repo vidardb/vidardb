@@ -8,3 +8,5 @@ make_config.mk
 *.d
 *.a
 util/build_version.cc
+*.so*
+libvidardb*dylib
