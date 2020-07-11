@@ -1,7 +1,7 @@
 # Mirror from https://hub.docker.com/_/postgres
 FROM vidardb/postgres:11.7
 
-# Install VidarDB
+# Install VidarDB Engine
 ENV VIDARDB_VERSION=master
 RUN set -xe && apt-get update && apt-get install -y --no-install-recommends gcc-6 g++-6 make wget && \
     update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 800 --slave /usr/bin/g++ g++ /usr/bin/g++-6 && \

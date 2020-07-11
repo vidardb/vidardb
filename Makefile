@@ -1057,9 +1057,10 @@ install-shared: install-headers $(SHARED4)
 		ln -fs $(SHARED4) $(INSTALL_PATH)/lib/$(SHARED2) && \
 		ln -fs $(SHARED4) $(INSTALL_PATH)/lib/$(SHARED1)
 
-# install static by default + install shared if it exists
-install: install-static
-	[ -e $(SHARED4) ] && $(MAKE) install-shared || :
+# install both static and shared library by cmake
+install:
+	@echo "install both static and shared library by cmake ..."
+	./CMakeInstall.sh
 
 #-------------------------------------------------
 

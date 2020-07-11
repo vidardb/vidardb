@@ -3,6 +3,8 @@
 // LICENSE file in the root directory of this source tree. An additional grant
 // of patent rights can be found in the PATENTS file in the same directory.
 
+#include <string.h>
+
 #include <iostream>
 using namespace std;
 
@@ -216,7 +218,7 @@ int main(int argc, char* argv[]) {
     cout << ", val_size=" << ro.result_val_size << endl;
   }
 
-  if (comparator->Name() == "CustomizedComparator") {
+  if (strcmp(comparator->Name(), "CustomizedComparator") == 0) {
     delete comparator;
   }
   delete db;
