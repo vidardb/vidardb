@@ -186,32 +186,6 @@ class MemTable {
                   std::list<RangeQueryKeyVal>& res, Status* s);
   /******************************* Shichao *******************************/
 
-  // Attempts to update the new_value inplace, else does normal Add
-  // Pseudocode
-  //   if key exists in current memtable && prev_value is of type kTypeValue
-  //     if new sizeof(new_value) <= sizeof(prev_value)
-  //       update inplace
-  //     else add(key, new_value)
-  //   else add(key, new_value)
-  //
-  // REQUIRES: external synchronization to prevent simultaneous
-  // operations on the same MemTable.
-  void Update(SequenceNumber seq, const Slice& key, const Slice& value);
-
-  // If prev_value for key exists, attempts to update it inplace.
-  // else returns false
-  // Pseudocode
-  //   if key exists in current memtable && prev_value is of type kTypeValue
-  //     new_value = delta(prev_value)
-  //     if sizeof(new_value) <= sizeof(prev_value)
-  //       update inplace
-  //     else add(key, new_value)
-  //   else return false
-  //
-  // REQUIRES: external synchronization to prevent simultaneous
-  // operations on the same MemTable.
-  bool UpdateCallback(SequenceNumber seq, const Slice& key, const Slice& delta);
-
   // Get total number of entries in the mem table.
   // REQUIRES: external synchronization to prevent simultaneous
   // operations on the same MemTable (unless this Memtable is immutable).

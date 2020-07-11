@@ -521,8 +521,6 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
                 it->second.iter_->user_val.size();
             it->second.seq_ = s->seq;
             it->second.type_ = type;
-            //            it->second.iter_->user_val =
-            //            std::move(user_val.ToString());
             it->second.iter_->user_val = user_val.ToString();
             s->read_options->result_val_size += 
                 it->second.iter_->user_val.size();
@@ -533,8 +531,6 @@ static bool SaveValueForRangeQuery(void* arg, const char* entry) {
             // inserted
             size_t delta_key_size = user_key.size();
             size_t delta_val_size = user_val.size();
-            //            s->res->emplace_back(user_key,
-            //            std::move(user_val.ToString()));
             s->res->emplace_back(user_key, user_val.ToString());
             s->read_options->result_key_size += delta_key_size;
             s->read_options->result_val_size += delta_val_size;
@@ -625,53 +621,6 @@ bool MemTable::RangeQuery(ReadOptions& read_options, const LookupRange& range,
   return (s->ok() || s->IsNotFound());
 }
 /***************************** Shichao *****************************/
-
-void MemTable::Update(SequenceNumber seq, const Slice& key,
-                      const Slice& value) {
-  LookupKey lkey(key, seq);
-  Slice mem_key = lkey.memtable_key();
-
-  std::unique_ptr<MemTableRep::Iterator> iter(
-      table_->GetDynamicPrefixIterator());
-  iter->Seek(lkey.internal_key(), mem_key.data());
-
-  if (iter->Valid()) {
-    // entry format is:
-    //    key_length  varint32
-    //    userkey  char[klength-8]
-    //    tag      uint64
-    //    vlength  varint32
-    //    value    char[vlength]
-    // Check that it belongs to same user key.  We do not check the
-    // sequence number since the Seek() call above should have skipped
-    // all entries with overly large sequence numbers.
-    const char* entry = iter->key();
-    uint32_t key_length = 0;
-    const char* key_ptr = GetVarint32Ptr(entry, entry + 5, &key_length);
-    if (comparator_.comparator.user_comparator()->Equal(
-            Slice(key_ptr, key_length - 8), lkey.user_key())) {
-      // Correct user key
-      const uint64_t tag = DecodeFixed64(key_ptr + key_length - 8);
-      ValueType type;
-      SequenceNumber unused;
-      UnPackSequenceAndType(tag, &unused, &type);
-      switch (type) {
-        case kTypeValue: {
-          // Update value, if new value size  <= previous value size
-          //          [[gnu::fallthrough]];
-        }
-        default:
-          // If the latest value is kTypeDeletion, kTypeMerge or kTypeLogData
-          // we don't have enough space for update inplace
-            Add(seq, kTypeValue, key, value);
-            return;
-      }
-    }
-  }
-
-  // key doesn't exist
-  Add(seq, kTypeValue, key, value);
-}
 
 void MemTableRep::Get(const LookupKey& k, void* callback_args,
                       bool (*callback_func)(void* arg, const char* entry)) {

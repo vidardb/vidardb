@@ -940,8 +940,6 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
           read_options.result_val_size -= it->second.iter_->user_val.size();
           it->second.seq_ = parsed_key.sequence;
           it->second.type_ = parsed_key.type;
-          //          it->second.iter_->user_val =
-          //          std::move(user_val.ToString());
           it->second.iter_->user_val = user_val.ToString();
           read_options.result_val_size += it->second.iter_->user_val.size();
           if (parsed_key.type == kTypeDeletion) {
@@ -951,8 +949,6 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
           // inserted
           size_t delta_key_size = user_key.size();
           size_t delta_val_size = user_val.size();
-          //          res.emplace_back(user_key,
-          //          std::move(user_val.ToString()));
           res.emplace_back(user_key, user_val.ToString());
           read_options.result_key_size += delta_key_size;
           read_options.result_val_size += delta_val_size;

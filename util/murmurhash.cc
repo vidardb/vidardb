@@ -46,13 +46,26 @@ uint64_t MurmurHash64A ( const void * key, int len, unsigned int seed )
 
     switch(len & 7)
     {
-    case 7: h ^= ((uint64_t)data2[6]) << 48; [[gnu::fallthrough]];
-    case 6: h ^= ((uint64_t)data2[5]) << 40; [[gnu::fallthrough]];
-    case 5: h ^= ((uint64_t)data2[4]) << 32; [[gnu::fallthrough]];
-    case 4: h ^= ((uint64_t)data2[3]) << 24; [[gnu::fallthrough]];
-    case 3: h ^= ((uint64_t)data2[2]) << 16; [[gnu::fallthrough]];
-    case 2: h ^= ((uint64_t)data2[1]) << 8; [[gnu::fallthrough]];
-    case 1: h ^= ((uint64_t)data2[0]);
+      case 7:
+        h ^= ((uint64_t)data2[6]) << 48;
+        [[fallthrough]];
+      case 6:
+        h ^= ((uint64_t)data2[5]) << 40;
+        [[fallthrough]];
+      case 5:
+        h ^= ((uint64_t)data2[4]) << 32;
+        [[fallthrough]];
+      case 4:
+        h ^= ((uint64_t)data2[3]) << 24;
+        [[fallthrough]];
+      case 3:
+        h ^= ((uint64_t)data2[2]) << 16;
+        [[fallthrough]];
+      case 2:
+        h ^= ((uint64_t)data2[1]) << 8;
+        [[fallthrough]];
+      case 1:
+        h ^= ((uint64_t)data2[0]);
         h *= m;
     };
 
