@@ -28,14 +28,12 @@ namespace vidardb {
 TransactionDBImpl::TransactionDBImpl(DB* db,
                                      const TransactionDBOptions& txn_db_options)
     : TransactionDB(db),
-      db_impl_(dynamic_cast<DBImpl*>(db)),
       txn_db_options_(txn_db_options),
       lock_mgr_(this, txn_db_options_.num_stripes, txn_db_options.max_num_locks,
                 txn_db_options_.custom_mutex_factory
                     ? txn_db_options_.custom_mutex_factory
                     : std::shared_ptr<TransactionDBMutexFactory>(
                           new TransactionDBMutexFactoryImpl())) {
-  assert(db_impl_ != nullptr);
 }
 
 TransactionDBImpl::~TransactionDBImpl() {

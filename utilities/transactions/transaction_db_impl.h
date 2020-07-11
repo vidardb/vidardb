@@ -90,7 +90,6 @@ class TransactionDBImpl : public TransactionDB {
 
   Transaction* BeginInternalTransaction(const WriteOptions& options);
 
-  DBImpl* db_impl_;
   const TransactionDBOptions txn_db_options_;
   TransactionLockMgr lock_mgr_;
 
