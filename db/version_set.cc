@@ -973,10 +973,8 @@ void Version::Get(const ReadOptions& read_options, const LookupKey& k,
     *key_exists = true;
   }
 
-  GetContext get_context(
-      user_comparator(), info_log_, db_statistics_,
-      GetContext::kNotFound, user_key,
-      value, value_found, this->env_, seq);
+  GetContext get_context(user_comparator(), GetContext::kNotFound, user_key,
+                         value, value_found, seq);
 
   FilePicker fp(storage_info_.files_, k, k, &storage_info_.level_files_brief_,
                 storage_info_.num_non_empty_levels_,

@@ -87,7 +87,7 @@ class BlockBasedTableBuilder : public TableBuilder {
   // Get table properties
   TableProperties GetTableProperties() const override;
 
-  const char* Name() const { return "BlockBasedTable"; }  // Shichao
+  const char* Name() const override { return "BlockBasedTable"; }  // Shichao
 
  private:
   struct Rep;

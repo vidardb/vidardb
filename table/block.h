@@ -208,11 +208,10 @@ class ColumnBlockIter : public BlockIter {
   virtual void Seek(const Slice& target) override;
 
  private:
-
-  virtual bool ParseNextKey();
+  virtual bool ParseNextKey() override;
 
   virtual bool BinarySeek(const Slice& target, uint32_t left, uint32_t right,
-                          uint32_t* index);
+                          uint32_t* index) override;
 };
 
 }  // namespace vidardb

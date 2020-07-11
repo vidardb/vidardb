@@ -713,7 +713,7 @@ void CompactionJob::ProcessKeyValueCompaction(SubcompactionState* sub_compact) {
   Status status;
   sub_compact->c_iter.reset(new CompactionIterator(
       input.get(), cfd->user_comparator(), versions_->LastSequence(),
-      &existing_snapshots_, earliest_write_conflict_snapshot_, env_, false,
+      &existing_snapshots_, earliest_write_conflict_snapshot_, false,
       sub_compact->compaction));
   auto c_iter = sub_compact->c_iter.get();
   c_iter->SeekToFirst();

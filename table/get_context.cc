@@ -29,19 +29,14 @@ void appendToReplayLog(std::string* replay_log, ValueType type, Slice value) {
 
 }  // namespace
 
-GetContext::GetContext(const Comparator* ucmp,
-                       Logger* logger,
-                       Statistics* statistics, GetState init_state,
+GetContext::GetContext(const Comparator* ucmp, GetState init_state,
                        const Slice& user_key, std::string* ret_value,
-                       bool* value_found, Env* env, SequenceNumber* seq)
+                       bool* value_found, SequenceNumber* seq)
     : ucmp_(ucmp),
-      logger_(logger),
-      statistics_(statistics),
       state_(init_state),
       user_key_(user_key),
       value_(ret_value),
       value_found_(value_found),
-      env_(env),
       seq_(seq),
       replay_log_(nullptr) {
   if (seq_) {

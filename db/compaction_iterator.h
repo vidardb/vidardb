@@ -38,10 +38,9 @@ class CompactionIterator {
   CompactionIterator(InternalIterator* input, const Comparator* cmp,
                      SequenceNumber last_sequence,
                      std::vector<SequenceNumber>* snapshots,
-                     SequenceNumber earliest_write_conflict_snapshot, Env* env,
+                     SequenceNumber earliest_write_conflict_snapshot,
                      bool expect_valid_internal_key,
-                     const Compaction* compaction = nullptr,
-                     LogBuffer* log_buffer = nullptr);
+                     const Compaction* compaction = nullptr);
 
   void ResetRecordCounts();
 
@@ -86,10 +85,8 @@ class CompactionIterator {
   const Comparator* cmp_;
   const std::vector<SequenceNumber>* snapshots_;
   const SequenceNumber earliest_write_conflict_snapshot_;
-  Env* env_;
   bool expect_valid_internal_key_;
   const Compaction* compaction_;
-  LogBuffer* log_buffer_;
   bool bottommost_level_;
   bool valid_ = false;
   SequenceNumber visible_at_tip_;

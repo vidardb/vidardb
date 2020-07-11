@@ -84,7 +84,7 @@ class ColumnTableBuilder : public TableBuilder {
   // Get table properties
   TableProperties GetTableProperties() const override;
 
-  const char* Name() const { return "ColumnTable"; }  // Shichao
+  const char* Name() const override { return "ColumnTable"; }  // Shichao
 
  private:
   struct Rep;

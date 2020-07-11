@@ -18,17 +18,14 @@ namespace vidardb {
 CompactionIterator::CompactionIterator(
     InternalIterator* input, const Comparator* cmp,
     SequenceNumber last_sequence, std::vector<SequenceNumber>* snapshots,
-    SequenceNumber earliest_write_conflict_snapshot, Env* env,
-    bool expect_valid_internal_key, const Compaction* compaction,
-    LogBuffer* log_buffer)
+    SequenceNumber earliest_write_conflict_snapshot,
+    bool expect_valid_internal_key, const Compaction* compaction)
     : input_(input),
       cmp_(cmp),
       snapshots_(snapshots),
       earliest_write_conflict_snapshot_(earliest_write_conflict_snapshot),
-      env_(env),
       expect_valid_internal_key_(expect_valid_internal_key),
-      compaction_(compaction),
-      log_buffer_(log_buffer) {
+      compaction_(compaction) {
   bottommost_level_ =
       compaction_ == nullptr ? false : compaction_->bottommost_level();
   if (compaction_ != nullptr) {

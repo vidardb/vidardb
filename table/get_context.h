@@ -25,10 +25,9 @@ class GetContext {
     kCorrupt,
   };
 
-  GetContext(const Comparator* ucmp,
-             Logger* logger, Statistics* statistics, GetState init_state,
-             const Slice& user_key, std::string* ret_value, bool* value_found,
-             Env* env, SequenceNumber* seq = nullptr);
+  GetContext(const Comparator* ucmp, GetState init_state, const Slice& user_key,
+             std::string* ret_value, bool* value_found,
+             SequenceNumber* seq = nullptr);
 
   void MarkKeyMayExist();
 
@@ -58,14 +57,10 @@ class GetContext {
 
  private:
   const Comparator* ucmp_;
-  Logger* logger_;
-  Statistics* statistics_;
-
   GetState state_;
   Slice user_key_;
   std::string* value_;
   bool* value_found_;  // Is value set correctly? Used by KeyMayExist
-  Env* env_;
   // If a key is found, seq_ will be set to the SequenceNumber of most recent
   // write to the key or kMaxSequenceNumber if unknown
   SequenceNumber* seq_;

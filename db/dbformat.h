@@ -30,7 +30,7 @@
 namespace vidardb {
 
 class InternalKey;
-class SuperVersion;
+struct SuperVersion;
 class ColumnFamilyData;
 
 // Value types encoded as the last component of internal keys.
