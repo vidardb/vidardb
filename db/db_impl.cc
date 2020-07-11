@@ -4230,11 +4230,13 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
   mutex_.Lock();
 
   if (!write_options.disableWAL) {
-    default_cf_internal_stats_->AddDBStats(InternalStats::WRITE_WITH_WAL, 1);
+    default_cf_internal_stats_->AddDBStats(InternalStats::kIntStatsWriteWithWal,
+                                           1);
   }
 
   RecordTick(stats_, WRITE_DONE_BY_SELF);
-  default_cf_internal_stats_->AddDBStats(InternalStats::WRITE_DONE_BY_SELF, 1);
+  default_cf_internal_stats_->AddDBStats(
+      InternalStats::kIntStatsWriteDoneBySelf, 1);
 
   // Once reaches this point, the current writer "w" will try to do its write
   // job.  It may also pick up some of the remaining writers in the "writers_"
@@ -4467,19 +4469,21 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
         // commit.  That lets us release our leader status early in
         // some cases.
         auto stats = default_cf_internal_stats_;
-        stats->AddDBStats(InternalStats::BYTES_WRITTEN, total_byte_size);
-        stats->AddDBStats(InternalStats::NUMBER_KEYS_WRITTEN, total_count);
+        stats->AddDBStats(InternalStats::kIntStatsBytesWritten,
+                          total_byte_size);
+        stats->AddDBStats(InternalStats::kIntStatsNumKeysWritten, total_count);
         if (!write_options.disableWAL) {
           if (write_options.sync) {
-            stats->AddDBStats(InternalStats::WAL_FILE_SYNCED, 1);
+            stats->AddDBStats(InternalStats::kIntStatsWalFileSynced, 1);
           }
-          stats->AddDBStats(InternalStats::WAL_FILE_BYTES, log_size);
+          stats->AddDBStats(InternalStats::kIntStatsWalFileBytes, log_size);
         }
         uint64_t for_other = write_group.size() - 1;
         if (for_other > 0) {
-          stats->AddDBStats(InternalStats::WRITE_DONE_BY_OTHER, for_other);
+          stats->AddDBStats(InternalStats::kIntStatsWriteDoneByOther,
+                            for_other);
           if (!write_options.disableWAL) {
-            stats->AddDBStats(InternalStats::WRITE_WITH_WAL, for_other);
+            stats->AddDBStats(InternalStats::kIntStatsWriteWithWal, for_other);
           }
         }
       }
@@ -4593,8 +4597,8 @@ Status DBImpl::DelayWrite(uint64_t num_bytes) {
     }
   }
   if (delayed) {
-    default_cf_internal_stats_->AddDBStats(InternalStats::WRITE_STALL_MICROS,
-                                           time_delayed);
+    default_cf_internal_stats_->AddDBStats(
+        InternalStats::kIntStatsWriteStallMicros, time_delayed);
     RecordTick(stats_, STALL_MICROS, time_delayed);
   }
 
