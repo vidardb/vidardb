@@ -17,9 +17,10 @@ _cleanup() {
 }
 
 _install() {
+    echo "cmake flags: $CMAKE_FLAGS"
     mkdir -p $temp_dir
     cd $temp_dir
-    cmake ..
+    cmake $CMAKE_FLAGS ..
     make
     make install
 }

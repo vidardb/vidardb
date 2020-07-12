@@ -18,7 +18,7 @@ RUN set -xe && export $env_exts && apt-get $apt_opts update && apt-get $apt_opts
     wget --no-check-certificate -O libsnappy-dev_1.1.7-1_amd64.deb http://launchpadlibrarian.net/343996427/libsnappy-dev_1.1.7-1_amd64.deb && \
     wget --no-check-certificate -O vidardb.tar.gz https://github.com/vidardb/vidardb-engine/archive/${VIDARDB_VERSION}.tar.gz && \
     apt-get install -y ./libsnappy1v5_1.1.7-1_amd64.deb ./libsnappy-dev_1.1.7-1_amd64.deb && \
-    tar zxvf vidardb.tar.gz && cd vidardb-engine-${VIDARDB_VERSION} && make install && rm -rf /usr/lib64/libvidardb.a && cd .. && \
+    tar zxvf vidardb.tar.gz && cd vidardb-engine-${VIDARDB_VERSION} && CMAKE_FLAGS="-DWITH_SNAPPY=ON" make install && rm -rf /usr/lib64/libvidardb.a && cd .. && \
     apt-get purge -y --auto-remove make wget cmake && \
     rm -rf /var/lib/apt/lists/* /tmp/* vidardb.tar.gz vidardb-engine-${VIDARDB_VERSION} libsnappy1v5_1.1.7-1_amd64.deb libsnappy-dev_1.1.7-1_amd64.deb
 

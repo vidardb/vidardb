@@ -21,6 +21,7 @@ DOCKER ?= docker
 NETWORK ?= default
 APT_OPTS ?=
 ENV_EXTS ?=
+CMAKE_FLAGS ?=
 
 # Transform parallel LOG output into something more readable.
 perl_command = perl -n \
@@ -1060,7 +1061,7 @@ install-shared: install-headers $(SHARED4)
 # install both static and shared library by cmake
 install:
 	@echo "install both static and shared library by cmake ..."
-	./CMakeInstall.sh
+	CMAKE_FLAGS=$(CMAKE_FLAGS) ./CMakeInstall.sh
 
 #-------------------------------------------------
 
