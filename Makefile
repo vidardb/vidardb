@@ -763,12 +763,6 @@ tags:
 	ctags * -R
 	cscope -b `find . -name '*.cc'` `find . -name '*.h'` `find . -name '*.c'`
 
-format:
-	build_tools/format-diff.sh
-
-package:
-	bash build_tools/make_package.sh $(SHARED_MAJOR).$(SHARED_MINOR)
-
 # ---------------------------------------------------------------------------
 # 	Unit tests and tools
 # ---------------------------------------------------------------------------

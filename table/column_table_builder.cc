@@ -543,7 +543,7 @@ Status ColumnTableBuilder::Finish() {
     // Write column block.
     {
       MetaColumnBlockBuilder meta_column_block_builder;
-      uint32_t column_count = r->builders.size();
+      uint32_t column_count = (uint32_t)r->builders.size();
       meta_column_block_builder.Add(r->main_column, column_count);
       for (auto i = 0u; i < column_count; i++) {
           meta_column_block_builder.Add(i+1, r->builders[i]->rep_->offset);

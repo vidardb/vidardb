@@ -31,8 +31,6 @@ typedef BinaryHeap<IteratorWrapper*, MaxIteratorComparator> MergerMaxIterHeap;
 typedef BinaryHeap<IteratorWrapper*, MinIteratorComparator> MergerMinIterHeap;
 }  // namespace
 
-const size_t kNumIterReserve = 4;
-
 class MergingIterator : public InternalIterator {
  public:
   MergingIterator(const Comparator* comparator, InternalIterator** children,

@@ -104,8 +104,7 @@ GENERIC_PORT_FILES=`cd "$VIDARDB_ROOT"; find port -name '*.cc' | tr "\n" " "`
 case "$TARGET_OS" in
     Darwin)
         PLATFORM=OS_MACOSX
-        # TODO: does not suppress all warnings
-        COMMON_FLAGS="$COMMON_FLAGS -DOS_MACOSX -w"
+        COMMON_FLAGS="$COMMON_FLAGS -DOS_MACOSX"
         PLATFORM_SHARED_EXT=dylib
         PLATFORM_SHARED_LDFLAGS="-dynamiclib -install_name "
         # PORT_FILES=port/darwin/darwin_specific.cc
