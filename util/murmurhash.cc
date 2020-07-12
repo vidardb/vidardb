@@ -11,6 +11,8 @@
 */
 #include "murmurhash.h"
 
+#include "port/lang.h"
+
 #if defined(__x86_64__)
 
 // -------------------------------------------------------------------
@@ -48,22 +50,22 @@ uint64_t MurmurHash64A ( const void * key, int len, unsigned int seed )
     {
       case 7:
         h ^= ((uint64_t)data2[6]) << 48;
-        break;
+        FALLTHROUGH_INTENDED;
       case 6:
         h ^= ((uint64_t)data2[5]) << 40;
-        break;
+        FALLTHROUGH_INTENDED;
       case 5:
         h ^= ((uint64_t)data2[4]) << 32;
-        break;
+        FALLTHROUGH_INTENDED;
       case 4:
         h ^= ((uint64_t)data2[3]) << 24;
-        break;
+        FALLTHROUGH_INTENDED;
       case 3:
         h ^= ((uint64_t)data2[2]) << 16;
-        break;
+        FALLTHROUGH_INTENDED;
       case 2:
         h ^= ((uint64_t)data2[1]) << 8;
-        break;
+        FALLTHROUGH_INTENDED;
       case 1:
         h ^= ((uint64_t)data2[0]);
         h *= m;
