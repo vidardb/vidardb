@@ -139,38 +139,6 @@ if(FAIL_ON_WARNINGS)
   endif()
 endif()
 
-option(WITH_ASAN "build with ASAN" OFF)
-if(WITH_ASAN)
-  add_definitions(-DVIDARDB_TSAN_RUN)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=address")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=address")
-  if(WITH_JEMALLOC)
-    message(FATAL "ASAN does not work well with JeMalloc")
-  endif()
-endif()
-
-option(WITH_TSAN "build with TSAN" OFF)
-if(WITH_TSAN)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=thread -pie")
-  add_definitions(-DVIDARDB_TSAN_RUN)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=thread -fPIC")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=thread -fPIC")
-  if(WITH_JEMALLOC)
-    message(FATAL "TSAN does not work well with JeMalloc")
-  endif()
-endif()
-
-option(WITH_UBSAN "build with UBSAN" OFF)
-if(WITH_UBSAN)
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=undefined")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsanitize=undefined")
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fsanitize=undefined")
-  if(WITH_JEMALLOC)
-    message(FATAL "UBSAN does not work well with JeMalloc")
-  endif()
-endif()
-
 # Used to run CI build and tests so we can run faster
 set(OPTIMIZE_DEBUG_DEFAULT 0)        # Debug build is unoptimized by default use -DOPTDBG=1 to optimize
 
@@ -414,13 +382,6 @@ else()
                         SOVERSION ${VIDARDB_VERSION_MAJOR}
                         CXX_STANDARD 11
                         OUTPUT_NAME "vidardb")
-endif()
-
-option(WITH_LIBRADOS "Build with librados" OFF)
-if(WITH_LIBRADOS)
-  list(APPEND SOURCES
-    utilities/env_librados.cc)
-  list(APPEND THIRDPARTY_LIBS rados)
 endif()
 
 add_library(${VIDARDB_STATIC_LIB} STATIC ${SOURCES})
