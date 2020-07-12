@@ -48,22 +48,22 @@ uint64_t MurmurHash64A ( const void * key, int len, unsigned int seed )
     {
       case 7:
         h ^= ((uint64_t)data2[6]) << 48;
-        [[fallthrough]];
+        break;
       case 6:
         h ^= ((uint64_t)data2[5]) << 40;
-        [[fallthrough]];
+        break;
       case 5:
         h ^= ((uint64_t)data2[4]) << 32;
-        [[fallthrough]];
+        break;
       case 4:
         h ^= ((uint64_t)data2[3]) << 24;
-        [[fallthrough]];
+        break;
       case 3:
         h ^= ((uint64_t)data2[2]) << 16;
-        [[fallthrough]];
+        break;
       case 2:
         h ^= ((uint64_t)data2[1]) << 8;
-        [[fallthrough]];
+        break;
       case 1:
         h ^= ((uint64_t)data2[0]);
         h *= m;

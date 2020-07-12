@@ -18,6 +18,9 @@ REGISTRY ?= vidardb
 IMAGE ?= vidardb
 TAG ?= latest
 DOCKER ?= docker
+NETWORK ?= default
+APT_OPTS ?=
+ENV_EXTS ?=
 
 # Transform parallel LOG output into something more readable.
 perl_command = perl -n \
@@ -427,7 +430,10 @@ endif  # PLATFORM_SHARED_EXT
 
 docker-image:
 	@echo "Building docker image..."
-	$(DOCKER) build --no-cache --pull -t $(REGISTRY)/$(IMAGE):$(TAG) docker_image
+	$(DOCKER) build --no-cache --pull --network $(NETWORK) \
+		--build-arg apt_opts="$(APT_OPTS)" \
+		--build-arg env_exts="$(ENV_EXTS)" \
+		-t $(REGISTRY)/$(IMAGE):$(TAG) docker_image
 
 all: $(LIBRARY) $(SHARED) $(BENCHMARKS) tools tools_lib test_libs  # Shichao
 
