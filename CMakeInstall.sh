@@ -10,14 +10,15 @@ if ! command -v cmake > /dev/null; then
     exit 1
 fi
 
+curr_dir=$(cd "$(dirname "$0")"; pwd)
 temp_dir=build
 
 _cleanup() {
-    rm -rf $temp_dir util/build_version.cc
+    rm -rf $curr_dir/$temp_dir $curr_dir/util/build_version.cc
 }
 
 _install() {
-    echo "cmake flags: $CMAKE_FLAGS"
+    echo "CMake Flags: $CMAKE_FLAGS"
     mkdir -p $temp_dir
     cd $temp_dir
     cmake $CMAKE_FLAGS ..
