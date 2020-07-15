@@ -1,5 +1,4 @@
-# Prerequisites for Windows:
-#     For Windows 64-bit only.
+# Windows 64-bit:
 #
 # Prerequisites:
 #     Tested with Visual Studio 2019. Start the Developer Command Prompt via Tools->Command Line->Developer Command Prompt.
@@ -12,9 +11,9 @@
 # 2. Create a new directory "build" for build artifacts and go into it.
 # 3. Run cmake to generate project files for Windows, add more options to enable required third-party libraries.
 #    See thirdparty.inc for more information.
-#        sample command: cmake -G "Visual Studio 14 Win64" -DSNAPPY=1..
+#        sample command: cmake -DSNAPPY=1..
 # 4. Then build the project in release mode (you may want to add /m[:<N>] flag to run msbuild in <N> parallel threads
-#                                            or simply /m ot use all avail cores)
+#                                            or simply /m to use all avail cores)
 #        msbuild vidardb.sln /p:Configuration=Release
 #
 # Linux:

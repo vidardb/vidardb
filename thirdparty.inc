@@ -3,13 +3,9 @@
 #
 # Edit these lines to set defaults for use of external libraries
 #
-set(USE_GFLAGS_DEFAULT 0)        # GFLAGS is disabled by default, enable with -DGFLAGS=1 cmake command line agrument
 set(USE_SNAPPY_DEFAULT 0)        # SNAPPY is disabled by default, enable with -DSNAPPY=1 cmake command line agrument
-set(USE_LZ4_DEFAULT 0)           # LZ4 is disabled by default, enable with -DLZ4=1 cmake command line agrument
 set(USE_ZLIB_DEFAULT 0)          # ZLIB is disabled by default, enable with -DZLIB=1 cmake command line agrument
 set(USE_XPRESS_DEFAULT 0)        # XPRESS is disabled by default, enable with -DXPRESS=1 cmake command line agrument
-set(USE_JEMALLOC_DEFAULT 0)      # JEMALLOC is disabled by default, enable with -DJEMALLOC=1 cmake command line agrument
-set(USE_JENONINIT_DEFAULT 1)     # Default is enabled do not call je_init/je_uninit as the newer versions do not have it disable with -DJENONINIT=0
 
 #
 # This example assumes all the libraries locate in directories under THIRDPARTY_HOME environment variable
@@ -18,48 +14,6 @@ set(USE_JENONINIT_DEFAULT 1)     # Default is enabled do not call je_init/je_uni
 #
 set (THIRDPARTY_LIBS "")         # Initialization, don't touch
 
-#
-# Edit these 4 lines to define paths to GFLAGS
-#
-set(GFLAGS_HOME $ENV{THIRDPARTY_HOME}/Gflags.Library)
-set(GFLAGS_INCLUDE ${GFLAGS_HOME}/inc/include)
-set(GFLAGS_LIB_DEBUG ${GFLAGS_HOME}/bin/debug/amd64/gflags.lib)
-set(GFLAGS_LIB_RELEASE ${GFLAGS_HOME}/bin/retail/amd64/gflags.lib)
-
-# ================================================== GFLAGS ==================================================
-#
-# Don't touch these lines
-#
-if (DEFINED GFLAGS)
-  set(USE_GFLAGS ${GFLAGS})
-else ()
-  set(USE_GFLAGS ${USE_GFLAGS_DEFAULT})
-endif ()
-
-if (${USE_GFLAGS} EQUAL 1)
-  message(STATUS "GFLAGS library is enabled")
-  
-  if(DEFINED ENV{GFLAGS_INCLUDE})
-    set(GFLAGS_INCLUDE $ENV{GFLAGS_INCLUDE})
-  endif()
-  
-  if(DEFINED ENV{GFLAGS_LIB_DEBUG})
-    set(GFLAGS_LIB_DEBUG $ENV{GFLAGS_LIB_DEBUG})
-  endif()
-
-  if(DEFINED ENV{GFLAGS_LIB_RELEASE})
-    set(GFLAGS_LIB_RELEASE $ENV{GFLAGS_LIB_RELEASE})
-  endif()
-  
-  set(GFLAGS_CXX_FLAGS -DGFLAGS=gflags)
-  set(GFLAGS_LIBS debug ${GFLAGS_LIB_DEBUG} optimized ${GFLAGS_LIB_RELEASE})
-
-  add_definitions(${GFLAGS_CXX_FLAGS})
-  include_directories(${GFLAGS_INCLUDE})
-  set (THIRDPARTY_LIBS ${THIRDPARTY_LIBS} ${GFLAGS_LIBS})
-else ()
-  message(STATUS "GFLAGS library is disabled")
-endif ()
 
 # ================================================== SNAPPY ==================================================
 #
@@ -102,49 +56,6 @@ if (${USE_SNAPPY} EQUAL 1)
   set (THIRDPARTY_LIBS ${THIRDPARTY_LIBS} ${SNAPPY_LIBS})
 else ()
   message(STATUS "SNAPPY library is disabled")
-endif ()
-
-# ================================================== LZ4 ==================================================
-#
-# Edit these 4 lines to define paths to LZ4
-#
-set(LZ4_HOME $ENV{THIRDPARTY_HOME}/LZ4.Library)
-set(LZ4_INCLUDE ${LZ4_HOME}/inc/include)
-set(LZ4_LIB_DEBUG ${LZ4_HOME}/bin/debug/amd64/lz4.lib)
-set(LZ4_LIB_RELEASE ${LZ4_HOME}/bin/retail/amd64/lz4.lib)
-
-#
-# Don't touch these lines
-#
-if (DEFINED LZ4)
-  set(USE_LZ4 ${LZ4})
-else ()
-  set(USE_LZ4 ${USE_LZ4_DEFAULT})
-endif ()
-
-if (${USE_LZ4} EQUAL 1)
-  message(STATUS "LZ4 library is enabled")
-  
-  if(DEFINED ENV{LZ4_INCLUDE})
-    set(LZ4_INCLUDE $ENV{LZ4_INCLUDE})
-  endif()
-  
-  if(DEFINED ENV{LZ4_LIB_DEBUG})
-    set(LZ4_LIB_DEBUG $ENV{LZ4_LIB_DEBUG})
-  endif()
-
-  if(DEFINED ENV{LZ4_LIB_RELEASE})
-    set(LZ4_LIB_RELEASE $ENV{LZ4_LIB_RELEASE})
-  endif()
-  
-  set(LZ4_CXX_FLAGS -DLZ4)
-  set(LZ4_LIBS debug ${LZ4_LIB_DEBUG} optimized ${LZ4_LIB_RELEASE})
-
-  add_definitions(${LZ4_CXX_FLAGS})
-  include_directories(${LZ4_INCLUDE})
-  set (THIRDPARTY_LIBS ${THIRDPARTY_LIBS} ${LZ4_LIBS})
-else ()
-  message(STATUS "LZ4 library is disabled")
 endif ()
 
 # ================================================== ZLIB ==================================================
@@ -205,61 +116,4 @@ if (${USE_XPRESS} EQUAL 1)
   set (SYSTEM_LIBS ${SYSTEM_LIBS} Cabinet.lib)
 else ()
   message(STATUS "XPRESS is disabled")
-endif ()
-
-#
-# Edit these 4 lines to define paths to Jemalloc
-#
-set(JEMALLOC_HOME $ENV{THIRDPARTY_HOME}/Jemalloc.Library)
-set(JEMALLOC_INCLUDE ${JEMALLOC_HOME}/inc/include)
-set(JEMALLOC_LIB_DEBUG ${JEMALLOC_HOME}/bin/debug/amd64/jemalloc.lib)
-set(JEMALLOC_LIB_RELEASE ${JEMALLOC_HOME}/bin/retail/amd64/jemalloc.lib)
-
-# ================================================== JEMALLOC ==================================================
-#
-# Don't touch these lines
-#
-if (DEFINED JEMALLOC)
-  set(USE_JEMALLOC ${JEMALLOC})
-else ()
-  set(USE_JEMALLOC ${USE_JEMALLOC_DEFAULT})
-endif ()
-
-if (${USE_JEMALLOC} EQUAL 1)
-  message(STATUS "JEMALLOC library is enabled")
-  set(JEMALLOC_CXX_FLAGS "-DJEMALLOC -DJEMALLOC_EXPORT= ")
-  
-  if(DEFINED ENV{JEMALLOC_INCLUDE})
-    set(JEMALLOC_INCLUDE $ENV{JEMALLOC_INCLUDE})
-  endif()
-  
-  if(DEFINED ENV{JEMALLOC_LIB_DEBUG})
-    set(JEMALLOC_LIB_DEBUG $ENV{JEMALLOC_LIB_DEBUG})
-  endif()
-
-  if(DEFINED ENV{JEMALLOC_LIB_RELEASE})
-    set(JEMALLOC_LIB_RELEASE $ENV{JEMALLOC_LIB_RELEASE})
-  endif()
-
-  set(JEMALLOC_LIBS debug ${JEMALLOC_LIB_DEBUG} optimized ${JEMALLOC_LIB_RELEASE})
-
-  add_definitions(${JEMALLOC_CXX_FLAGS})
-  include_directories(${JEMALLOC_INCLUDE})
-  set (THIRDPARTY_LIBS ${THIRDPARTY_LIBS} ${JEMALLOC_LIBS})
-  set (ARTIFACT_SUFFIX "_je")
-  
-  set(USE_JENONINIT USE_JENONINIT_DEFAULT)
- 
-  if(JENONINIT)
-    set(USE_JENONINIT ${JENONINIT})
-  endif()
-  
-  if(${USE_JENONINIT} EQUAL 1)
-    add_definitions(-DJEMALLOC_NON_INIT)
-    message(STATUS "JEMALLOC NONINIT version")
-  endif()
-  
-else ()
-  set (ARTIFACT_SUFFIX "")
-  message(STATUS "JEMALLOC library is disabled")
 endif ()
