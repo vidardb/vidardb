@@ -49,10 +49,11 @@ class PinnedIteratorsManager {
 
       // Remove duplicate pointers
       std::sort(pinned_iters_->begin(), pinned_iters_->end());
-      std::unique(pinned_iters_->begin(), pinned_iters_->end());
+      auto unique_end =
+          std::unique(pinned_iters_->begin(), pinned_iters_->end());
 
-      for (auto& iter : *pinned_iters_) {
-        delete iter;
+      for (auto it = pinned_iters_->begin(); it != unique_end; it++) {
+        delete (*it);
       }
       pinned_iters_->clear();
     }

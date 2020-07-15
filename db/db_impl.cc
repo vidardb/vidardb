@@ -2557,68 +2557,67 @@ void DBImpl::ExportMeta(bool end) {
   if (!db_options_.show_key_fun || !default_cf_handle_) {
     return;
   }
-  auto* sv = default_cf_handle_->cfd()->GetSuperVersion();
-  nlohmann::json j;
-
-  if (!end) {
-    Arena arena;
-    std::vector<InternalIterator*> its;
-    sv->imm->AddIterators(ReadOptions(), &its, &arena);
-    for (uint i = 0; i <= its.size(); i++) {
-      InternalIterator* it = (i == 0) ?
-          sv->mem->NewIterator(ReadOptions(), &arena) : its[its.size()-i];
-      std::string begin_key, end_key;
-      it->SeekToFirst();
-      if (it->Valid()) {
-        Slice internal_key = it->key();
-        std::string raw_begin_key =
-            Slice(internal_key.data(), internal_key.size() - 8).ToString();
-        db_options_.show_key_fun(raw_begin_key, begin_key);
-      }
-      it->SeekToLast();
-      if (it->Valid()) {
-        Slice internal_key = it->key();
-        std::string raw_end_key =
-            Slice(internal_key.data(), internal_key.size() - 8).ToString();
-        db_options_.show_key_fun(raw_end_key, end_key);
-      }
-      j["RAM"] += {i + 1, begin_key, end_key};
-      it->~InternalIterator();
-    }
-  } else {
-    j["RAM"] = {{}};
-    j["RAM"].clear();
-  }
-
-  ColumnFamilyMetaData cf_meta;
-  sv->current->GetColumnFamilyMetaData(&cf_meta);
-  for (const auto& level : cf_meta.levels) {
-    int num = 1;
-    for (const auto& file : level.files) {
-      std::string file_type = "unknown";
-      std::string begin_key, end_key;
-      db_options_.show_key_fun(file.smallestkey, begin_key);
-      db_options_.show_key_fun(file.largestkey, end_key);
-      j["Disk"] += {num, level.level + 1, file_type, begin_key, end_key};
-      ++num;
-    }
-  }
-
-  std::string prepend = db_options_.export_path;
-  std::string meta_file = std::to_string(GetLatestSequenceNumber()) + ".json";
-  std::ofstream fout((prepend + meta_file).c_str());
-  fout << std::setw(2) << j << std::endl;
-  fout.close();
-
-  std::string index_file = "index.csv";
-  struct stat buf;
-  bool exist = stat((prepend + index_file).c_str(), &buf) == 0;
-  fout.open((prepend + index_file).c_str(), std::ofstream::app);
-  if (!exist) {
-    fout << "File_Index" << std::endl;
-  }
-  fout << meta_file << std::endl;
-  fout.close();
+  //  auto* sv = default_cf_handle_->cfd()->GetSuperVersion();
+  //  nlohmann::json j;
+  //
+  //  if (!end) {
+  //    Arena arena;
+  //    std::vector<InternalIterator*> its;
+  //    sv->imm->AddIterators(ReadOptions(), &its, &arena);
+  //    for (uint i = 0; i <= its.size(); i++) {
+  //      InternalIterator* it = (i == 0) ?
+  //          sv->mem->NewIterator(ReadOptions(), &arena) : its[its.size()-i];
+  //      std::string begin_key, end_key;
+  //      it->SeekToFirst();
+  //      if (it->Valid()) {
+  //        Slice internal_key = it->key();
+  //        std::string raw_begin_key =
+  //            Slice(internal_key.data(), internal_key.size() - 8).ToString();
+  //        db_options_.show_key_fun(raw_begin_key, begin_key);
+  //      }
+  //      it->SeekToLast();
+  //      if (it->Valid()) {
+  //        Slice internal_key = it->key();
+  //        std::string raw_end_key =
+  //            Slice(internal_key.data(), internal_key.size() - 8).ToString();
+  //        db_options_.show_key_fun(raw_end_key, end_key);
+  //      }
+  //      j["RAM"] += {i + 1, begin_key, end_key};
+  //      it->~InternalIterator();
+  //    }
+  //  } else {
+  //    j["RAM"] = {{}};
+  //    j["RAM"].clear();
+  //  }
+  //
+  //  ColumnFamilyMetaData cf_meta;
+  //  sv->current->GetColumnFamilyMetaData(&cf_meta);
+  //  for (const auto& level : cf_meta.levels) {
+  //    int num = 1;
+  //    for (const auto& file : level.files) {
+  //      std::string file_type = "unknown";
+  //      std::string begin_key, end_key;
+  //      db_options_.show_key_fun(file.smallestkey, begin_key);
+  //      db_options_.show_key_fun(file.largestkey, end_key);
+  //      j["Disk"] += {num, level.level + 1, file_type, begin_key, end_key};
+  //      ++num;
+  //    }
+  //  }
+  //
+  //  std::string prepend = db_options_.export_path;
+  //  std::string meta_file = std::to_string(GetLatestSequenceNumber()) +
+  //  ".json"; std::ofstream fout((prepend + meta_file).c_str()); fout <<
+  //  std::setw(2) << j << std::endl; fout.close();
+  //
+  //  std::string index_file = "index.csv";
+  //  struct stat buf;
+  //  bool exist = stat((prepend + index_file).c_str(), &buf) == 0;
+  //  fout.open((prepend + index_file).c_str(), std::ofstream::app);
+  //  if (!exist) {
+  //    fout << "File_Index" << std::endl;
+  //  }
+  //  fout << meta_file << std::endl;
+  //  fout.close();
 }
 /******************************* Shichao ********************************/
 
