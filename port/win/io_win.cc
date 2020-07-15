@@ -186,7 +186,7 @@ Status WinMmapReadableFile::Read(uint64_t offset, size_t n, Slice* result,
 
   if (offset > length_) {
     *result = Slice();
-    return IOError(fileName_, EINVAL);
+    return IOError(filename_, EINVAL);
   } else if (offset + n > length_) {
     n = length_ - offset;
   }

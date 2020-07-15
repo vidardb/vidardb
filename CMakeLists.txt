@@ -1,28 +1,20 @@
 # Prerequisites for Windows:
-#     This cmake build is for Windows 64-bit only.
+#     For Windows 64-bit only.
 #
 # Prerequisites:
-#     You must have at least Visual Studio 2015 Update 3. Start the Developer Command Prompt window that is a part of Visual Studio installation.
+#     Tested with Visual Studio 2019. Start the Developer Command Prompt via Tools->Command Line->Developer Command Prompt.
 #     Run the build commands from within the Developer Command Prompt window to have paths to the compiler and runtime libraries set.
 #     You must have git.exe in your %PATH% environment variable.
 #
-# To build VidarDB for Windows is as easy as 1-2-3-4-5:
+# To build VidarDB for Windows:
 #
 # 1. Update paths to third-party libraries in thirdparty.inc file
-# 2. Create a new directory for build artifacts
-#        mkdir build
-#        cd build
+# 2. Create a new directory "build" for build artifacts and go into it.
 # 3. Run cmake to generate project files for Windows, add more options to enable required third-party libraries.
 #    See thirdparty.inc for more information.
-#        sample command: cmake -G "Visual Studio 14 Win64" -DGFLAGS=1 -DSNAPPY=1 -DJEMALLOC=1 -DJNI=1 ..
-# 4. Then build the project in debug mode (you may want to add /m[:<N>] flag to run msbuild in <N> parallel threads
-#                                          or simply /m ot use all avail cores)
-#        msbuild vidardb.sln
-#
-#        vidardb.sln build features exclusions of test only code in Release. If you build ALL_BUILD then everything
-#        will be attempted but test only code does not build in Release mode.
-#
-# 5. And release mode (/m[:<N>] is also supported)
+#        sample command: cmake -G "Visual Studio 14 Win64" -DSNAPPY=1..
+# 4. Then build the project in release mode (you may want to add /m[:<N>] flag to run msbuild in <N> parallel threads
+#                                            or simply /m ot use all avail cores)
 #        msbuild vidardb.sln /p:Configuration=Release
 #
 # Linux:
@@ -30,7 +22,7 @@
 # 1. Install a recent toolchain such as devtoolset-3 if you're on a older distro. C++11 required.
 # 2. mkdir build; cd build
 # 3. cmake ..
-# 4. make -j
+# 4. make -j(number of cores)
 
 cmake_minimum_required(VERSION 2.6)
 project(vidardb)
