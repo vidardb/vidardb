@@ -1,7 +1,8 @@
 # Windows 64-bit:
 #
 # Prerequisites:
-#     Tested with Visual Studio 2019. Start the Developer Command Prompt via Tools->Command Line->Developer Command Prompt.
+#     Tested with Visual Studio 2019. Start the Developer Command Prompt via Tools->Command Line->Developer Command Prompt. 
+#     Be sure to use 64 bit version of Developer Command Prompt.
 #     Run the build commands from within the Developer Command Prompt window to have paths to the compiler and runtime libraries set.
 #     You must have git.exe in your %PATH% environment variable.
 #
@@ -11,7 +12,7 @@
 # 2. Create a new directory "build" for build artifacts and go into it.
 # 3. Run cmake to generate project files for Windows, add more options to enable required third-party libraries.
 #    See thirdparty.inc for more information.
-#        sample command: cmake -DSNAPPY=1..
+#        sample command: cmake ..
 # 4. Then build the project in release mode (you may want to add /m[:<N>] flag to run msbuild in <N> parallel threads
 #                                            or simply /m to use all avail cores)
 #        msbuild vidardb.sln /p:Configuration=Release
