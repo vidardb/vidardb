@@ -81,18 +81,6 @@ ifeq ($(MAKECMDGOALS),install)
 	DEBUG_LEVEL=0
 endif
 
-ifeq ($(MAKECMDGOALS),vidardbjavastatic)
-	DEBUG_LEVEL=0
-endif
-
-ifeq ($(MAKECMDGOALS),vidardbjavastaticrelease)
-	DEBUG_LEVEL=0
-endif
-
-ifeq ($(MAKECMDGOALS),vidardbjavastaticpublish)
-	DEBUG_LEVEL=0
-endif
-
 # compile with -O2 if debug level is not 2
 ifneq ($(DEBUG_LEVEL), 2)
 OPT += -O2 -fno-omit-frame-pointer
@@ -426,7 +414,7 @@ endif  # PLATFORM_SHARED_EXT
 
 .PHONY: blackbox_crash_test check clean coverage crash_test ldb_tests package \
 	release tags valgrind_check whitebox_crash_test format static_lib shared_lib all \
-	dbg vidardbjavastatic vidardbjava install install-static install-shared uninstall \
+	dbg  install install-static install-shared uninstall \
 	analyze tools tools_lib docker-image hook_install
 
 docker-image:
