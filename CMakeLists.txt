@@ -1,25 +1,27 @@
 # Windows 64-bit:
 #
 # Prerequisites:
-#     Tested with Visual Studio 2019. Start the Developer Command Prompt via Tools->Command Line->Developer Command Prompt. 
+#     Tested with Visual Studio 2019. Start the Developer Command Prompt via 
+#     Tools->Command Line->Developer Command Prompt. 
 #     Be sure to use 64 bit version of Developer Command Prompt.
-#     Run the build commands from within the Developer Command Prompt window to have paths to the compiler and runtime libraries set.
+#     Run the build commands from within the Developer Command Prompt window to 
+#     have paths to the compiler and runtime libraries set.
 #     You must have git.exe in your %PATH% environment variable.
 #
 # To build VidarDB for Windows:
 #
 # 1. Update paths to third-party libraries in thirdparty.inc file
 # 2. Create a new directory "build" for build artifacts and go into it.
-# 3. Run cmake to generate project files for Windows, add more options to enable required third-party libraries.
-#    See thirdparty.inc for more information.
+# 3. Run cmake to generate project files for Windows, add more options to enable 
+#    required third-party libraries. See thirdparty.inc for more information.
 #        sample command: cmake ..
-# 4. Then build the project in release mode (you may want to add /m[:<N>] flag to run msbuild in <N> parallel threads
-#                                            or simply /m to use all avail cores)
+# 4. Then build the project in release mode (you may want to add /m[:<N>] flag 
+#    to run msbuild in <N> parallel threads or simply /m to use all avail cores)
 #        msbuild vidardb.sln /p:Configuration=Release
 #
 # Linux:
 #
-# 1. Install a recent toolchain such as devtoolset-3 if you're on a older distro. C++11 required.
+# 1. C++11 required.
 # 2. mkdir build; cd build
 # 3. cmake ..
 # 4. make -j(number of cores)
@@ -131,22 +133,8 @@ if(FAIL_ON_WARNINGS)
   endif()
 endif()
 
-# Used to run CI build and tests so we can run faster
-set(OPTIMIZE_DEBUG_DEFAULT 0)        # Debug build is unoptimized by default use -DOPTDBG=1 to optimize
-
-if(DEFINED OPTDBG)
-   set(OPTIMIZE_DEBUG ${OPTDBG})
-else()
-   set(OPTIMIZE_DEBUG ${OPTIMIZE_DEBUG_DEFAULT})
-endif()
-
 if(WIN32)
-  if((${OPTIMIZE_DEBUG} EQUAL 1))
-    message(STATUS "Debug optimization is enabled")
-    set(CMAKE_CXX_FLAGS_DEBUG "/Oxt /MDd")
-  else()
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od /RTC1 /Gm /MDd")
-  endif()
+  set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Od /RTC1 /Gm- /MDd")
   set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /Oxt /Zp8 /Gm- /Gy /MD")
 
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} /DEBUG")
@@ -157,20 +145,15 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-builtin-memcmp")
 endif()
 
-option(VIDARDB_LITE "Build VidarDBLite version" OFF)
-if(VIDARDB_LITE)
-  add_definitions(-DVIDARDB_LITE)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
-endif()
+# no debug info, that will make our library big
+add_definitions(-DNDEBUG)
 
 if(CMAKE_SYSTEM_NAME MATCHES "Cygwin")
   add_definitions(-fno-builtin-memcmp -DCYGWIN)
 elseif(CMAKE_SYSTEM_NAME MATCHES "Darwin")
   add_definitions(-DOS_MACOSX)
   if(CMAKE_SYSTEM_PROCESSOR MATCHES arm)
-    add_definitions(-DIOS_CROSS_COMPILE -DVIDARDB_LITE)
-    # no debug info for IOS, that will make our library big
-    add_definitions(-DNDEBUG)
+    add_definitions(-DIOS_CROSS_COMPILE)
   endif()
 elseif(CMAKE_SYSTEM_NAME MATCHES "Linux")
   add_definitions(-DOS_LINUX)
@@ -391,7 +374,6 @@ if(WIN32)
     ${THIRDPARTY_LIBS} ${SYSTEM_LIBS})
   set_target_properties(${VIDARDB_IMPORT_LIB} PROPERTIES
     COMPILE_FLAGS "-DVIDARDB_DLL -DVIDARDB_LIBRARY_EXPORTS /Fd${CMAKE_CFG_INTDIR}/${VIDARDB_IMPORT_LIB}.pdb")
-else()
 endif()
 
 # Installation and packaging for Linux
