@@ -7,7 +7,6 @@ make_config.mk
 *.o
 *.d
 *.a
-util/build_version.cc
 *.so*
 libvidardb*dylib
 build

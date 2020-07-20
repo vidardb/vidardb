@@ -225,7 +225,7 @@ gen_build_version =							\
 # as a regular source file as part of the compilation process.
 # One can run "strings executable_filename | grep _build_" to find
 # the version of the source that we used to build the executable file.
-CLEAN_FILES += util/build_version.cc:
+CLEAN_FILES += util/build_version.cc
 FORCE:
 util/build_version.cc: FORCE
 	$(AM_V_GEN)rm -f $@-t
