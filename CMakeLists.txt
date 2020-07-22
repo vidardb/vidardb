@@ -379,10 +379,10 @@ endif()
 
 # Installation and packaging for Linux
 if (NOT WIN32)
-install(TARGETS ${VIDARDB_STATIC_LIB} COMPONENT devel ARCHIVE DESTINATION lib64)
-install(TARGETS ${VIDARDB_SHARED_LIB} COMPONENT runtime DESTINATION lib64)
+install(TARGETS ${VIDARDB_STATIC_LIB} COMPONENT devel ARCHIVE DESTINATION lib)
+install(TARGETS ${VIDARDB_SHARED_LIB} COMPONENT runtime DESTINATION lib)
 install(DIRECTORY "${PROJECT_SOURCE_DIR}/include/vidardb/"
         COMPONENT devel
         DESTINATION include/vidardb)
-set(CMAKE_INSTALL_PREFIX /usr)
+set(CMAKE_INSTALL_PREFIX /usr/local)
 endif()
