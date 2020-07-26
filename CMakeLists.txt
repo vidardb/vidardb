@@ -21,7 +21,7 @@
 #
 # Linux:
 #
-# 1. C++11 required.
+# 1. C++11 required, and build-essential.
 # 2. mkdir build; cd build
 # 3. cmake ..
 # 4. make -j(number of cores)
