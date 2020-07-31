@@ -21,7 +21,6 @@ int main() {
   // Optimize VidarDB. This is the easiest way to get VidarDB to perform well
   options.IncreaseParallelism();
   options.OptimizeLevelStyleCompaction();
-  // create the DB if it's not already present
   options.splitter.reset(NewPipeSplitter());
 
   // open DB
