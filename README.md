@@ -13,11 +13,17 @@ If you are interested in contributing to VidarDB, see [CONTRIBUTING.md](./CONTRI
 - For static library:
 
     ```shell
-    sudo DEBUG_LEVEL=0 make static_lib install-static
+    sudo DEBUG_LEVEL=0 make static_lib
     ```
 
 - For shared library:
 
     ```shell
-    sudo DEBUG_LEVEL=0 make shared_lib install-shared
+    sudo DEBUG_LEVEL=0 make shared_lib
     ```
+
+### Installing
+
+```
+sudo make install
+```
