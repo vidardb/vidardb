@@ -1,12 +1,18 @@
 <img style="width:100%;" src="/github-banner.png">
 
-## VidarDB engine is a versatile storage engine. It is a lineage of LevelDB and RocksDB, but with support of various workloads.
+## VidarDB engine is a modern embedded key-value store with a versatile storage engine. It is a lineage of LevelDB and RocksDB, but with support of various workloads.
 
 [![Build Status](https://travis-ci.com/vidardb/vidardb-engine.svg?branch=master)](https://travis-ci.com/github/vidardb/vidardb-engine)
 
-This code is a library that forms the core building block for VidarDB database system. For ease of use, we provide a [Docker image](docker_image/README.md) that has a PostgreSQL interface and SQL is supported. You can read more documentation [here](https://www.vidardb.com/docs/). VidarDB is actively developed and maintained by VidarDB team. Feel free to report bugs or issues via Github.
+There are 3 interfaces to use it: C++, Python, PostgreSQL extension.
 
-If you are interested in contributing to VidarDB, see [CONTRIBUTING.md](./CONTRIBUTING.md).
+For C++: build either by cmake or makefile (see Building & Installing steps below) provided, then try [examples](examples/simple_example.cc).
+
+For Python: check this [repo](https://github.com/vidardb/PyVidarDB).
+
+For PostgreSQL extension: check this [repo](https://github.com/vidardb/PostgresForeignDataWrapper). For ease of use, we provide a [Docker image](docker_image/README.md) that has a PostgreSQL interface and SQL is supported. You can read more documentation [here](https://www.vidardb.com/docs/). 
+
+VidarDB is actively developed and maintained by VidarDB team. Feel free to report bugs or issues via Github. If you are interested in contributing to VidarDB, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ### Building
 
