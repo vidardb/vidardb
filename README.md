@@ -1,6 +1,6 @@
 <img style="width:100%;" src="/github-banner.png">
 
-## VidarDB engine is a versatile storage engine. It is a lineage of LevelDB and RocksDB, but with support of various workloads .
+## VidarDB engine is a versatile storage engine. It is a lineage of LevelDB and RocksDB, but with support of various workloads.
 
 [![Build Status](https://travis-ci.com/vidardb/vidardb-engine.svg?branch=master)](https://travis-ci.com/github/vidardb/vidardb-engine)
 
