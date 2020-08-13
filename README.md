@@ -14,21 +14,21 @@ For PostgreSQL extension: check this [repo](https://github.com/vidardb/PostgresF
 
 VidarDB is actively developed and maintained by VidarDB team. Feel free to report bugs or issues via Github. If you are interested in contributing to VidarDB, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-### Building
+### Makefile
 
 - For static library:
 
     ```shell
-    sudo DEBUG_LEVEL=0 make static_lib
+    sudo DEBUG_LEVEL=0 make static_lib install-static -j[cores]
     ```
 
 - For shared library:
 
     ```shell
-    sudo DEBUG_LEVEL=0 make shared_lib
+    sudo DEBUG_LEVEL=0 make shared_lib install-shared -j[cores]
     ```
 
-### Installing
+### CMake
 
 ```
 sudo make install
