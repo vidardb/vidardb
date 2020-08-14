@@ -14,7 +14,13 @@ For PostgreSQL extension: check this [repo](https://github.com/vidardb/PostgresF
 
 VidarDB is actively developed and maintained by VidarDB team. Feel free to report bugs or issues via Github. If you are interested in contributing to VidarDB, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
-### Makefile
+### For users, CMake provides the ability of compilation and installation across various platforms (Linux, Win, MacOS) with minimum lib size. 
+
+```
+sudo make install
+```
+
+### For engine developers, Makefile provides debug info with much bigger lib size, workable in linux.
 
 - For static library:
 
@@ -27,9 +33,3 @@ VidarDB is actively developed and maintained by VidarDB team. Feel free to repor
     ```shell
     sudo DEBUG_LEVEL=0 make shared_lib install-shared -j[cores]
     ```
-
-### CMake
-
-```
-sudo make install
-```
