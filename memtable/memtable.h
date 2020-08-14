@@ -256,11 +256,6 @@ class MemTable {
     allocator_.DoneAllocating();
   }
 
-  // return true if the current MemTableRep supports merge operator.
-  bool IsMergeOperatorSupported() const {
-    return table_->IsMergeOperatorSupported();
-  }
-
   // return true if the current MemTableRep supports snapshots.
   // inplace update prevents snapshots,
   bool IsSnapshotSupported() const {

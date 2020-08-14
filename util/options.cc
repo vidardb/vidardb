@@ -525,6 +525,10 @@ Options::PrepareForBulkLoad()
 
   // The compaction would create large files in L1.
   target_file_size_base = 256 * 1024 * 1024;
+
+  // Might do some extra work after bulkloading to revert back
+  memtable_factory.reset(new VectorRepFactory(100));
+
   return this;
 }
 

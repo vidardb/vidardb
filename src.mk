@@ -40,6 +40,7 @@ LIB_SOURCES =                                                   \
   db/write_controller.cc                                        \
   db/write_thread.cc                                            \
   memtable/skiplistrep.cc                                       \
+  memtable/vectorrep.cc                                         \
   port/stack_trace.cc                                           \
   port/port_posix.cc                                            \
   table/adaptive_table_factory.cc                               \

@@ -248,6 +248,7 @@ set(SOURCES
         db/write_controller.cc
         db/write_thread.cc
         memtable/skiplistrep.cc
+        memtable/vectorrep.cc
         port/stack_trace.cc
         table/adaptive_table_factory.cc
         table/block_based_table_builder.cc

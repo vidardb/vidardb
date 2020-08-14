@@ -192,10 +192,6 @@ class MemTableRep {
     return GetIterator(arena);
   }
 
-  // Return true if the current MemTableRep supports merge operator.
-  // Default: true
-  virtual bool IsMergeOperatorSupported() const { return true; }
-
   // Return true if the current MemTableRep supports snapshot
   // Default: true
   virtual bool IsSnapshotSupported() const { return true; }
@@ -245,4 +241,27 @@ class SkipListFactory : public MemTableRepFactory {
   const size_t lookahead_;
 };
 
+
+#ifndef VIDARDB_LITE
+// This creates MemTableReps that are backed by an std::vector. On iteration,
+// the vector is sorted. This is useful for workloads where iteration is very
+// rare and writes are generally not issued after reads begin.
+//
+// Parameters:
+//   count: Passed to the constructor of the underlying std::vector of each
+//     VectorRep. On initialization, the underlying array will be at least count
+//     bytes reserved for usage.
+class VectorRepFactory : public MemTableRepFactory {
+  const size_t count_;
+
+ public:
+  explicit VectorRepFactory(size_t count = 0) : count_(count) { printf("\nI am here\n"); }
+  virtual MemTableRep* CreateMemTableRep(const MemTableRep::KeyComparator&,
+                                         MemTableAllocator*,
+                                         Logger* logger) override;
+  virtual const char* Name() const override {
+    return "VectorRepFactory";
+  }
+};
+#endif  // VIDARDB_LITE
 }  // namespace vidardb
