@@ -34,6 +34,4 @@ sudo make install
     sudo DEBUG_LEVEL=0 make shared_lib install-shared -j[cores]
     ```
 
-### Supported Clients
-
-- [Python](https://github.com/vidardb/PyVidarDB)
+If you like **vidardb-engine**, please leave us a star. ![GitHub stars](https://img.shields.io/github/stars/vidardb/vidardb-engine?style=social)
