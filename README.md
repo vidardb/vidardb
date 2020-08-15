@@ -33,3 +33,7 @@ sudo make install
     ```shell
     sudo DEBUG_LEVEL=0 make shared_lib install-shared -j[cores]
     ```
+
+### Supported Clients
+
+- [Python](https://github.com/vidardb/PyVidarDB)
