@@ -1,5 +1,5 @@
 # Mirror from https://hub.docker.com/_/postgres
-FROM vidardb/postgres:11.7
+FROM vidardb/postgres:12.4
 
 ARG apt_opts
 ARG env_exts
@@ -12,8 +12,8 @@ RUN chmod 777 /usr/local/bin/docker-entrypoint.sh /usr/local/bin/install-madlib.
 # https://launchpad.net/ubuntu/+source/snappy/1.1.7-1/+build/13663202/+files/libsnappy1v5_1.1.7-1_amd64.deb
 # http://launchpadlibrarian.net/343996427/libsnappy-dev_1.1.7-1_amd64.deb
 ENV VIDARDB_VERSION=master
-RUN set -xe && export $env_exts && apt-get $apt_opts update && apt-get $apt_opts install -y --no-install-recommends gcc-6 g++-6 make wget cmake && \
-    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 800 --slave /usr/bin/g++ g++ /usr/bin/g++-6 && \
+RUN set -xe && export $env_exts && apt-get $apt_opts update && apt-get $apt_opts install -y --no-install-recommends gcc-8 g++-8 make wget cmake && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 800 --slave /usr/bin/g++ g++ /usr/bin/g++-8 && \
     wget --no-check-certificate -O libsnappy1v5_1.1.7-1_amd64.deb https://launchpad.net/ubuntu/+source/snappy/1.1.7-1/+build/13663202/+files/libsnappy1v5_1.1.7-1_amd64.deb && \
     wget --no-check-certificate -O libsnappy-dev_1.1.7-1_amd64.deb http://launchpadlibrarian.net/343996427/libsnappy-dev_1.1.7-1_amd64.deb && \
     wget --no-check-certificate -O vidardb.tar.gz https://github.com/vidardb/vidardb-engine/archive/${VIDARDB_VERSION}.tar.gz && \
@@ -23,14 +23,14 @@ RUN set -xe && export $env_exts && apt-get $apt_opts update && apt-get $apt_opts
     rm -rf /var/lib/apt/lists/* /tmp/* vidardb.tar.gz vidardb-engine-${VIDARDB_VERSION} libsnappy1v5_1.1.7-1_amd64.deb libsnappy-dev_1.1.7-1_amd64.deb
 
 # Install PostgresForeignDataWrapper
-ENV POSTGRES_VERSION=11
+ENV POSTGRES_VERSION=12
 ENV FDW_VERSION=master
 RUN set -xe && export $env_exts && apt-get $apt_opts update && \
     apt-get $apt_opts install -y --no-install-recommends make wget ca-certificates postgresql-server-dev-${POSTGRES_VERSION} && \
-    wget --no-check-certificate -O PostgresForeignDataWrapper.tar.gz https://github.com/vidardb/PostgresForeignDataWrapper/archive/${FDW_VERSION}.tar.gz && \
-    tar zxvf PostgresForeignDataWrapper.tar.gz && cd PostgresForeignDataWrapper-${FDW_VERSION} && make VIDARDB=true && make install && cd .. && \
+    wget --no-check-certificate -O pgrocks-fdw.tar.gz https://github.com/vidardb/pgrocks-fdw/archive/${FDW_VERSION}.tar.gz && \
+    tar zxvf pgrocks-fdw.tar.gz && cd pgrocks-fdw-${FDW_VERSION} && make VIDARDB=true && make install && cd .. && \
     apt-get purge -y --auto-remove make wget ca-certificates postgresql-server-dev-${POSTGRES_VERSION} && \
-    rm -rf /var/lib/apt/lists/* /tmp/* PostgresForeignDataWrapper.tar.gz PostgresForeignDataWrapper-${FDW_VERSION}
+    rm -rf /var/lib/apt/lists/* /tmp/* pgrocks-fdw.tar.gz pgrocks-fdw-${FDW_VERSION}
 
 # Install AI Functionality
 ENV MADLIB_VERSION=1.17.0
