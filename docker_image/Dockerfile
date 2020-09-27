@@ -35,7 +35,7 @@ RUN set -xe && export $env_exts && apt-get $apt_opts update && \
 # Install AI Functionality
 ENV MADLIB_VERSION=1.17.0
 RUN set -xe && export $env_exts && apt-get $apt_opts update && \
-    apt-get $apt_opts install -y --no-install-recommends wget ca-certificates postgresql-plpython-${POSTGRES_VERSION} python m4 && \
+    apt-get $apt_opts install -y --no-install-recommends wget ca-certificates postgresql-plpython3-${POSTGRES_VERSION} python3 m4 && \
     wget --no-check-certificate -O apache-madlib-${MADLIB_VERSION}-bin-Linux.deb https://dist.apache.org/repos/dist/release/madlib/${MADLIB_VERSION}/apache-madlib-${MADLIB_VERSION}-bin-Linux.deb && \
     dpkg -i apache-madlib-${MADLIB_VERSION}-bin-Linux.deb && \
     apt-get purge -y --auto-remove wget ca-certificates && \

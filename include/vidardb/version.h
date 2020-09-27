@@ -9,8 +9,8 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 #pragma once
 
-#define VIDARDB_MAJOR 0
-#define VIDARDB_MINOR 2
+#define VIDARDB_MAJOR 1
+#define VIDARDB_MINOR 0
 #define VIDARDB_PATCH 0
 
 // Do not use these. We made the mistake of declaring macros starting with
