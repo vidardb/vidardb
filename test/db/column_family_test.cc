@@ -1925,18 +1925,12 @@ TEST_F(ColumnFamilyTest, SanitizeOptions) {
             ColumnFamilyOptions original;
             original.compaction_style = static_cast<CompactionStyle>(s);
             original.num_levels = l;
-            original.level0_stop_writes_trigger = i;
-            original.level0_slowdown_writes_trigger = j;
             original.level0_file_num_compaction_trigger = k;
             original.write_buffer_size =
                 l * 4 * 1024 * 1024 + i * 1024 * 1024 + j * 1024 + k;
 
             ColumnFamilyOptions result =
                 SanitizeOptions(db_options, nullptr, original);
-            ASSERT_TRUE(result.level0_stop_writes_trigger >=
-                        result.level0_slowdown_writes_trigger);
-            ASSERT_TRUE(result.level0_slowdown_writes_trigger >=
-                        result.level0_file_num_compaction_trigger);
             ASSERT_TRUE(result.level0_file_num_compaction_trigger ==
                         original.level0_file_num_compaction_trigger);
             if (s == kCompactionStyleLevel) {
@@ -1975,8 +1969,6 @@ TEST_F(ColumnFamilyTest, ReadDroppedColumnFamily) {
     Open({"default", "one", "two"});
     ColumnFamilyOptions options;
     options.level0_file_num_compaction_trigger = 100;
-    options.level0_slowdown_writes_trigger = 200;
-    options.level0_stop_writes_trigger = 200;
     options.write_buffer_size = 100000;  // small write buffer size
     Reopen({options, options, options});
 
@@ -2041,8 +2033,6 @@ TEST_F(ColumnFamilyTest, FlushAndDropRaceCondition) {
   Open({"default", "one"});
   ColumnFamilyOptions options;
   options.level0_file_num_compaction_trigger = 100;
-  options.level0_slowdown_writes_trigger = 200;
-  options.level0_stop_writes_trigger = 200;
   options.max_write_buffer_number = 20;
   options.write_buffer_size = 100000;  // small write buffer size
   Reopen({options, options});
@@ -2196,11 +2186,6 @@ TEST_F(ColumnFamilyTest, WriteStallSingleColumnFamily) {
   MutableCFOptions mutable_cf_options(
       Options(db_options_, column_family_options_),
       ImmutableCFOptions(Options(db_options_, column_family_options_)));
-
-  mutable_cf_options.level0_slowdown_writes_trigger = 20;
-  mutable_cf_options.level0_stop_writes_trigger = 10000;
-  mutable_cf_options.soft_pending_compaction_bytes_limit = 200;
-  mutable_cf_options.hard_pending_compaction_bytes_limit = 2000;
 
   vstorage->TEST_set_estimated_compaction_needed_bytes(50);
   cfd->RecalculateWriteStallConditions(mutable_cf_options);
@@ -2389,11 +2374,7 @@ TEST_F(ColumnFamilyTest, CompactionSpeedupSingleColumnFamily) {
 
   // Speed up threshold = min(4 * 2, 4 + (36 - 4)/4) = 8
   mutable_cf_options.level0_file_num_compaction_trigger = 4;
-  mutable_cf_options.level0_slowdown_writes_trigger = 36;
-  mutable_cf_options.level0_stop_writes_trigger = 50;
   // Speedup threshold = 200 / 4 = 50
-  mutable_cf_options.soft_pending_compaction_bytes_limit = 200;
-  mutable_cf_options.hard_pending_compaction_bytes_limit = 2000;
 
   vstorage->TEST_set_estimated_compaction_needed_bytes(40);
   cfd->RecalculateWriteStallConditions(mutable_cf_options);
@@ -2425,8 +2406,6 @@ TEST_F(ColumnFamilyTest, CompactionSpeedupSingleColumnFamily) {
 
   // Speed up threshold = min(4 * 2, 4 + (12 - 4)/4) = 6
   mutable_cf_options.level0_file_num_compaction_trigger = 4;
-  mutable_cf_options.level0_slowdown_writes_trigger = 16;
-  mutable_cf_options.level0_stop_writes_trigger = 30;
 
   vstorage->set_l0_delay_trigger_count(5);
   cfd->RecalculateWriteStallConditions(mutable_cf_options);
@@ -2457,13 +2436,8 @@ TEST_F(ColumnFamilyTest, WriteStallTwoColumnFamilies) {
   MutableCFOptions mutable_cf_options(
       Options(db_options_, column_family_options_),
       ImmutableCFOptions(Options(db_options_, column_family_options_)));
-  mutable_cf_options.level0_slowdown_writes_trigger = 20;
-  mutable_cf_options.level0_stop_writes_trigger = 10000;
-  mutable_cf_options.soft_pending_compaction_bytes_limit = 200;
-  mutable_cf_options.hard_pending_compaction_bytes_limit = 2000;
 
   MutableCFOptions mutable_cf_options1 = mutable_cf_options;
-  mutable_cf_options1.soft_pending_compaction_bytes_limit = 500;
 
   vstorage->TEST_set_estimated_compaction_needed_bytes(50);
   cfd->RecalculateWriteStallConditions(mutable_cf_options);
@@ -2526,8 +2500,6 @@ TEST_F(ColumnFamilyTest, WriteStallTwoColumnFamilies) {
 TEST_F(ColumnFamilyTest, CompactionSpeedupTwoColumnFamilies) {
   db_options_.base_background_compactions = 2;
   db_options_.max_background_compactions = 6;
-  column_family_options_.soft_pending_compaction_bytes_limit = 200;
-  column_family_options_.hard_pending_compaction_bytes_limit = 2000;
   Open();
   CreateColumnFamilies({"one"});
   ColumnFamilyData* cfd =
@@ -2543,14 +2515,9 @@ TEST_F(ColumnFamilyTest, CompactionSpeedupTwoColumnFamilies) {
       ImmutableCFOptions(Options(db_options_, column_family_options_)));
   // Speed up threshold = min(4 * 2, 4 + (36 - 4)/4) = 8
   mutable_cf_options.level0_file_num_compaction_trigger = 4;
-  mutable_cf_options.level0_slowdown_writes_trigger = 36;
-  mutable_cf_options.level0_stop_writes_trigger = 30;
   // Speedup threshold = 200 / 4 = 50
-  mutable_cf_options.soft_pending_compaction_bytes_limit = 200;
-  mutable_cf_options.hard_pending_compaction_bytes_limit = 2000;
 
   MutableCFOptions mutable_cf_options1 = mutable_cf_options;
-  mutable_cf_options1.level0_slowdown_writes_trigger = 16;
 
   vstorage->TEST_set_estimated_compaction_needed_bytes(40);
   cfd->RecalculateWriteStallConditions(mutable_cf_options);

@@ -510,8 +510,6 @@ TEST_F(DBCompactionTest, BGCompactionsAllowed) {
   options.num_levels = 3;
   // Should speed up compaction when there are 4 files.
   options.level0_file_num_compaction_trigger = 2;
-  options.level0_slowdown_writes_trigger = 20;
-  options.soft_pending_compaction_bytes_limit = 1 << 30;  // Infinitely large
   options.base_background_compactions = 1;
   options.max_background_compactions = 3;
   options.memtable_factory.reset(new SpecialSkipListFactory(kNumKeysPerFile));
@@ -1936,7 +1934,6 @@ TEST_P(DBCompactionTestWithParam, DISABLED_CompactFilesOnLevelCompaction) {
   options.compaction_style = kCompactionStyleLevel;
   options.target_file_size_base = options.write_buffer_size;
   options.max_bytes_for_level_base = options.target_file_size_base * 2;
-  options.level0_stop_writes_trigger = 2;
   options.max_bytes_for_level_multiplier = 2;
   options.compression = kNoCompression;
   options.max_subcompactions = max_subcompactions_;
@@ -2260,20 +2257,14 @@ TEST_P(DBCompactionTestWithParam, CompressLevelCompaction) {
 TEST_F(DBCompactionTest, SanitizeCompactionOptionsTest) {
   Options options = CurrentOptions();
   options.max_background_compactions = 5;
-  options.soft_pending_compaction_bytes_limit = 0;
-  options.hard_pending_compaction_bytes_limit = 100;
   options.create_if_missing = true;
   DestroyAndReopen(options);
   ASSERT_EQ(5, db_->GetOptions().base_background_compactions);
-  ASSERT_EQ(100, db_->GetOptions().soft_pending_compaction_bytes_limit);
 
   options.base_background_compactions = 4;
   options.max_background_compactions = 3;
-  options.soft_pending_compaction_bytes_limit = 200;
-  options.hard_pending_compaction_bytes_limit = 150;
   DestroyAndReopen(options);
   ASSERT_EQ(3, db_->GetOptions().base_background_compactions);
-  ASSERT_EQ(150, db_->GetOptions().soft_pending_compaction_bytes_limit);
 }
 
 TEST_P(DBCompactionTestWithParam, ForceBottommostLevelCompaction) {
@@ -2382,7 +2373,6 @@ TEST_P(CompactionPriTest, Test) {
   Options options = CurrentOptions();
   options.write_buffer_size = 16 * 1024;
   options.compaction_pri = static_cast<CompactionPri>(compaction_pri_);
-  options.hard_pending_compaction_bytes_limit = 256 * 1024;
   options.max_bytes_for_level_base = 64 * 1024;
   options.max_bytes_for_level_multiplier = 4;
   options.compression = kNoCompression;

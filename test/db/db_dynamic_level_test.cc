@@ -22,7 +22,7 @@ class DBTestDynamicLevel : public DBTestBase {
 };
 
 TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBase) {
-  if (!Snappy_Supported() || !LZ4_Supported()) {
+  if (!Snappy_Supported()) {
     return;
   }
   // Use InMemoryEnv, or it would be too slow.
@@ -60,19 +60,15 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBase) {
       options.write_buffer_size = 2048;
       options.max_write_buffer_number = 2;
       options.level0_file_num_compaction_trigger = 2;
-      options.level0_slowdown_writes_trigger = 2;
-      options.level0_stop_writes_trigger = 2;
       options.target_file_size_base = 2048;
-      options.level_compaction_dynamic_level_bytes = true;
       options.max_bytes_for_level_base = 10240;
       options.max_bytes_for_level_multiplier = 4;
-      options.soft_rate_limit = 1.1;
       options.max_background_compactions = max_background_compactions;
       options.num_levels = 5;
 
       options.compression_per_level.resize(3);
       options.compression_per_level[0] = kNoCompression;
-      options.compression_per_level[1] = kLZ4Compression;
+      options.compression_per_level[1] = kSnappyCompression;
       options.compression_per_level[2] = kSnappyCompression;
 
       DestroyAndReopen(options);
@@ -129,10 +125,7 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBase2) {
   options.write_buffer_size = 20480;
   options.max_write_buffer_number = 2;
   options.level0_file_num_compaction_trigger = 2;
-  options.level0_slowdown_writes_trigger = 9999;
-  options.level0_stop_writes_trigger = 9999;
   options.target_file_size_base = 9102;
-  options.level_compaction_dynamic_level_bytes = true;
   options.max_bytes_for_level_base = 40960;
   options.max_bytes_for_level_multiplier = 4;
   options.max_background_compactions = 2;
@@ -285,10 +278,7 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesCompactRange) {
   options.write_buffer_size = 2048;
   options.max_write_buffer_number = 2;
   options.level0_file_num_compaction_trigger = 2;
-  options.level0_slowdown_writes_trigger = 9999;
-  options.level0_stop_writes_trigger = 9999;
   options.target_file_size_base = 2;
-  options.level_compaction_dynamic_level_bytes = true;
   options.max_bytes_for_level_base = 10240;
   options.max_bytes_for_level_multiplier = 4;
   options.max_background_compactions = 1;
@@ -363,13 +353,9 @@ TEST_F(DBTestDynamicLevel, DynamicLevelMaxBytesBaseInc) {
   options.write_buffer_size = 2048;
   options.max_write_buffer_number = 2;
   options.level0_file_num_compaction_trigger = 2;
-  options.level0_slowdown_writes_trigger = 2;
-  options.level0_stop_writes_trigger = 2;
   options.target_file_size_base = 2048;
-  options.level_compaction_dynamic_level_bytes = true;
   options.max_bytes_for_level_base = 10240;
   options.max_bytes_for_level_multiplier = 4;
-  options.soft_rate_limit = 1.1;
   options.max_background_compactions = 2;
   options.num_levels = 5;
 
@@ -415,13 +401,9 @@ TEST_F(DBTestDynamicLevel, MigrateToDynamicLevelMaxBytesBase) {
   options.write_buffer_size = 2048;
   options.max_write_buffer_number = 8;
   options.level0_file_num_compaction_trigger = 4;
-  options.level0_slowdown_writes_trigger = 4;
-  options.level0_stop_writes_trigger = 8;
   options.target_file_size_base = 2048;
-  options.level_compaction_dynamic_level_bytes = false;
   options.max_bytes_for_level_base = 10240;
   options.max_bytes_for_level_multiplier = 4;
-  options.soft_rate_limit = 1.1;
   options.num_levels = 8;
 
   DestroyAndReopen(options);
@@ -452,7 +434,6 @@ TEST_F(DBTestDynamicLevel, MigrateToDynamicLevelMaxBytesBase) {
   verify_func(total_keys, false);
   dbfull()->TEST_WaitForCompact();
 
-  options.level_compaction_dynamic_level_bytes = true;
   options.disable_auto_compactions = true;
   Reopen(options);
   verify_func(total_keys, false);

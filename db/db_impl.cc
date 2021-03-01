@@ -267,7 +267,6 @@ void DumpSupportInfo(Logger* logger) {
       Zlib_Supported());
   Log(InfoLogLevel::INFO_LEVEL, logger, "\tBzip supported: %d",
       BZip2_Supported());
-  Log(InfoLogLevel::INFO_LEVEL, logger, "\tLZ4 supported: %d", LZ4_Supported());
   Log(InfoLogLevel::INFO_LEVEL, logger, "Fast CRC32 supported: %d",
       crc32c::IsFastCrc32Supported());
 }

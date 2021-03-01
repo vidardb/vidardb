@@ -343,8 +343,6 @@ TEST_F(DBTest, WrongLevel0Config) {
   Options options = CurrentOptions();
   Close();
   ASSERT_OK(DestroyDB(dbname_, options));
-  options.level0_stop_writes_trigger = 1;
-  options.level0_slowdown_writes_trigger = 2;
   options.level0_file_num_compaction_trigger = 3;
   ASSERT_OK(DB::Open(options, dbname_, &db_));
 }
@@ -547,8 +545,6 @@ TEST_F(DBTest, FLUSH) {
 TEST_F(DBTest, FlushSchedule) {
   Options options = CurrentOptions();
   options.disable_auto_compactions = true;
-  options.level0_stop_writes_trigger = 1 << 10;
-  options.level0_slowdown_writes_trigger = 1 << 10;
   options.min_write_buffer_number_to_merge = 1;
   options.max_write_buffer_number_to_maintain = 1;
   options.max_write_buffer_number = 2;
@@ -736,9 +732,6 @@ bool MinLevelToCompress(CompressionType& type, Options& options, int wbits,
   } else if (BZip2_Supported()) {
     type = kBZip2Compression;
     fprintf(stderr, "using bzip2\n");
-  } else if (LZ4_Supported()) {
-    type = kLZ4Compression;
-    fprintf(stderr, "using lz4\n");
   } else {
     fprintf(stderr, "skipping test, compression disabled\n");
     return false;
@@ -805,8 +798,7 @@ TEST_F(DBTest, RepeatedWritesToSameKey) {
 
     // We must have at most one file per level except for level-0,
     // which may have up to kL0_StopWritesTrigger files.
-    const int kMaxFiles =
-        options.num_levels + options.level0_stop_writes_trigger;
+    const int kMaxFiles = options.num_levels;
 
     Random rnd(301);
     std::string value =
@@ -2219,12 +2211,6 @@ class ModelDB : public DB {
     return 1;
   }
 
-  using DB::Level0StopWriteTrigger;
-  virtual int Level0StopWriteTrigger(
-      ColumnFamilyHandle* column_family) override {
-    return -1;
-  }
-
   virtual const std::string& GetName() const override { return name_; }
 
   virtual Env* GetEnv() const override { return nullptr; }
@@ -2520,14 +2506,6 @@ TEST_P(DBTestWithParam, FIFOCompactionTest) {
 }
 #endif  // VIDARDB_LITE
 
-// verify that we correctly deprecated timeout_hint_us
-TEST_F(DBTest, SimpleWriteTimeoutTest) {
-  WriteOptions write_opt;
-  write_opt.timeout_hint_us = 0;
-  ASSERT_OK(Put(Key(1), Key(1) + std::string(100, 'v'), write_opt));
-  write_opt.timeout_hint_us = 10;
-  ASSERT_NOK(Put(Key(1), Key(1) + std::string(100, 'v'), write_opt));
-}
 
 #ifndef VIDARDB_LITE
 
@@ -2676,8 +2654,6 @@ TEST_F(DBTest, DynamicMemtableOptions) {
   options.max_write_buffer_number = 2;
   // Don't trigger compact/slowdown/stop
   options.level0_file_num_compaction_trigger = 1024;
-  options.level0_slowdown_writes_trigger = 1024;
-  options.level0_stop_writes_trigger = 1024;
   DestroyAndReopen(options);
 
   auto gen_l0_kb = [this, kNumPutsBeforeWaitForFlush](int size) {
@@ -3084,8 +3060,6 @@ TEST_P(DBTestWithParam, PreShutdownMultipleCompaction) {
   options.level0_file_num_compaction_trigger = kNumL0Files;
   options.max_bytes_for_level_multiplier = 2;
   options.max_background_compactions = kLowPriCount;
-  options.level0_stop_writes_trigger = 1 << 10;
-  options.level0_slowdown_writes_trigger = 1 << 10;
   options.max_subcompactions = max_subcompactions_;
 
   TryReopen(options);
@@ -3173,8 +3147,6 @@ TEST_P(DBTestWithParam, PreShutdownCompactionMiddle) {
   options.level0_file_num_compaction_trigger = kNumL0Files;
   options.max_bytes_for_level_multiplier = 2;
   options.max_background_compactions = kLowPriCount;
-  options.level0_stop_writes_trigger = 1 << 10;
-  options.level0_slowdown_writes_trigger = 1 << 10;
   options.max_subcompactions = max_subcompactions_;
 
   TryReopen(options);
@@ -3262,10 +3234,7 @@ TEST_F(DBTest, DynamicLevelCompressionPerLevel) {
   options.write_buffer_size = 20480;
   options.max_write_buffer_number = 2;
   options.level0_file_num_compaction_trigger = 2;
-  options.level0_slowdown_writes_trigger = 2;
-  options.level0_stop_writes_trigger = 2;
   options.target_file_size_base = 2048;
-  options.level_compaction_dynamic_level_bytes = true;
   options.max_bytes_for_level_base = 102400;
   options.max_bytes_for_level_multiplier = 4;
   options.max_background_compactions = 1;
@@ -3326,7 +3295,7 @@ TEST_F(DBTest, DynamicLevelCompressionPerLevel) {
 }
 
 TEST_F(DBTest, DynamicLevelCompressionPerLevel2) {
-  if (!Snappy_Supported() || !LZ4_Supported() || !Zlib_Supported()) {
+  if (!Snappy_Supported() || !Zlib_Supported()) {
     return;
   }
   const int kNKeys = 500;
@@ -3343,9 +3312,6 @@ TEST_F(DBTest, DynamicLevelCompressionPerLevel2) {
   options.write_buffer_size = 6000;
   options.max_write_buffer_number = 2;
   options.level0_file_num_compaction_trigger = 2;
-  options.level0_slowdown_writes_trigger = 2;
-  options.level0_stop_writes_trigger = 2;
-  options.soft_pending_compaction_bytes_limit = 1024 * 1024;
 
   // Use file size to distinguish levels
   // L1: 10, L2: 20, L3 40, L4 80
@@ -3353,7 +3319,6 @@ TEST_F(DBTest, DynamicLevelCompressionPerLevel2) {
   options.target_file_size_base = 10;
   options.target_file_size_multiplier = 2;
 
-  options.level_compaction_dynamic_level_bytes = true;
   options.max_bytes_for_level_base = 200;
   options.max_bytes_for_level_multiplier = 8;
   options.max_background_compactions = 1;
@@ -3363,7 +3328,7 @@ TEST_F(DBTest, DynamicLevelCompressionPerLevel2) {
 
   options.compression_per_level.resize(3);
   options.compression_per_level[0] = kNoCompression;
-  options.compression_per_level[1] = kLZ4Compression;
+  options.compression_per_level[1] = kZlibCompression;
   options.compression_per_level[2] = kZlibCompression;
 
   DestroyAndReopen(options);
@@ -3375,7 +3340,6 @@ TEST_F(DBTest, DynamicLevelCompressionPerLevel2) {
       "LevelCompactionPicker::PickCompaction:Return", [&](void* arg) {
         Compaction* compaction = reinterpret_cast<Compaction*>(arg);
         if (compaction->output_level() == 4) {
-          ASSERT_TRUE(compaction->output_compression() == kLZ4Compression);
           num_lz4.fetch_add(1);
         }
       });
@@ -3419,7 +3383,6 @@ TEST_F(DBTest, DynamicLevelCompressionPerLevel2) {
           ASSERT_TRUE(compaction->output_compression() == kZlibCompression);
           num_zlib.fetch_add(1);
         } else {
-          ASSERT_TRUE(compaction->output_compression() == kLZ4Compression);
           num_lz4.fetch_add(1);
         }
       });
@@ -3461,14 +3424,11 @@ TEST_F(DBTest, DynamicCompactionOptions) {
   options.env = env_;
   options.create_if_missing = true;
   options.compression = kNoCompression;
-  options.soft_pending_compaction_bytes_limit = 1024 * 1024;
   options.write_buffer_size = k64KB;
   options.arena_block_size = 4 * k4KB;
   options.max_write_buffer_number = 2;
   // Compaction related options
   options.level0_file_num_compaction_trigger = 3;
-  options.level0_slowdown_writes_trigger = 4;
-  options.level0_stop_writes_trigger = 8;
   options.max_grandparent_overlap_factor = 10;
   options.expanded_compaction_factor = 25;
   options.source_compaction_factor = 1;
@@ -3719,7 +3679,6 @@ TEST_F(DBTest, DynamicMiscOptions) {
   Options options;
   options.env = env_;
   options.create_if_missing = true;
-  options.max_sequential_skip_in_iterations = 16;
   options.compression = kNoCompression;
   options.statistics = vidardb::CreateDBStatistics();
   DestroyAndReopen(options);
@@ -3741,8 +3700,6 @@ TEST_F(DBTest, DynamicMiscOptions) {
     iter->Next();
     ASSERT_TRUE(iter->Valid());
     ASSERT_EQ(iter->key().compare(Key(key2)), 0);
-    ASSERT_EQ(num_reseek,
-              TestGetTickerCount(options, NUMBER_OF_RESEEKS_IN_ITERATION));
   };
   // No reseek
   assert_reseek_count(100, 0);
@@ -3769,8 +3726,6 @@ TEST_F(DBTest, DynamicMiscOptions) {
                     {"hard_pending_compaction_bytes_limit", "300"}}));
   ASSERT_OK(dbfull()->TEST_GetLatestMutableCFOptions(handles_[1],
                                                      &mutable_cf_options));
-  ASSERT_EQ(200, mutable_cf_options.soft_pending_compaction_bytes_limit);
-  ASSERT_EQ(300, mutable_cf_options.hard_pending_compaction_bytes_limit);
   // Test report_bg_io_stats
   ASSERT_OK(
       dbfull()->SetOptions(handles_[1], {{"report_bg_io_stats", "true"}}));
@@ -3783,7 +3738,6 @@ TEST_F(DBTest, DynamicMiscOptions) {
       dbfull()->SetOptions(handles_[1], {{"min_partial_merge_operands", "4"}}));
   ASSERT_OK(dbfull()->TEST_GetLatestMutableCFOptions(handles_[1],
                                                      &mutable_cf_options));
-  ASSERT_EQ(4, mutable_cf_options.min_partial_merge_operands);
   // Test compression
   // sanity check
   ASSERT_OK(dbfull()->SetOptions({{"compression", "kNoCompression"}}));
@@ -3809,8 +3763,6 @@ TEST_F(DBTest, L0L1L2AndUpHitCounter) {
   options.write_buffer_size = 32 * 1024;
   options.target_file_size_base = 32 * 1024;
   options.level0_file_num_compaction_trigger = 2;
-  options.level0_slowdown_writes_trigger = 2;
-  options.level0_stop_writes_trigger = 4;
   options.max_bytes_for_level_base = 64 * 1024;
   options.max_write_buffer_number = 2;
   options.max_background_compactions = 8;
@@ -3848,9 +3800,7 @@ TEST_F(DBTest, EncodeDecompressedBlockSizeTest) {
   // iter 2 -- lz4
   // iter 3 -- lz4HC
   // iter 4 -- xpress
-  CompressionType compressions[] = {kZlibCompression, kBZip2Compression,
-                                    kLZ4Compression, kLZ4HCCompression,
-                                    kXpressCompression};
+  CompressionType compressions[] = {kZlibCompression, kBZip2Compression};
   for (auto comp : compressions) {
     if (!CompressionTypeSupported(comp)) {
       continue;
@@ -4003,7 +3953,6 @@ TEST_F(DBTest, HugeNumberOfLevels) {
   options.num_levels = 12;
   options.max_background_compactions = 10;
   options.max_bytes_for_level_multiplier = 2;
-  options.level_compaction_dynamic_level_bytes = true;
   DestroyAndReopen(options);
 
   Random rnd(301);
@@ -4021,7 +3970,6 @@ TEST_F(DBTest, AutomaticConflictsWithManualCompaction) {
   options.num_levels = 12;
   options.max_background_compactions = 10;
   options.max_bytes_for_level_multiplier = 2;
-  options.level_compaction_dynamic_level_bytes = true;
   DestroyAndReopen(options);
 
   Random rnd(301);
@@ -4151,8 +4099,6 @@ TEST_F(DBTest, DelayedWriteRate) {
   options.max_write_buffer_number = 256;
   options.max_background_compactions = 1;
   options.level0_file_num_compaction_trigger = 3;
-  options.level0_slowdown_writes_trigger = 3;
-  options.level0_stop_writes_trigger = 999999;
   options.delayed_write_rate = 20000000;  // Start with 200MB/s
   options.memtable_factory.reset(
       new SpecialSkipListFactory(kEntriesPerMemTable));
@@ -4214,9 +4160,6 @@ TEST_F(DBTest, HardLimit) {
   options.write_buffer_size = 110 << 10;  // 110KB
   options.arena_block_size = 4 * 1024;
   options.level0_file_num_compaction_trigger = 4;
-  options.level0_slowdown_writes_trigger = 999999;
-  options.level0_stop_writes_trigger = 999999;
-  options.hard_pending_compaction_bytes_limit = 800 << 10;
   options.max_bytes_for_level_base = 10000000000u;
   options.max_background_compactions = 1;
   options.memtable_factory.reset(
@@ -4263,10 +4206,7 @@ TEST_F(DBTest, SoftLimit) {
   options.write_buffer_size = 100000;  // Small write buffer
   options.max_write_buffer_number = 256;
   options.level0_file_num_compaction_trigger = 1;
-  options.level0_slowdown_writes_trigger = 3;
-  options.level0_stop_writes_trigger = 999999;
   options.delayed_write_rate = 20000;  // About 200KB/s limited rate
-  options.soft_pending_compaction_bytes_limit = 160000;
   options.target_file_size_base = 99999999;  // All into one file
   options.max_bytes_for_level_base = 50000;
   options.max_bytes_for_level_multiplier = 10;
@@ -4433,9 +4373,7 @@ TEST_F(DBTest, LastWriteBufferDelay) {
 #endif  // VIDARDB_LITE
 
 TEST_F(DBTest, FailWhenCompressionNotSupportedTest) {
-  CompressionType compressions[] = {kZlibCompression, kBZip2Compression,
-                                    kLZ4Compression, kLZ4HCCompression,
-                                    kXpressCompression};
+  CompressionType compressions[] = {kZlibCompression, kBZip2Compression};
   for (auto comp : compressions) {
     if (!CompressionTypeSupported(comp)) {
       // not supported, we should fail the Open()
@@ -4486,8 +4424,6 @@ TEST_F(DBTest, DeletingOldWalAfterDrop) {
   options.compression = kNoCompression;
   options.write_buffer_size = 1 << 20;
   options.level0_file_num_compaction_trigger = (1 << 30);
-  options.level0_slowdown_writes_trigger = (1 << 30);
-  options.level0_stop_writes_trigger = (1 << 30);
   options.disable_auto_compactions = true;
   DestroyAndReopen(options);
   vidardb::SyncPoint::GetInstance()->EnableProcessing();
