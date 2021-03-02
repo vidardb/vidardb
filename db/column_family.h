@@ -388,8 +388,6 @@ class ColumnFamilyData {
   // If true --> this ColumnFamily is currently present in
   // DBImpl::compaction_queue_
   bool pending_compaction_;
-
-  uint64_t prev_compaction_needed_bytes_;
 };
 
 // ColumnFamilySet has interesting thread-safety requirements

@@ -271,8 +271,7 @@ ColumnFamilyData::ColumnFamilyData(
       log_number_(0),
       column_family_set_(column_family_set),
       pending_flush_(false),
-      pending_compaction_(false),
-      prev_compaction_needed_bytes_(0) {
+      pending_compaction_(false) {
   Ref();
 
   // Convert user defined table properties collector factories to internal ones.
@@ -387,73 +386,10 @@ void ColumnFamilyData::SetDropped() {
   column_family_set_->RemoveColumnFamily(this);
 }
 
-const double kSlowdownRatio = 1.2;
-
-namespace {
-std::unique_ptr<WriteControllerToken> SetupDelay(
-    uint64_t max_write_rate, WriteController* write_controller,
-    uint64_t compaction_needed_bytes, uint64_t prev_compaction_neeed_bytes,
-    bool auto_comapctions_disabled) {
-  const uint64_t kMinWriteRate = 1024u;  // Minimum write rate 1KB/s.
-
-  uint64_t write_rate = write_controller->delayed_write_rate();
-
-  if (auto_comapctions_disabled) {
-    // When auto compaction is disabled, always use the value user gave.
-    write_rate = max_write_rate;
-  } else if (write_controller->NeedsDelay() && max_write_rate > kMinWriteRate) {
-    // If user gives rate less than kMinWriteRate, don't adjust it.
-    //
-    // If already delayed, need to adjust based on previous compaction debt.
-    // When there are two or more column families require delay, we always
-    // increase or reduce write rate based on information for one single
-    // column family. It is likely to be OK but we can improve if there is a
-    // problem.
-    // Ignore compaction_needed_bytes = 0 case because compaction_needed_bytes
-    // is only available in level-based compaction
-    //
-    // If the compaction debt stays the same as previously, we also further slow
-    // down. It usually means a mem table is full. It's mainly for the case
-    // where both of flush and compaction are much slower than the speed we
-    // insert to mem tables, so we need to actively slow down before we get
-    // feedback signal from compaction and flushes to avoid the full stop
-    // because of hitting the max write buffer number.
-    if (prev_compaction_neeed_bytes > 0 &&
-        prev_compaction_neeed_bytes <= compaction_needed_bytes) {
-      write_rate = static_cast<uint64_t>(static_cast<double>(write_rate) /
-                                         kSlowdownRatio);
-      if (write_rate < kMinWriteRate) {
-        write_rate = kMinWriteRate;
-      }
-    } else if (prev_compaction_neeed_bytes > compaction_needed_bytes) {
-      // We are speeding up by ratio of kSlowdownRatio when we have paid
-      // compaction debt. But we'll never speed up to faster than the write rate
-      // given by users.
-      write_rate = static_cast<uint64_t>(static_cast<double>(write_rate) *
-                                         kSlowdownRatio);
-      if (write_rate > max_write_rate) {
-        write_rate = max_write_rate;
-      }
-    }
-  }
-  return write_controller->GetDelayToken(write_rate);
-}
-
-int GetL0ThresholdSpeedupCompaction(int level0_file_num_compaction_trigger) {
-  // 1/4 of the way between L0 compaction trigger threshold and slowdown
-  // condition.
-  // Or twice as compaction trigger, if it is smaller.
-  return level0_file_num_compaction_trigger * 2;
-}
-}  // namespace
-
 void ColumnFamilyData::RecalculateWriteStallConditions(
       const MutableCFOptions& mutable_cf_options) {
   if (current_ != nullptr) {
-    auto* vstorage = current_->storage_info();
     auto write_controller = column_family_set_->write_controller_;
-    uint64_t compaction_needed_bytes =
-        vstorage->estimated_compaction_needed_bytes();
 
     if (imm()->NumNotFlushed() >= mutable_cf_options.max_write_buffer_number) {
       write_controller_token_ = write_controller->GetStopToken();
@@ -463,34 +399,10 @@ void ColumnFamilyData::RecalculateWriteStallConditions(
           "(waiting for flush), max_write_buffer_number is set to %d",
           name_.c_str(), imm()->NumNotFlushed(),
           mutable_cf_options.max_write_buffer_number);
-    } else if (mutable_cf_options.max_write_buffer_number > 3 &&
-               imm()->NumNotFlushed() >=
-                   mutable_cf_options.max_write_buffer_number - 1) {
-      write_controller_token_ =
-          SetupDelay(ioptions_.delayed_write_rate, write_controller,
-                     compaction_needed_bytes, prev_compaction_needed_bytes_,
-                     mutable_cf_options.disable_auto_compactions);
-      internal_stats_->AddCFStats(InternalStats::MEMTABLE_SLOWDOWN, 1);
-      Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
-          "[%s] Stalling writes because we have %d immutable memtables "
-          "(waiting for flush), max_write_buffer_number is set to %d "
-          "rate %" PRIu64,
-          name_.c_str(), imm()->NumNotFlushed(),
-          mutable_cf_options.max_write_buffer_number,
-          write_controller->delayed_write_rate());
-    } else if (vstorage->l0_delay_trigger_count() >=
-               GetL0ThresholdSpeedupCompaction(
-                   mutable_cf_options.level0_file_num_compaction_trigger)) {
-      write_controller_token_ = write_controller->GetCompactionPressureToken();
-      Log(InfoLogLevel::WARN_LEVEL, ioptions_.info_log,
-          "[%s] Increasing compaction threads because we have %d level-0 "
-          "files ",
-          name_.c_str(), vstorage->l0_delay_trigger_count());
     } else {
       // Increase compaction threads.
       write_controller_token_ = write_controller->GetCompactionPressureToken();
     }
-    prev_compaction_needed_bytes_ = compaction_needed_bytes;
   }
 }
 

@@ -293,7 +293,6 @@ DBImpl::DBImpl(const DBOptions& options, const std::string& dbname)
       write_buffer_(options.db_write_buffer_size),
       write_thread_(0, options.write_thread_slow_yield_usec),
       write_controller_(options.delayed_write_rate),
-      last_batch_group_size_(0),
       unscheduled_flushes_(0),
       unscheduled_compactions_(0),
       bg_compaction_scheduled_(0),
@@ -4313,15 +4312,14 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
     status = ScheduleFlushes(&context);
   }
 
-  if (UNLIKELY(status.ok() && (write_controller_.IsStopped() ||
-                               write_controller_.NeedsDelay()))) {
+  if (UNLIKELY(status.ok() && write_controller_.IsStopped())) {
     PERF_TIMER_STOP(write_pre_and_post_process_time);
     PERF_TIMER_GUARD(write_delay_time);
     // We don't know size of current batch so that we always use the size
     // for previous one. It might create a fairness issue that expiration
     // might happen for smaller writes but larger writes can go through.
     // Can optimize it if it is an issue.
-    status = DelayWrite(last_batch_group_size_);
+    status = DelayWrite();
     PERF_TIMER_START(write_pre_and_post_process_time);
   }
 
@@ -4353,8 +4351,7 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
   // At this point the mutex is unlocked
 
   bool exit_completed_early = false;
-  last_batch_group_size_ =
-      write_thread_.EnterAsBatchGroupLeader(&w, &last_writer, &write_group);
+  write_thread_.EnterAsBatchGroupLeader(&w, &last_writer, &write_group);
 
   if (status.ok()) {
     // Rules for when we can update the memtable concurrently
@@ -4573,21 +4570,11 @@ Status DBImpl::WriteImpl(const WriteOptions& write_options,
 
 // REQUIRES: mutex_ is held
 // REQUIRES: this thread is currently at the front of the writer queue
-Status DBImpl::DelayWrite(uint64_t num_bytes) {
+Status DBImpl::DelayWrite() {
   uint64_t time_delayed = 0;
   bool delayed = false;
   {
     StopWatch sw(env_, stats_, WRITE_STALL, &time_delayed);
-    auto delay = write_controller_.GetDelay(env_, num_bytes);
-    if (delay > 0) {
-      mutex_.Unlock();
-      delayed = true;
-      TEST_SYNC_POINT("DBImpl::DelayWrite:Sleep");
-      // hopefully we don't have to sleep more than 2 billion microseconds
-      env_->SleepForMicroseconds(static_cast<int>(delay));
-      mutex_.Lock();
-    }
-
     while (bg_error_.ok() && write_controller_.IsStopped()) {
       delayed = true;
       TEST_SYNC_POINT("DBImpl::DelayWrite:Wait");

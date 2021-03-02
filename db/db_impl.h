@@ -335,7 +335,7 @@ class DBImpl : public DB {
 
 #endif  // NDEBUG
 
-  // Return maximum background compaction alowed to be scheduled based on
+  // Return maximum background compaction allowed to be scheduled based on
   // compaction status.
   int BGCompactionsAllowed() const;
 
@@ -585,9 +585,7 @@ class DBImpl : public DB {
   Status WriteLevel0TableForRecovery(int job_id, ColumnFamilyData* cfd,
                                      MemTable* mem, VersionEdit* edit);
 
-  // num_bytes: for slowdown case, delay time is calculated based on
-  //            `num_bytes` going through.
-  Status DelayWrite(uint64_t num_bytes);
+  Status DelayWrite();
 
   Status ScheduleFlushes(WriteContext* context);
 
@@ -772,10 +770,6 @@ class DBImpl : public DB {
   WriteBatch tmp_batch_;
 
   WriteController write_controller_;
-
-  // Size of the last batch group. In slowdown mode, next write needs to
-  // sleep if it uses up the quota.
-  uint64_t last_batch_group_size_;
 
   FlushScheduler flush_scheduler_;
 

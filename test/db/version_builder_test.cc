@@ -134,8 +134,6 @@ TEST_F(VersionBuilderTest, ApplyAndSaveTo) {
 }
 
 TEST_F(VersionBuilderTest, ApplyAndSaveToDynamic) {
-  ioptions_.level_compaction_dynamic_level_bytes = true;
-
   Add(0, 1U, "150", "200", 100U, 0, 200U, 200U, 0, 0, false, 200U, 200U);
   Add(0, 88U, "201", "300", 100U, 0, 100U, 100U, 0, 0, false, 100U, 100U);
 
@@ -171,8 +169,6 @@ TEST_F(VersionBuilderTest, ApplyAndSaveToDynamic) {
 }
 
 TEST_F(VersionBuilderTest, ApplyAndSaveToDynamic2) {
-  ioptions_.level_compaction_dynamic_level_bytes = true;
-
   Add(0, 1U, "150", "200", 100U, 0, 200U, 200U, 0, 0, false, 200U, 200U);
   Add(0, 88U, "201", "300", 100U, 0, 100U, 100U, 0, 0, false, 100U, 100U);
 

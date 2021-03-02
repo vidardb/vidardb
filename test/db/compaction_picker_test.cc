@@ -245,7 +245,6 @@ TEST_F(CompactionPickerTest, NeedsCompactionLevel) {
 
 TEST_F(CompactionPickerTest, Level0TriggerDynamic) {
   int num_levels = ioptions_.num_levels;
-  ioptions_.level_compaction_dynamic_level_bytes = true;
   mutable_cf_options_.level0_file_num_compaction_trigger = 2;
   mutable_cf_options_.max_bytes_for_level_base = 200;
   mutable_cf_options_.max_bytes_for_level_multiplier = 10;
@@ -267,7 +266,6 @@ TEST_F(CompactionPickerTest, Level0TriggerDynamic) {
 
 TEST_F(CompactionPickerTest, Level0TriggerDynamic2) {
   int num_levels = ioptions_.num_levels;
-  ioptions_.level_compaction_dynamic_level_bytes = true;
   mutable_cf_options_.level0_file_num_compaction_trigger = 2;
   mutable_cf_options_.max_bytes_for_level_base = 200;
   mutable_cf_options_.max_bytes_for_level_multiplier = 10;
@@ -291,7 +289,6 @@ TEST_F(CompactionPickerTest, Level0TriggerDynamic2) {
 
 TEST_F(CompactionPickerTest, Level0TriggerDynamic3) {
   int num_levels = ioptions_.num_levels;
-  ioptions_.level_compaction_dynamic_level_bytes = true;
   mutable_cf_options_.level0_file_num_compaction_trigger = 2;
   mutable_cf_options_.max_bytes_for_level_base = 200;
   mutable_cf_options_.max_bytes_for_level_multiplier = 10;
@@ -316,7 +313,6 @@ TEST_F(CompactionPickerTest, Level0TriggerDynamic3) {
 
 TEST_F(CompactionPickerTest, Level0TriggerDynamic4) {
   int num_levels = ioptions_.num_levels;
-  ioptions_.level_compaction_dynamic_level_bytes = true;
   mutable_cf_options_.level0_file_num_compaction_trigger = 2;
   mutable_cf_options_.max_bytes_for_level_base = 200;
   mutable_cf_options_.max_bytes_for_level_multiplier = 10;
@@ -349,7 +345,6 @@ TEST_F(CompactionPickerTest, Level0TriggerDynamic4) {
 
 TEST_F(CompactionPickerTest, LevelTriggerDynamic4) {
   int num_levels = ioptions_.num_levels;
-  ioptions_.level_compaction_dynamic_level_bytes = true;
   mutable_cf_options_.level0_file_num_compaction_trigger = 2;
   mutable_cf_options_.max_bytes_for_level_base = 200;
   mutable_cf_options_.max_bytes_for_level_multiplier = 10;
@@ -684,7 +679,6 @@ TEST_F(CompactionPickerTest, NotScheduleL1IfL0WithHigherPri3) {
 
 TEST_F(CompactionPickerTest, EstimateCompactionBytesNeeded1) {
   int num_levels = ioptions_.num_levels;
-  ioptions_.level_compaction_dynamic_level_bytes = false;
   mutable_cf_options_.level0_file_num_compaction_trigger = 3;
   mutable_cf_options_.max_bytes_for_level_base = 1000;
   mutable_cf_options_.max_bytes_for_level_multiplier = 10;
@@ -717,7 +711,6 @@ TEST_F(CompactionPickerTest, EstimateCompactionBytesNeeded1) {
 
 TEST_F(CompactionPickerTest, EstimateCompactionBytesNeeded2) {
   int num_levels = ioptions_.num_levels;
-  ioptions_.level_compaction_dynamic_level_bytes = false;
   mutable_cf_options_.level0_file_num_compaction_trigger = 3;
   mutable_cf_options_.max_bytes_for_level_base = 1000;
   mutable_cf_options_.max_bytes_for_level_multiplier = 10;
@@ -744,7 +737,6 @@ TEST_F(CompactionPickerTest, EstimateCompactionBytesNeeded2) {
 
 TEST_F(CompactionPickerTest, EstimateCompactionBytesNeeded3) {
   int num_levels = ioptions_.num_levels;
-  ioptions_.level_compaction_dynamic_level_bytes = false;
   mutable_cf_options_.level0_file_num_compaction_trigger = 3;
   mutable_cf_options_.max_bytes_for_level_base = 1000;
   mutable_cf_options_.max_bytes_for_level_multiplier = 10;
@@ -767,7 +759,6 @@ TEST_F(CompactionPickerTest, EstimateCompactionBytesNeeded3) {
 
 TEST_F(CompactionPickerTest, EstimateCompactionBytesNeededDynamicLevel) {
   int num_levels = ioptions_.num_levels;
-  ioptions_.level_compaction_dynamic_level_bytes = true;
   mutable_cf_options_.level0_file_num_compaction_trigger = 3;
   mutable_cf_options_.max_bytes_for_level_base = 1000;
   mutable_cf_options_.max_bytes_for_level_multiplier = 10;

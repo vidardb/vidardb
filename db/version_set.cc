@@ -914,7 +914,6 @@ VersionStorageInfo::VersionStorageInfo(
       next_file_to_compact_by_size_(num_levels_),
       compaction_score_(num_levels_),
       compaction_level_(num_levels_),
-      l0_delay_trigger_count_(0),
       accumulated_file_size_(0),
       accumulated_raw_key_size_(0),
       accumulated_raw_value_size_(0),
@@ -1943,12 +1942,6 @@ uint64_t VersionStorageInfo::MaxBytesForLevel(int level) const {
 
 void VersionStorageInfo::CalculateBaseBytes(const ImmutableCFOptions& ioptions,
                                             const MutableCFOptions& options) {
-  // Special logic to set number of sorted runs.
-  // It is to match the previous behavior when all files are in L0.
-  int num_l0_count = static_cast<int>(files_[0].size());
-
-  set_l0_delay_trigger_count(num_l0_count);
-
   level_max_bytes_.resize(ioptions.num_levels);
 
   base_level_ = (ioptions.compaction_style == kCompactionStyleLevel) ? 1 : -1;

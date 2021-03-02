@@ -4087,71 +4087,6 @@ TEST_F(DBTest, FlushesInParallelWithCompactRange) {
   }
 }
 
-TEST_F(DBTest, DelayedWriteRate) {
-  const int kEntriesPerMemTable = 100;
-  const int kTotalFlushes = 20;
-
-  Options options = CurrentOptions();
-  env_->SetBackgroundThreads(1, Env::LOW);
-  options.env = env_;
-  env_->no_sleep_ = true;
-  options.write_buffer_size = 100000000;
-  options.max_write_buffer_number = 256;
-  options.max_background_compactions = 1;
-  options.level0_file_num_compaction_trigger = 3;
-  options.delayed_write_rate = 20000000;  // Start with 200MB/s
-  options.memtable_factory.reset(
-      new SpecialSkipListFactory(kEntriesPerMemTable));
-
-  CreateAndReopenWithCF({"pikachu"}, options);
-
-  // Block compactions
-  test::SleepingBackgroundTask sleeping_task_low;
-  env_->Schedule(&test::SleepingBackgroundTask::DoSleepTask, &sleeping_task_low,
-                 Env::Priority::LOW);
-
-  for (int i = 0; i < 3; i++) {
-    Put(Key(i), std::string(10000, 'x'));
-    Flush();
-  }
-
-  // These writes will be slowed down to 1KB/s
-  uint64_t estimated_sleep_time = 0;
-  Random rnd(301);
-  Put("", "");
-  uint64_t cur_rate = options.delayed_write_rate;
-  for (int i = 0; i < kTotalFlushes; i++) {
-    uint64_t size_memtable = 0;
-    for (int j = 0; j < kEntriesPerMemTable; j++) {
-      auto rand_num = rnd.Uniform(20);
-      // Spread the size range to more.
-      size_t entry_size = rand_num * rand_num * rand_num;
-      WriteOptions wo;
-      Put(Key(i), std::string(entry_size, 'x'), wo);
-      size_memtable += entry_size + 18;
-      // Occasionally sleep a while
-      if (rnd.Uniform(20) == 6) {
-        env_->SleepForMicroseconds(2666);
-      }
-    }
-    dbfull()->TEST_WaitForFlushMemTable();
-    estimated_sleep_time += size_memtable * 1000000u / cur_rate;
-    // Slow down twice. One for memtable switch and one for flush finishes.
-    cur_rate = static_cast<uint64_t>(static_cast<double>(cur_rate) /
-                                     kSlowdownRatio / kSlowdownRatio);
-  }
-  // Estimate the total sleep time fall into the rough range.
-  ASSERT_GT(env_->addon_time_.load(),
-            static_cast<int64_t>(estimated_sleep_time / 2));
-  ASSERT_LT(env_->addon_time_.load(),
-            static_cast<int64_t>(estimated_sleep_time * 2));
-
-  env_->no_sleep_ = false;
-  vidardb::SyncPoint::GetInstance()->DisableProcessing();
-  sleeping_task_low.WakeUp();
-  sleeping_task_low.WaitUntilDone();
-}
-
 TEST_F(DBTest, HardLimit) {
   Options options = CurrentOptions();
   options.env = env_;
@@ -4250,7 +4185,6 @@ TEST_F(DBTest, SoftLimit) {
     // Flush the file. File size is around 30KB.
     Flush();
   }
-  ASSERT_TRUE(dbfull()->TEST_write_controler().NeedsDelay());
 
   sleeping_task_low.WakeUp();
   sleeping_task_low.WaitUntilDone();
@@ -4260,7 +4194,6 @@ TEST_F(DBTest, SoftLimit) {
   // Now there is one L1 file but doesn't trigger soft_rate_limit
   // The L1 file size is around 30KB.
   ASSERT_EQ(NumTableFilesAtLevel(1), 1);
-  ASSERT_TRUE(!dbfull()->TEST_write_controler().NeedsDelay());
 
   // Only allow one compactin going through.
   vidardb::SyncPoint::GetInstance()->SetCallBack(
@@ -4294,7 +4227,6 @@ TEST_F(DBTest, SoftLimit) {
   // Given level multiplier 10, estimated pending compaction is around 100KB
   // doesn't trigger soft_pending_compaction_bytes_limit
   ASSERT_EQ(NumTableFilesAtLevel(1), 1);
-  ASSERT_TRUE(!dbfull()->TEST_write_controler().NeedsDelay());
 
   // Create 3 L0 files, making score of L0 to be 3, higher than L0.
   for (int i = 0; i < 3; i++) {
@@ -4314,12 +4246,10 @@ TEST_F(DBTest, SoftLimit) {
   // compaction is around 200KB
   // triggerring soft_pending_compaction_bytes_limit
   ASSERT_EQ(NumTableFilesAtLevel(1), 1);
-  ASSERT_TRUE(dbfull()->TEST_write_controler().NeedsDelay());
 
   sleeping_task_low.WakeUp();
   sleeping_task_low.WaitUntilSleeping();
 
-  ASSERT_TRUE(!dbfull()->TEST_write_controler().NeedsDelay());
 
   // shrink level base so L2 will hit soft limit easier.
   ASSERT_OK(dbfull()->SetOptions({
@@ -4328,7 +4258,6 @@ TEST_F(DBTest, SoftLimit) {
 
   Put("", "");
   Flush();
-  ASSERT_TRUE(dbfull()->TEST_write_controler().NeedsDelay());
 
   sleeping_task_low.WaitUntilSleeping();
   vidardb::SyncPoint::GetInstance()->DisableProcessing();
@@ -4361,11 +4290,9 @@ TEST_F(DBTest, LastWriteBufferDelay) {
     for (int j = 0; j < kNumKeysPerMemtable; j++) {
       Put(Key(j), "");
     }
-    ASSERT_TRUE(!dbfull()->TEST_write_controler().NeedsDelay());
   }
   // Inserting a new entry would create a new mem table, triggering slow down.
   Put(Key(0), "");
-  ASSERT_TRUE(dbfull()->TEST_write_controler().NeedsDelay());
 
   sleeping_task.WakeUp();
   sleeping_task.WaitUntilDone();

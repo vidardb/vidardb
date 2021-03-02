@@ -203,14 +203,6 @@ class VersionStorageInfo {
     return num_non_empty_levels_;
   }
 
-  // REQUIRES: This version has been finalized.
-  // (CalculateBaseBytes() is called)
-  // This may or may not return number of level files. It is to keep backward
-  // compatible behavior in universal compaction.
-  int l0_delay_trigger_count() const { return l0_delay_trigger_count_; }
-
-  void set_l0_delay_trigger_count(int v) { l0_delay_trigger_count_ = v; }
-
   // REQUIRES: This version has been saved (see VersionSet::SaveTo)
   int NumLevelFiles(int level) const {
     assert(finalized_);
@@ -391,8 +383,6 @@ class VersionStorageInfo {
   // These are used to pick the best compaction level
   std::vector<double> compaction_score_;
   std::vector<int> compaction_level_;
-  int l0_delay_trigger_count_ = 0;  // Count used to trigger slow down and stop
-                                    // for number of L0 files.
 
   // the following are the sampled temporary stats.
   // the current accumulated size of sampled files.
