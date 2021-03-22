@@ -119,15 +119,15 @@ bool NotifyCollectTableCollectorsOnFinish(
 //          *table_properties will point to a heap-allocated TableProperties
 //          object, otherwise value of `table_properties` will not be modified.
 Status ReadProperties(const Slice& handle_value, RandomAccessFileReader* file,
-                      const Footer& footer, Env* env, Logger* logger,
+                      Env* env, Logger* logger,
                       TableProperties** table_properties);
 
 /*********************************** Shichao *******************************/
 // Read the meta column block from the table.
 // @returns a status to indicate if the operation succeeded.
 Status ReadMetaColumnBlock(const Slice& handle_value,
-                           RandomAccessFileReader* file, const Footer& footer,
-                           Env* env, Logger* logger, uint32_t* column_num,
+                           RandomAccessFileReader* file, Env* env,
+                           Logger* logger, uint32_t* column_num,
                            std::vector<uint64_t>& file_sizes);
 /*********************************** Shichao *******************************/
 

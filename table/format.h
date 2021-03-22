@@ -188,10 +188,9 @@ struct BlockContents {
 // Read the block identified by "handle" from "file".  On failure
 // return non-OK.  On success fill *result and return OK.
 extern Status ReadBlockContents(
-    RandomAccessFileReader* file, const Footer& footer,
-    const ReadOptions& options, const BlockHandle& handle,
-    BlockContents* contents, Env* env, bool do_uncompress = true,
-    const Slice& compression_dict = Slice(),
+    RandomAccessFileReader* file, const ReadOptions& options,
+    const BlockHandle& handle, BlockContents* contents, Env* env,
+    bool do_uncompress = true, const Slice& compression_dict = Slice(),
     Logger* info_log = nullptr);
 
 // The 'data' points to the raw block contents read in from file.

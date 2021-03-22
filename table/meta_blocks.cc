@@ -176,7 +176,7 @@ bool NotifyCollectTableCollectorsOnFinish(
 }
 
 Status ReadProperties(const Slice& handle_value, RandomAccessFileReader* file,
-                      const Footer& footer, Env* env, Logger* logger,
+                      Env* env, Logger* logger,
                       TableProperties** table_properties) {
   assert(table_properties);
 
@@ -189,9 +189,8 @@ Status ReadProperties(const Slice& handle_value, RandomAccessFileReader* file,
   BlockContents block_contents;
   ReadOptions read_options;
   read_options.verify_checksums = false;
-  Status s;
-  s = ReadBlockContents(file, footer, read_options, handle, &block_contents,
-                        env, false /* decompress */);
+  Status s = ReadBlockContents(file, read_options, handle, &block_contents, env,
+                               false /* decompress */);
 
   if (!s.ok()) {
     return s;
@@ -274,8 +273,8 @@ Status ReadProperties(const Slice& handle_value, RandomAccessFileReader* file,
 
 /********************************** Shichao *********************************/
 Status ReadMetaColumnBlock(const Slice& handle_value,
-                           RandomAccessFileReader* file, const Footer& footer,
-                           Env* env, Logger* logger, uint32_t* column_num,
+                           RandomAccessFileReader* file, Env* env,
+                           Logger* logger, uint32_t* column_num,
                            std::vector<uint64_t>& file_sizes) {
   Slice v = handle_value;
   BlockHandle handle;
@@ -286,8 +285,8 @@ Status ReadMetaColumnBlock(const Slice& handle_value,
   BlockContents block_contents;
   ReadOptions read_options;
   read_options.verify_checksums = false;
-  Status s = ReadBlockContents(file, footer, read_options, handle,
-                               &block_contents, env, false /* decompress */);
+  Status s = ReadBlockContents(file, read_options, handle, &block_contents, env,
+                               false /* decompress */);
   if (!s.ok()) {
     return s;
   }
@@ -334,7 +333,7 @@ Status ReadTableProperties(RandomAccessFileReader* file, uint64_t file_size,
   BlockContents metaindex_contents;
   ReadOptions read_options;
   read_options.verify_checksums = false;
-  s = ReadBlockContents(file, footer, read_options, metaindex_handle,
+  s = ReadBlockContents(file, read_options, metaindex_handle,
                         &metaindex_contents, env, false /* decompress */);
   if (!s.ok()) {
     return s;
@@ -352,8 +351,7 @@ Status ReadTableProperties(RandomAccessFileReader* file, uint64_t file_size,
 
   TableProperties table_properties;
   if (found_properties_block == true) {
-    s = ReadProperties(meta_iter->value(), file, footer, env, info_log,
-                       properties);
+    s = ReadProperties(meta_iter->value(), file, env, info_log, properties);
   } else {
     s = Status::NotFound();
   }
@@ -388,7 +386,7 @@ Status FindMetaBlock(RandomAccessFileReader* file, uint64_t file_size,
   BlockContents metaindex_contents;
   ReadOptions read_options;
   read_options.verify_checksums = false;
-  s = ReadBlockContents(file, footer, read_options, metaindex_handle,
+  s = ReadBlockContents(file, read_options, metaindex_handle,
                         &metaindex_contents, env, false /* do decompression */);
   if (!s.ok()) {
     return s;
@@ -417,7 +415,7 @@ Status ReadMetaBlock(RandomAccessFileReader* file, uint64_t file_size,
   BlockContents metaindex_contents;
   ReadOptions read_options;
   read_options.verify_checksums = false;
-  status = ReadBlockContents(file, footer, read_options, metaindex_handle,
+  status = ReadBlockContents(file, read_options, metaindex_handle,
                              &metaindex_contents, env, false /* decompress */);
   if (!status.ok()) {
     return status;
@@ -437,8 +435,8 @@ Status ReadMetaBlock(RandomAccessFileReader* file, uint64_t file_size,
   }
 
   // Reading metablock
-  return ReadBlockContents(file, footer, read_options, block_handle, contents,
-                           env, false /* decompress */);
+  return ReadBlockContents(file, read_options, block_handle, contents, env,
+                           false /* decompress */);
 }
 
 }  // namespace vidardb

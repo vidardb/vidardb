@@ -164,8 +164,8 @@ namespace {
 // Read a block and check its CRC
 // contents is the result of reading.
 // According to the implementation of file->Read, contents may not point to buf
-Status ReadBlock(RandomAccessFileReader* file, const Footer& footer,
-                 const ReadOptions& options, const BlockHandle& handle,
+Status ReadBlock(RandomAccessFileReader* file, const ReadOptions& options,
+                 const BlockHandle& handle,
                  Slice* contents, /* result of reading */ char* buf) {
   size_t n = static_cast<size_t>(handle.size());
   Status s;
@@ -207,7 +207,7 @@ Status ReadBlock(RandomAccessFileReader* file, const Footer& footer,
 
 }  // namespace
 
-Status ReadBlockContents(RandomAccessFileReader* file, const Footer& footer,
+Status ReadBlockContents(RandomAccessFileReader* file,
                          const ReadOptions& read_options,
                          const BlockHandle& handle, BlockContents* contents,
                          Env* env, bool decompression_requested,
@@ -234,7 +234,7 @@ Status ReadBlockContents(RandomAccessFileReader* file, const Footer& footer,
     used_buf = heap_buf.get();
   }
 
-  status = ReadBlock(file, footer, read_options, handle, &slice, used_buf);
+  status = ReadBlock(file, read_options, handle, &slice, used_buf);
 
   if (!status.ok()) {
     return status;

@@ -48,13 +48,13 @@ namespace {
 // On success fill *result and return OK - caller owns *result
 // @param compression_dict Data for presetting the compression library's
 //    dictionary.
-Status ReadBlockFromFile(RandomAccessFileReader* file, const Footer& footer,
+Status ReadBlockFromFile(RandomAccessFileReader* file,
                          const ReadOptions& options, const BlockHandle& handle,
                          std::unique_ptr<Block>* result, Env* env,
                          bool do_uncompress, const Slice& compression_dict,
                          Logger* info_log) {
   BlockContents contents;
-  Status s = ReadBlockContents(file, footer, options, handle, &contents, env,
+  Status s = ReadBlockContents(file, options, handle, &contents, env,
                                do_uncompress, compression_dict, info_log);
   if (s.ok()) {
     result->reset(new Block(std::move(contents)));
@@ -162,13 +162,13 @@ class BinarySearchIndexReader : public IndexReader {
   // `BinarySearchIndexReader`.
   // On success, index_reader will be populated; otherwise it will remain
   // unmodified.
-  static Status Create(RandomAccessFileReader* file, const Footer& footer,
+  static Status Create(RandomAccessFileReader* file,
                        const BlockHandle& index_handle, Env* env,
                        const Comparator* comparator, IndexReader** index_reader,
                        Statistics* statistics) {
     std::unique_ptr<Block> index_block;
-    auto s = ReadBlockFromFile(file, footer, ReadOptions(), index_handle,
-                               &index_block, env, true /* decompress */,
+    auto s = ReadBlockFromFile(file, ReadOptions(), index_handle, &index_block,
+                               env, true /* decompress */,
                                Slice() /*compression dict*/,
                                /*info_log*/ nullptr);
 
@@ -284,9 +284,8 @@ Status ColumnTable::ReadMetaBlock(Rep* rep,
                                   std::unique_ptr<InternalIterator>* iter) {
   std::unique_ptr<Block> meta;
   Status s = ReadBlockFromFile(
-      rep->file.get(), rep->footer, ReadOptions(),
-      rep->footer.metaindex_handle(), &meta, rep->ioptions.env,
-      true /* decompress */, Slice() /*compression dict*/,
+      rep->file.get(), ReadOptions(), rep->footer.metaindex_handle(), &meta,
+      rep->ioptions.env, true /* decompress */, Slice() /*compression dict*/,
       rep->ioptions.info_log);
 
   if (!s.ok()) {
@@ -438,9 +437,9 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
       std::unique_ptr<Block> raw_block;
       {
         StopWatch sw(rep->ioptions.env, statistics, READ_BLOCK_GET_MICROS);
-        s = ReadBlockFromFile(rep->file.get(), rep->footer, read_options,
-                              handle, &raw_block, rep->ioptions.env, true,
-                              compression_dict, rep->ioptions.info_log);
+        s = ReadBlockFromFile(rep->file.get(), read_options, handle, &raw_block,
+                              rep->ioptions.env, true, compression_dict,
+                              rep->ioptions.info_log);
       }
 
       if (s.ok()) {
@@ -462,9 +461,9 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
       }
     }
     std::unique_ptr<Block> block_value;
-    s = ReadBlockFromFile(rep->file.get(), rep->footer, read_options, handle,
-                          &block_value, rep->ioptions.env, true,
-                          compression_dict, rep->ioptions.info_log);
+    s = ReadBlockFromFile(rep->file.get(), read_options, handle, &block_value,
+                          rep->ioptions.env, true, compression_dict,
+                          rep->ioptions.info_log);
     if (s.ok()) {
       block.value = block_value.release();
     }
@@ -498,8 +497,8 @@ Status ColumnTable::CreateIndexReader(IndexReader** index_reader) {
   const Footer& footer = rep_->footer;
   Statistics* stats = rep_->ioptions.statistics;
 
-  return BinarySearchIndexReader::Create(file, footer, footer.index_handle(),
-                                         env, comparator, index_reader, stats);
+  return BinarySearchIndexReader::Create(file, footer.index_handle(), env,
+                                         comparator, index_reader, stats);
 }
 
 InternalIterator* ColumnTable::NewIndexIterator(
@@ -746,9 +745,8 @@ Status ColumnTable::Open(const ImmutableCFOptions& ioptions,
 
     uint32_t column_count;
     std::vector<uint64_t> file_sizes;
-    s = ReadMetaColumnBlock(meta_iter->value(), rep->file.get(), rep->footer,
-                            ioptions.env, ioptions.info_log, &column_count,
-                            file_sizes);
+    s = ReadMetaColumnBlock(meta_iter->value(), rep->file.get(), ioptions.env,
+                            ioptions.info_log, &column_count, file_sizes);
     if (!s.ok()) {
       return s;
     }
@@ -805,9 +803,8 @@ Status ColumnTable::Open(const ImmutableCFOptions& ioptions,
     s = meta_iter->status();
     TableProperties* table_properties = nullptr;
     if (s.ok()) {
-      s = ReadProperties(meta_iter->value(), rep->file.get(), rep->footer,
-                         rep->ioptions.env, rep->ioptions.info_log,
-                         &table_properties);
+      s = ReadProperties(meta_iter->value(), rep->file.get(), rep->ioptions.env,
+                         rep->ioptions.info_log, &table_properties);
     }
 
     if (!s.ok()) {
