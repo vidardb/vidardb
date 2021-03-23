@@ -90,8 +90,11 @@ extern TableFactory* NewBlockBasedTableFactory(
 /*********************************  Shichao  **********************************/
 // For advanced user only
 struct ColumnTableOptions : public TableOptions {
-  // Total column number excluding key
+  // Total column attribute number (excluding key)
   uint32_t column_count = 0;
+  // Comparators for each column attribute (excluding key) and the order
+  // must be same as the column attribute
+  std::vector<const Comparator*> column_comparators;
 };
 
 // Create default column table factory.

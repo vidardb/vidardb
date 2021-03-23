@@ -82,6 +82,9 @@ Status ColumnTableFactory::SanitizeOptions(
   if (!cf_opts.splitter) {
     return Status::InvalidArgument("Missing splitter.");
   }
+  if (table_options_.column_comparators.size() != table_options_.column_count) {
+    return Status::InvalidArgument("Invalid column comparators.");
+  }
   return Status::OK();
 }
 

@@ -127,6 +127,9 @@ int main(int argc, char* argv[]) {
   ColumnTableOptions* column_opts =
       static_cast<ColumnTableOptions*>(column_table->GetOptions());
   column_opts->column_count = M;
+  for (auto i = 0u; i < column_opts->column_count; i++) {
+    column_opts->column_comparators.push_back(BytewiseComparator());
+  }
   options.table_factory.reset(NewAdaptiveTableFactory(block_based_table,
       block_based_table, column_table, knob));
 

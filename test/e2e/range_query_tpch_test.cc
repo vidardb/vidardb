@@ -21,6 +21,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "vidardb/comparator.h"
 #include "vidardb/db.h"
 #include "vidardb/options.h"
 #include "vidardb/splitter.h"
@@ -126,6 +127,9 @@ void TestTpchRangeQuery(bool flush, kTableType table, size_t capacity,
   ColumnTableOptions* column_opts =
       static_cast<ColumnTableOptions*>(column_table->GetOptions());
   column_opts->column_count = kColumn;
+  for (auto i = 0u; i < column_opts->column_count; i++) {
+    column_opts->column_comparators.push_back(BytewiseComparator());
+  }
   options.table_factory.reset(NewAdaptiveTableFactory(
       block_based_table, block_based_table, column_table, knob));
 
