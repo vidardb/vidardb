@@ -987,157 +987,35 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 
   virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
                             std::list<RangeQueryKeyVal>& res) {
-    std::vector<std::map<std::string, SeqTypeVal>::iterator> user_vals;
+    STVIters user_vals;
     std::vector<bool> sub_key_bs;  // trace the valid sub_keys
     // user key's sequence number -> sub_key_bs index
-    std::unordered_map<SequenceNumber, size_t> seq_idx_map;
+    SeqIdxMap seq_idx_map;
     if (num_entries_ > 0) {
       user_vals.reserve(num_entries_);
       sub_key_bs.reserve(num_entries_);
     }
 
     std::string start_sub_key;  // track start sub key
-    SequenceNumber sequence_num = range.SequenceNum();
-    RangeQueryMeta* meta =
-        static_cast<RangeQueryMeta*>(read_options.range_query_meta);
 
     // Range query one by one to improve performance
     for (size_t i = 0u; i < columns_.size(); i++) {
       InternalIterator* iter = columns_[i];
 
       if (i == 0) {  // query sub keys from main column
-        if (range.start_->user_key().compare(kRangeQueryMin) == 0) {
-          iter->SeekToFirst(); // Full search
-        } else {
-          iter->Seek(range.start_->internal_key());
-        }
-
-        for (; iter->Valid(); iter->Next()) {  // main iterator
-          if (CompareRangeLimit(internal_comparator_, iter->key(),
-                                meta->current_limit_key) > 0) {
-            break;
-          }
-
-          ParsedInternalKey parsed_key;
-          if (!ParseInternalKey(iter->key(), &parsed_key)) {
-            return Status::Corruption("corrupted internal key in Table::Iter");
-          }
-
-          if (parsed_key.sequence <= sequence_num) {
-            std::string user_key(iter->key().data(), iter->key().size() - 8);
-            SeqTypeVal stv(parsed_key.sequence, parsed_key.type, res.end());
-            if (start_sub_key.empty()) {  // record the sub start key
-              start_sub_key.assign(iter->value().data_, iter->value().size_);
-            }
-
-            // give accurate hint
-            auto it = meta->map_res->end();
-            if (!user_vals.empty()) {
-              it = user_vals.back();
-              it++;
-            }
-            it = meta->map_res->emplace_hint(it, user_key, std::move(stv));
-            if (it->second.seq_ > parsed_key.sequence) {
-              // already exists the same user key, which shadows the current
-              sub_key_bs.push_back(false);
-              continue;
-            }
-
-            // two cases:
-            // 1. already exists the same user key, invalidate the old one
-            // 2. same seq, the current one
-            sub_key_bs.push_back(true);
-            seq_idx_map.insert({parsed_key.sequence, sub_key_bs.size() - 1});
-
-            if (it->second.seq_ < parsed_key.sequence) {
-              // replaced
-              if (it->second.type_ == kTypeDeletion) {
-                meta->del_keys.erase(it->second.seq_);
-              }
-              assert(read_options.result_val_size >=
-                  it->second.iter_->user_val.size());
-              read_options.result_val_size -= it->second.iter_->user_val.size();
-              it->second.seq_ = parsed_key.sequence;
-              it->second.type_ = parsed_key.type;
-              it->second.iter_->user_val = "";
-              user_vals.push_back(it);
-              if (parsed_key.type == kTypeDeletion) {
-                meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
-              }
-            } else {
-              // inserted
-              res.emplace_back(user_key, "");
-              read_options.result_key_size += user_key.size();
-              it->second.iter_ = --res.end();
-              user_vals.push_back(it);
-              if (parsed_key.type == kTypeDeletion) {
-                meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
-              }
-
-              // check the result size only by key size
-              auto crl = CompressResultList(&res, read_options);
-              if (crl.size() > 0 && meta->map_res->rbegin()->first <= user_key) {
-                if (meta->map_res->rbegin()->first < user_key) {
-                  for (auto& seq : crl) {
-                    // element added but popped out in map
-                    // remove in bits as well
-                    if (seq_idx_map.erase(seq) > 0) {
-                      sub_key_bs.pop_back();
-                      user_vals.pop_back();
-                    }
-                  }
-                }
-                break;  // Reach the batch capacity
-              }
-            }
-          } else {
-            sub_key_bs.push_back(false);
-          }
+        Status s= RangeQueryMainColumn(iter, read_options, range, res,
+                                       user_vals, sub_key_bs, start_sub_key,
+                                       seq_idx_map);
+        if (!s.ok()) {
+          return s;
         }
       } else {  // loop query all sub column values
-        if (!start_sub_key.empty()) {
-          iter->Seek(start_sub_key);
-        } else {  // not found valid keys
+        if (start_sub_key.empty()) {
           break;
         }
-
-        size_t sub_key_idx = 0, user_val_idx = 0;
-        for (; iter->Valid() && sub_key_idx < sub_key_bs.size(); iter->Next()) {
-          if (!sub_key_bs[sub_key_idx++]) {  // follow sub_key's order
-            continue;
-          }
-
-          auto& it = user_vals[user_val_idx++]->second.iter_;
-          size_t prev_val_size = it->user_val.size();
-          splitter_->Append(it->user_val, iter->value(),
-                            i + 1 == columns_.size());
-          size_t delta_val_size = it->user_val.size() - prev_val_size;
-          read_options.result_val_size += delta_val_size;
-
-          // check the result size by key and value size
-          auto crl = CompressResultList(&res, read_options);
-          if (crl.size() > 0) {  // Reach the batch capacity
-            size_t smallest_idx = sub_key_bs.size();
-            for (auto& seq : crl) {
-              auto idx_iter = seq_idx_map.find(seq);
-              if (idx_iter == seq_idx_map.end()) {
-                // user_key is not in this sstable
-                continue;
-              }
-
-              size_t idx = idx_iter->second;
-              assert(idx <= sub_key_bs.size());
-              smallest_idx = std::min(smallest_idx, idx);
-              seq_idx_map.erase(idx_iter);
-            }
-
-            // remove sub_key index from sub_key_bs
-            assert(smallest_idx <= sub_key_bs.size());
-            if (smallest_idx < sub_key_bs.size()) {
-              sub_key_bs.resize(smallest_idx);
-            }
-          }
-        }
+        bool last = i + 1 == columns_.size();
+        RangeQuerySubColumn(iter, last, read_options, res, user_vals,
+                            sub_key_bs, start_sub_key, seq_idx_map);
       }
     }
 
@@ -1173,6 +1051,159 @@ class ColumnTable::ColumnIterator : public InternalIterator {
       splitter_->Append(value_, columns_[i]->value(), i + 1 == columns_.size());
     }
     return true;
+  }
+
+  typedef std::vector<std::map<std::string, SeqTypeVal>::iterator> STVIters;
+  typedef std::unordered_map<SequenceNumber, size_t> SeqIdxMap;
+
+  Status RangeQueryMainColumn(InternalIterator* iter, ReadOptions& read_options,
+                              const LookupRange& range,
+                              std::list<RangeQueryKeyVal>& res,
+                              STVIters& user_vals,
+                              std::vector<bool>& sub_key_bs,
+                              std::string& start_sub_key,
+                              SeqIdxMap& seq_idx_map) {
+    if (range.start_->user_key().compare(kRangeQueryMin) == 0) {
+      iter->SeekToFirst(); // Full search
+    } else {
+      iter->Seek(range.start_->internal_key());
+    }
+
+    RangeQueryMeta* meta =
+        static_cast<RangeQueryMeta*>(read_options.range_query_meta);
+    SequenceNumber sequence_num = range.SequenceNum();
+
+    for (; iter->Valid(); iter->Next()) {  // main iterator
+      if (CompareRangeLimit(internal_comparator_, iter->key(),
+                            meta->current_limit_key) > 0) {
+        break;
+      }
+
+      ParsedInternalKey parsed_key;
+      if (!ParseInternalKey(iter->key(), &parsed_key)) {
+        return Status::Corruption("corrupted internal key in Table::Iter");
+      }
+
+      if (parsed_key.sequence <= sequence_num) {
+        std::string user_key(iter->key().data(), iter->key().size() - 8);
+        SeqTypeVal stv(parsed_key.sequence, parsed_key.type, res.end());
+        if (start_sub_key.empty()) {  // record the sub start key
+          start_sub_key.assign(iter->value().data_, iter->value().size_);
+        }
+
+        // give accurate hint
+        auto it = meta->map_res->end();
+        if (!user_vals.empty()) {
+          it = user_vals.back();
+          it++;
+        }
+        it = meta->map_res->emplace_hint(it, user_key, std::move(stv));
+        if (it->second.seq_ > parsed_key.sequence) {
+          // already exists the same user key, which shadows the current
+          sub_key_bs.push_back(false);
+          continue;
+        }
+
+        // two cases:
+        // 1. already exists the same user key, invalidate the old one
+        // 2. same seq, the current one
+        sub_key_bs.push_back(true);
+        seq_idx_map.insert({parsed_key.sequence, sub_key_bs.size() - 1});
+
+        if (it->second.seq_ < parsed_key.sequence) {
+          // replaced
+          if (it->second.type_ == kTypeDeletion) {
+            meta->del_keys.erase(it->second.seq_);
+          }
+          assert(read_options.result_val_size >=
+                 it->second.iter_->user_val.size());
+          read_options.result_val_size -= it->second.iter_->user_val.size();
+          it->second.seq_ = parsed_key.sequence;
+          it->second.type_ = parsed_key.type;
+          it->second.iter_->user_val = "";
+          user_vals.push_back(it);
+          if (parsed_key.type == kTypeDeletion) {
+            meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
+          }
+        } else {
+          // inserted
+          res.emplace_back(user_key, "");
+          read_options.result_key_size += user_key.size();
+          it->second.iter_ = --res.end();
+          user_vals.push_back(it);
+          if (parsed_key.type == kTypeDeletion) {
+            meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
+          }
+
+          // check the result size only by key size
+          auto crl = CompressResultList(&res, read_options);
+          if (crl.size() > 0 && meta->map_res->rbegin()->first <= user_key) {
+            if (meta->map_res->rbegin()->first < user_key) {
+              for (auto& seq : crl) {
+                // element added but popped out in map
+                // remove in bits as well
+                if (seq_idx_map.erase(seq) > 0) {
+                  sub_key_bs.pop_back();
+                  user_vals.pop_back();
+                }
+              }
+            }
+            break;  // Reach the batch capacity
+          }
+        }
+      } else {
+        sub_key_bs.push_back(false);
+      }
+    }
+
+    return Status();
+  }
+
+  void RangeQuerySubColumn(InternalIterator* iter, bool last,
+                           ReadOptions& read_options,
+                           std::list<RangeQueryKeyVal>& res,
+                           STVIters& user_vals, std::vector<bool>& sub_key_bs,
+                           const std::string& start_sub_key,
+                           SeqIdxMap& seq_idx_map) {
+    assert(!start_sub_key.empty());
+    iter->Seek(start_sub_key);
+
+    size_t sub_key_idx = 0, user_val_idx = 0;
+    for (; iter->Valid() && sub_key_idx < sub_key_bs.size(); iter->Next()) {
+      if (!sub_key_bs[sub_key_idx++]) {  // follow sub_key's order
+        continue;
+      }
+
+      auto& it = user_vals[user_val_idx++]->second.iter_;
+      size_t prev_val_size = it->user_val.size();
+      splitter_->Append(it->user_val, iter->value(), last);
+      size_t delta_val_size = it->user_val.size() - prev_val_size;
+      read_options.result_val_size += delta_val_size;
+
+      // check the result size by key and value size
+      auto crl = CompressResultList(&res, read_options);
+      if (crl.size() > 0) {  // Reach the batch capacity
+        size_t smallest_idx = sub_key_bs.size();
+        for (auto& seq : crl) {
+          auto idx_iter = seq_idx_map.find(seq);
+          if (idx_iter == seq_idx_map.end()) {
+            // user_key is not in this sstable
+            continue;
+          }
+
+          size_t idx = idx_iter->second;
+          assert(idx <= sub_key_bs.size());
+          smallest_idx = std::min(smallest_idx, idx);
+          seq_idx_map.erase(idx_iter);
+        }
+
+        // remove sub_key index from sub_key_bs
+        assert(smallest_idx <= sub_key_bs.size());
+        if (smallest_idx < sub_key_bs.size()) {
+          sub_key_bs.resize(smallest_idx);
+        }
+      }
+    }
   }
 
   std::vector<InternalIterator*> columns_;
