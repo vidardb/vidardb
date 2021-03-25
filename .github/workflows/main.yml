@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y gcc g++ clang-8 zlib1g-dev cmake build-essential curl libbz2-dev libsnappy-dev
+          pushd /tmp/ && curl -L https://github.com/gflags/gflags/archive/v2.1.2.tar.gz -o gflags.tar.gz && tar xfz gflags.tar.gz && cd gflags-2.1.2 && cmake . && make && popd
+          export LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/tmp/gflags-2.1.2/lib"
+          export LIBRARY_PATH="$LIBRARY_PATH:/tmp/gflags-2.1.2/lib"
+          export CPLUS_INCLUDE_PATH="$CPLUS_INCLUDE_PATH:/tmp/gflags-2.1.2/include"
+          export CPU_CORES=`cat /proc/cpuinfo | grep processor | wc -l`
+          ulimit -n 2000 || true
+      - uses: actions/checkout@v2
+      - run: |
+          OPT="-DVIDARDB" V=1 make -j${CPU_CORES} release
+          OPT="-DVIDARDB" V=1 DEBUG_LEVEL=0 make -j${CPU_CORES} all
+          cd test/e2e && make e2e-test
+          cd ../../examples && OPT="-DVIDARDB" V=1 make all
