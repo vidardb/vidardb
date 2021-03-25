@@ -2,7 +2,7 @@
 
 ## VidarDB engine is a modern embedded key-value store with a versatile storage engine. It is a lineage of LevelDB and RocksDB, but with support of various workloads.
 
-[![Build Status](https://travis-ci.com/vidardb/vidardb-engine.svg?branch=master)](https://travis-ci.com/github/vidardb/vidardb-engine)
+![Github Action Build Status](https://github.com/vidardb/vidardb-engine/workflows/CI/badge.svg)
 
 There are 3 interfaces to use it: C++, Python, PostgreSQL extension.
 
