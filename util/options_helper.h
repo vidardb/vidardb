@@ -83,6 +83,8 @@ enum class OptionType {
   kVectorCompressionType,
   kTableFactory,
   kComparator,
+  kVectorComparator,
+  kSplitter,
   kMemTableRepFactory,
   kFlushBlockPolicyFactory,
   kEncodingType,
@@ -388,6 +390,9 @@ static std::unordered_map<std::string, OptionTypeInfo> cf_options_type_info = {
     {"comparator",
      {offsetof(struct ColumnFamilyOptions, comparator), OptionType::kComparator,
       OptionVerificationType::kByName}},
+    {"splitter",
+     {offsetof(struct ColumnFamilyOptions, splitter), OptionType::kSplitter,
+      OptionVerificationType::kByName}},
     {"memtable_factory",
      {offsetof(struct ColumnFamilyOptions, memtable_factory),
       OptionType::kMemTableRepFactory, OptionVerificationType::kByName}},
@@ -404,25 +409,57 @@ static std::unordered_map<std::string, OptionTypeInfo>
           std::shared_ptr<Cache> block_cache = nullptr;
           std::shared_ptr<Cache> block_cache_compressed = nullptr;
          */
-        {"flush_block_policy_factory",
+        {"block_based_table.flush_block_policy_factory",
          {offsetof(struct BlockBasedTableOptions, flush_block_policy_factory),
           OptionType::kFlushBlockPolicyFactory,
           OptionVerificationType::kByName}},
-        {"no_block_cache",
+        {"block_based_table.no_block_cache",
          {offsetof(struct BlockBasedTableOptions, no_block_cache),
           OptionType::kBoolean, OptionVerificationType::kNormal}},
-        {"block_size",
+        {"block_based_table.block_size",
          {offsetof(struct BlockBasedTableOptions, block_size),
           OptionType::kSizeT, OptionVerificationType::kNormal}},
-        {"block_size_deviation",
+        {"block_based_table.block_size_deviation",
          {offsetof(struct BlockBasedTableOptions, block_size_deviation),
           OptionType::kInt, OptionVerificationType::kNormal}},
-        {"block_restart_interval",
+        {"block_based_table.block_restart_interval",
          {offsetof(struct BlockBasedTableOptions, block_restart_interval),
           OptionType::kInt, OptionVerificationType::kNormal}},
-        {"index_block_restart_interval",
+        {"block_based_table.index_block_restart_interval",
          {offsetof(struct BlockBasedTableOptions, index_block_restart_interval),
           OptionType::kInt, OptionVerificationType::kNormal}}};
+
+static std::unordered_map<std::string, OptionTypeInfo> column_table_type_info =
+    {
+        /* currently not supported
+          std::shared_ptr<Cache> block_cache = nullptr;
+          std::shared_ptr<Cache> block_cache_compressed = nullptr;
+         */
+        {"column_table.flush_block_policy_factory",
+         {offsetof(struct ColumnTableOptions, flush_block_policy_factory),
+          OptionType::kFlushBlockPolicyFactory,
+          OptionVerificationType::kByName}},
+        {"column_table.no_block_cache",
+         {offsetof(struct ColumnTableOptions, no_block_cache),
+          OptionType::kBoolean, OptionVerificationType::kNormal}},
+        {"column_table.block_size",
+         {offsetof(struct ColumnTableOptions, block_size), OptionType::kSizeT,
+          OptionVerificationType::kNormal}},
+        {"column_table.block_size_deviation",
+         {offsetof(struct ColumnTableOptions, block_size_deviation),
+          OptionType::kInt, OptionVerificationType::kNormal}},
+        {"column_table.block_restart_interval",
+         {offsetof(struct ColumnTableOptions, block_restart_interval),
+          OptionType::kInt, OptionVerificationType::kNormal}},
+        {"column_table.index_block_restart_interval",
+         {offsetof(struct ColumnTableOptions, index_block_restart_interval),
+          OptionType::kInt, OptionVerificationType::kNormal}},
+        {"column_table.column_count",
+         {offsetof(struct ColumnTableOptions, column_count),
+          OptionType::kUInt32T, OptionVerificationType::kNormal}},
+        {"column_table.column_comparators",
+         {offsetof(struct ColumnTableOptions, column_comparators),
+          OptionType::kVectorComparator, OptionVerificationType::kNormal}}};
 
 static std::unordered_map<std::string, CompressionType>
     compression_type_string_map = {

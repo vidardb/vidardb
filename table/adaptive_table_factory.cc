@@ -93,11 +93,11 @@ TableBuilder* AdaptiveTableFactory::NewTableBuilder(
 std::string AdaptiveTableFactory::GetPrintableTableOptions() const {
   std::string ret;
   ret.reserve(20000);
-  const int kBufferSize = 200;
+  const int kBufferSize = 1500;
   char buffer[kBufferSize];
 
   if (table_factory_to_write_) {
-    snprintf(buffer, kBufferSize, "  write factory (%s) options:\n%s\n",
+    snprintf(buffer, kBufferSize, "\nwrite factory (%s) options:\n%s\n",
              (table_factory_to_write_->Name() ? table_factory_to_write_->Name()
                                               : ""),
              table_factory_to_write_->GetPrintableTableOptions().c_str());
@@ -105,7 +105,7 @@ std::string AdaptiveTableFactory::GetPrintableTableOptions() const {
   }
   if (block_based_table_factory_) {
     snprintf(
-        buffer, kBufferSize, "  %s options:\n%s\n",
+        buffer, kBufferSize, "\n%s options:\n%s\n",
         (block_based_table_factory_->Name() ? block_based_table_factory_->Name()
                                             : ""),
         block_based_table_factory_->GetPrintableTableOptions().c_str());
@@ -113,7 +113,7 @@ std::string AdaptiveTableFactory::GetPrintableTableOptions() const {
   }
   /***************************** Shichao *****************************/
   if (column_table_factory_) {
-    snprintf(buffer, kBufferSize, "  %s options:\n%s\n",
+    snprintf(buffer, kBufferSize, "\n%s options:\n%s\n",
              column_table_factory_->Name() ? column_table_factory_->Name() : "",
              column_table_factory_->GetPrintableTableOptions().c_str());
     ret.append(buffer);

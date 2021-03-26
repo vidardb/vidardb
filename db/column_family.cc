@@ -307,12 +307,10 @@ ColumnFamilyData::ColumnFamilyData(
     }
 
     if (column_family_set_->NumberOfColumnFamilies() < 10) {
-      Log(InfoLogLevel::INFO_LEVEL, ioptions_.info_log,
-          "--------------- Options for column family [%s]:\n", name.c_str());
       options_.DumpCFOptions(ioptions_.info_log);
     } else {
       Log(InfoLogLevel::INFO_LEVEL, ioptions_.info_log,
-          "\t(skipping printing options)\n");
+          "\t(skipping printing ColumnFamilyOptions)\n");
     }
   }
 

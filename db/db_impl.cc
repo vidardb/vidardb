@@ -260,14 +260,14 @@ CompressionType GetCompressionFlush(
 }
 
 void DumpSupportInfo(Logger* logger) {
-  Log(InfoLogLevel::INFO_LEVEL, logger, "Compression algorithms supported:");
+  Log(InfoLogLevel::INFO_LEVEL, logger, "[Compression Algorithms]");
   Log(InfoLogLevel::INFO_LEVEL, logger, "\tSnappy supported: %d",
       Snappy_Supported());
   Log(InfoLogLevel::INFO_LEVEL, logger, "\tZlib supported: %d",
       Zlib_Supported());
   Log(InfoLogLevel::INFO_LEVEL, logger, "\tBzip supported: %d",
       BZip2_Supported());
-  Log(InfoLogLevel::INFO_LEVEL, logger, "Fast CRC32 supported: %d",
+  Log(InfoLogLevel::INFO_LEVEL, logger, "\tFast CRC32 supported: %d",
       crc32c::IsFastCrc32Supported());
 }
 
@@ -5783,10 +5783,10 @@ void DumpVidarDBBuildVersion(Logger * log) {
 #if !defined(IOS_CROSS_COMPILE)
   // if we compile with Xcode, we don't run build_detect_vesion, so we don't
   // generate util/build_version.cc
-  Header(log, "VidarDB version: %d.%d.%d\n", VIDARDB_MAJOR, VIDARDB_MINOR,
+  Header(log, "VidarDB Version: %d.%d.%d\n", VIDARDB_MAJOR, VIDARDB_MINOR,
          VIDARDB_PATCH);
-  Header(log, "Git sha %s", vidardb_build_git_sha);
-  Header(log, "Compile date %s", vidardb_build_compile_date);
+  Header(log, "Git SHA: %s", vidardb_build_git_sha);
+  Header(log, "Compile Date: %s", vidardb_build_compile_date);
 #endif
 }
 

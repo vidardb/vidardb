@@ -83,6 +83,18 @@ class AdaptiveTableFactory : public TableFactory {
       const std::string& file_name, int output_level);
 
   int GetKnob() const { return knob_; }
+
+  const TableFactory* GetWriteTableFactory() const {
+    return table_factory_to_write_.get();
+  }
+
+  const TableFactory* GetBlockBasedTableFactory() const {
+    return block_based_table_factory_.get();
+  }
+
+  const TableFactory* GetColumnTableFactory() const {
+    return column_table_factory_.get();
+  }
   /********************** Shichao **********************/
 
  private:
