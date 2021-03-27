@@ -82,6 +82,9 @@ Status ColumnTableFactory::SanitizeOptions(
   if (!cf_opts.splitter) {
     return Status::InvalidArgument("Missing splitter.");
   }
+  if (table_options_.column_comparators.size() != table_options_.column_count) {
+    return Status::InvalidArgument("Invalid column comparators.");
+  }
   return Status::OK();
 }
 
@@ -118,6 +121,15 @@ std::string ColumnTableFactory::GetPrintableTableOptions() const {
   snprintf(buffer, kBufferSize, "  index_block_restart_interval: %d\n",
            table_options_.index_block_restart_interval);
   ret.append(buffer);
+  snprintf(buffer, kBufferSize, "  column count (excluding key): %d\n",
+           table_options_.column_count);
+  ret.append(buffer);
+  for (auto i = 0u; i < table_options_.column_count; i++) {
+    const Comparator* comparator = table_options_.column_comparators[i];
+    snprintf(buffer, kBufferSize, "  column comparator[%d]: %s\n", i,
+             comparator->Name());
+    ret.append(buffer);
+  }
   return ret;
 }
 

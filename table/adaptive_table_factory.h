@@ -50,8 +50,23 @@ class AdaptiveTableFactory : public TableFactory {
   // Sanitizes the specified DB Options.
   Status SanitizeOptions(const DBOptions& db_opts,
                          const ColumnFamilyOptions& cf_opts) const override {
-    if (!cf_opts.splitter) {
-      return Status::InvalidArgument("Missing splitter.");
+    if (table_factory_to_write_) {
+      Status s = table_factory_to_write_->SanitizeOptions(db_opts, cf_opts);
+      if (!s.ok()) {
+        return s;
+      }
+    }
+    if (block_based_table_factory_) {
+      Status s = block_based_table_factory_->SanitizeOptions(db_opts, cf_opts);
+      if (!s.ok()) {
+        return s;
+      }
+    }
+    if (column_table_factory_) {
+      Status s = column_table_factory_->SanitizeOptions(db_opts, cf_opts);
+      if (!s.ok()) {
+        return s;
+      }
     }
     return Status::OK();
   }
@@ -68,6 +83,18 @@ class AdaptiveTableFactory : public TableFactory {
       const std::string& file_name, int output_level);
 
   int GetKnob() const { return knob_; }
+
+  const TableFactory* GetWriteTableFactory() const {
+    return table_factory_to_write_.get();
+  }
+
+  const TableFactory* GetBlockBasedTableFactory() const {
+    return block_based_table_factory_.get();
+  }
+
+  const TableFactory* GetColumnTableFactory() const {
+    return column_table_factory_.get();
+  }
   /********************** Shichao **********************/
 
  private:

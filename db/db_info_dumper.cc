@@ -35,7 +35,7 @@ void DumpDBFileSummary(const DBOptions& options, const std::string& dbname) {
   uint64_t file_size;
   std::string file_info, wal_info;
 
-  Header(options.info_log, "DB SUMMARY\n");
+  Header(options.info_log, "[DB SUMMARY]\n");
   // Get files in dbname dir
   if (!env->GetChildren(dbname, &files).ok()) {
     Error(options.info_log,
@@ -48,14 +48,14 @@ void DumpDBFileSummary(const DBOptions& options, const std::string& dbname) {
     }
     switch (type) {
       case kCurrentFile:
-        Header(options.info_log, "CURRENT file:  %s\n", file.c_str());
+        Header(options.info_log, "CURRENT file: %s\n", file.c_str());
         break;
       case kIdentityFile:
-        Header(options.info_log, "IDENTITY file:  %s\n", file.c_str());
+        Header(options.info_log, "IDENTITY file: %s\n", file.c_str());
         break;
       case kDescriptorFile:
         env->GetFileSize(dbname + "/" + file, &file_size);
-        Header(options.info_log, "MANIFEST file:  %s size: %" PRIu64 " Bytes\n",
+        Header(options.info_log, "MANIFEST file: %s, Size: %" PRIu64 " Bytes\n",
                file.c_str(), file_size);
         break;
       case kLogFile:
@@ -94,7 +94,7 @@ void DumpDBFileSummary(const DBOptions& options, const std::string& dbname) {
       }
     }
     Header(options.info_log,
-           "SST files in %s dir, Total Num: %" PRIu64 ", files: %s\n",
+           "SST files in %s dir, Total Num: %" PRIu64 ", Files: %s\n",
            db_path.path.c_str(), file_num, file_info.c_str());
     file_num = 0;
     file_info.clear();

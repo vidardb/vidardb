@@ -41,7 +41,7 @@ struct Options;
 using std::unique_ptr;
 
 // For advanced user only
-struct TableOptions {
+struct BlockBasedTableOptions {
   // @flush_block_policy_factory creates the instances of flush block policy.
   // which provides a configurable way to determine when to flush a block in
   // the block based tables.  If not set, table builder will use the default
@@ -81,17 +81,57 @@ struct TableOptions {
   int index_block_restart_interval = 1;
 };
 
-struct BlockBasedTableOptions : public TableOptions {};
-
 // Create default block based table factory.
 extern TableFactory* NewBlockBasedTableFactory(
     const BlockBasedTableOptions& table_options = BlockBasedTableOptions());
 
 /*********************************  Shichao  **********************************/
 // For advanced user only
-struct ColumnTableOptions : public TableOptions {
-  // Total column number excluding key
+struct ColumnTableOptions {
+  // @flush_block_policy_factory creates the instances of flush block policy.
+  // which provides a configurable way to determine when to flush a block in
+  // the block based tables.  If not set, table builder will use the default
+  // block flush policy, which cut blocks by block size (please refer to
+  // `FlushBlockBySizePolicy`).
+  std::shared_ptr<FlushBlockPolicyFactory> flush_block_policy_factory;
+
+  // Disable block cache. If this is set to true,
+  // then no block cache should be used, and the block_cache should
+  // point to a nullptr object.
+  bool no_block_cache = false;
+
+  // If non-NULL use the specified cache for blocks.
+  // If NULL, vidardb will automatically create and use an 8MB internal cache.
+  std::shared_ptr<Cache> block_cache = nullptr;
+
+  // Approximate size of user data packed per block. Note that the
+  // block size specified here corresponds to uncompressed data. The
+  // actual size of the unit read from disk may be smaller if
+  // compression is enabled. This parameter can be changed dynamically.
+  size_t block_size = 4 * 1024;
+
+  // This is used to close a block before it reaches the configured
+  // 'block_size'. If the percentage of free space in the current block is less
+  // than this specified number and adding a new record to the block will
+  // exceed the configured block size, then this block will be closed and the
+  // new record will be written to the next block.
+  int block_size_deviation = 10;
+
+  // Number of keys between restart points for delta encoding of keys.
+  // This parameter can be changed dynamically. Most clients should
+  // leave this parameter alone. The minimum value allowed is 1. Any smaller
+  // value will be silently overwritten with 1.
+  int block_restart_interval = 16;
+
+  // Same as block_restart_interval but used for the index block.
+  int index_block_restart_interval = 1;
+
+  // Total column attribute number (excluding key)
   uint32_t column_count = 0;
+
+  // Comparators for each column attribute (excluding key) and the order
+  // must be same as the column attribute
+  std::vector<const Comparator*> column_comparators;
 };
 
 // Create default column table factory.

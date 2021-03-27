@@ -5,6 +5,7 @@
 
 #include <iostream>
 
+#include "vidardb/comparator.h"
 #include "vidardb/db.h"
 #include "vidardb/options.h"
 #include "vidardb/splitter.h"
@@ -26,6 +27,9 @@ void TestSimpleColumnStore(bool flush) {
   ColumnTableOptions* opts =
       static_cast<ColumnTableOptions*>(table_factory->GetOptions());
   opts->column_count = kColumn;
+  for (auto i = 0u; i < opts->column_count; i++) {
+    opts->column_comparators.push_back(BytewiseComparator());
+  }
   options.table_factory.reset(table_factory);
 
   DB* db;

@@ -9,14 +9,17 @@
 #include <cstdlib>
 #include <unordered_set>
 #include <vector>
+
+#include "table/adaptive_table_factory.h"
+#include "table/block_based_table_factory.h"
+#include "table/column_table_factory.h"
+#include "util/logging.h"
+#include "util/string_util.h"
 #include "vidardb/cache.h"
 #include "vidardb/convenience.h"
 #include "vidardb/memtablerep.h"
 #include "vidardb/options.h"
 #include "vidardb/table.h"
-#include "table/block_based_table_factory.h"
-#include "util/logging.h"
-#include "util/string_util.h"
 
 namespace vidardb {
 
@@ -138,6 +141,39 @@ bool SerializeVectorCompressionType(const std::vector<CompressionType>& types,
       return result;
     }
     ss << string_type;
+  }
+  *value = ss.str();
+  return true;
+}
+
+bool SerializeComparator(const Comparator* comparator, std::string* value) {
+  // Since the user-specified comparator will be wrapped by
+  // InternalKeyComparator, we should persist the user-specified one
+  // instead of InternalKeyComparator.
+  const auto* internal_comparator =
+      dynamic_cast<const InternalKeyComparator*>(comparator);
+  if (internal_comparator != nullptr) {
+    *value = internal_comparator->user_comparator()->Name();
+  } else {
+    *value = comparator ? comparator->Name() : "nullptr";
+  }
+  return true;
+}
+
+bool SerializeVectorComparator(
+    const std::vector<const Comparator*>& comparators, std::string* value) {
+  std::stringstream ss;
+  bool result;
+  for (size_t i = 0; i < comparators.size(); ++i) {
+    if (i > 0) {
+      ss << ':';
+    }
+    std::string string_comparator;
+    result = SerializeComparator(comparators[i], &string_comparator);
+    if (!result) {
+      return result;
+    }
+    ss << string_comparator;
   }
   *value = ss.str();
   return true;
@@ -364,16 +400,20 @@ bool SerializeSingleOptionHelper(const char* opt_address,
     case OptionType::kComparator: {
       // it's a const pointer of const Comparator*
       const auto* ptr = reinterpret_cast<const Comparator* const*>(opt_address);
-      // Since the user-specified comparator will be wrapped by
-      // InternalKeyComparator, we should persist the user-specified one
-      // instead of InternalKeyComparator.
-      const auto* internal_comparator =
-          dynamic_cast<const InternalKeyComparator*>(*ptr);
-      if (internal_comparator != nullptr) {
-        *value = internal_comparator->user_comparator()->Name();
-      } else {
-        *value = *ptr ? (*ptr)->Name() : kNullptrString;
-      }
+      SerializeComparator(*ptr, value);
+      break;
+    }
+    case OptionType::kVectorComparator: {
+      return SerializeVectorComparator(
+          *(reinterpret_cast<const std::vector<const Comparator*>*>(
+              opt_address)),
+          value);
+      break;
+    }
+    case OptionType::kSplitter: {
+      const auto* ptr =
+          reinterpret_cast<const std::shared_ptr<Splitter>*>(opt_address);
+      *value = ptr->get() ? ptr->get()->Name() : kNullptrString;
       break;
     }
     case OptionType::kMemTableRepFactory: {
@@ -818,6 +858,25 @@ bool SerializeSingleBlockBasedTableOption(
   return result;
 }
 
+bool SerializeColumnTableOption(std::string* opt_string,
+                                const ColumnTableOptions& ct_options,
+                                const std::string& name,
+                                const std::string& delimiter) {
+  auto iter = column_table_type_info.find(name);
+  if (iter == column_table_type_info.end()) {
+    return false;
+  }
+  auto& opt_info = iter->second;
+  const char* opt_address =
+      reinterpret_cast<const char*>(&ct_options) + opt_info.offset;
+  std::string value;
+  bool result = SerializeSingleOptionHelper(opt_address, opt_info.type, &value);
+  if (result) {
+    *opt_string = name + "=" + value + delimiter;
+  }
+  return result;
+}
+
 Status GetStringFromBlockBasedTableOptions(
     std::string* opt_string, const BlockBasedTableOptions& bbt_options,
     const std::string& delimiter) {
@@ -841,13 +900,66 @@ Status GetStringFromBlockBasedTableOptions(
   return Status::OK();
 }
 
+Status GetStringFromColumnTableOptions(std::string* opt_string,
+                                       const ColumnTableOptions& ct_options,
+                                       const std::string& delimiter) {
+  assert(opt_string);
+  opt_string->clear();
+  for (auto iter = column_table_type_info.begin();
+       iter != column_table_type_info.end(); ++iter) {
+    if (iter->second.verification == OptionVerificationType::kDeprecated) {
+      // If the option is no longer used in vidardb and marked as deprecated,
+      // we skip it in the serialization.
+      continue;
+    }
+    std::string single_output;
+    bool result = SerializeColumnTableOption(&single_output, ct_options,
+                                             iter->first, delimiter);
+    assert(result);
+    if (result) {
+      opt_string->append(single_output);
+    }
+  }
+  return Status::OK();
+}
+
 Status GetStringFromTableFactory(std::string* opts_str, const TableFactory* tf,
                                  const std::string& delimiter) {
   const auto* bbtf = dynamic_cast<const BlockBasedTableFactory*>(tf);
-  opts_str->clear();
   if (bbtf != nullptr) {
     return GetStringFromBlockBasedTableOptions(opts_str, bbtf->table_options(),
                                                delimiter);
+  }
+
+  const auto* ctf = dynamic_cast<const ColumnTableFactory*>(tf);
+  if (ctf != nullptr) {
+    return GetStringFromColumnTableOptions(opts_str, ctf->table_options(),
+                                           delimiter);
+  }
+
+  const auto* atf = dynamic_cast<const AdaptiveTableFactory*>(tf);
+  if (atf != nullptr) {
+    assert(opts_str);
+    opts_str->clear();
+    std::string opt_str;
+
+    if (atf->GetWriteTableFactory()) {
+      GetStringFromTableFactory(&opt_str, atf->GetWriteTableFactory(),
+                                delimiter);
+      opts_str->append(opt_str);
+    }
+
+    if (atf->GetBlockBasedTableFactory()) {
+      GetStringFromTableFactory(&opt_str, atf->GetBlockBasedTableFactory(),
+                                delimiter);
+      opts_str->append(opt_str);
+    }
+
+    if (atf->GetColumnTableFactory()) {
+      GetStringFromTableFactory(&opt_str, atf->GetColumnTableFactory(),
+                                delimiter);
+      opts_str->append(opt_str);
+    }
   }
 
   return Status::OK();

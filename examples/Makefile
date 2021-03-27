@@ -1,5 +1,7 @@
 include ../make_config.mk
 
+CXXFLAGS += -g $(OPT)
+
 OBJS = simple_example \
 	   column_families_example \
 	   compact_files_example \
@@ -42,7 +44,7 @@ comparator_example: libvidardb comparator_example.cc
 	$(CXX) $(CXXFLAGS) $@.cc -o$@ ../libvidardb.a -I../include -O2 -std=c++11 $(PLATFORM_LDFLAGS) $(PLATFORM_CXXFLAGS) $(EXEC_LDFLAGS)
 
 clean:
-	rm -rf $(OBJS)
+	rm -rf $(OBJS) *.dSYM
 
 libvidardb:
 	cd .. && $(MAKE) static_lib
