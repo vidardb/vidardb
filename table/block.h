@@ -59,7 +59,8 @@ class Block {
   // If iter is null, return new Iterator
   // If iter is not null, update this one and return it as Iterator*
   InternalIterator* NewIterator(const Comparator* comparator,
-                                BlockIter* iter = nullptr, bool column = false);
+                                BlockIter* iter = nullptr,
+                                bool sub_column = false);
 
   // Report an approximation of how much memory has been used.
   size_t ApproximateMemoryUsage() const;
@@ -196,6 +197,7 @@ class BlockIter : public InternalIterator {
                           uint32_t* index);
 };
 
+// Sub-column block iterator
 class ColumnBlockIter : public BlockIter {
  public:
   ColumnBlockIter() : BlockIter() {}

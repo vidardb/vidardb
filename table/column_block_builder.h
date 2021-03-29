@@ -12,6 +12,7 @@
 
 namespace vidardb {
 
+// Sub-column builder
 class ColumnBlockBuilder : public BlockBuilder {
  public:
   ColumnBlockBuilder(const ColumnBlockBuilder&) = delete;

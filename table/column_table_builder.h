@@ -115,7 +115,8 @@ class ColumnTableBuilder : public TableBuilder {
   void CreateSubcolumnBuilders(Rep* r);
 
   // Called by main column to add kv in sub column builders
-  void AddInSubcolumnBuilders(Rep* r, const Slice& key, const Slice& value);
+  void AddInSubcolumnBuilders(Rep* r, const Slice& key, const Slice& value,
+                              bool should_flush);
 
   // No copying allowed
   ColumnTableBuilder(const ColumnTableBuilder&) = delete;

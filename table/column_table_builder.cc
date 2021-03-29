@@ -124,6 +124,14 @@ class ShortenedIndexBuilder : public IndexBuilder {
     std::string handle_encoding;
     block_handle.EncodeTo(&handle_encoding);
     index_block_builder_.Add(*last_key_in_current_block, handle_encoding);
+
+    min_block_value_.clear();
+    max_block_value_.clear();
+  }
+
+  virtual void OnKeyAdded(const Slice& value) override {
+      min_block_value_.clear();
+      max_block_value_.clear();
   }
 
   virtual Status Finish(IndexBlocks* index_blocks) override {
@@ -137,6 +145,8 @@ class ShortenedIndexBuilder : public IndexBuilder {
 
  private:
   BlockBuilder index_block_builder_;
+  std::string min_block_value_;
+  std::string max_block_value_;
 };
 
 // Without anonymous namespace here, we fail the warning -Wmissing-prototypes
@@ -269,9 +279,10 @@ struct ColumnTableBuilder::Rep {
         compression_type(_compression_type),
         compression_opts(_compression_opts),
         compression_dict(_compression_dict),
-        flush_block_policy(
+        flush_block_policy(main_column ?
             table_options.flush_block_policy_factory->NewFlushBlockPolicy(
-                table_options, *data_block)),
+                table_options, *data_block) :
+            nullptr),
         column_family_id(_column_family_id),
         column_family_name(_column_family_name),
         env_options(_env_options) {
@@ -328,7 +339,8 @@ void ColumnTableBuilder::CreateSubcolumnBuilders(Rep* r) {
 }
 
 void ColumnTableBuilder::AddInSubcolumnBuilders(Rep* r, const Slice& key,
-                                                const Slice& value) {
+                                                const Slice& value,
+                                                bool should_flush) {
   std::vector<Slice> vals(r->ioptions.splitter->Split(value));
   if (!vals.empty() && vals.size() != r->table_options.column_count) {
     r->status = Status::InvalidArgument("table_options.column_count");
@@ -343,9 +355,8 @@ void ColumnTableBuilder::AddInSubcolumnBuilders(Rep* r, const Slice& key,
       assert(rep->internal_comparator.Compare(key, Slice(rep->last_key)) > 0);
     }
 
-    // empty key to subcolumn data block, but tail index should not empty key
-    auto should_flush = rep->flush_block_policy->
-            Update(key, vals.empty()? Slice(): vals[i]);
+    // instead of fixed block size, every block has the same amount of attribute
+    // values horizontally
     if (should_flush) {
       assert(!rep->data_block->empty());
       r->builders[i]->Flush();
@@ -362,7 +373,7 @@ void ColumnTableBuilder::AddInSubcolumnBuilders(Rep* r, const Slice& key,
     rep->props.num_entries++;
     rep->props.raw_key_size += rep->data_block->IsKeyStored() ? key.size() : 0;
     rep->props.raw_value_size += vals.empty()? 0: vals[i].size();
-    rep->index_builder->OnKeyAdded(key);
+    rep->index_builder->OnKeyAdded(vals.empty()? Slice(): vals[i]);
   }
 }
 
@@ -407,12 +418,11 @@ void ColumnTableBuilder::Add(const Slice& key, const Slice& value) {
   r->props.num_entries++;
   r->props.raw_key_size += key.size();
   r->props.raw_value_size += pos.size();
-  r->index_builder->OnKeyAdded(key);
   NotifyCollectTableCollectorsOnAdd(key, pos, r->offset,
                                     r->table_properties_collectors,
                                     r->ioptions.info_log);
 
-  AddInSubcolumnBuilders(r, pos, value);
+  AddInSubcolumnBuilders(r, pos, value, should_flush);
 }
 
 void ColumnTableBuilder::Flush() {
