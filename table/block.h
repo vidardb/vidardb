@@ -197,7 +197,7 @@ class BlockIter : public InternalIterator {
                           uint32_t* index);
 };
 
-// Sub-column block iterator
+// Sub-column block iterator, used in sub columns' data block
 class ColumnBlockIter : public BlockIter {
  public:
   ColumnBlockIter() : BlockIter() {}
@@ -214,6 +214,32 @@ class ColumnBlockIter : public BlockIter {
 
   virtual bool BinarySeek(const Slice& target, uint32_t left, uint32_t right,
                           uint32_t* index) override;
+};
+
+// Min max block iterator, used in sub columns' index block
+class MinMaxBlockIter : public BlockIter {
+ public:
+  MinMaxBlockIter() : BlockIter() {}
+  MinMaxBlockIter(const Comparator* comparator, const char* data,
+                  uint32_t restarts, uint32_t num_restarts)
+      : MinMaxBlockIter() {
+    Initialize(comparator, data, restarts, num_restarts);
+  }
+
+ private:
+  // Return the offset in data_ just past the end of the current entry.
+  virtual inline uint32_t NextEntryOffset() const {
+    // NOTE: We don't support files bigger than 2GB
+    return next_entry_offset_;
+  }
+
+  virtual void CorruptionError() override;
+
+  virtual bool ParseNextKey() override;
+
+  Slice min_;
+  std::string max_;
+  uint32_t next_entry_offset_;
 };
 
 }  // namespace vidardb

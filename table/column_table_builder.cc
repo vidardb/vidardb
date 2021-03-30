@@ -26,7 +26,7 @@
 
 #include "table/block.h"
 #include "table/column_table_reader.h"
-#include "table/block_builder.h"
+#include "table/min_max_block_builder.h"
 #include "table/column_block_builder.h"
 #include "table/column_table_factory.h"
 #include "table/format.h"
@@ -123,7 +123,8 @@ class ShortenedIndexBuilder : public IndexBuilder {
 
     std::string handle_encoding;
     block_handle.EncodeTo(&handle_encoding);
-    index_block_builder_.Add(*last_key_in_current_block, handle_encoding);
+    index_block_builder_.Add(*last_key_in_current_block, handle_encoding,
+                             min_block_value_, max_block_value_);
 
     min_block_value_.clear();
     max_block_value_.clear();
@@ -144,9 +145,9 @@ class ShortenedIndexBuilder : public IndexBuilder {
   }
 
  private:
-  BlockBuilder index_block_builder_;
-  std::string min_block_value_;
-  std::string max_block_value_;
+  MinMaxBlockBuilder index_block_builder_;
+  std::string        min_block_value_;
+  std::string        max_block_value_;
 };
 
 // Without anonymous namespace here, we fail the warning -Wmissing-prototypes
@@ -393,7 +394,7 @@ void ColumnTableBuilder::Add(const Slice& key, const Slice& value) {
   // Be carefull about big endian and small endian issue
   // when comparing number with binary format
   std::string pos;
-  PutFixed64BigEndian(&pos, r->props.num_entries);
+  PutFixed32BigEndian(&pos, r->props.num_entries);
 
   auto should_flush = r->flush_block_policy->Update(key, pos);
   if (should_flush) {

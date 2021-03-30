@@ -53,6 +53,7 @@ LIB_SOURCES =                                                   \
   table/block_builder.cc                                        \
   table/block.cc                                                \
   table/column_block_builder.cc                                 \
+  table/min_max_block_builder.cc                                \
   table/flush_block_policy.cc                                   \
   table/format.cc                                               \
   table/get_context.cc                                          \

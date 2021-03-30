@@ -21,7 +21,9 @@ class ColumnBlockBuilder : public BlockBuilder {
   explicit ColumnBlockBuilder(int block_restart_interval)
     : BlockBuilder(block_restart_interval) {}
 
-  // REQUIRES: Finish() has not been callled since the last call to Reset().
+  virtual ~ColumnBlockBuilder() {}
+
+  // REQUIRES: Finish() has not been called since the last call to Reset().
   // REQUIRES: key is larger than any previously added key
   virtual void Add(const Slice& key, const Slice& value) override;
 
