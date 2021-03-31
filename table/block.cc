@@ -336,11 +336,12 @@ void MinMaxBlockIter::CorruptionError() {
   BlockIter::CorruptionError();
   min_.clear();
   max_.clear();
+  max_storage_len_ = 0;
 }
 
 // Helper routine: decode the next block max starting at "p",
-// storing the number of shared key bytes, non_shared key bytes,
-// in "*shared", "*non_shared" respectively.  Will not derefence past "limit".
+// storing the number of shared bytes, non_shared bytes, in "*shared",
+// "*non_shared" respectively.  Will not derefence past "limit".
 //
 // If any errors are detected, returns nullptr.  Otherwise, returns a
 // pointer to the key delta (just past the three decoded values).
@@ -366,21 +367,23 @@ static inline const char* DecodeMax(const char* p, const char* limit,
 bool MinMaxBlockIter::ParseNextKey() {
   bool ret = BlockIter::ParseNextKey();
   if (!ret) {
-    return ret;
+    return false;
   }
 
   const char* p = value_.data_ + value_.size_;
   const char* limit = data_ + restarts_;  // Restarts come right after data
   // Decode min
-  uint32_t length, shared, non_shared;
-  p = DecodeKeyOrValue(p, limit, &length);
+  uint32_t shared, non_shared;
+  p = DecodeKeyOrValue(p, limit, &non_shared);
   if (p == nullptr) {
     CorruptionError();
     return false;
   }
-  min_ = Slice(p, length);
-  p += length;
+  min_ = Slice(p, non_shared);
+  p += non_shared;
+  const char* max_start = p;
 
+  // Decode max
   p = DecodeMax(p, limit, &shared, &non_shared);
   if (p == nullptr || min_.size() < shared) {
     CorruptionError();
@@ -391,7 +394,7 @@ bool MinMaxBlockIter::ParseNextKey() {
   max_.append(p, non_shared);
 
   p += non_shared;
-  next_entry_offset_ = p - data_;
+  max_storage_len_ = p - max_start;
   return true;
 }
 
@@ -418,7 +421,7 @@ Block::Block(BlockContents&& contents)
 }
 
 InternalIterator* Block::NewIterator(const Comparator* cmp, BlockIter* iter,
-                                     bool sub_column) {
+                                     BlockType type) {
   if (size_ < 2*sizeof(uint32_t)) {
     if (iter != nullptr) {
       iter->SetStatus(Status::Corruption("bad block contents"));
@@ -439,10 +442,17 @@ InternalIterator* Block::NewIterator(const Comparator* cmp, BlockIter* iter,
     if (iter != nullptr) {
       iter->Initialize(cmp, data_, restart_offset_, num_restarts);
     } else {
-      iter =
-          sub_column
-              ? new ColumnBlockIter(cmp, data_, restart_offset_, num_restarts)
-              : new BlockIter(cmp, data_, restart_offset_, num_restarts);
+      switch (type) {
+        case kTypeBlock:
+          return new BlockIter(cmp, data_, restart_offset_, num_restarts);
+        case kTypeColumn:
+          return new ColumnBlockIter(cmp, data_, restart_offset_, num_restarts);
+        case kTypeMinMax:
+          return new MinMaxBlockIter(cmp, data_, restart_offset_, num_restarts);
+        default:
+          return NewErrorInternalIterator(
+              Status::Corruption("unknown block type"));
+      }
     }
   }
 

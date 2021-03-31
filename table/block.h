@@ -56,11 +56,17 @@ class Block {
     return contents_.compression_type;
   }
 
+  enum BlockType : unsigned char {
+    kTypeBlock = 0x0,
+    kTypeColumn = 0x1,
+    kTypeMinMax = 0x3
+  };
+
   // If iter is null, return new Iterator
   // If iter is not null, update this one and return it as Iterator*
   InternalIterator* NewIterator(const Comparator* comparator,
                                 BlockIter* iter = nullptr,
-                                bool sub_column = false);
+                                BlockType type = kTypeBlock);
 
   // Report an approximation of how much memory has been used.
   size_t ApproximateMemoryUsage() const;
@@ -219,7 +225,7 @@ class ColumnBlockIter : public BlockIter {
 // Min max block iterator, used in sub columns' index block
 class MinMaxBlockIter : public BlockIter {
  public:
-  MinMaxBlockIter() : BlockIter() {}
+  MinMaxBlockIter() : BlockIter(), max_storage_len_(0) {}
   MinMaxBlockIter(const Comparator* comparator, const char* data,
                   uint32_t restarts, uint32_t num_restarts)
       : MinMaxBlockIter() {
@@ -228,9 +234,24 @@ class MinMaxBlockIter : public BlockIter {
 
  private:
   // Return the offset in data_ just past the end of the current entry.
-  virtual inline uint32_t NextEntryOffset() const {
+  virtual inline uint32_t NextEntryOffset() const override {
     // NOTE: We don't support files bigger than 2GB
-    return next_entry_offset_;
+    return static_cast<uint32_t>(min_.data() + min_.size() + max_storage_len_ -
+                                 data_);
+  }
+
+  virtual void SeekToRestartPoint(uint32_t index) override {
+    key_.Clear();
+    value_.clear();
+    max_.clear();
+    restart_index_ = index;
+    max_storage_len_ = 0;
+    // current_ will be fixed by ParseNextKey();
+
+    // ParseNextKey() starts at the end of max_, but max is not continuously
+    // stored, so set min_accordingly
+    uint32_t offset = GetRestartPoint(index);
+    min_ = Slice(data_ + offset, 0);
   }
 
   virtual void CorruptionError() override;
@@ -239,7 +260,7 @@ class MinMaxBlockIter : public BlockIter {
 
   Slice min_;
   std::string max_;
-  uint32_t next_entry_offset_;
+  uint32_t max_storage_len_;
 };
 
 }  // namespace vidardb

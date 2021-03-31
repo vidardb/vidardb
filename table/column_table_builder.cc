@@ -107,9 +107,13 @@ class IndexBuilder {
 class ShortenedIndexBuilder : public IndexBuilder {
  public:
   explicit ShortenedIndexBuilder(const Comparator* comparator,
-                                 int index_block_restart_interval)
-      : IndexBuilder(comparator),
-        index_block_builder_(index_block_restart_interval) {}
+                                 int index_block_restart_interval,
+                                 bool main_column)
+      : IndexBuilder(comparator), main_column_(main_column) {
+    index_block_builder_.reset(
+        main_column_ ? new BlockBuilder(index_block_restart_interval)
+                     : new MinMaxBlockBuilder(index_block_restart_interval));
+  }
 
   virtual void AddIndexEntry(std::string* last_key_in_current_block,
                              const Slice* first_key_in_next_block,
@@ -123,31 +127,40 @@ class ShortenedIndexBuilder : public IndexBuilder {
 
     std::string handle_encoding;
     block_handle.EncodeTo(&handle_encoding);
-    index_block_builder_.Add(*last_key_in_current_block, handle_encoding,
-                             min_block_value_, max_block_value_);
 
-    min_block_value_.clear();
-    max_block_value_.clear();
+    if (main_column_) {
+      index_block_builder_->Add(*last_key_in_current_block, handle_encoding);
+    } else {
+      auto builder =
+          dynamic_cast<MinMaxBlockBuilder*>(index_block_builder_.get());
+      builder->Add(*last_key_in_current_block, handle_encoding,
+                   min_block_value_, max_block_value_);
+      min_block_value_.clear();
+      max_block_value_.clear();
+    }
   }
 
   virtual void OnKeyAdded(const Slice& value) override {
+    if (!main_column_) {
       min_block_value_.clear();
       max_block_value_.clear();
+    }
   }
 
   virtual Status Finish(IndexBlocks* index_blocks) override {
-    index_blocks->index_block_contents = index_block_builder_.Finish();
+    index_blocks->index_block_contents = index_block_builder_->Finish();
     return Status::OK();
   }
 
   virtual size_t EstimatedSize() const override {
-    return index_block_builder_.CurrentSizeEstimate();
+    return index_block_builder_->CurrentSizeEstimate();
   }
 
  private:
-  MinMaxBlockBuilder index_block_builder_;
-  std::string        min_block_value_;
-  std::string        max_block_value_;
+  std::unique_ptr<BlockBuilder> index_block_builder_;
+  bool main_column_;             // regular block or min max block ?
+  std::string min_block_value_;  // only used in min max block
+  std::string max_block_value_;  // only used in min max block
 };
 
 // Without anonymous namespace here, we fail the warning -Wmissing-prototypes
@@ -155,8 +168,10 @@ namespace {
 
 // Create a index builder based on its type.
 IndexBuilder* CreateIndexBuilder(const Comparator* comparator,
-                                 int index_block_restart_interval) {
-  return new ShortenedIndexBuilder(comparator, index_block_restart_interval);
+                                 int index_block_restart_interval,
+                                 bool main_column) {
+  return new ShortenedIndexBuilder(comparator, index_block_restart_interval,
+                                   main_column);
 }
 
 bool GoodCompressionRatio(size_t compressed_size, size_t raw_size) {
@@ -253,8 +268,7 @@ struct ColumnTableBuilder::Rep {
   const EnvOptions& env_options;
   std::vector<std::unique_ptr<ColumnTableBuilder>> builders;
 
-  Rep(bool _main_column,
-      const ImmutableCFOptions& _ioptions,
+  Rep(bool _main_column, const ImmutableCFOptions& _ioptions,
       const ColumnTableOptions& table_opt,
       const InternalKeyComparator& icomparator,
       const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
@@ -263,27 +277,28 @@ struct ColumnTableBuilder::Rep {
       const CompressionType _compression_type,
       const CompressionOptions& _compression_opts,
       const std::string* _compression_dict,
-      const std::string& _column_family_name,
-      const EnvOptions& _env_options)
+      const std::string& _column_family_name, const EnvOptions& _env_options)
       : main_column(_main_column),
         ioptions(_ioptions),
         table_options(table_opt),
         internal_comparator(icomparator),
         column_comparator(main_column ? new ColumnKeyComparator() : nullptr),
         file(f),
-        data_block(main_column ?
-                new BlockBuilder(table_options.block_restart_interval) :
-                new ColumnBlockBuilder(table_options.block_restart_interval)),
-        index_builder(
-            CreateIndexBuilder(&internal_comparator,
-                               table_options.index_block_restart_interval)),
+        data_block(
+            main_column
+                ? new BlockBuilder(table_options.block_restart_interval)
+                : new ColumnBlockBuilder(table_options.block_restart_interval)),
+        index_builder(CreateIndexBuilder(
+            &internal_comparator, table_options.index_block_restart_interval,
+            main_column)),
         compression_type(_compression_type),
         compression_opts(_compression_opts),
         compression_dict(_compression_dict),
-        flush_block_policy(main_column ?
-            table_options.flush_block_policy_factory->NewFlushBlockPolicy(
-                table_options, *data_block) :
-            nullptr),
+        flush_block_policy(
+            main_column
+                ? table_options.flush_block_policy_factory->NewFlushBlockPolicy(
+                      table_options, *data_block)
+                : nullptr),
         column_family_id(_column_family_id),
         column_family_name(_column_family_name),
         env_options(_env_options) {

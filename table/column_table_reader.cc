@@ -471,8 +471,9 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
 
   InternalIterator* iter;
   if (s.ok() && block.value != nullptr) {
-    iter = block.value->NewIterator(&rep->internal_comparator, input_iter,
-                                    !rep->main_column);
+    iter = block.value->NewIterator(
+        &rep->internal_comparator, input_iter,
+        rep->main_column ? Block::kTypeBlock : Block::kTypeColumn);
     if (block.cache_handle != nullptr) {
       iter->RegisterCleanup(&ReleaseCachedEntry, block_cache,
                             block.cache_handle);
