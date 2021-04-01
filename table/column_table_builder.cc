@@ -16,152 +16,28 @@
 
 #include "db/dbformat.h"
 #include "db/filename.h"
-
-#include "vidardb/cache.h"
-#include "vidardb/comparator.h"
-#include "vidardb/env.h"
-#include "vidardb/flush_block_policy.h"
-#include "vidardb/table.h"
-#include "vidardb/splitter.h"
-
 #include "table/block.h"
-#include "table/column_table_reader.h"
-#include "table/min_max_block_builder.h"
 #include "table/column_block_builder.h"
 #include "table/column_table_factory.h"
+#include "table/column_table_reader.h"
 #include "table/format.h"
+#include "table/index_builder.h"
 #include "table/meta_blocks.h"
+#include "table/min_max_block_builder.h"
 #include "table/table_builder.h"
-
-#include "util/string_util.h"
 #include "util/coding.h"
 #include "util/compression.h"
 #include "util/crc32c.h"
 #include "util/stop_watch.h"
 #include "util/string_util.h"
+#include "vidardb/cache.h"
+#include "vidardb/comparator.h"
+#include "vidardb/env.h"
+#include "vidardb/flush_block_policy.h"
+#include "vidardb/splitter.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
-
-// The interface for building index.
-// Instruction for adding a new concrete IndexBuilder:
-//  1. Create a subclass instantiated from IndexBuilder.
-//  2. Add a new entry associated with that subclass in TableOptions::IndexType.
-//  3. Add a create function for the new subclass in CreateIndexBuilder.
-// Note: we can devise more advanced design to simplify the process for adding
-// new subclass, which will, on the other hand, increase the code complexity and
-// catch unwanted attention from readers. Given that we won't add/change
-// indexes frequently, it makes sense to just embrace a more straightforward
-// design that just works.
-class IndexBuilder {
- public:
-  // Index builder will construct a set of blocks which contain:
-  //  1. One primary index block.
-  struct IndexBlocks {
-    Slice index_block_contents;
-  };
-  explicit IndexBuilder(const Comparator* comparator)
-      : comparator_(comparator) {}
-
-  virtual ~IndexBuilder() {}
-
-  // Add a new index entry to index block.
-  // To allow further optimization, we provide `last_key_in_current_block` and
-  // `first_key_in_next_block`, based on which the specific implementation can
-  // determine the best index key to be used for the index block.
-  // @last_key_in_current_block: this parameter maybe overridden with the value
-  //                             "substitute key".
-  // @first_key_in_next_block: it will be nullptr if the entry being added is
-  //                           the last one in the table
-  //
-  // REQUIRES: Finish() has not yet been called.
-  virtual void AddIndexEntry(std::string* last_key_in_current_block,
-                             const Slice* first_key_in_next_block,
-                             const BlockHandle& block_handle) = 0;
-
-  // This method will be called whenever a key is added. The subclasses may
-  // override OnKeyAdded() if they need to collect additional information.
-  virtual void OnKeyAdded(const Slice& key) {}
-
-  // Inform the index builder that all entries has been written. Block builder
-  // may therefore perform any operation required for block finalization.
-  //
-  // REQUIRES: Finish() has not yet been called.
-  virtual Status Finish(IndexBlocks* index_blocks) = 0;
-
-  // Get the estimated size for index block.
-  virtual size_t EstimatedSize() const = 0;
-
- protected:
-  const Comparator* comparator_;
-};
-
-// This index builder builds space-efficient index block.
-//
-// Optimizations:
-//  1. Made block's `block_restart_interval` to be 1, which will avoid linear
-//     search when doing index lookup (can be disabled by setting
-//     index_block_restart_interval).
-//  2. Shorten the key length for index block. Other than honestly using the
-//     last key in the data block as the index key, we instead find a shortest
-//     substitute key that serves the same function.
-class ShortenedIndexBuilder : public IndexBuilder {
- public:
-  explicit ShortenedIndexBuilder(const Comparator* comparator,
-                                 int index_block_restart_interval,
-                                 bool main_column)
-      : IndexBuilder(comparator), main_column_(main_column) {
-    index_block_builder_.reset(
-        main_column_ ? new BlockBuilder(index_block_restart_interval)
-                     : new MinMaxBlockBuilder(index_block_restart_interval));
-  }
-
-  virtual void AddIndexEntry(std::string* last_key_in_current_block,
-                             const Slice* first_key_in_next_block,
-                             const BlockHandle& block_handle) override {
-    if (first_key_in_next_block != nullptr) {
-      comparator_->FindShortestSeparator(last_key_in_current_block,
-                                         *first_key_in_next_block);
-    } else {
-      comparator_->FindShortSuccessor(last_key_in_current_block);
-    }
-
-    std::string handle_encoding;
-    block_handle.EncodeTo(&handle_encoding);
-
-    if (main_column_) {
-      index_block_builder_->Add(*last_key_in_current_block, handle_encoding);
-    } else {
-      auto builder =
-          dynamic_cast<MinMaxBlockBuilder*>(index_block_builder_.get());
-      builder->Add(*last_key_in_current_block, handle_encoding,
-                   min_block_value_, max_block_value_);
-      min_block_value_.clear();
-      max_block_value_.clear();
-    }
-  }
-
-  virtual void OnKeyAdded(const Slice& value) override {
-    if (!main_column_) {
-      min_block_value_.clear();
-      max_block_value_.clear();
-    }
-  }
-
-  virtual Status Finish(IndexBlocks* index_blocks) override {
-    index_blocks->index_block_contents = index_block_builder_->Finish();
-    return Status::OK();
-  }
-
-  virtual size_t EstimatedSize() const override {
-    return index_block_builder_->CurrentSizeEstimate();
-  }
-
- private:
-  std::unique_ptr<BlockBuilder> index_block_builder_;
-  bool main_column_;             // regular block or min max block ?
-  std::string min_block_value_;  // only used in min max block
-  std::string max_block_value_;  // only used in min max block
-};
 
 // Without anonymous namespace here, we fail the warning -Wmissing-prototypes
 namespace {
@@ -170,8 +46,12 @@ namespace {
 IndexBuilder* CreateIndexBuilder(const Comparator* comparator,
                                  int index_block_restart_interval,
                                  bool main_column) {
-  return new ShortenedIndexBuilder(comparator, index_block_restart_interval,
-                                   main_column);
+  if (main_column) {
+    return new ShortenedIndexBuilder(comparator, index_block_restart_interval);
+  } else {
+    return new MinMaxShortenedIndexBuilder(comparator,
+                                           index_block_restart_interval);
+  }
 }
 
 bool GoodCompressionRatio(size_t compressed_size, size_t raw_size) {
