@@ -165,7 +165,7 @@ class BinarySearchIndexReader : public IndexReader {
   static Status Create(RandomAccessFileReader* file,
                        const BlockHandle& index_handle, Env* env,
                        const Comparator* comparator, IndexReader** index_reader,
-                       Statistics* statistics) {
+                       Statistics* statistics, bool main_column) {
     std::unique_ptr<Block> index_block;
     auto s = ReadBlockFromFile(file, ReadOptions(), index_handle, &index_block,
                                env, true /* decompress */,
@@ -174,14 +174,16 @@ class BinarySearchIndexReader : public IndexReader {
 
     if (s.ok()) {
       *index_reader = new BinarySearchIndexReader(
-          comparator, std::move(index_block), statistics);
+          comparator, std::move(index_block), statistics, main_column);
     }
 
     return s;
   }
 
   virtual InternalIterator* NewIterator(BlockIter* iter = nullptr) override {
-    return index_block_->NewIterator(comparator_, iter);
+    return index_block_->NewIterator(
+        comparator_, iter,
+        main_column_ ? Block::kTypeBlock : Block::kTypeMinMax);
   }
 
   virtual size_t size() const override { return index_block_->size(); }
@@ -197,11 +199,15 @@ class BinarySearchIndexReader : public IndexReader {
  private:
   BinarySearchIndexReader(const Comparator* comparator,
                           std::unique_ptr<Block>&& index_block,
-                          Statistics* stats)
-      : IndexReader(comparator, stats), index_block_(std::move(index_block)) {
+                          Statistics* stats, bool main_column)
+      : IndexReader(comparator, stats),
+        index_block_(std::move(index_block)),
+        main_column_(main_column) {
     assert(index_block_ != nullptr);
   }
+
   std::unique_ptr<Block> index_block_;
+  bool main_column_;  // regular block or min max block ?
 };
 
 namespace {
@@ -497,9 +503,11 @@ Status ColumnTable::CreateIndexReader(IndexReader** index_reader) {
   auto comparator = &rep_->internal_comparator;
   const Footer& footer = rep_->footer;
   Statistics* stats = rep_->ioptions.statistics;
+  bool main_column = rep_->main_column;
 
   return BinarySearchIndexReader::Create(file, footer.index_handle(), env,
-                                         comparator, index_reader, stats);
+                                         comparator, index_reader, stats,
+                                         main_column);
 }
 
 InternalIterator* ColumnTable::NewIndexIterator(
