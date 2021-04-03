@@ -129,7 +129,8 @@ class MinMaxBinarySearchIndexReader : public IndexReader {
   static Status Create(RandomAccessFileReader* file,
                        const BlockHandle& index_handle, Env* env,
                        const Comparator* comparator, IndexReader** index_reader,
-                       Statistics* statistics) {
+                       Statistics* statistics,
+                       const Comparator* value_comparator) {
     std::unique_ptr<Block> index_block;
     auto s = ReadBlockFromFile(file, ReadOptions(), index_handle, &index_block,
                                env, true /* decompress */,
@@ -138,7 +139,7 @@ class MinMaxBinarySearchIndexReader : public IndexReader {
 
     if (s.ok()) {
       *index_reader = new MinMaxBinarySearchIndexReader(
-          comparator, std::move(index_block), statistics);
+          comparator, std::move(index_block), statistics, value_comparator);
     }
 
     return s;
@@ -161,11 +162,15 @@ class MinMaxBinarySearchIndexReader : public IndexReader {
  private:
   MinMaxBinarySearchIndexReader(const Comparator* comparator,
                                 std::unique_ptr<Block>&& index_block,
-                                Statistics* stats)
-      : IndexReader(comparator, stats), index_block_(std::move(index_block)) {
+                                Statistics* stats,
+                                const Comparator* value_comparator)
+      : IndexReader(comparator, stats),
+        index_block_(std::move(index_block)),
+        value_comparator_(value_comparator) {
     assert(index_block_ != nullptr);
   }
 
   std::unique_ptr<Block> index_block_;
+  const Comparator* value_comparator_;
 };
 }  // namespace vidardb

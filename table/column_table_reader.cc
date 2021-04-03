@@ -165,7 +165,7 @@ struct ColumnTable::Rep {
   // another member ("allocation").
   std::unique_ptr<const BlockContents> compression_dict_block;
 
-  bool main_column;
+  uint32_t column_num;
   std::vector<unique_ptr<ColumnTable>> tables;  // sub colum tables
 };
 
@@ -365,7 +365,7 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
   if (s.ok() && block.value != nullptr) {
     iter = block.value->NewIterator(
         &rep->internal_comparator, input_iter,
-        rep->main_column ? Block::kTypeBlock : Block::kTypeColumn);
+        (rep->column_num == 0) ? Block::kTypeBlock : Block::kTypeColumn);
     if (block.cache_handle != nullptr) {
       iter->RegisterCleanup(&ReleaseCachedEntry, block_cache,
                             block.cache_handle);
@@ -390,12 +390,16 @@ Status ColumnTable::CreateIndexReader(IndexReader** index_reader) {
   const Footer& footer = rep_->footer;
   Statistics* stats = rep_->ioptions.statistics;
 
-  if (rep_->main_column) {
+  if (rep_->column_num == 0) {
     return BinarySearchIndexReader::Create(file, footer.index_handle(), env,
                                            comparator, index_reader, stats);
   } else {
-    return MinMaxBinarySearchIndexReader::Create(
-        file, footer.index_handle(), env, comparator, index_reader, stats);
+    const ColumnTableOptions& table_options = rep_->table_options;
+    const Comparator* value_comparator =
+        table_options.value_comparators[rep_->column_num - 1];
+    return MinMaxBinarySearchIndexReader::Create(file, footer.index_handle(),
+                                                 env, comparator, index_reader,
+                                                 stats, value_comparator);
   }
 }
 
@@ -644,17 +648,18 @@ Status ColumnTable::Open(const ImmutableCFOptions& ioptions,
     uint32_t column_count;
     std::vector<uint64_t> file_sizes;
     s = ReadMetaColumnBlock(meta_iter->value(), rep->file.get(), ioptions.env,
-                            ioptions.info_log, &column_count, file_sizes);
+                            ioptions.info_log, &rep->column_num, &column_count,
+                            file_sizes);
     if (!s.ok()) {
       return s;
     }
 
     rep->tables.resize(column_count);
-    rep->main_column = rep->tables.empty()? false: true;
-    if (rep->main_column && column_count != rep->table_options.column_count) {
+    if (rep->column_num == 0 &&
+        column_count != rep->table_options.column_count) {
       return Status::InvalidArgument("table_options.column_count");
     }
-    if (rep->main_column) {
+    if (rep->column_num == 0) {
       rep->column_comparator.reset(new ColumnKeyComparator());
     }
 
@@ -1348,7 +1353,7 @@ uint64_t ColumnTable::ApproximateOffsetOf(const Slice& key) {
     }
   }
 
-  if (!rep_->main_column) {
+  if (rep_->column_num > 0) {
     return result;
   }
 
@@ -1498,7 +1503,7 @@ void ColumnTable::Close() {
 }
 
 ColumnTable::~ColumnTable() {
-  if (rep_->main_column) {
+  if (rep_->column_num == 0) {
     Close();
   }
   delete rep_;

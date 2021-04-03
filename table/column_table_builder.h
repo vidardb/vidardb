@@ -41,9 +41,8 @@ class ColumnTableBuilder : public TableBuilder {
       const CompressionType compression_type,
       const CompressionOptions& compression_opts,
       const std::string* compression_dict,
-      const std::string& column_family_name,
-      const EnvOptions& env_options,
-      bool main_column = true);
+      const std::string& column_family_name, const EnvOptions& env_options,
+      uint32_t column_num);
 
   // REQUIRES: Either Finish() or Abandon() has been called.
   ~ColumnTableBuilder();

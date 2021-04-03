@@ -120,9 +120,11 @@ class ShortenedIndexBuilder : public IndexBuilder {
 class MinMaxShortenedIndexBuilder : public IndexBuilder {
  public:
   explicit MinMaxShortenedIndexBuilder(const Comparator* comparator,
-                                       int index_block_restart_interval)
+                                       int index_block_restart_interval,
+                                       const Comparator* value_comparator)
       : IndexBuilder(comparator),
-        index_block_builder_(index_block_restart_interval) {}
+        index_block_builder_(index_block_restart_interval),
+        value_comparator_(value_comparator) {}
 
   virtual void AddIndexEntry(std::string* last_key_in_current_block,
                              const Slice* first_key_in_next_block,
@@ -144,8 +146,14 @@ class MinMaxShortenedIndexBuilder : public IndexBuilder {
   }
 
   virtual void OnKeyAdded(const Slice& value) override {
-    min_block_value_.clear();
-    max_block_value_.clear();
+    if (min_block_value_.empty() ||
+        value_comparator_->Compare(value, min_block_value_) < 0) {
+      min_block_value_.assign(value.data(), value.size());
+    }
+    if (max_block_value_.empty() ||
+        value_comparator_->Compare(value, max_block_value_) > 0) {
+      max_block_value_.assign(value.data(), value.size());
+    }
   }
 
   virtual Status Finish(IndexBlocks* index_blocks) override {
@@ -161,6 +169,7 @@ class MinMaxShortenedIndexBuilder : public IndexBuilder {
   MinMaxBlockBuilder index_block_builder_;
   std::string min_block_value_;
   std::string max_block_value_;
+  const Comparator* value_comparator_;
 };
 
 }  // namespace vidardb

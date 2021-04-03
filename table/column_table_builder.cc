@@ -45,12 +45,12 @@ namespace {
 // Create a index builder based on its type.
 IndexBuilder* CreateIndexBuilder(const Comparator* comparator,
                                  int index_block_restart_interval,
-                                 bool main_column) {
-  if (main_column) {
+                                 const Comparator* value_comparator) {
+  if (value_comparator == nullptr) {
     return new ShortenedIndexBuilder(comparator, index_block_restart_interval);
   } else {
-    return new MinMaxShortenedIndexBuilder(comparator,
-                                           index_block_restart_interval);
+    return new MinMaxShortenedIndexBuilder(
+        comparator, index_block_restart_interval, value_comparator);
   }
 }
 
@@ -115,7 +115,7 @@ Slice CompressBlock(const Slice& raw,
 const uint64_t kColumnTableMagicNumber = 0x88e241b785f4cfffull;
 
 struct ColumnTableBuilder::Rep {
-  bool main_column;
+  uint32_t column_num;
   const ImmutableCFOptions ioptions;
   const ColumnTableOptions table_options;
   const InternalKeyComparator& internal_comparator;
@@ -148,7 +148,7 @@ struct ColumnTableBuilder::Rep {
   const EnvOptions& env_options;
   std::vector<std::unique_ptr<ColumnTableBuilder>> builders;
 
-  Rep(bool _main_column, const ImmutableCFOptions& _ioptions,
+  Rep(uint32_t _column_num, const ImmutableCFOptions& _ioptions,
       const ColumnTableOptions& table_opt,
       const InternalKeyComparator& icomparator,
       const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
@@ -158,31 +158,34 @@ struct ColumnTableBuilder::Rep {
       const CompressionOptions& _compression_opts,
       const std::string* _compression_dict,
       const std::string& _column_family_name, const EnvOptions& _env_options)
-      : main_column(_main_column),
+      : column_num(_column_num),
         ioptions(_ioptions),
         table_options(table_opt),
         internal_comparator(icomparator),
-        column_comparator(main_column ? new ColumnKeyComparator() : nullptr),
+        column_comparator(column_num == 0 ? new ColumnKeyComparator()
+                                          : nullptr),
         file(f),
         data_block(
-            main_column
+            column_num == 0
                 ? new BlockBuilder(table_options.block_restart_interval)
                 : new ColumnBlockBuilder(table_options.block_restart_interval)),
         index_builder(CreateIndexBuilder(
             &internal_comparator, table_options.index_block_restart_interval,
-            main_column)),
+            (column_num == 0)
+                ? nullptr
+                : table_options.value_comparators[column_num - 1])),
         compression_type(_compression_type),
         compression_opts(_compression_opts),
         compression_dict(_compression_dict),
         flush_block_policy(
-            main_column
+            column_num == 0
                 ? table_options.flush_block_policy_factory->NewFlushBlockPolicy(
                       table_options, *data_block)
                 : nullptr),
         column_family_id(_column_family_id),
         column_family_name(_column_family_name),
         env_options(_env_options) {
-    if (main_column && int_tbl_prop_collector_factories) {
+    if (column_num == 0 && int_tbl_prop_collector_factories) {
       for (auto& collector_factories : *int_tbl_prop_collector_factories) {
         table_properties_collectors.emplace_back(
             collector_factories->CreateIntTblPropCollector(column_family_id));
@@ -192,19 +195,16 @@ struct ColumnTableBuilder::Rep {
 };
 
 ColumnTableBuilder::ColumnTableBuilder(
-    const ImmutableCFOptions& ioptions,
-    const ColumnTableOptions& table_options,
+    const ImmutableCFOptions& ioptions, const ColumnTableOptions& table_options,
     const InternalKeyComparator& internal_comparator,
     const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
         int_tbl_prop_collector_factories,
     uint32_t column_family_id, WritableFileWriter* file,
     const CompressionType compression_type,
     const CompressionOptions& compression_opts,
-    const std::string* compression_dict,
-    const std::string& column_family_name,
-    const EnvOptions& env_options,
-    bool main_column) {
-  rep_ = new Rep(main_column, ioptions, table_options, internal_comparator,
+    const std::string* compression_dict, const std::string& column_family_name,
+    const EnvOptions& env_options, uint32_t column_num) {
+  rep_ = new Rep(column_num, ioptions, table_options, internal_comparator,
                  int_tbl_prop_collector_factories, column_family_id, file,
                  compression_type, compression_opts, compression_dict,
                  column_family_name, env_options);
@@ -226,11 +226,12 @@ void ColumnTableBuilder::CreateSubcolumnBuilders(Rep* r) {
                                 r->env_options);
     assert(r->status.ok());
     file->SetIOPriority(pri);
-    r->builders[i].reset(new ColumnTableBuilder(r->ioptions, r->table_options,
-        *(r->column_comparator), nullptr, r->column_family_id,
+    r->builders[i].reset(new ColumnTableBuilder(
+        r->ioptions, r->table_options, *(r->column_comparator), nullptr,
+        r->column_family_id,
         new WritableFileWriter(std::move(file), r->env_options),
         r->compression_type, r->compression_opts, r->compression_dict,
-        r->column_family_name, r->env_options, false));
+        r->column_family_name, r->env_options, i + 1));
   }
 }
 
@@ -404,7 +405,7 @@ Status ColumnTableBuilder::status() const {
 
 Status ColumnTableBuilder::Finish() {
   Rep* r = rep_;
-  if (r->main_column) {
+  if (r->column_num == 0) {
     for (const auto& it : r->builders) {
       if (it) {
         it->rep_->status = it->Finish();
@@ -450,9 +451,9 @@ Status ColumnTableBuilder::Finish() {
     {
       MetaColumnBlockBuilder meta_column_block_builder;
       uint32_t column_count = (uint32_t)r->builders.size();
-      meta_column_block_builder.Add(r->main_column, column_count);
+      meta_column_block_builder.Add(r->column_num, column_count);
       for (auto i = 0u; i < column_count; i++) {
-          meta_column_block_builder.Add(i+1, r->builders[i]->rep_->offset);
+        meta_column_block_builder.Add(i + 1, r->builders[i]->rep_->offset);
       }
 
       BlockHandle column_block_handle;
@@ -473,7 +474,7 @@ Status ColumnTableBuilder::Finish() {
                                      : "nullptr";
       r->props.compression_name = CompressionTypeToString(r->compression_type);
 
-      if (r->main_column) {
+      if (r->column_num == 0) {
         std::string property_collectors_names = "[";
         for (size_t i = 0;
              i < r->ioptions.table_properties_collector_factories.size(); ++i) {
@@ -491,7 +492,7 @@ Status ColumnTableBuilder::Finish() {
       property_block_builder.AddTableProperty(r->props);
 
       // Add user collected properties
-      if (r->main_column) {
+      if (r->column_num == 0) {
         NotifyCollectTableCollectorsOnFinish(r->table_properties_collectors,
                                              r->ioptions.info_log,
                                              &property_block_builder);
@@ -536,7 +537,7 @@ Status ColumnTableBuilder::Finish() {
 
   // Different from blockbasedtable, we take care of subcolumn file sync and
   // close inside the builder
-  if (r->main_column) {
+  if (r->column_num == 0) {
     for (const auto& it : r->builders) {
       if (it && it->rep_->status.ok()) {
         it->rep_->file->Sync(r->ioptions.use_fsync);

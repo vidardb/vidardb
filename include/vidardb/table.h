@@ -131,7 +131,7 @@ struct ColumnTableOptions {
 
   // Comparators for each column attribute (excluding key) and the order
   // must be same as the column attribute
-  std::vector<const Comparator*> column_comparators;
+  std::vector<const Comparator*> value_comparators;
 };
 
 // Create default column table factory.

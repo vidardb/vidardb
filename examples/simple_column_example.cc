@@ -28,7 +28,7 @@ int main() {
       static_cast<ColumnTableOptions*>(table_factory->GetOptions());
   opts->column_count = M;
   for (auto i = 0u; i < opts->column_count; i++) {
-    opts->column_comparators.push_back(BytewiseComparator());
+    opts->value_comparators.push_back(BytewiseComparator());
   }
   options.table_factory.reset(table_factory);
 
