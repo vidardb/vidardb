@@ -232,6 +232,16 @@ class MinMaxBlockIter : public BlockIter {
     Initialize(comparator, data, restarts, num_restarts);
   }
 
+  virtual Slice min() const {
+    assert(Valid());
+    return min_;
+  }
+
+  virtual Slice max() const {
+    assert(Valid());
+    return max_;
+  }
+
  private:
   // Return the offset in data_ just past the end of the current entry.
   virtual inline uint32_t NextEntryOffset() const override {

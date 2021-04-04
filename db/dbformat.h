@@ -322,12 +322,14 @@ inline LookupKey::~LookupKey() {
 struct LookupRange {
   LookupKey* start_;          // Included in the range
   LookupKey* limit_;          // Included in the range
+  const std::vector<MinMaxValue>& min_max_values_;
 
-  LookupRange(): start_(NULL), limit_(NULL) { }
-  LookupRange(LookupKey* start, LookupKey* limit) :
-              start_(start), limit_(limit) { }
+  LookupRange(LookupKey* start = nullptr, LookupKey* limit = nullptr,
+              const std::vector<MinMaxValue>& min_max_values = {})
+      : start_(start), limit_(limit), min_max_values_(min_max_values) {}
+
   SequenceNumber SequenceNum() const {
-    assert(start_ != NULL);
+    assert(start_ != nullptr);
     const Slice& ikey = start_->internal_key();
     uint64_t num = DecodeFixed64(ikey.data() + ikey.size() - 8);
     return num >> 8;
