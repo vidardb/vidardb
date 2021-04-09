@@ -322,11 +322,9 @@ inline LookupKey::~LookupKey() {
 struct LookupRange {
   LookupKey* start_;          // Included in the range
   LookupKey* limit_;          // Included in the range
-  const std::vector<MinMaxValue>& min_max_values_;
 
-  LookupRange(LookupKey* start = nullptr, LookupKey* limit = nullptr,
-              const std::vector<MinMaxValue>& min_max_values = {})
-      : start_(start), limit_(limit), min_max_values_(min_max_values) {}
+  LookupRange(LookupKey* start = nullptr, LookupKey* limit = nullptr)
+      : start_(start), limit_(limit) {}
 
   SequenceNumber SequenceNum() const {
     assert(start_ != nullptr);

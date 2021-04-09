@@ -1,3 +1,8 @@
+//  Copyright (c) 2021-present, VidarDB, Inc.  All rights reserved.
+//  This source code is licensed under the BSD-style license found in the
+//  LICENSE file in the root directory of this source tree. An additional grant
+//  of patent rights can be found in the PATENTS file in the same directory.
+//
 //  Copyright (c) 2011-present, Facebook, Inc.  All rights reserved.
 //  This source code is licensed under the BSD-style license found in the
 //  LICENSE file in the root directory of this source tree. An additional grant
@@ -25,6 +30,59 @@ struct TwoLevelIteratorState {
   virtual InternalIterator* NewSecondaryIterator(const Slice& handle) = 0;
 };
 
+class TwoLevelIterator : public InternalIterator {
+ public:
+  explicit TwoLevelIterator(TwoLevelIteratorState* state,
+                            InternalIterator* first_level_iter,
+                            bool need_free_iter_and_state);
+
+  virtual ~TwoLevelIterator();
+
+  virtual void Seek(const Slice& target) override;
+  virtual void SeekToFirst() override;
+  virtual void SeekToLast() override;
+  virtual void Next() override;
+  virtual void Prev() override;
+
+  /******************** Shichao ******************/
+  virtual void NextBlock();
+  virtual void NextInBlock();
+  /******************** Shichao ******************/
+
+  virtual bool Valid() const override { return second_level_iter_.Valid(); }
+  virtual Slice key() const override {
+    assert(Valid());
+    return second_level_iter_.key();
+  }
+  virtual Slice value() override {
+    assert(Valid());
+    return second_level_iter_.value();
+  }
+  virtual Status status() const override;
+
+  virtual void SetPinnedItersMgr(
+      PinnedIteratorsManager* pinned_iters_mgr) override;
+  virtual bool IsKeyPinned() const override;
+
+ private:
+  void SaveError(const Status& s) {
+    if (status_.ok() && !s.ok()) status_ = s;
+  }
+  void SkipEmptyDataBlocksForward();
+  void SkipEmptyDataBlocksBackward();
+  void SetSecondLevelIterator(InternalIterator* iter);
+  void InitDataBlock();
+
+  TwoLevelIteratorState* state_;
+  IteratorWrapper first_level_iter_;
+  IteratorWrapper second_level_iter_;  // May be nullptr
+  bool need_free_iter_and_state_;
+  PinnedIteratorsManager* pinned_iters_mgr_;
+  Status status_;
+  // If second_level_iter is non-nullptr, then "data_block_handle_" holds the
+  // "index_value" passed to block_function_ to create the second_level_iter.
+  std::string data_block_handle_;
+};
 
 // Return a new two level iterator.  A two-level iterator contains an
 // index iterator whose values point to a sequence of blocks where
