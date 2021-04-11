@@ -559,7 +559,7 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
                          const EnvOptions& env_options,
                          const InternalKeyComparator& icomparator,
                          HistogramImpl* file_read_hist, bool for_compaction,
-                         int level)
+                         int level, bool os_cache = true)  // Shichao
       : TwoLevelIteratorState(),
         table_cache_(table_cache),
         read_options_(read_options),
@@ -567,7 +567,8 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
         icomparator_(icomparator),
         file_read_hist_(file_read_hist),
         for_compaction_(for_compaction),
-        level_(level) {}
+        level_(level),
+        os_cache_(os_cache) {}  // Shichao
 
   InternalIterator* NewSecondaryIterator(const Slice& meta_handle) override {
     if (meta_handle.size() != sizeof(FileDescriptor)) {
@@ -579,7 +580,7 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
       return table_cache_->NewIterator(
           read_options_, env_options_, icomparator_, *fd,
           nullptr /* don't need reference to table*/, file_read_hist_,
-          for_compaction_, nullptr /* arena */, level_);
+          for_compaction_, nullptr /* arena */, level_, os_cache_);  // Shichao
     }
   }
 
@@ -591,6 +592,7 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
   HistogramImpl* file_read_hist_;
   bool for_compaction_;
   int level_;
+  bool os_cache_;  // Shichao
 };
 
 // A wrapper of version builder which references the current version in
@@ -873,7 +875,7 @@ void Version::AddIterators(const ReadOptions& read_options,
     merge_iter_builder->AddIterator(cfd_->table_cache()->NewIterator(
         read_options, soptions, cfd_->internal_comparator(), file.fd, nullptr,
         cfd_->internal_stats()->GetFileReadHist(0), false, arena,
-        false /* skip_filters */, 0 /* level */));
+        0 /* level */));
   }
 
   // For levels > 0, we can use a concatenating iterator that sequentially
@@ -892,6 +894,43 @@ void Version::AddIterators(const ReadOptions& read_options,
           cfd_->internal_comparator(), &storage_info_.LevelFilesBrief(level));
       merge_iter_builder->AddIterator(
           NewTwoLevelIterator(state, first_level_iter, arena, false));
+    }
+  }
+}
+
+void Version::AddIterators(const ReadOptions& read_options,
+                           const EnvOptions& soptions,
+                           std::vector<InternalIterator*>* iterator_list) {
+  assert(storage_info_.finalized_);
+
+  if (storage_info_.num_non_empty_levels() == 0) {
+    // No file in the Version.
+    return;
+  }
+
+  // Merge all level zero files together since they may overlap
+  for (size_t i = 0; i < storage_info_.LevelFilesBrief(0).num_files; i++) {
+    const auto& file = storage_info_.LevelFilesBrief(0).files[i];
+    iterator_list->push_back(cfd_->table_cache()->NewIterator(
+        read_options, soptions, cfd_->internal_comparator(), file.fd, nullptr,
+        cfd_->internal_stats()->GetFileReadHist(0), true, /* for compactions */
+        nullptr, 0, /* level */ false /* don't use os cache */));
+  }
+
+  // For levels > 0, we can use a concatenating iterator that sequentially
+  // walks through the non-overlapping files in the level, opening them
+  // lazily.
+  for (int level = 1; level < storage_info_.num_non_empty_levels(); level++) {
+    if (storage_info_.LevelFilesBrief(level).num_files != 0) {
+      auto* state = new LevelFileIteratorState(
+          cfd_->table_cache(), read_options, soptions,
+          cfd_->internal_comparator(),
+          cfd_->internal_stats()->GetFileReadHist(level),
+          true /* for_compaction */, level, false /* don't use os cache */);
+      auto* first_level_iter = new LevelFileNumIterator(
+          cfd_->internal_comparator(), &storage_info_.LevelFilesBrief(level));
+      iterator_list->push_back(
+          NewTwoLevelIterator(state, first_level_iter, nullptr, false));
     }
   }
 }

@@ -422,6 +422,12 @@ class Version {
   void AddIterators(const ReadOptions&, const EnvOptions& soptions,
                     MergeIteratorBuilder* merger_iter_builder);
 
+  /**************************** Shichao *****************************/
+  // Another version but for file iterators
+  void AddIterators(const ReadOptions&, const EnvOptions& soptions,
+                    std::vector<InternalIterator*>* iterator_list);
+  /**************************** Shichao *****************************/
+
   // Lookup the value for key.  If found, store it in *val and
   // return OK.  Else return a non-OK status.
   // Uses *operands to store merge_operator operations to apply later.

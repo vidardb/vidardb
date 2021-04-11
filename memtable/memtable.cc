@@ -292,9 +292,12 @@ class MemTableIterator : public InternalIterator {
 
 InternalIterator* MemTable::NewIterator(const ReadOptions& read_options,
                                         Arena* arena) {
-  assert(arena != nullptr);
-  auto mem = arena->AllocateAligned(sizeof(MemTableIterator));
-  return new (mem) MemTableIterator(*this, read_options.columns, arena);
+  if (arena) {
+    auto mem = arena->AllocateAligned(sizeof(MemTableIterator));
+    return new (mem) MemTableIterator(*this, read_options.columns, arena);
+  } else {
+    return new MemTableIterator(*this, read_options.columns, nullptr);
+  }
 }
 
 uint64_t MemTable::ApproximateSize(const Slice& start_ikey,

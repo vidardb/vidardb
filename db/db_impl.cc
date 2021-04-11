@@ -26,9 +26,12 @@
 #include "jemalloc/jemalloc.h"
 #endif
 
+#include <sys/stat.h>  // Shichao
+
 #include <algorithm>
 #include <climits>
 #include <cstdio>
+#include <fstream>  // Shichao
 #include <map>
 #include <set>
 #include <stdexcept>
@@ -37,8 +40,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <fstream>  // Shichao
-#include <sys/stat.h>  // Shichao
 
 #include "db/auto_roll_logger.h"
 #include "db/builder.h"
@@ -53,24 +54,16 @@
 #include "db/job_context.h"
 #include "db/log_reader.h"
 #include "db/log_writer.h"
-#include "memtable/memtable.h"
-#include "memtable/memtable_list.h"
 #include "db/table_cache.h"
 #include "db/table_properties_collector.h"
 #include "db/transaction_log_impl.h"
 #include "db/version_set.h"
 #include "db/write_batch_internal.h"
 #include "db/writebuffer.h"
+#include "memtable/memtable.h"
+#include "memtable/memtable_list.h"
 #include "port/likely.h"
 #include "port/port.h"
-#include "vidardb/cache.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
-#include "vidardb/sst_file_writer.h"
-#include "vidardb/statistics.h"
-#include "vidardb/status.h"
-#include "vidardb/table.h"
-#include "vidardb/version.h"
 #include "table/block.h"
 #include "table/block_based_table_factory.h"
 #include "table/merger.h"
@@ -95,7 +88,16 @@
 #include "util/sync_point.h"
 #include "util/thread_status_updater.h"
 #include "util/thread_status_util.h"
+#include "vidardb/cache.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/file_iter.h"  // Shichao
+#include "vidardb/sst_file_writer.h"
+#include "vidardb/statistics.h"
+#include "vidardb/status.h"
+#include "vidardb/table.h"
 #include "vidardb/utilities/json.hpp"  // Shichao
+#include "vidardb/version.h"
 
 namespace vidardb {
 
@@ -3638,7 +3640,31 @@ Iterator* DBImpl::NewFileIterator(const ReadOptions& read_options) {
         "ReadOptions::tailing is not yet supported in file iterators."));
   }
 
-  return nullptr;
+  auto cfh = dynamic_cast<ColumnFamilyHandleImpl*>(default_cf_handle_);
+  auto cfd = cfh->cfd();
+
+  SequenceNumber latest_snapshot = versions_->LastSequence();
+  SuperVersion* sv = cfd->GetReferencedSuperVersion(&mutex_);
+
+  auto snapshot =
+      read_options.snapshot != nullptr
+          ? dynamic_cast<const SnapshotImpl*>(read_options.snapshot)->number_
+          : latest_snapshot;
+
+  FileIter* file_iter = new FileIter(snapshot);
+  auto iters = file_iter->GetInternalIterators();
+
+  // Collect iterator for mutable mem
+  iters->push_back(sv->mem->NewIterator(read_options, nullptr));
+  // Collect all needed child iterators for immutable memtables
+  sv->imm->AddIterators(read_options, iters, nullptr);
+  // Collect iterators for files in L0 - Ln
+  sv->current->AddIterators(read_options, env_options_, iters);
+
+  IterState* cleanup = new IterState(this, &mutex_, sv);
+  file_iter->RegisterCleanup(CleanupIteratorState, cleanup, nullptr);
+
+  return file_iter;
 }
 /***************************** Shichao ******************************/
 
