@@ -274,6 +274,14 @@ class DB {
                           Status* s = nullptr) {
     return RangeQuery(options, DefaultColumnFamily(), range, res, s);
   }
+
+  // Used in range query for default column familty, it assumes the upper
+  // level has turned update operation into delete and add, so that it is
+  // reasonable to check the version of a key via the delete set.
+  // TODO: allocate space in specific arena to eliminate copy overhead
+  virtual Iterator* NewFileIterator(const ReadOptions& options) {
+    return nullptr;
+  }
   /***************** Shichao **********************/
 
   // Return a heap-allocated iterator over the contents of the database.

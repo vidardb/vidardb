@@ -3628,6 +3628,18 @@ bool DBImpl::RangeQuery(ReadOptions& read_options,
 
   return next_query;
 }
+
+Iterator* DBImpl::NewFileIterator(const ReadOptions& read_options) {
+  if (read_options.read_tier == kPersistedTier) {
+    return NewErrorIterator(Status::NotSupported(
+        "ReadTier::kPersistedData is not yet supported in iterators."));
+  } else if (read_options.tailing) {
+    return NewErrorIterator(Status::NotSupported(
+        "ReadOptions::tailing is not yet supported in file iterators."));
+  }
+
+  return nullptr;
+}
 /***************************** Shichao ******************************/
 
 #ifndef VIDARDB_LITE
@@ -4029,7 +4041,7 @@ Iterator* DBImpl::NewIterator(const ReadOptions& read_options,
     return NewErrorIterator(Status::NotSupported(
         "ReadTier::kPersistedData is not yet supported in iterators."));
   }
-  auto cfh = reinterpret_cast<ColumnFamilyHandleImpl*>(column_family);
+  auto cfh = dynamic_cast<ColumnFamilyHandleImpl*>(column_family);
   auto cfd = cfh->cfd();
 
   if (read_options.tailing) {
@@ -4049,8 +4061,7 @@ Iterator* DBImpl::NewIterator(const ReadOptions& read_options,
 
     auto snapshot =
         read_options.snapshot != nullptr
-            ? reinterpret_cast<const SnapshotImpl*>(
-                read_options.snapshot)->number_
+            ? dynamic_cast<const SnapshotImpl*>(read_options.snapshot)->number_
             : latest_snapshot;
 
     // Try to generate a DB iterator tree in continuous memory area to be

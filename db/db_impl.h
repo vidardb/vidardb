@@ -91,6 +91,8 @@ class DBImpl : public DB {
                           ColumnFamilyHandle* column_family, const Range& range,
                           std::list<RangeQueryKeyVal>& res,
                           Status* s = nullptr) override;
+
+  virtual Iterator* NewFileIterator(const ReadOptions& options) override;
   /*************************** Shichao ****************************/
 
   virtual Status CreateColumnFamily(const ColumnFamilyOptions& options,
