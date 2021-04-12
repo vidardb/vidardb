@@ -40,8 +40,12 @@ struct Options;
 
 using std::unique_ptr;
 
+enum TableOptionType { BlockBasedTableOption, ColumnTableOption };
+
 // For advanced user only
 struct BlockBasedTableOptions {
+  TableOptionType table_option_type = BlockBasedTableOption;
+
   // @flush_block_policy_factory creates the instances of flush block policy.
   // which provides a configurable way to determine when to flush a block in
   // the block based tables.  If not set, table builder will use the default
@@ -88,6 +92,8 @@ extern TableFactory* NewBlockBasedTableFactory(
 /*********************************  Shichao  **********************************/
 // For advanced user only
 struct ColumnTableOptions {
+  TableOptionType table_option_type = ColumnTableOption;
+
   // @flush_block_policy_factory creates the instances of flush block policy.
   // which provides a configurable way to determine when to flush a block in
   // the block based tables.  If not set, table builder will use the default

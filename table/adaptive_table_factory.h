@@ -73,6 +73,23 @@ class AdaptiveTableFactory : public TableFactory {
 
   std::string GetPrintableTableOptions() const override;
 
+  void* GetOptions() override {
+    if (!table_factory_options_.empty()) {
+      return &table_factory_options_;
+    }
+    if (table_factory_to_write_) {
+      table_factory_options_.push_back(table_factory_to_write_->GetOptions());
+    }
+    if (block_based_table_factory_) {
+      table_factory_options_.push_back(
+          block_based_table_factory_->GetOptions());
+    }
+    if (column_table_factory_) {
+      table_factory_options_.push_back(column_table_factory_->GetOptions());
+    }
+    return &table_factory_options_;
+  }
+
   /********************** Shichao **********************/
   // not thread-safe
   void SetWriteTableFactory(
@@ -104,6 +121,7 @@ class AdaptiveTableFactory : public TableFactory {
   std::unordered_map<std::string, int> output_levels_;  // Shichao
   int knob_;                                            // Shichao
   std::unique_ptr<InstrumentedMutex> mutex_;            // Shichao
+  std::vector<void*> table_factory_options_;            // Quanzhao
 };
 
 }  // namespace vidardb
