@@ -86,7 +86,7 @@ void TwoLevelIterator::Prev() {
 }
 
 /**************************** Shichao *****************************/
-void TwoLevelIterator::NextBlock() {
+void TwoLevelIterator::FirstLevelNext() {
   first_level_iter_.Next();
   InitDataBlock();
   if (second_level_iter_.iter() != nullptr) {
@@ -94,7 +94,7 @@ void TwoLevelIterator::NextBlock() {
   }
 }
 
-void TwoLevelIterator::NextInBlock() {
+void TwoLevelIterator::SecondLevelNext() {
   assert(first_level_iter_.Valid());
   second_level_iter_.Next();
 }

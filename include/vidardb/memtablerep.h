@@ -255,7 +255,7 @@ class VectorRepFactory : public MemTableRepFactory {
   const size_t count_;
 
  public:
-  explicit VectorRepFactory(size_t count = 0) : count_(count) { printf("\nI am here\n"); }
+  explicit VectorRepFactory(size_t count = 0) : count_(count) {}
   virtual MemTableRep* CreateMemTableRep(const MemTableRep::KeyComparator&,
                                          MemTableAllocator*,
                                          Logger* logger) override;

@@ -7,8 +7,10 @@
 #pragma once
 
 #include <vector>
+
 #include "vidardb/iterator.h"
 #include "vidardb/slice.h"
+#include "vidardb/types.h"
 
 namespace vidardb {
 
@@ -25,13 +27,13 @@ class InternalIterator;
 // Flie level iterator of picking up the next file
 class FileIter : public Iterator {
  public:
-  FileIter(SequenceNumber s) : sequence_(s) {}
+  FileIter(SequenceNumber s) : sequence_(s), cur_(0) {}
 
   virtual ~FileIter() {}
 
-  bool Valid() const override { return true; }
+  bool Valid() const override;
 
-  void SeekToFirst() override {}
+  void SeekToFirst() override;
 
   // not support
   void SeekToLast() override {
@@ -45,7 +47,7 @@ class FileIter : public Iterator {
     return;
   }
 
-  void Next() override {}
+  void Next() override;
 
   // not support
   void Prev() override {
@@ -74,17 +76,18 @@ class FileIter : public Iterator {
   // Return the targeted columns' block min and max. If key is in the target
   // set, return its block min and max as well, but be cautious about its
   // different max.
-  void GetMinMax(std::vector<std::vector<MinMax>>& v) const {}
+  Status GetMinMax(std::vector<std::vector<MinMax>>& v) const;
 
   // According to the calculated block bits, fetch the partial tuples. If key is
   // not in the target set, don't bother to return it.
-  void RangeQuery(const std::vector<bool>& block_bits,
-                  std::vector<std::string>& res) const {}
+  Status RangeQuery(const std::vector<bool>& block_bits,
+                    std::vector<std::string>& res) const;
 
  private:
   std::vector<InternalIterator*> children_;
   Status status_;
   SequenceNumber sequence_;
+  size_t cur_;
 };
 
 }  // vidardb

@@ -45,8 +45,8 @@ class TwoLevelIterator : public InternalIterator {
   virtual void Prev() override;
 
   /******************** Shichao ******************/
-  virtual void NextBlock();
-  virtual void NextInBlock();
+  virtual void FirstLevelNext();
+  virtual void SecondLevelNext();
   /******************** Shichao ******************/
 
   virtual bool Valid() const override { return second_level_iter_.Valid(); }

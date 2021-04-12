@@ -25,6 +25,7 @@ class PinnedIteratorsManager;
 struct LookupRange;
 struct SeqTypeVal;
 struct RangeQueryKeyVal;
+struct MinMax;
 /*********************** Shichao **************************/
 
 class InternalIterator : public Cleanable {
@@ -80,6 +81,15 @@ class InternalIterator : public Cleanable {
   // Support OLAP range query, Table iterator should re-implement this.
   virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
                             std::list<RangeQueryKeyVal>& res) {
+    return Status::NotSupported(Slice("not implemented"));
+  }
+
+  Status GetMinMax(std::vector<std::vector<MinMax>>& v) const {
+    return Status::NotSupported(Slice("not implemented"));
+  }
+
+  Status RangeQuery(const std::vector<bool>& block_bits,
+                    std::vector<std::string>& res) const {
     return Status::NotSupported(Slice("not implemented"));
   }
   /***************************** Shichao ******************************/

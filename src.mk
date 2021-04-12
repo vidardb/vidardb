@@ -17,6 +17,7 @@ LIB_SOURCES =                                                   \
   db/db_iter.cc                                                 \
   db/event_helpers.cc                                           \
   db/file_indexer.cc                                            \
+  db/file_iter.cc                                               \
   db/filename.cc                                                \
   db/flush_job.cc                                               \
   db/flush_scheduler.cc                                         \

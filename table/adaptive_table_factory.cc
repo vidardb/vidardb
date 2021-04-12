@@ -90,6 +90,31 @@ TableBuilder* AdaptiveTableFactory::NewTableBuilder(
   /******************************** Shichao ********************************/
 }
 
+/***************************** Quanzhao *****************************/
+Status AdaptiveTableFactory::SanitizeOptions(
+    const DBOptions& db_opts, const ColumnFamilyOptions& cf_opts) const {
+  if (table_factory_to_write_) {
+    Status s = table_factory_to_write_->SanitizeOptions(db_opts, cf_opts);
+    if (!s.ok()) {
+      return s;
+    }
+  }
+  if (block_based_table_factory_) {
+    Status s = block_based_table_factory_->SanitizeOptions(db_opts, cf_opts);
+    if (!s.ok()) {
+      return s;
+    }
+  }
+  if (column_table_factory_) {
+    Status s = column_table_factory_->SanitizeOptions(db_opts, cf_opts);
+    if (!s.ok()) {
+      return s;
+    }
+  }
+  return Status::OK();
+}
+/***************************** Quanzhao *****************************/
+
 std::string AdaptiveTableFactory::GetPrintableTableOptions() const {
   std::string ret;
   ret.reserve(20000);
@@ -121,6 +146,24 @@ std::string AdaptiveTableFactory::GetPrintableTableOptions() const {
   /***************************** Shichao *****************************/
   return ret;
 }
+
+/***************************** Quanzhao *****************************/
+void* AdaptiveTableFactory::GetOptions() {
+  if (!table_factory_options_.empty()) {
+    return &table_factory_options_;
+  }
+  if (table_factory_to_write_) {
+    table_factory_options_.push_back(table_factory_to_write_->GetOptions());
+  }
+  if (block_based_table_factory_) {
+    table_factory_options_.push_back(block_based_table_factory_->GetOptions());
+  }
+  if (column_table_factory_) {
+    table_factory_options_.push_back(column_table_factory_->GetOptions());
+  }
+  return &table_factory_options_;
+}
+/***************************** Quanzhao *****************************/
 
 /***************************** Shichao *****************************/
 void AdaptiveTableFactory::SetWriteTableFactory(
