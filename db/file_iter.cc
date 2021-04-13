@@ -27,15 +27,20 @@ void FileIter::Next() {
   cur_++;
 }
 
+Status FileIter::status() const {
+  if (children_.empty()) {
+    return Status::NotFound();
+  }
+  return children_[cur_]->status();
+}
+
 Status FileIter::GetMinMax(std::vector<std::vector<MinMax>>& v) const {
-  children_[cur_]->GetMinMax(v);
-  return status_;
+  return children_[cur_]->GetMinMax(v);
 }
 
 Status FileIter::RangeQuery(const std::vector<bool>& block_bits,
                             std::vector<std::string>& res) const {
-  children_[cur_]->RangeQuery(block_bits, res);
-  return status_;
+  return children_[cur_]->RangeQuery(block_bits, res);
 }
 
 }  // namespace vidardb

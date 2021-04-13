@@ -36,40 +36,23 @@ class FileIter : public Iterator {
   void SeekToFirst() override;
 
   // not support
-  void SeekToLast() override {
-    status_.NotSupported();
-    return;
-  }
+  void SeekToLast() override { return; }
 
   // TODO: not support now, but should support in the future for parallel scan
-  void Seek(const Slice& target) override {
-    status_.NotSupported();
-    return;
-  }
+  void Seek(const Slice& target) override { return; }
 
   void Next() override;
 
   // not support
-  void Prev() override {
-    status_.NotSupported();
-    return;
-  }
+  void Prev() override { return; }
 
   // not support
-  Slice key() const override {
-    status_.NotSupported();
-    return Slice();
-  }
+  Slice key() const override { return Slice(); }
 
   // not support
-  Slice value() const override {
-    status_.NotSupported();
-    return Slice();
-  }
+  Slice value() const override { return Slice(); }
 
-  Status status() const override {
-    return status_;
-  }
+  Status status() const override;
 
   std::vector<InternalIterator*>* GetInternalIterators() { return &children_; }
 
@@ -85,7 +68,6 @@ class FileIter : public Iterator {
 
  private:
   std::vector<InternalIterator*> children_;
-  Status status_;
   SequenceNumber sequence_;
   size_t cur_;
 };

@@ -35,6 +35,7 @@
 #include "util/stop_watch.h"
 #include "vidardb/comparator.h"
 #include "vidardb/env.h"
+#include "vidardb/file_iter.h"
 #include "vidardb/iterator.h"
 #include "vidardb/splitter.h"
 #include "vidardb/table.h"
@@ -271,6 +272,79 @@ class MemTableIterator : public InternalIterator {
   }
 
   virtual Status status() const override { return Status::OK(); }
+
+  /***************************** Shichao ********************************/
+  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
+    v.resize(columns_.size());
+    for (size_t i = 0; i < v.size(); i++) {
+      uint32_t col = columns_[i];
+      // treat the entire memtable column as a block
+      v[i].resize(1);
+      if (col == 0) {
+        // min user key
+        iter_->SeekToFirst();
+        if (!iter_->Valid()) {
+          // empty memtable
+          return Status::NotFound();
+        }
+        Slice min(GetLengthPrefixedSlice(iter_->key()));
+        Slice userkey_min(Slice(min.data(), min.size()-8));
+        v[i][0].min_.assign(userkey_min.ToString());
+
+        // max user_key
+        iter_->SeekToLast();
+        Slice max(GetLengthPrefixedSlice(iter_->key()));
+        Slice userkey_max(Slice(max.data(), max.size()-8));
+        v[i][0].max_.assign(userkey_max.ToString());
+      } else {
+        // We don't bother to store other columns' min & max in memtables.
+        // Let's use empty to represent min and max temporarily.
+        v[i][0].min_ = v[i][0].max_ = "";
+      }
+    }
+    return Status::OK();
+  }
+
+  using InternalIterator::RangeQuery;
+  virtual Status RangeQuery(const std::vector<bool>& block_bits,
+                            std::vector<std::string>& res) const override {
+    // block_bits is generally useless in memtable, since we treat the memtable
+    // column as a block
+    if (block_bits.size() > 1) {
+      return Status::InvalidArgument();
+    }
+
+    if (block_bits.empty()) {
+      return Status::OK();
+    }
+
+    // TODO: handle update and delete
+    for (iter_->SeekToFirst(); iter_->Valid(); iter_->Next()) {
+      Slice key_slice = GetLengthPrefixedSlice(iter_->key());
+      Slice val_slice =
+          GetLengthPrefixedSlice(key_slice.data() + key_slice.size());
+      if (columns_.empty() || !splitter_ || val_slice.empty()) {
+        res.emplace_back(val_slice.ToString());
+        continue;
+      }
+
+      std::string val;  // prepare for splitting user value
+      ReformatUserValue(val_slice, columns_, splitter_, val);
+
+      uint32_t col = columns_[0];
+      if (col == 0) {
+        Slice userkey_slice(Slice(key_slice.data(), key_slice.size()-8));
+        std::string userkey;
+        splitter_->Append(userkey, userkey_slice, false);
+        res.emplace_back(userkey + val);
+      } else {
+        res.emplace_back(std::move(val));
+      }
+    }
+
+    return Status::OK();
+  }
+  /***************************** Shichao ********************************/
 
   virtual bool IsKeyPinned() const override {
     // memtable data is always pinned

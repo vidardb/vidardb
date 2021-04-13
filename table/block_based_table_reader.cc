@@ -776,8 +776,9 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
     return iter_->status();
   }
 
+  using InternalIterator::RangeQuery;
   virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
-                            std::list<RangeQueryKeyVal>& res) {
+                            std::list<RangeQueryKeyVal>& res) override {
     if (range.start_->user_key().compare(kRangeQueryMin) == 0) {
       iter_->SeekToFirst(); // Full search
     } else {

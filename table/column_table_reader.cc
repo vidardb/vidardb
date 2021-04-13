@@ -894,6 +894,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return s;
   }
 
+  using InternalIterator::RangeQuery;
   virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
                             std::list<RangeQueryKeyVal>& res) {
     STVIters user_vals;
