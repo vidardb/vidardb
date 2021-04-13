@@ -810,7 +810,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     }
   }
 
-  virtual bool Valid() const {
+  virtual bool Valid() const override {
     for (const auto& it : iters_) {
       if (!it->Valid()) {
         return false;
@@ -819,21 +819,21 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return true;
   }
 
-  virtual void SeekToFirst() {
+  virtual void SeekToFirst() override {
     for (const auto& it : iters_) {
       it->SeekToFirst();
     }
     ParseCurrentValue();
   }
 
-  virtual void SeekToLast() {
+  virtual void SeekToLast() override {
     for (const auto& it : iters_) {
       it->SeekToLast();
     }
     ParseCurrentValue();
   }
 
-  virtual void Seek(const Slice& target) {
+  virtual void Seek(const Slice& target) override {
     Slice sub_column_target = target;
     for (auto i = 0u; i < iters_.size(); i++) {
       const auto& it = iters_[i];
@@ -854,7 +854,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     ParseCurrentValue();
   }
 
-  virtual void Next() {
+  virtual void Next() override {
     assert(Valid());
     for (const auto& it : iters_) {
       it->Next();
@@ -862,7 +862,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     ParseCurrentValue();
   }
 
-  virtual void Prev() {
+  virtual void Prev() override {
     assert(Valid());
     for (const auto& it : iters_) {
       it->Prev();
@@ -870,17 +870,17 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     ParseCurrentValue();
   }
 
-  virtual Slice key() const {
+  virtual Slice key() const override {
     assert(Valid());
     return iters_[0]->key();
   }
 
-  virtual Slice value() {
+  virtual Slice value() override {
     assert(Valid());
     return value_;
   }
 
-  virtual Status status() const {
+  virtual Status status() const override {
     if (!status_.ok()) {
       return status_;
     }
@@ -894,9 +894,8 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return s;
   }
 
-  using InternalIterator::RangeQuery;
   virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
-                            std::list<RangeQueryKeyVal>& res) {
+                            std::list<RangeQueryKeyVal>& res) override {
     STVIters user_vals;
     std::vector<bool> sub_key_bs;  // trace the valid sub_keys
     // user key's sequence number -> sub_key_bs index
@@ -932,13 +931,23 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return Status();
   }
 
-  virtual void SetPinnedItersMgr(PinnedIteratorsManager* pinned_iters_mgr) {
+  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
+    return Status::NotSupported(Slice("not implemented"));
+  }
+
+  virtual Status RangeQuery(const std::vector<bool>& block_bits,
+                            std::vector<RangeQueryKeyVal>& res) const override {
+    return Status::NotSupported(Slice("not implemented"));
+  }
+
+  virtual void SetPinnedItersMgr(
+      PinnedIteratorsManager* pinned_iters_mgr) override {
     for (const auto& it : iters_) {
       it->SetPinnedItersMgr(pinned_iters_mgr);
     }
   }
 
-  virtual bool IsKeyPinned() const {
+  virtual bool IsKeyPinned() const override {
     for (const auto& it : iters_) {
       if (!it->IsKeyPinned()) {
         return false;

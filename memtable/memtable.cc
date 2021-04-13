@@ -35,7 +35,6 @@
 #include "util/stop_watch.h"
 #include "vidardb/comparator.h"
 #include "vidardb/env.h"
-#include "vidardb/file_iter.h"
 #include "vidardb/iterator.h"
 #include "vidardb/splitter.h"
 #include "vidardb/table.h"
@@ -305,9 +304,10 @@ class MemTableIterator : public InternalIterator {
     return Status::OK();
   }
 
+  // TODO: remove the below using after delete the old rangequery
   using InternalIterator::RangeQuery;
   virtual Status RangeQuery(const std::vector<bool>& block_bits,
-                            std::vector<std::string>& res) const override {
+                            std::vector<RangeQueryKeyVal>& res) const override {
     // block_bits is generally useless in memtable, since we treat the memtable
     // column as a block
     if (block_bits.size() > 1) {
@@ -321,10 +321,13 @@ class MemTableIterator : public InternalIterator {
     // TODO: handle update and delete
     for (iter_->SeekToFirst(); iter_->Valid(); iter_->Next()) {
       Slice key_slice = GetLengthPrefixedSlice(iter_->key());
+      Slice userkey_slice(Slice(key_slice.data(), key_slice.size()-8));
       Slice val_slice =
           GetLengthPrefixedSlice(key_slice.data() + key_slice.size());
-      if (columns_.empty() || !splitter_ || val_slice.empty()) {
-        res.emplace_back(val_slice.ToString());
+
+      if (columns_.empty() || !splitter_) {
+        // either row storage or column storage with all columns
+        res.emplace_back(userkey_slice.ToString(), val_slice.ToString());
         continue;
       }
 
@@ -332,14 +335,7 @@ class MemTableIterator : public InternalIterator {
       ReformatUserValue(val_slice, columns_, splitter_, val);
 
       uint32_t col = columns_[0];
-      if (col == 0) {
-        Slice userkey_slice(Slice(key_slice.data(), key_slice.size()-8));
-        std::string userkey;
-        splitter_->Append(userkey, userkey_slice, false);
-        res.emplace_back(userkey + val);
-      } else {
-        res.emplace_back(std::move(val));
-      }
+      res.emplace_back(col==0 ? userkey_slice.ToString() : "", std::move(val));
     }
 
     return Status::OK();

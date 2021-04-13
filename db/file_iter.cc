@@ -39,7 +39,7 @@ Status FileIter::GetMinMax(std::vector<std::vector<MinMax>>& v) const {
 }
 
 Status FileIter::RangeQuery(const std::vector<bool>& block_bits,
-                            std::vector<std::string>& res) const {
+                            std::vector<RangeQueryKeyVal>& res) const {
   return children_[cur_]->RangeQuery(block_bits, res);
 }
 

@@ -731,38 +731,30 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
     iter_->~InternalIterator();
   }
 
-  virtual bool Valid() const {
-    return iter_->Valid();
-  }
+  virtual bool Valid() const override { return iter_->Valid(); }
 
-  virtual void SeekToFirst() {
-    iter_->SeekToFirst();
-  }
+  virtual void SeekToFirst() override { iter_->SeekToFirst(); }
 
-  virtual void SeekToLast() {
-    iter_->SeekToLast();
-  }
+  virtual void SeekToLast() override { iter_->SeekToLast(); }
 
-  virtual void Seek(const Slice& target) {
-    iter_->Seek(target);
-  }
+  virtual void Seek(const Slice& target) override { iter_->Seek(target); }
 
-  virtual void Next() {
+  virtual void Next() override {
     assert(Valid());
     iter_->Next();
   }
 
-  virtual void Prev() {
+  virtual void Prev() override {
     assert(Valid());
     iter_->Prev();
   }
 
-  virtual Slice key() const {
+  virtual Slice key() const override {
     assert(Valid());
     return iter_->key();
   }
 
-  virtual Slice value() {
+  virtual Slice value() override {
     assert(Valid());
     Slice v = iter_->value();
     if (columns_.empty() || !splitter_ || v.empty()) {
@@ -772,11 +764,8 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
     return ReformatUserValue(v, columns_, splitter_, value_);
   }
 
-  virtual Status status() const {
-    return iter_->status();
-  }
+  virtual Status status() const override { return iter_->status(); }
 
-  using InternalIterator::RangeQuery;
   virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
                             std::list<RangeQueryKeyVal>& res) override {
     if (range.start_->user_key().compare(kRangeQueryMin) == 0) {
@@ -858,13 +847,21 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
     return Status();
   }
 
-  virtual void SetPinnedItersMgr(PinnedIteratorsManager* pinned_iters_mgr) {
+  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
+    return Status::NotSupported(Slice("not implemented"));
+  }
+
+  virtual Status RangeQuery(const std::vector<bool>& block_bits,
+                            std::vector<RangeQueryKeyVal>& res) const override {
+    return Status::NotSupported(Slice("not implemented"));
+  }
+
+  virtual void SetPinnedItersMgr(
+      PinnedIteratorsManager* pinned_iters_mgr) override {
     iter_->SetPinnedItersMgr(pinned_iters_mgr);
   }
 
-  virtual bool IsKeyPinned() const {
-    return iter_->IsKeyPinned();
-  }
+  virtual bool IsKeyPinned() const override { return iter_->IsKeyPinned(); }
 
  private:
   InternalIterator* iter_;

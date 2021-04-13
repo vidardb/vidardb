@@ -14,14 +14,8 @@
 
 namespace vidardb {
 
-struct MinMax {
-  std::string min_;
-  std::string max_;
-
-  MinMax(const std::string& min = {}, const std::string& max = {})
-    : min_(min), max_(max) {}
-};
-
+struct MinMax;
+struct RangeQueryKeyVal;
 class InternalIterator;
 
 // Flie level iterator of picking up the next file
@@ -61,10 +55,10 @@ class FileIter : public Iterator {
   // different max.
   Status GetMinMax(std::vector<std::vector<MinMax>>& v) const;
 
-  // According to the calculated block bits, fetch the partial tuples. If key is
-  // not in the target set, don't bother to return it.
+  // According to the calculated block bits, fetch the partial tuples.
+  // If key is not in the target, set empty
   Status RangeQuery(const std::vector<bool>& block_bits,
-                    std::vector<std::string>& res) const;
+                    std::vector<RangeQueryKeyVal>& res) const;
 
  private:
   std::vector<InternalIterator*> children_;

@@ -89,7 +89,7 @@ class InternalIterator : public Cleanable {
   }
 
   virtual Status RangeQuery(const std::vector<bool>& block_bits,
-                            std::vector<std::string>& res) const {
+                            std::vector<RangeQueryKeyVal>& res) const {
     return Status::NotSupported(Slice("not implemented"));
   }
   /***************************** Shichao ******************************/

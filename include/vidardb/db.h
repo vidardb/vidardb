@@ -91,6 +91,14 @@ static const int kMinorVersion = __VIDARDB_MINOR__;
 static const Slice kRangeQueryMin = Slice("min");  // Quanzhao
 static const Slice kRangeQueryMax = Slice("max");  // Quanzhao
 
+struct MinMax {
+  std::string min_;
+  std::string max_;
+
+  MinMax(const std::string& min = {}, const std::string& max = {})
+      : min_(min), max_(max) {}
+};
+
 // A range of keys
 struct Range {
   Slice start;          // Included in the range
