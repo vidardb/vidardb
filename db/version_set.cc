@@ -908,6 +908,7 @@ void Version::AddIterators(const ReadOptions& read_options,
     return;
   }
 
+  // TODO: consider using two level iterator to save memory space
   // Merge all level files together
   for (int level = 0; level < storage_info_.num_non_empty_levels(); level++) {
     for (size_t i = 0; i < storage_info_.LevelFilesBrief(level).num_files;

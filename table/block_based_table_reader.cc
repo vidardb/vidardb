@@ -721,14 +721,17 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   BlockBasedIterator(InternalIterator* iter,
                      const InternalKeyComparator& internal_comparator,
                      const Splitter* splitter,
-                     const std::vector<uint32_t>& columns)
+                     const std::vector<uint32_t>& columns,
+                     InternalIterator* index_iter = nullptr)
       : iter_(iter),
         internal_comparator_(internal_comparator),
         splitter_(splitter),
-        columns_(columns) {}
+        columns_(columns),
+        index_iter_(index_iter) {}
 
   virtual ~BlockBasedIterator() {
     iter_->~InternalIterator();
+    delete index_iter_;
   }
 
   virtual bool Valid() const override { return iter_->Valid(); }
@@ -757,10 +760,6 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   virtual Slice value() override {
     assert(Valid());
     Slice v = iter_->value();
-    if (columns_.empty() || !splitter_ || v.empty()) {
-      return v;
-    }
-    value_.clear();  // prepare for splitting user value
     return ReformatUserValue(v, columns_, splitter_, value_);
   }
 
@@ -805,9 +804,8 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
           continue;
         }
 
-        value_.clear();  // prepare for splitting user value
-        Slice user_val(ReformatUserValue(iter_->value(), read_options.columns,
-                                         splitter_, value_));
+        ReformatUserValue(iter_->value(), read_options.columns, splitter_,
+                          value_);
 
         if (it->second.seq_ < parsed_key.sequence) {
           // replaced
@@ -819,7 +817,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
           read_options.result_val_size -= it->second.iter_->user_val.size();
           it->second.seq_ = parsed_key.sequence;
           it->second.type_ = parsed_key.type;
-          it->second.iter_->user_val = user_val.ToString();
+          it->second.iter_->user_val.assign(value_);
           read_options.result_val_size += it->second.iter_->user_val.size();
           if (parsed_key.type == kTypeDeletion) {
             meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
@@ -827,8 +825,8 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
         } else {
           // inserted
           size_t delta_key_size = user_key.size();
-          size_t delta_val_size = user_val.size();
-          res.emplace_back(user_key, user_val.ToString());
+          size_t delta_val_size = value_.size();
+          res.emplace_back(user_key, value_);
           read_options.result_key_size += delta_key_size;
           read_options.result_val_size += delta_val_size;
           it->second.iter_ = --res.end();
@@ -847,7 +845,8 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
     return Status();
   }
 
-  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
+  virtual Status GetMinMax(FileIter::FileType& type,
+                           std::vector<std::vector<MinMax>>& v) const override {
     return Status::NotSupported(Slice("not implemented"));
   }
 
@@ -871,6 +870,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   const Splitter* splitter_;
   const std::vector<uint32_t> columns_;
   std::string value_;  // mutable
+  InternalIterator* index_iter_;
 };
 /***************************** Shichao *********************************/
 
@@ -879,7 +879,8 @@ InternalIterator* BlockBasedTable::NewIterator(const ReadOptions& read_options,
   return new BlockBasedIterator(
       NewTwoLevelIterator(new BlockEntryIteratorState(this, read_options),
                           NewIndexIterator(read_options), arena),
-      rep_->internal_comparator, rep_->ioptions.splitter, read_options.columns);
+      rep_->internal_comparator, rep_->ioptions.splitter, read_options.columns,
+      NewIndexIterator(read_options));
 }
 
 Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,

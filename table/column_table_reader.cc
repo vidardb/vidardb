@@ -931,7 +931,8 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return Status();
   }
 
-  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
+  virtual Status GetMinMax(FileIter::FileType& type,
+                           std::vector<std::vector<MinMax>>& v) const override {
     return Status::NotSupported(Slice("not implemented"));
   }
 

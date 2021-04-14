@@ -162,7 +162,9 @@ LookupKey::LookupKey(const Slice& _user_key, SequenceNumber s) {
 const Slice ReformatUserValue(const Slice& user_value,
                               const std::vector<uint32_t>& columns,
                               const Splitter* splitter, std::string& buf) {
+  buf.clear();
   if (columns.empty() || user_value.empty() || !splitter) {
+    buf.assign(user_value.data(), user_value.size());
     return user_value;
   }
 

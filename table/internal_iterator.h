@@ -11,11 +11,13 @@
 
 #pragma once
 
+#include <list>  // Shichao
 #include <string>
-#include <list>    // Shichao
+
+#include "vidardb/file_iter.h"  // Shichao
 #include "vidardb/iterator.h"
+#include "vidardb/options.h"  // Quanzhao
 #include "vidardb/status.h"
-#include "vidardb/options.h" // Quanzhao
 
 namespace vidardb {
 
@@ -84,10 +86,13 @@ class InternalIterator : public Cleanable {
     return Status::NotSupported(Slice("not implemented"));
   }
 
-  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const {
+  // See comments in file_iter.h
+  virtual Status GetMinMax(FileIter::FileType& type,
+                           std::vector<std::vector<MinMax>>& v) const {
     return Status::NotSupported(Slice("not implemented"));
   }
 
+  // See comments in file_iter.h
   virtual Status RangeQuery(const std::vector<bool>& block_bits,
                             std::vector<RangeQueryKeyVal>& res) const {
     return Status::NotSupported(Slice("not implemented"));

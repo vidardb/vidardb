@@ -34,8 +34,9 @@ Status FileIter::status() const {
   return children_[cur_]->status();
 }
 
-Status FileIter::GetMinMax(std::vector<std::vector<MinMax>>& v) const {
-  return children_[cur_]->GetMinMax(v);
+Status FileIter::GetMinMax(FileType& type,
+                           std::vector<std::vector<MinMax>>& v) const {
+  return children_[cur_]->GetMinMax(type, v);
 }
 
 Status FileIter::RangeQuery(const std::vector<bool>& block_bits,
