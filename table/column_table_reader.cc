@@ -791,22 +791,16 @@ class ColumnTable::ColumnIterator : public InternalIterator {
   ColumnIterator(const std::vector<InternalIterator*>& iters,
                  bool has_main_column, const Splitter* splitter,
                  const InternalKeyComparator& internal_comparator,
-                 uint64_t num_entries = 0,
-                 const std::vector<InternalIterator*>& index_iters = {})
+                 uint64_t num_entries = 0)
       : iters_(iters),
         has_main_column_(has_main_column),
         splitter_(splitter),
         internal_comparator_(internal_comparator),
-        num_entries_(num_entries),
-        index_iters_(index_iters) {}
+        num_entries_(num_entries) {}
 
   virtual ~ColumnIterator() {
     for (const auto& it : iters_) {
       it->~InternalIterator();
-    }
-    // TODO: delete or deconstructor?
-    for (const auto& it : index_iters_) {
-      delete it;
     }
   }
 
@@ -1133,7 +1127,6 @@ class ColumnTable::ColumnIterator : public InternalIterator {
   const Splitter* splitter_;                         // used in rangequery
   const InternalKeyComparator& internal_comparator_; // used in rangrquery
   uint64_t num_entries_;                             // used in rangrquery
-  std::vector<InternalIterator*> index_iters_;       // used in rangrquery
 };
 
 // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
@@ -1163,7 +1156,6 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
   std::vector<InternalIterator*> iters;  // main column
   iters.push_back(NewTwoLevelIterator(new BlockEntryIteratorState(this, ro),
                                       NewIndexIterator(ro), arena));
-  std::vector<InternalIterator*> index_iters;
 
   for (const auto& column_index : ro.columns) {  // sub column
     if (column_index < 1) {  // only process the value columns
@@ -1174,12 +1166,10 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
     iters.push_back(NewTwoLevelIterator(
         new BlockEntryIteratorState(rep_->tables[column_index-1].get(), ro),
         table->NewIndexIterator(ro), arena));
-
-    index_iters.push_back(table->NewIndexIterator(ro));  // for min & max
   }
   return new ColumnIterator(iters, true, rep_->ioptions.splitter,
                             rep_->internal_comparator,
-                            rep_->table_properties->num_entries, index_iters);
+                            rep_->table_properties->num_entries);
 }
 
 Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,

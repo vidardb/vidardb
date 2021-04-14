@@ -721,17 +721,14 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   BlockBasedIterator(InternalIterator* iter,
                      const InternalKeyComparator& internal_comparator,
                      const Splitter* splitter,
-                     const std::vector<uint32_t>& columns,
-                     InternalIterator* index_iter = nullptr)
+                     const std::vector<uint32_t>& columns)
       : iter_(iter),
         internal_comparator_(internal_comparator),
         splitter_(splitter),
-        columns_(columns),
-        index_iter_(index_iter) {}
+        columns_(columns) {}
 
   virtual ~BlockBasedIterator() {
     iter_->~InternalIterator();
-    delete index_iter_;
   }
 
   virtual bool Valid() const override { return iter_->Valid(); }
@@ -847,12 +844,76 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 
   virtual Status GetMinMax(FileIter::FileType& type,
                            std::vector<std::vector<MinMax>>& v) const override {
-    return Status::NotSupported(Slice("not implemented"));
+    type = FileIter::BlockBasedTable;
+    v.clear();
+    // test whether it is an empty table
+    iter_->SeekToFirst();
+    if (!iter_->Valid()) {
+      return Status::NotFound();
+    }
+
+    // all columns or key column is involved
+    // In other cases, we really can don nothing here.
+    if (columns_.empty() || columns_.front() == 0) {
+      // only key column is useful
+      v.resize(1);
+      // store the smallest internal key in parsed_key
+      ParsedInternalKey parsed_key;
+      if (!ParseInternalKey(iter_->key(), &parsed_key)) {
+        return Status::Corruption("corrupted internal key in Table::Iter");
+      }
+      // store the smallest user key
+      std::string last_block_user_key(parsed_key.user_key.data(),
+                                      parsed_key.user_key.size());
+
+      auto iter = dynamic_cast<TwoLevelIterator*>(iter_);
+      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext()) {
+        // current block max internal key
+        if (!ParseInternalKey(iter->FirstLevelKey(), &parsed_key)) {
+          return Status::Corruption("corrupted internal key in Table::Iter");
+        }
+
+        v[0].emplace_back(last_block_user_key, parsed_key.user_key.ToString());
+
+        // for next block's min user key
+        last_block_user_key.assign(parsed_key.user_key.data(),
+                                   parsed_key.user_key.size());
+      }
+    }
+
+    return Status::OK();
   }
 
+  // TODO: handle update and delete
   virtual Status RangeQuery(const std::vector<bool>& block_bits,
                             std::vector<RangeQueryKeyVal>& res) const override {
-    return Status::NotSupported(Slice("not implemented"));
+    res.clear();
+
+    // If block_bits is empty, imply a full scan. Empty table case has been
+    // recognized by NotFound status in GetMinMax, so shouldn't reach here.
+    if (block_bits.empty()) {
+      for (iter_->SeekToFirst(); iter_->Valid(); iter_->Next()) {
+        Status s = ProcessKeyValue(iter_, res);
+        if (!s.ok()) return s;
+      }
+    } else {
+      size_t j = 0;
+      auto iter = dynamic_cast<TwoLevelIterator*>(iter_);
+      // block level
+      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
+        assert(j < block_bits.size());
+        if (!block_bits[j]) {
+          continue;
+        }
+        // within block
+        for (; iter->Valid(); iter->SecondLevelNext()) {
+          Status s = ProcessKeyValue(iter, res);
+          if (!s.ok()) return s;
+        }
+      }
+    }
+
+    return Status::OK();
   }
 
   virtual void SetPinnedItersMgr(
@@ -863,6 +924,23 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   virtual bool IsKeyPinned() const override { return iter_->IsKeyPinned(); }
 
  private:
+  Status ProcessKeyValue(InternalIterator* iter,
+                         std::vector<RangeQueryKeyVal>& res) const {
+    ParsedInternalKey parsed_key;
+    if (!ParseInternalKey(iter->key(), &parsed_key)) {
+      return Status::Corruption("corrupted internal key in Table::Iter");
+    }
+
+    std::string val;  // prepare for splitting user value
+    ReformatUserValue(iter->value(), columns_, splitter_, val);
+
+    std::string userkey(columns_.empty() || columns_.front()==0
+                            ? parsed_key.user_key.ToString()
+                            : "");
+    res.emplace_back(std::move(userkey), std::move(val));
+    return Status::OK();
+  }
+
   InternalIterator* iter_;
   Status status_;
   const InternalKeyComparator& internal_comparator_;
@@ -870,7 +948,6 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   const Splitter* splitter_;
   const std::vector<uint32_t> columns_;
   std::string value_;  // mutable
-  InternalIterator* index_iter_;
 };
 /***************************** Shichao *********************************/
 
@@ -879,8 +956,7 @@ InternalIterator* BlockBasedTable::NewIterator(const ReadOptions& read_options,
   return new BlockBasedIterator(
       NewTwoLevelIterator(new BlockEntryIteratorState(this, read_options),
                           NewIndexIterator(read_options), arena),
-      rep_->internal_comparator, rep_->ioptions.splitter, read_options.columns,
-      NewIndexIterator(read_options));
+      rep_->internal_comparator, rep_->ioptions.splitter, read_options.columns);
 }
 
 Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,

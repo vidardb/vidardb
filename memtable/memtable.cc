@@ -288,14 +288,14 @@ class MemTableIterator : public InternalIterator {
 
       // min user key
       Slice min(GetLengthPrefixedSlice(iter_->key()));
-      Slice userkey_min(Slice(min.data(), min.size()-8));
-      v[0][0].min_.assign(userkey_min.ToString());
+      Slice userkey_min(min.data(), min.size()-8);
+      v[0][0].min_.assign(userkey_min.data(), userkey_min.size());
 
       // max user_key
       iter_->SeekToLast();
       Slice max(GetLengthPrefixedSlice(iter_->key()));
-      Slice userkey_max(Slice(max.data(), max.size()-8));
-      v[0][0].max_.assign(userkey_max.ToString());
+      Slice userkey_max(max.data(), max.size()-8);
+      v[0][0].max_.assign(userkey_max.data(), userkey_max.size());
     }
 
     return Status::OK();

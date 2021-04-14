@@ -47,6 +47,10 @@ class TwoLevelIterator : public InternalIterator {
   /******************** Shichao ******************/
   virtual void FirstLevelNext();
   virtual void SecondLevelNext();
+  virtual Slice FirstLevelKey() const {
+    assert(Valid());
+    return first_level_iter_.key();
+  }
   /******************** Shichao ******************/
 
   virtual bool Valid() const override { return second_level_iter_.Valid(); }
