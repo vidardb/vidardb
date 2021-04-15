@@ -28,9 +28,9 @@ void MinMaxBlockBuilder::Add(const Slice& key, const Slice& value,
   PutVarint32(&buffer_, static_cast<uint32_t>(min.size()));
   buffer_.append(min.data(), min.size());
 
-  size_t shared = 0;  // number of bytes shared with prev min or max
+  size_t shared = 0;  // number of bytes shared with min
 
-  // See how much sharing to do with previous string
+  // See how much sharing to do with min
   size_t min_length = std::min(min.size(), max.size());
   while ((shared < min_length) && (min[shared] == max[shared])) {
     shared++;
@@ -41,7 +41,7 @@ void MinMaxBlockBuilder::Add(const Slice& key, const Slice& value,
   PutVarint32(&buffer_, static_cast<uint32_t>(shared));
   PutVarint32(&buffer_, static_cast<uint32_t>(non_shared));
 
-  // Add string delta to buffer_ followed by value
+  // Add max delta to buffer_
   buffer_.append(max.data() + shared, non_shared);
 }
 

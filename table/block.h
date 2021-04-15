@@ -232,12 +232,12 @@ class MinMaxBlockIter : public BlockIter {
     Initialize(comparator, data, restarts, num_restarts);
   }
 
-  virtual Slice min() const {
+  virtual Slice min() const override {
     assert(Valid());
     return min_;
   }
 
-  virtual Slice max() const {
+  virtual Slice max() const override {
     assert(Valid());
     return max_;
   }

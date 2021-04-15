@@ -51,6 +51,14 @@ class TwoLevelIterator : public InternalIterator {
     assert(Valid());
     return first_level_iter_.key();
   }
+  virtual Slice FirstLevelMin() const {
+    assert(Valid());
+    return first_level_iter_.min();
+  }
+  virtual Slice FirstLevelMax() const {
+    assert(Valid());
+    return first_level_iter_.max();
+  }
   /******************** Shichao ******************/
 
   virtual bool Valid() const override { return second_level_iter_.Valid(); }

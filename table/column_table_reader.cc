@@ -791,11 +791,12 @@ class ColumnTable::ColumnIterator : public InternalIterator {
   ColumnIterator(const std::vector<InternalIterator*>& iters,
                  bool has_main_column, const Splitter* splitter,
                  const InternalKeyComparator& internal_comparator,
-                 uint64_t num_entries = 0)
+                 const std::vector<uint32_t>& columns, uint64_t num_entries = 0)
       : iters_(iters),
         has_main_column_(has_main_column),
         splitter_(splitter),
         internal_comparator_(internal_comparator),
+        columns_(columns),
         num_entries_(num_entries) {}
 
   virtual ~ColumnIterator() {
@@ -927,12 +928,112 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 
   virtual Status GetMinMax(FileIter::FileType& type,
                            std::vector<std::vector<MinMax>>& v) const override {
-    return Status::NotSupported(Slice("not implemented"));
+    type = FileIter::ColumnTable;
+    v.clear();
+    // called from NewIterator, so iters_ won't be empty
+    assert(has_main_column_);
+    // test whether it is an empty table
+    iters_.front()->SeekToFirst();
+    if (!iters_.front()->Valid()) {
+      return Status::NotFound();
+    }
+
+    // columns should already be sanitized so empty columns is impossible.
+    v.resize(columns_.size());
+
+    // handle key column case
+    if (columns_.front() == 0) {
+      // store the smallest internal key in parsed_key
+      ParsedInternalKey parsed_key;
+      if (!ParseInternalKey(iters_.front()->key(), &parsed_key)) {
+        return Status::Corruption("corrupted internal key in Table::Iter");
+      }
+      // store the smallest user key
+      std::string last_block_user_key(parsed_key.user_key.data(),
+                                      parsed_key.user_key.size());
+
+      auto iter = dynamic_cast<TwoLevelIterator*>(iters_.front());
+      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext()) {
+        // current block max internal key
+        if (!ParseInternalKey(iter->FirstLevelKey(), &parsed_key)) {
+          return Status::Corruption("corrupted internal key in Table::Iter");
+        }
+
+        v[0].emplace_back(last_block_user_key, parsed_key.user_key.ToString());
+
+        // for next block's min user key
+        last_block_user_key.assign(parsed_key.user_key.data(),
+                                   parsed_key.user_key.size());
+      }
+    }
+
+    // handle other column cases
+    for (size_t i = 1; i < iters_.size(); i++) {
+      // if not the first column, reserve the space to avoid re-allocation
+      size_t first_column_len = v.front().size();
+      if (first_column_len > 0) {
+        v[i].reserve(first_column_len);
+      }
+      auto iter = dynamic_cast<TwoLevelIterator*>(iters_[i]);
+      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext()) {
+        v[i].emplace_back(iter->FirstLevelMin().ToString(),
+                          iter->FirstLevelMax().ToString());
+      }
+    }
+
+    return Status::OK();
   }
 
+  // TODO: handle update and delete
   virtual Status RangeQuery(const std::vector<bool>& block_bits,
                             std::vector<RangeQueryKeyVal>& res) const override {
-    return Status::NotSupported(Slice("not implemented"));
+    res.clear();
+
+    // Empty block_bits cannot happen here. Empty table case has been recognized
+    // by NotFound status in GetMinMax, so shouldn't reach here.
+    if (block_bits.empty()) {
+      return Status::InvalidArgument("block_bits cannot be empty");
+    }
+
+    // handle key column case
+    size_t j = 0;
+    auto iter = dynamic_cast<TwoLevelIterator*>(iters_.front());
+    // block level
+    for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
+      assert(j < block_bits.size());
+      if (!block_bits[j]) continue;
+      // within block
+      for (; iter->Valid(); iter->SecondLevelNext()) {
+        if (columns_.front() > 0) {
+          res.emplace_back("", "");
+        } else {
+          ParsedInternalKey parsed_key;
+          if (!ParseInternalKey(iter->key(), &parsed_key)) {
+            return Status::Corruption("corrupted internal key in Table::Iter");
+          }
+          res.emplace_back(parsed_key.user_key.ToString(), "");
+        }
+      }
+    }
+
+    // handle other column cases
+    for (size_t i = 1; i < iters_.size(); i++) {
+      j = 0;
+      size_t k = 0;
+      iter = dynamic_cast<TwoLevelIterator*>(iters_[i]);
+      bool last_column = ((i + 1) == iters_.size());
+      // block level
+      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
+        assert(j < block_bits.size());
+        if (!block_bits[j]) continue;
+        // within block
+        for (; iter->Valid(); iter->SecondLevelNext()) {
+          splitter_->Append(res[k++].user_val, iter->value(), last_column);
+        }
+      }
+    }
+
+    return Status::OK();
   }
 
   virtual void SetPinnedItersMgr(
@@ -1126,6 +1227,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
   bool has_main_column_;  // true in NewIterator, false in Get & Prefetch
   const Splitter* splitter_;                         // used in rangequery
   const InternalKeyComparator& internal_comparator_; // used in rangrquery
+  const std::vector<uint32_t> columns_;              // used in rangequery
   uint64_t num_entries_;                             // used in rangrquery
 };
 
@@ -1168,7 +1270,7 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
         table->NewIndexIterator(ro), arena));
   }
   return new ColumnIterator(iters, true, rep_->ioptions.splitter,
-                            rep_->internal_comparator,
+                            rep_->internal_comparator, ro.columns,
                             rep_->table_properties->num_entries);
 }
 
@@ -1223,7 +1325,7 @@ Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
 
       ColumnIterator citers(iters, false, rep_->ioptions.splitter,
                             rep_->internal_comparator, /* might change*/
-                            rep_->table_properties->num_entries);
+                            ro.columns, rep_->table_properties->num_entries);
       if (!citers.status().ok()) {
         s = citers.status();
         break;
@@ -1321,7 +1423,7 @@ Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end,
     }
 
     ColumnIterator citers(iters, false, rep_->ioptions.splitter,
-                          rep_->internal_comparator,
+                          rep_->internal_comparator, ro.columns,
                           rep_->table_properties->num_entries);
     if (!citers.status().ok()) {
       return citers.status();

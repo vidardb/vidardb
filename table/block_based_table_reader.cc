@@ -902,9 +902,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
       // block level
       for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
         assert(j < block_bits.size());
-        if (!block_bits[j]) {
-          continue;
-        }
+        if (!block_bits[j]) continue;
         // within block
         for (; iter->Valid(); iter->SecondLevelNext()) {
           Status s = ProcessKeyValue(iter, res);

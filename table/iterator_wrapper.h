@@ -57,6 +57,10 @@ class IteratorWrapper {
   Slice key() const         { assert(Valid()); return key_; }
   bool IsKeyPinned() const  { assert(Valid()); return is_key_pinned_; }
   Slice value() const       { assert(Valid()); return iter_->value(); }
+  /************************* Shichao ***************************/
+  Slice min() const         { assert(Valid()); return iter_->min(); }
+  Slice max() const         { assert(Valid()); return iter_->max(); }
+  /************************* Shichao ***************************/
   // Methods below require iter() != nullptr
   Status status() const     { assert(iter_); return iter_->status(); }
   void Next()               { assert(iter_); iter_->Next();        Update(); }
