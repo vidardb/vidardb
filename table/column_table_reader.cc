@@ -940,7 +940,8 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 
     // columns should already be sanitized so empty columns is impossible.
     v.resize(columns_.size());
-
+    // column idx
+    size_t j = 0;
     // handle key column case
     if (columns_.front() == 0) {
       // store the smallest internal key in parsed_key
@@ -959,24 +960,24 @@ class ColumnTable::ColumnIterator : public InternalIterator {
           return Status::Corruption("corrupted internal key in Table::Iter");
         }
 
-        v[0].emplace_back(last_block_user_key, parsed_key.user_key.ToString());
+        v[j].emplace_back(last_block_user_key, parsed_key.user_key.ToString());
 
         // for next block's min user key
         last_block_user_key.assign(parsed_key.user_key.data(),
                                    parsed_key.user_key.size());
       }
+      j++;
     }
 
     // handle other column cases
-    for (size_t i = 1; i < iters_.size(); i++) {
+    for (size_t i = 1; i < iters_.size(); i++, j++) {
       // if not the first column, reserve the space to avoid re-allocation
-      size_t first_column_len = v.front().size();
-      if (first_column_len > 0) {
-        v[i].reserve(first_column_len);
+      if (j > 0) {
+        v[j].reserve(v.front().size());
       }
       auto iter = dynamic_cast<TwoLevelIterator*>(iters_[i]);
       for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext()) {
-        v[i].emplace_back(iter->FirstLevelMin().ToString(),
+        v[j].emplace_back(iter->FirstLevelMin().ToString(),
                           iter->FirstLevelMax().ToString());
       }
     }
@@ -989,19 +990,18 @@ class ColumnTable::ColumnIterator : public InternalIterator {
                             std::vector<RangeQueryKeyVal>& res) const override {
     res.clear();
 
-    // Empty block_bits cannot happen here. Empty table case has been recognized
-    // by NotFound status in GetMinMax, so shouldn't reach here.
-    if (block_bits.empty()) {
-      return Status::InvalidArgument("block_bits cannot be empty");
-    }
+    // If block_bits is empty, imply a full scan. Empty table case has been
+    // recognized by NotFound status in GetMinMax, so shouldn't reach here.
 
     // handle key column case
     size_t j = 0;
     auto iter = dynamic_cast<TwoLevelIterator*>(iters_.front());
     // block level
     for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
-      assert(j < block_bits.size());
-      if (!block_bits[j]) continue;
+      assert(block_bits.empty() || j < block_bits.size());
+      if (!block_bits.empty() && !block_bits[j]) {
+        continue;
+      }
       // within block
       for (; iter->Valid(); iter->SecondLevelNext()) {
         if (columns_.front() > 0) {
@@ -1024,8 +1024,10 @@ class ColumnTable::ColumnIterator : public InternalIterator {
       bool last_column = ((i + 1) == iters_.size());
       // block level
       for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
-        assert(j < block_bits.size());
-        if (!block_bits[j]) continue;
+        assert(block_bits.empty() || j < block_bits.size());
+        if (!block_bits.empty() && !block_bits[j]) {
+          continue;
+        }
         // within block
         for (; iter->Valid(); iter->SecondLevelNext()) {
           splitter_->Append(res[k++].user_val, iter->value(), last_column);

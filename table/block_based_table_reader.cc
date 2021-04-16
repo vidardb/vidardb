@@ -891,23 +891,28 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 
     // If block_bits is empty, imply a full scan. Empty table case has been
     // recognized by NotFound status in GetMinMax, so shouldn't reach here.
-    if (block_bits.empty()) {
-      for (iter_->SeekToFirst(); iter_->Valid(); iter_->Next()) {
-        Status s = ProcessKeyValue(iter_, res);
-        if (!s.ok()) return s;
+    size_t j = 0;
+    auto iter = dynamic_cast<TwoLevelIterator*>(iter_);
+    // block level
+    for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
+      assert(block_bits.empty() || j < block_bits.size());
+      if (!block_bits.empty() && !block_bits[j]) {
+        continue;
       }
-    } else {
-      size_t j = 0;
-      auto iter = dynamic_cast<TwoLevelIterator*>(iter_);
-      // block level
-      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
-        assert(j < block_bits.size());
-        if (!block_bits[j]) continue;
-        // within block
-        for (; iter->Valid(); iter->SecondLevelNext()) {
-          Status s = ProcessKeyValue(iter, res);
-          if (!s.ok()) return s;
+      // within block
+      for (; iter->Valid(); iter->SecondLevelNext()) {
+        ParsedInternalKey parsed_key;
+        if (!ParseInternalKey(iter->key(), &parsed_key)) {
+          return Status::Corruption("corrupted internal key in Table::Iter");
         }
+
+        std::string val;  // prepare for splitting user value
+        ReformatUserValue(iter->value(), columns_, splitter_, val);
+
+        std::string userkey(columns_.empty() || columns_.front()==0
+                                ? parsed_key.user_key.ToString()
+                                : "");
+        res.emplace_back(std::move(userkey), std::move(val));
       }
     }
 
@@ -922,23 +927,6 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   virtual bool IsKeyPinned() const override { return iter_->IsKeyPinned(); }
 
  private:
-  Status ProcessKeyValue(InternalIterator* iter,
-                         std::vector<RangeQueryKeyVal>& res) const {
-    ParsedInternalKey parsed_key;
-    if (!ParseInternalKey(iter->key(), &parsed_key)) {
-      return Status::Corruption("corrupted internal key in Table::Iter");
-    }
-
-    std::string val;  // prepare for splitting user value
-    ReformatUserValue(iter->value(), columns_, splitter_, val);
-
-    std::string userkey(columns_.empty() || columns_.front()==0
-                            ? parsed_key.user_key.ToString()
-                            : "");
-    res.emplace_back(std::move(userkey), std::move(val));
-    return Status::OK();
-  }
-
   InternalIterator* iter_;
   Status status_;
   const InternalKeyComparator& internal_comparator_;

@@ -142,8 +142,6 @@ int main() {
   assert(s.ok());
   assert(db);
 
-  // if background compaction is not working, write will stall
-  // because of options.level0_stop_writes_trigger
   for (int i = 1000; i < 99999; ++i) {
     db->Put(WriteOptions(), std::to_string(i),
                             std::string(500, 'a' + (i % 26)));

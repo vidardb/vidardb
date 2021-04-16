@@ -8,6 +8,7 @@ using namespace std;
 
 #include "vidardb/comparator.h"
 #include "vidardb/db.h"
+#include "vidardb/file_iter.h"
 #include "vidardb/options.h"
 #include "vidardb/splitter.h"
 #include "vidardb/status.h"
@@ -73,40 +74,42 @@ int main(int argc, char* argv[]) {
   s = db->Put(write_options, "6",
               options.splitter->Stitch({"lian6", "30", "changsha"}));
   assert(s.ok());
-  s = db->Delete(write_options, "1");
-  assert(s.ok());
-  s = db->Put(write_options, "3",
-              options.splitter->Stitch({"zhao333", "35", "nanjing"}));
-  assert(s.ok());
-  s = db->Put(write_options, "6",
-              options.splitter->Stitch({"lian666", "30", "changsha"}));
-  assert(s.ok());
-  s = db->Put(write_options, "1",
-              options.splitter->Stitch({"chen1111", "33", "hangzhou"}));
-  assert(s.ok());
-  s = db->Delete(write_options, "3");
-  assert(s.ok());
+//  s = db->Delete(write_options, "1");
+//  assert(s.ok());
+//  s = db->Put(write_options, "3",
+//              options.splitter->Stitch({"zhao333", "35", "nanjing"}));
+//  assert(s.ok());
+//  s = db->Put(write_options, "6",
+//              options.splitter->Stitch({"lian666", "30", "changsha"}));
+//  assert(s.ok());
+//  s = db->Put(write_options, "1",
+//              options.splitter->Stitch({"chen1111", "33", "hangzhou"}));
+//  assert(s.ok());
+//  s = db->Delete(write_options, "3");
+//  assert(s.ok());
 
   // test memtable or sstable
   s = db->Flush(FlushOptions());
   assert(s.ok());
 
-  ReadOptions read_options;
-  // read_options.batch_capacity = 0; // full search
-  read_options.batch_capacity = 50;  // in batch (byte)
-  read_options.columns = {1, 3};
+  ReadOptions ro;
+  ro.columns = {1, 2};
 
-  // Range range; // full search
-  // Range range("2", "5"); // [2, 5]
-  Range range("1", "6"); // [1, 6]
-  // Range range("1", kRangeQueryMax); // [1, max]
-
-  list<RangeQueryKeyVal> res;
-  bool next = true;
-  while (next) { // range query loop
-    next = db->RangeQuery(read_options, range, res, &s);
+  FileIter* iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
+  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+    FileIter::FileType type;
+    vector<vector<MinMax>> v;
+    s = iter->GetMinMax(type, v);
     assert(s.ok());
-    for (auto it : res) {
+
+    // block_bits is set for illustration purpose here.
+    std::vector<bool> block_bits(1, true);
+    vector<RangeQueryKeyVal> res;
+    s = iter->RangeQuery(block_bits, res);
+    assert(s.ok());
+
+    cout << "{ ";
+    for (auto& it : res) {
       cout << it.user_key << "=[";
       vector<Slice> vals(options.splitter->Split(it.user_val));
       for (auto i = 0u; i < vals.size(); i++) {
@@ -117,9 +120,9 @@ int main(int argc, char* argv[]) {
       }
       cout << "] ";
     }
-    cout << " key_size=" << read_options.result_key_size;
-    cout << ", val_size=" << read_options.result_val_size << endl;
+    cout << "} " << endl;
   }
+  delete iter;
 
   delete db;
   return 0;

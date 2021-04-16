@@ -195,32 +195,6 @@ int main(int argc, char* argv[]) {
   }
   delete iter;
 
-  // range query
-  cout << "=> range query:" << endl;
-  ro.batch_capacity = 50;  // in batch (byte)
-  ro.columns = {1, 3};
-  Range range;
-
-  list<RangeQueryKeyVal> res;
-  bool next = true;
-  while (next) { // range query loop
-    next = db->RangeQuery(ro, range, res, &s);
-    assert(s.ok());
-    for (auto it : res) {
-      cout << it.user_key << "=[";
-      vector<Slice> vals(options.splitter->Split(it.user_val));
-      for (auto i = 0u; i < vals.size(); i++) {
-        cout << vals[i].ToString();
-        if (i < vals.size() - 1) {
-          cout << ", ";
-        }
-      }
-      cout << "] ";
-    }
-    cout << " key_size=" << ro.result_key_size;
-    cout << ", val_size=" << ro.result_val_size << endl;
-  }
-
   if (strcmp(comparator->Name(), "CustomizedComparator") == 0) {
     delete comparator;
   }
