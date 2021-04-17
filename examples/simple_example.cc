@@ -5,15 +5,15 @@
 #include <cstdio>
 #include <iostream>
 #include <string>
+using namespace std;
 
 #include "vidardb/db.h"
 #include "vidardb/options.h"
 #include "vidardb/slice.h"
 #include "vidardb/splitter.h"
-using namespace std;
 using namespace vidardb;
 
-std::string kDBPath = "/tmp/vidardb_simple_example";
+string kDBPath = "/tmp/vidardb_simple_example";
 
 int main() {
   DB* db;
@@ -40,7 +40,7 @@ int main() {
   ReadOptions ro;
   ro.columns = {1};
 
-  std::string value;
+  string value;
   s = db->Get(ro, "key1", &value);
   assert(s.ok());
   assert(value == "val11");

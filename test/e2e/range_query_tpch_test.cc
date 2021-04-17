@@ -17,12 +17,13 @@
 //
 
 #include <stdlib.h>
-
 #include <fstream>
 #include <iostream>
+using namespace std;
 
 #include "vidardb/comparator.h"
 #include "vidardb/db.h"
+#include "vidardb/file_iter.h"
 #include "vidardb/options.h"
 #include "vidardb/splitter.h"
 #include "vidardb/status.h"
@@ -32,8 +33,8 @@ using namespace vidardb;
 
 enum kTableType { ROW, COLUMN };
 const unsigned int kColumn = 14;  // lineitem
-const std::string kDBPath = "/tmp/vidardb_range_query_tpch_test";
-const std::string delim = "|";
+const string kDBPath = "/tmp/vidardb_range_query_tpch_test";
+const string delim = "|";
 const char* kDataSet = "DATASET";
 
 int IndexOf(const char* str, const char c, const int n) {
@@ -54,13 +55,13 @@ int IndexOf(const char* str, const char c, const int n) {
   return res - str;
 }
 
-std::string GetNthAttr(const std::string& str, const int n) {
+string GetNthAttr(const string& str, const int n) {
   int i = IndexOf(str.c_str(), '|', n);
   int j = IndexOf(str.c_str(), '|', n + 1);
-  return std::string(str.substr(i + 1, j - i - 1));
+  return string(str.substr(i + 1, j - i - 1));
 }
 
-void PutFixed32(std::string* dst, uint32_t value) {
+void PutFixed32(string* dst, uint32_t value) {
   char buf[sizeof(value)];
   buf[0] = (value >> 24) & 0xff;
   buf[1] = (value >> 16) & 0xff;
@@ -69,25 +70,25 @@ void PutFixed32(std::string* dst, uint32_t value) {
   dst->append(buf, sizeof(buf));
 }
 
-void EncodeAttr(const std::string& s, std::string& k, std::string& v) {
-  std::string orderKey, lineNumber;
-  PutFixed32(&orderKey, std::stoul(GetNthAttr(s, 0)));
-  PutFixed32(&lineNumber, std::stoul(GetNthAttr(s, 3)));
+void EncodeAttr(const string& s, string& k, string& v) {
+  string orderKey, lineNumber;
+  PutFixed32(&orderKey, stoul(GetNthAttr(s, 0)));
+  PutFixed32(&lineNumber, stoul(GetNthAttr(s, 3)));
 
-  std::string partKey(GetNthAttr(s, 1));
-  std::string suppKey(GetNthAttr(s, 2));
-  std::string quantity(GetNthAttr(s, 4));
-  std::string extendedPrice(GetNthAttr(s, 5));
-  std::string discount(GetNthAttr(s, 6));
-  std::string tax(GetNthAttr(s, 7));
-  std::string returnFlag(GetNthAttr(s, 8));
-  std::string lineStatus(GetNthAttr(s, 9));
-  std::string shipDate(GetNthAttr(s, 10));
-  std::string commitDate(GetNthAttr(s, 11));
-  std::string receiptDate(GetNthAttr(s, 12));
-  std::string shipInstruct(GetNthAttr(s, 13));
-  std::string shipMode(GetNthAttr(s, 14));
-  std::string comment(GetNthAttr(s, 15));
+  string partKey(GetNthAttr(s, 1));
+  string suppKey(GetNthAttr(s, 2));
+  string quantity(GetNthAttr(s, 4));
+  string extendedPrice(GetNthAttr(s, 5));
+  string discount(GetNthAttr(s, 6));
+  string tax(GetNthAttr(s, 7));
+  string returnFlag(GetNthAttr(s, 8));
+  string lineStatus(GetNthAttr(s, 9));
+  string shipDate(GetNthAttr(s, 10));
+  string commitDate(GetNthAttr(s, 11));
+  string receiptDate(GetNthAttr(s, 12));
+  string shipInstruct(GetNthAttr(s, 13));
+  string shipMode(GetNthAttr(s, 14));
+  string comment(GetNthAttr(s, 15));
 
   k.assign(orderKey + delim + lineNumber);
   v.assign(partKey + delim + suppKey + delim + quantity + delim +
@@ -97,20 +98,19 @@ void EncodeAttr(const std::string& s, std::string& k, std::string& v) {
            comment);
 }
 
-void TestTpchRangeQuery(bool flush, kTableType table, size_t capacity,
-                        std::vector<uint32_t> cols) {
-  std::cout << ">> capacity: " << capacity << ", cols: { ";
-  for (auto& col : cols) {
-    std::cout << col << " ";
+void TestTpchRangeQuery(bool flush, kTableType table, vector<uint32_t> cols) {
+  cout << "cols: { ";
+  for (auto col : cols) {
+    cout << col << " ";
   }
-  std::cout << "}" << std::endl;
+  cout << "}" << endl;
 
   if (!getenv(kDataSet)) {
-    std::cout << "err: missing dataset" << std::endl;
+    cout << "err: missing dataset" << endl;
     return;
   }
 
-  int ret = system(std::string("rm -rf " + kDBPath).c_str());
+  int ret = system(string("rm -rf " + kDBPath).c_str());
 
   Options options;
   options.create_if_missing = true;
@@ -128,7 +128,7 @@ void TestTpchRangeQuery(bool flush, kTableType table, size_t capacity,
       static_cast<ColumnTableOptions*>(column_table->GetOptions());
   column_opts->column_count = kColumn;
   for (auto i = 0u; i < column_opts->column_count; i++) {
-    column_opts->column_comparators.push_back(BytewiseComparator());
+    column_opts->value_comparators.push_back(BytewiseComparator());
   }
   options.table_factory.reset(NewAdaptiveTableFactory(
       block_based_table, block_based_table, column_table, knob));
@@ -138,15 +138,15 @@ void TestTpchRangeQuery(bool flush, kTableType table, size_t capacity,
   assert(s.ok());
 
   // init db dataset
-  std::cout << "init dataset ..." << std::endl;
-  std::ifstream in(std::string(getenv(kDataSet)));
-  for (std::string line; getline(in, line);) {
-    std::string key, value;
+  cout << "init dataset ..." << endl;
+  ifstream in(string(getenv(kDataSet)));
+  for (string line; getline(in, line);) {
+    string key, value;
     EncodeAttr(line.substr(0, line.size() - 1), key, value);
 
     Status s = db->Put(WriteOptions(), key, value);
     if (!s.ok()) {
-      std::cout << s.ToString() << std::endl;
+      cout << s.ToString() << endl;
     }
   }
   in.close();
@@ -157,60 +157,45 @@ void TestTpchRangeQuery(bool flush, kTableType table, size_t capacity,
   }
 
   ReadOptions ro;
-  ro.batch_capacity = capacity;
   ro.columns = cols;
 
-  // full scan
-  Range range(kRangeQueryMin, kRangeQueryMax);
-  std::cout << "range query ..." << std::endl;
-  std::list<RangeQueryKeyVal> res;
-  bool next = true;
-  for (auto batch_index = 0u; next; batch_index++) {
-    std::cout << "index=" << batch_index;
-
-    next = db->RangeQuery(ro, range, res, &s);
-    if (!s.ok()) {
-      std::cout << s.ToString() << std::endl;
-    }
+  FileIter* iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
+  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+    FileIter::FileType type;
+    vector<vector<MinMax>> v;
+    s = iter->GetMinMax(type, v);
     assert(s.ok());
 
-    for (auto it : res) {
-      // std::cout << it.user_key << "=[";
+    // block_bits is set for illustration purpose here.
+    vector<bool> block_bits(1, true);
+    vector<RangeQueryKeyVal> res;
+    s = iter->RangeQuery(block_bits, res);
+    assert(s.ok());
 
-      std::vector<Slice> vals(options.splitter->Split(it.user_val));
-      if (cols.size() == 1 && cols[0] == 0) {
-        assert(vals.size() == 0);
-      } else if (!cols.empty()) {
-        assert(vals.size() == cols.size());
+    cout << "{ ";
+    for (auto& it : res) {
+      cout << it.user_key << "=[";
+      vector<Slice> vals(options.splitter->Split(it.user_val));
+      for (auto i = 0u; i < vals.size(); i++) {
+        cout << vals[i].ToString();
+        if (i < vals.size() - 1) {
+          cout << ", ";
+        };
       }
-
-      // for (auto i = 0u; i < vals.size(); i++) {
-      //   std::cout << vals[i].ToString();
-      //   if (i < vals.size() - 1) {
-      //     std::cout << ", ";
-      //   };
-      // }
-      // std::cout << "] ";
+      cout << "] ";
     }
-
-    size_t result_total_size = ro.result_key_size + ro.result_val_size;
-    std::cout << ", result_key_size=" << ro.result_key_size;
-    std::cout << ", result_val_size=" << ro.result_val_size;
-    std::cout << ", result_total_size=" << result_total_size;
-    std::cout << ", capacity=" << capacity << std::endl;
-    if (capacity > 0) {
-      assert(result_total_size <= capacity);
-    }
+    cout << "} " << endl;
   }
+  delete iter;
 
   delete db;
-  std::cout << std::endl;
+  cout << endl;
 }
 
 int main() {
-  // TestTpchRangeQuery(false, ROW, 4096 * 20, {});
-  TestTpchRangeQuery(false, COLUMN, 4096 * 20, {});
-  // TestTpchRangeQuery(true, ROW, 4096 * 20, {});
-  // TestTpchRangeQuery(true, COLUMN, 4096 * 20, {});
+  // TestTpchRangeQuery(false, ROW, {});
+  TestTpchRangeQuery(false, COLUMN, {});
+  // TestTpchRangeQuery(true, ROW, {});
+  // TestTpchRangeQuery(true, COLUMN, {});
   return 0;
 }

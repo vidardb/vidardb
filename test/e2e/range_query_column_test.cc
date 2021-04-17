@@ -4,23 +4,23 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 
 #include <iostream>
+using namespace std;
 
 #include "vidardb/comparator.h"
 #include "vidardb/db.h"
+#include "vidardb/file_iter.h"
 #include "vidardb/options.h"
 #include "vidardb/splitter.h"
 #include "vidardb/status.h"
 #include "vidardb/table.h"
-
-using namespace std;
 using namespace vidardb;
 
 const unsigned int kColumn = 3;
 const string kDBPath = "/tmp/vidardb_range_query_column_test";
 
-void TestColumnRangeQuery(bool flush, size_t capacity, vector<uint32_t> cols) {
-  cout << ">> capacity: " << capacity << ", cols: { ";
-  for (auto& col : cols) {
+void TestColumnRangeQuery(bool flush, vector<uint32_t> cols) {
+  cout << "cols: { ";
+  for (auto col : cols) {
     cout << col << " ";
   }
   cout << "}" << endl;
@@ -36,7 +36,7 @@ void TestColumnRangeQuery(bool flush, size_t capacity, vector<uint32_t> cols) {
       static_cast<ColumnTableOptions*>(table_factory->GetOptions());
   opts->column_count = kColumn;
   for (auto i = 0u; i < opts->column_count; i++) {
-    opts->column_comparators.push_back(BytewiseComparator());
+    opts->value_comparators.push_back(BytewiseComparator());
   }
   options.table_factory.reset(table_factory);
 
@@ -57,17 +57,17 @@ void TestColumnRangeQuery(bool flush, size_t capacity, vector<uint32_t> cols) {
   assert(s.ok());
   s = db->Put(wo, "6", options.splitter->Stitch({"lian6", "30", "changsha"}));
   assert(s.ok());
-  s = db->Delete(wo, "1");
-  assert(s.ok());
-  s = db->Put(wo, "3", options.splitter->Stitch({"zhao333", "35", "nanjing"}));
-  assert(s.ok());
-  s = db->Put(wo, "6", options.splitter->Stitch({"lian666", "30", "changsha"}));
-  assert(s.ok());
-  s = db->Put(wo, "1",
-              options.splitter->Stitch({"chen1111", "33", "hangzhou"}));
-  assert(s.ok());
-  s = db->Delete(wo, "3");
-  assert(s.ok());
+//  s = db->Delete(wo, "1");
+//  assert(s.ok());
+//  s = db->Put(wo, "3", options.splitter->Stitch({"zhao333", "35", "nanjing"}));
+//  assert(s.ok());
+//  s = db->Put(wo, "6", options.splitter->Stitch({"lian666", "30", "changsha"}));
+//  assert(s.ok());
+//  s = db->Put(wo, "1",
+//              options.splitter->Stitch({"chen1111", "33", "hangzhou"}));
+//  assert(s.ok());
+//  s = db->Delete(wo, "3");
+//  assert(s.ok());
 
   if (flush) {
     s = db->Flush(FlushOptions());
@@ -75,31 +75,25 @@ void TestColumnRangeQuery(bool flush, size_t capacity, vector<uint32_t> cols) {
   }
 
   ReadOptions ro;
-  ro.batch_capacity = capacity;
   ro.columns = cols;
 
-  Range range("1", "6");
+  FileIter* iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
+  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+    FileIter::FileType type;
+    vector<vector<MinMax>> v;
+    s = iter->GetMinMax(type, v);
+    assert(s.ok());
 
-  list<RangeQueryKeyVal> res;
-  bool next = true;
-  while (next) {
-    size_t total_key_size = 0, total_val_size = 0;
-    next = db->RangeQuery(ro, range, res, &s);
+    // block_bits is set for illustration purpose here.
+    vector<bool> block_bits(1, true);
+    vector<RangeQueryKeyVal> res;
+    s = iter->RangeQuery(block_bits, res);
     assert(s.ok());
 
     cout << "{ ";
-    for (auto it : res) {
-      total_key_size += it.user_key.size();
-      total_val_size += it.user_val.size();
+    for (auto& it : res) {
       cout << it.user_key << "=[";
-
       vector<Slice> vals(options.splitter->Split(it.user_val));
-      if (cols.size() == 1 && cols[0] == 0) {
-        assert(vals.size() == 0);
-      } else {
-        assert(vals.size() == cols.size());
-      }
-
       for (auto i = 0u; i < vals.size(); i++) {
         cout << vals[i].ToString();
         if (i < vals.size() - 1) {
@@ -108,31 +102,19 @@ void TestColumnRangeQuery(bool flush, size_t capacity, vector<uint32_t> cols) {
       }
       cout << "] ";
     }
-    cout << "} key_size=" << ro.result_key_size;
-    cout << ", val_size=" << ro.result_val_size << endl;
-
-    assert(total_key_size == ro.result_key_size);
-    assert(total_val_size == ro.result_val_size);
-    if (capacity > 0) {
-      assert(total_key_size + total_val_size <= capacity);
-    }
+    cout << "} " << endl;
   }
+  delete iter;
 
   delete db;
   cout << endl;
 }
 
 int main() {
-  TestColumnRangeQuery(false, 0, {1, 3});
-  TestColumnRangeQuery(false, 20, {1, 3});
-  TestColumnRangeQuery(false, 40, {1, 3});
-  TestColumnRangeQuery(false, 100, {1, 3});
-  TestColumnRangeQuery(false, 10, {0});
+  TestColumnRangeQuery(false, {1, 3});
+  TestColumnRangeQuery(false, {0});
 
-  TestColumnRangeQuery(true, 0, {1, 3});
-  TestColumnRangeQuery(true, 20, {1, 3});
-  TestColumnRangeQuery(true, 40, {1, 3});
-  TestColumnRangeQuery(true, 100, {1, 3});
-  TestColumnRangeQuery(true, 10, {0});
+  TestColumnRangeQuery(true, {1, 3});
+  TestColumnRangeQuery(true, {0});
   return 0;
 }

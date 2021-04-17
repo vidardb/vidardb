@@ -5,14 +5,14 @@
 #include <cstdio>
 #include <string>
 #include <vector>
+using namespace std;
 
 #include "vidardb/db.h"
 #include "vidardb/slice.h"
 #include "vidardb/options.h"
-
 using namespace vidardb;
 
-std::string kDBPath = "/tmp/vidardb_column_families_example";
+string kDBPath = "/tmp/vidardb_column_families_example";
 
 int main() {
   // open DB
@@ -30,21 +30,21 @@ int main() {
   delete db;
 
   // open DB with two column families
-  std::vector<ColumnFamilyDescriptor> column_families;
+  vector<ColumnFamilyDescriptor> column_families;
   // have to open default column family
   column_families.push_back(ColumnFamilyDescriptor(
       kDefaultColumnFamilyName, ColumnFamilyOptions()));
   // open the new one, too
   column_families.push_back(ColumnFamilyDescriptor(
       "new_cf", ColumnFamilyOptions()));
-  std::vector<ColumnFamilyHandle*> handles;
+  vector<ColumnFamilyHandle*> handles;
   s = DB::Open(DBOptions(), kDBPath, column_families, &handles, &db);
   assert(s.ok());
 
   // put and get from non-default column family
   s = db->Put(WriteOptions(), handles[1], Slice("key"), Slice("value"));
   assert(s.ok());
-  std::string value;
+  string value;
   ReadOptions ro;
   s = db->Get(ro, handles[1], Slice("key"), &value);
   assert(s.ok());

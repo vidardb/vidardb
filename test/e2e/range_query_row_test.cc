@@ -4,19 +4,17 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 
 #include <iostream>
+using namespace std;
 
 #include "vidardb/db.h"
+#include "vidardb/file_iter.h"
 #include "vidardb/options.h"
 #include "vidardb/status.h"
-
-using namespace std;
 using namespace vidardb;
 
 const string kDBPath = "/tmp/vidardb_range_query_row_test";
 
-void TestRowRangeQuery(bool flush, size_t capacity) {
-  cout << ">> capacity: " << capacity << endl;
-
+void TestRowRangeQuery(bool flush) {
   int ret = system(string("rm -rf " + kDBPath).c_str());
 
   Options options;
@@ -39,16 +37,16 @@ void TestRowRangeQuery(bool flush, size_t capacity) {
   assert(s.ok());
   s = db->Put(wo, "6", "data6");
   assert(s.ok());
-  s = db->Delete(wo, "1");
-  assert(s.ok());
-  s = db->Put(wo, "3", "data333");
-  assert(s.ok());
-  s = db->Put(wo, "6", "data666");
-  assert(s.ok());
-  s = db->Put(wo, "1", "data1111");
-  assert(s.ok());
-  s = db->Delete(wo, "3");
-  assert(s.ok());
+//  s = db->Delete(wo, "1");
+//  assert(s.ok());
+//  s = db->Put(wo, "3", "data333");
+//  assert(s.ok());
+//  s = db->Put(wo, "6", "data666");
+//  assert(s.ok());
+//  s = db->Put(wo, "1", "data1111");
+//  assert(s.ok());
+//  s = db->Delete(wo, "3");
+//  assert(s.ok());
 
   if (flush) {  // flush to disk
     s = db->Flush(FlushOptions());
@@ -56,46 +54,29 @@ void TestRowRangeQuery(bool flush, size_t capacity) {
   }
 
   ReadOptions ro;
-  ro.batch_capacity = capacity;
+  FileIter* iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
+  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+    FileIter::FileType type;
+    vector<vector<MinMax>> v;
+    iter->GetMinMax(type, v);
 
-  Range range("1", "6");
-
-  list<RangeQueryKeyVal> res;
-  bool next = true;
-  while (next) {
-    size_t total_key_size = 0, total_val_size = 0;
-    next = db->RangeQuery(ro, range, res, &s);
-    assert(s.ok());
-
-    cout << "{ ";
-    for (auto it : res) {
-      total_key_size += it.user_key.size();
-      total_val_size += it.user_val.size();
-      cout << it.user_key << "=" << it.user_val << " ";
-    }
-    cout << "} key_size=" << ro.result_key_size;
-    cout << ", val_size=" << ro.result_val_size << endl;
-
-    assert(total_key_size == ro.result_key_size);
-    assert(total_val_size == ro.result_val_size);
-    if (capacity > 0) {
-      assert(total_key_size + total_val_size <= capacity);
+    // block_bits is set for illustration purpose here.
+    vector<bool> block_bits(1, true);
+    vector<RangeQueryKeyVal> res;
+    iter->RangeQuery(block_bits, res);
+    for (auto& it : res) {
+      cout << it.user_key << ": " << it.user_val << endl;
     }
   }
+  delete iter;
 
   delete db;
   cout << endl;
 }
 
 int main() {
-  TestRowRangeQuery(false, 0);
-  TestRowRangeQuery(false, 10);
-  TestRowRangeQuery(false, 20);
-  TestRowRangeQuery(false, 50);
+  TestRowRangeQuery(false);
+  TestRowRangeQuery(true);
 
-  TestRowRangeQuery(true, 0);
-  TestRowRangeQuery(true, 10);
-  TestRowRangeQuery(true, 20);
-  TestRowRangeQuery(true, 50);
   return 0;
 }

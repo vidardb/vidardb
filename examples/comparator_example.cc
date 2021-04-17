@@ -38,10 +38,10 @@ class CustomizedComparator : public Comparator {
     return a == b;
   }
 
-  virtual void FindShortestSeparator(std::string* start,
+  virtual void FindShortestSeparator(string* start,
                                      const Slice& limit) const override {
     // Find length of common prefix
-    size_t min_length = std::min(start->size(), limit.size());
+    size_t min_length = min(start->size(), limit.size());
     size_t diff_index = 0;
     while ((diff_index < min_length) &&
            ((*start)[diff_index] == limit[diff_index])) {
@@ -89,7 +89,7 @@ class CustomizedComparator : public Comparator {
     }
   }
 
-  virtual void FindShortSuccessor(std::string* key) const override {
+  virtual void FindShortSuccessor(string* key) const override {
     // Find first character that can be incremented
     size_t n = key->size();
     for (size_t i = 0; i < n; i++) {

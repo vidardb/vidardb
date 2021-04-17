@@ -5,15 +5,17 @@
 
 #ifndef VIDARDB_LITE
 
+#include <string>
+using namespace std;
+
 #include "vidardb/db.h"
 #include "vidardb/options.h"
 #include "vidardb/slice.h"
 #include "vidardb/utilities/transaction.h"
 #include "vidardb/utilities/transaction_db.h"
-
 using namespace vidardb;
 
-std::string kDBPath = "/tmp/vidardb_transaction_example";
+string kDBPath = "/tmp/vidardb_transaction_example";
 
 int main() {
   // open DB
@@ -29,7 +31,7 @@ int main() {
   WriteOptions write_options;
   ReadOptions read_options;
   TransactionOptions txn_options;
-  std::string value;
+  string value;
 
   ////////////////////////////////////////////////////////
   //

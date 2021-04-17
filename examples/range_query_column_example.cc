@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
     assert(s.ok());
 
     // block_bits is set for illustration purpose here.
-    std::vector<bool> block_bits(1, true);
+    vector<bool> block_bits(1, true);
     vector<RangeQueryKeyVal> res;
     s = iter->RangeQuery(block_bits, res);
     assert(s.ok());

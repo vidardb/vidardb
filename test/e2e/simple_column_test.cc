@@ -4,9 +4,11 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 
 #include <iostream>
+using namespace std;
 
 #include "vidardb/comparator.h"
 #include "vidardb/db.h"
+#include "vidardb/file_iter.h"
 #include "vidardb/options.h"
 #include "vidardb/splitter.h"
 #include "vidardb/table.h"
@@ -14,10 +16,10 @@
 using namespace vidardb;
 
 const unsigned int kColumn = 3;  // value columns
-const std::string kDBPath = "/tmp/vidardb_simple_column_test";
+const string kDBPath = "/tmp/vidardb_simple_column_test";
 
 void TestSimpleColumnStore(bool flush) {
-  int ret = system(std::string("rm -rf " + kDBPath).c_str());
+  int ret = system(string("rm -rf " + kDBPath).c_str());
 
   Options options;
   options.create_if_missing = true;
@@ -28,7 +30,7 @@ void TestSimpleColumnStore(bool flush) {
       static_cast<ColumnTableOptions*>(table_factory->GetOptions());
   opts->column_count = kColumn;
   for (auto i = 0u; i < opts->column_count; i++) {
-    opts->column_comparators.push_back(BytewiseComparator());
+    opts->value_comparators.push_back(BytewiseComparator());
   }
   options.table_factory.reset(table_factory);
 
@@ -51,38 +53,44 @@ void TestSimpleColumnStore(bool flush) {
   ReadOptions ro;
   ro.columns = {1, 3};
 
-  std::list<RangeQueryKeyVal> res;
-  bool next = true;
-  while (next) {
-    next = db->RangeQuery(ro, Range(), res, &s);
+  FileIter* file_iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
+  for (file_iter->SeekToFirst(); file_iter->Valid(); file_iter->Next()) {
+    FileIter::FileType type;
+    vector<vector<MinMax>> v;
+    s = file_iter->GetMinMax(type, v);
     assert(s.ok());
 
-    for (auto it = res.begin(); it != res.end(); it++) {
-      std::cout << "key: " << it->user_key << ", "
-                << "val: " << it->user_val << std::endl;
-      assert(it->user_key == "key1" || it->user_key == "key2");
-      assert(it->user_val == "val11|val13" || it->user_val == "val21|val23");
+    // block_bits is set for illustration purpose here.
+    vector<bool> block_bits(1, true);
+    vector<RangeQueryKeyVal> res;
+    s = file_iter->RangeQuery(block_bits, res);
+    assert(s.ok());
+    for (auto& it : res) {
+      cout << it.user_key << ": " << it.user_val << " " << endl;
+      assert(it.user_key == "" || it.user_key == "");
+      assert(it.user_val == "val11|val13" || it.user_val == "val21|val23");
     }
   }
+  delete file_iter;
 
-  std::string value;
+  string value;
   s = db->Get(ro, "key2", &value);
   assert(s.ok());
-  std::cout << "key2: " << value << std::endl;
+  cout << "key2: " << value << endl;
   assert(value == "val21|val23");
 
   Iterator* it = db->NewIterator(ro);
   it->Seek("key1");
   assert(it->Valid());
   value = it->value().ToString();
-  std::cout << "key1: " << value << std::endl;
+  cout << "key1: " << value << endl;
   assert(value == "val11|val13");
 
   for (it->SeekToFirst(); it->Valid(); it->Next()) {
-    std::string key = it->key().ToString();
-    std::string val = it->value().ToString();
-    std::cout << "key: " << key << ", "
-              << "val: " << val << std::endl;
+    string key = it->key().ToString();
+    string val = it->value().ToString();
+    cout << "key: " << key << ", "
+         << "val: " << val << endl;
     assert(key == "key1" || key == "key2");
     assert(val == "val11|val13" || val == "val21|val23");
 
@@ -92,7 +100,7 @@ void TestSimpleColumnStore(bool flush) {
 
   delete it;
   delete db;
-  std::cout << std::endl;
+  cout << endl;
 }
 
 int main() {
