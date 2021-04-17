@@ -80,12 +80,6 @@ class InternalIterator : public Cleanable {
   virtual Status status() const = 0;
 
   /***************************** Shichao ******************************/
-  // Support OLAP range query, Table iterator should re-implement this.
-  virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
-                            std::list<RangeQueryKeyVal>& res) {
-    return Status::NotSupported(Slice("not implemented"));
-  }
-
   // Implemented in MinMaxBlock iterator
   virtual Slice min() const { return Slice(); }
 

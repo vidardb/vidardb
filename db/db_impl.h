@@ -86,12 +86,6 @@ class DBImpl : public DB {
                      const Slice& key, std::string* value) override;
 
   /*************************** Shichao ****************************/
-  using DB::RangeQuery;
-  virtual bool RangeQuery(ReadOptions& options,
-                          ColumnFamilyHandle* column_family, const Range& range,
-                          std::list<RangeQueryKeyVal>& res,
-                          Status* s = nullptr) override;
-
   virtual Iterator* NewFileIterator(const ReadOptions& options) override;
   /*************************** Shichao ****************************/
 

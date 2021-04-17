@@ -87,25 +87,21 @@ class ColumnFamilyHandle {
 static const int kMajorVersion = __VIDARDB_MAJOR__;
 static const int kMinorVersion = __VIDARDB_MINOR__;
 
-/***************************** Quanzhao *****************************/
-static const Slice kRangeQueryMin = Slice("min");  // Quanzhao
-static const Slice kRangeQueryMax = Slice("max");  // Quanzhao
+// A range of keys
+struct Range {
+  Slice start;  // Included in the range
+  Slice limit;  // Not included in the range
 
+  Range(const Slice& s, const Slice& l) : start(s), limit(l) {}
+};
+
+/***************************** Quanzhao *****************************/
 struct MinMax {
   std::string min_;
   std::string max_;
 
   MinMax(const std::string& min = {}, const std::string& max = {})
       : min_(min), max_(max) {}
-};
-
-// A range of keys
-struct Range {
-  Slice start;          // Included in the range
-  Slice limit;          // Included in the range
-
-  Range(const Slice& s = kRangeQueryMin, const Slice& l = kRangeQueryMax)
-      : start(s), limit(l) {}
 };
 
 struct RangeQueryKeyVal {
@@ -268,21 +264,6 @@ class DB {
   }
 
   /***************** Shichao **********************/
-  // OLAP, given a range of keys, return attribute(s) values.
-  // If another subrange query exists, it returns true, else false.
-  virtual bool RangeQuery(ReadOptions& options,
-                          ColumnFamilyHandle* column_family, const Range& range,
-                          std::list<RangeQueryKeyVal>& res,
-                          Status* s = nullptr) {
-    *s = Status::NotSupported(Slice());
-    return false;
-  }
-  virtual bool RangeQuery(ReadOptions& options, const Range& range,
-                          std::list<RangeQueryKeyVal>& res,
-                          Status* s = nullptr) {
-    return RangeQuery(options, DefaultColumnFamily(), range, res, s);
-  }
-
   // Used in range query for default column familty, it assumes the upper
   // level has turned update operation into delete and add, so that it is
   // reasonable to check the version of a key via the delete set.

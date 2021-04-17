@@ -598,11 +598,7 @@ ReadOptions::ReadOptions()
       tailing(false),
       total_order_seek(false),
       pin_data(false),
-      readahead_size(0),
-      batch_capacity(0),
-      range_query_meta(nullptr),
-      result_key_size(0),
-      result_val_size(0) {}
+      readahead_size(0) {}
 
 ReadOptions::ReadOptions(bool cksum, bool cache)
     : verify_checksums(cksum),
@@ -612,10 +608,5 @@ ReadOptions::ReadOptions(bool cksum, bool cache)
       tailing(false),
       total_order_seek(false),
       pin_data(false),
-      readahead_size(0),
-      batch_capacity(0),
-      range_query_meta(nullptr),
-      result_key_size(0),
-      result_val_size(0) {}
-
+      readahead_size(0) {}
 }  // namespace vidardb

@@ -448,11 +448,6 @@ class Version {
            Status* status, bool* value_found = nullptr,
            bool* key_exists = nullptr, SequenceNumber* seq = nullptr);
 
-  /**************** Shichao *******************/
-  void RangeQuery(ReadOptions& read_options, const LookupRange& range,
-                  std::list<RangeQueryKeyVal>& res, Status* status);
-  /**************** Shichao *******************/
-
   // Loads some stats information from files. Call without mutex held. It needs
   // to be called before applying the version to the version set.
   void PrepareApply(const MutableCFOptions& mutable_cf_options,

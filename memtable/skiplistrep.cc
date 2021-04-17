@@ -64,27 +64,6 @@ public:
     }
   }
 
-  /******************************* Shichao ***********************************/
-  virtual void RangeQuery(const LookupRange& range,
-                          std::list<RangeQueryKeyVal>& res,
-                          void* callback_args,
-                          bool (*callback_func)(void* arg, const char* entry))
-                          override {
-    SkipListRep::Iterator iter(&skip_list_);
-    Slice dummy_slice;
-
-    if (range.start_->user_key().compare(kRangeQueryMin) == 0) {
-      iter.SeekToFirst(); // Full search
-    } else {
-      iter.Seek(dummy_slice, range.start_->memtable_key().data());
-    }
-
-    for (; iter.Valid() && callback_func(callback_args, iter.key());
-         iter.Next()) {
-    }
-  }
-  /******************************* Shichao ***********************************/
-
   uint64_t ApproximateNumEntries(const Slice& start_ikey,
                                  const Slice& end_ikey) override {
     std::string tmp;

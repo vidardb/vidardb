@@ -301,8 +301,6 @@ class MemTableIterator : public InternalIterator {
     return Status::OK();
   }
 
-  // TODO: remove the below using after delete the old rangequery
-  using InternalIterator::RangeQuery;
   virtual Status RangeQuery(const std::vector<bool>& block_bits,
                             std::vector<RangeQueryKeyVal>& res) const override {
     res.clear();
@@ -534,97 +532,6 @@ static bool SaveValue(void* arg, const char* entry) {
   return false;
 }
 
-/***************************** Shichao *****************************/
-static bool SaveValueForRangeQuery(void* arg, const char* entry) {
-  Saver* s = reinterpret_cast<Saver*>(arg);
-  assert(s != nullptr);
-
-  uint32_t key_length;
-  const char* key_ptr = GetVarint32Ptr(entry, entry + 5, &key_length);
-  Slice internal_key = Slice(key_ptr, key_length);
-
-  RangeQueryMeta* meta =
-      static_cast<RangeQueryMeta*>(s->read_options->range_query_meta);
-  if (CompareRangeLimit(s->mem->GetInternalKeyComparator(), internal_key,
-                        meta->current_limit_key) > 0) {
-    *(s->status) = Status::OK();
-    return false;
-  }
-
-  const uint64_t tag = DecodeFixed64(key_ptr + key_length - 8);
-  ValueType type;
-  UnPackSequenceAndType(tag, &s->seq, &type);
-  SequenceNumber sequence_num = s->range->SequenceNum();
-  switch (type) {
-    case kTypeValue:
-    case kTypeDeletion:
-    case kTypeSingleDeletion: {
-      if (s->seq <= sequence_num) {
-        std::string user_key(internal_key.data(), internal_key.size() - 8);
-        SeqTypeVal stv(s->seq, type, s->res->end());
-
-        auto it = s->prev_iter;
-        if (it != meta->map_res->end()) {
-          it++;
-        }
-        it = meta->map_res->emplace_hint(it, user_key, std::move(stv));
-        s->prev_iter = it;
-
-        if (it->second.seq_ <= s->seq) {
-          // TODO: might leverage move semantic later
-          Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
-          std::string user_val;  // prepare for splitting user value
-          ReformatUserValue(v, s->read_options->columns,
-                            s->mem->GetMemTableOptions()->splitter, user_val);
-
-          if (it->second.seq_ < s->seq) {
-            // replaced
-            if (it->second.type_ == kTypeDeletion) {
-              meta->del_keys.erase(it->second.seq_);
-            }
-            assert(s->read_options->result_val_size >=
-                it->second.iter_->user_val.size());
-            s->read_options->result_val_size -= 
-                it->second.iter_->user_val.size();
-            it->second.seq_ = s->seq;
-            it->second.type_ = type;
-            it->second.iter_->user_val.assign(user_val);
-            s->read_options->result_val_size += 
-                it->second.iter_->user_val.size();
-            if (type == kTypeDeletion) {
-              meta->del_keys.insert({s->seq, it->second.iter_});
-            }
-          } else {
-            // inserted
-            size_t delta_key_size = user_key.size();
-            size_t delta_val_size = user_val.size();
-            s->res->emplace_back(user_key, user_val);
-            s->read_options->result_key_size += delta_key_size;
-            s->read_options->result_val_size += delta_val_size;
-            it->second.iter_ = --(s->res->end());
-            if (type == kTypeDeletion) {
-              meta->del_keys.insert({s->seq, it->second.iter_});
-            }
-          }
-
-          auto crl = CompressResultList(s->res, *(s->read_options));
-          if (crl.size() > 0 && meta->map_res->rbegin()->first <= user_key) {
-            // Reach the batch capacity
-            *(s->status) = Status::OK();
-            return false;
-          }
-        }
-      }
-      *(s->status) = Status::OK();
-      return true;
-    }
-    default:
-      *(s->status) = Status::Corruption(Slice());
-      return false;
-  }
-}
-/***************************** Shichao *****************************/
-
 bool MemTable::Get(ReadOptions& read_options, const LookupKey& key,
                    std::string* value, Status* s, SequenceNumber* seq) {
   // The sequence number is updated synchronously in version_set.h
@@ -656,38 +563,6 @@ bool MemTable::Get(ReadOptions& read_options, const LookupKey& key,
   PERF_COUNTER_ADD(get_from_memtable_count, 1);
   return found_final_value;
 }
-
-/***************************** Shichao *****************************/
-bool MemTable::RangeQuery(ReadOptions& read_options, const LookupRange& range,
-                          std::list<RangeQueryKeyVal>& res, Status* s) {
-  if (IsEmpty()) {
-    *s = Status::NotFound(Slice());
-    return true;
-  }
-
-  RangeQueryMeta* meta =
-      static_cast<RangeQueryMeta*>(read_options.range_query_meta);
-  Saver saver;
-  saver.status = s;
-  saver.range = &range;
-  saver.res = &res;
-  saver.prev_iter = meta->map_res->end();
-  saver.seq = kMaxSequenceNumber;
-  saver.mem = this;
-  saver.logger = moptions_.info_log;
-  saver.statistics = moptions_.statistics;
-  saver.env_ = env_;
-  saver.read_options = &read_options;
-
-  size_t old_size = res.size();
-  table_->RangeQuery(range, res, &saver, SaveValueForRangeQuery);
-  if (res.size() == old_size) {
-    *s = Status::NotFound(Slice());
-  }
-
-  return (s->ok() || s->IsNotFound());
-}
-/***************************** Shichao *****************************/
 
 void MemTableRep::Get(const LookupKey& k, void* callback_args,
                       bool (*callback_func)(void* arg, const char* entry)) {

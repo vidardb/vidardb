@@ -122,13 +122,6 @@ class MemTableRep {
   virtual void Get(const LookupKey& k, void* callback_args,
                    bool (*callback_func)(void* arg, const char* entry));
 
-  /******************************* Shichao ***********************************/
-  virtual void RangeQuery(const LookupRange& range,
-                          std::list<RangeQueryKeyVal>& res,
-                          void* callback_args,
-                          bool (*callback_func)(void* arg, const char* entry)) {}
-  /******************************* Shichao ***********************************/
-
   virtual uint64_t ApproximateNumEntries(const Slice& start_ikey,
                                          const Slice& end_key) {
     return 0;
