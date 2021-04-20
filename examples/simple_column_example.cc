@@ -53,9 +53,8 @@ int main() {
   cout << "Range Query: ";
   FileIter* file_iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
   for (file_iter->SeekToFirst(); file_iter->Valid(); file_iter->Next()) {
-    FileIter::FileType type;
     vector<vector<MinMax>> v;
-    s = file_iter->GetMinMax(type, v);
+    s = file_iter->GetMinMax(v);
     assert(s.ok());
 
     // block_bits is set for illustration purpose here.

@@ -60,9 +60,8 @@ int main(int argc, char* argv[]) {
 
   FileIter* iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-    FileIter::FileType type;
     vector<vector<MinMax>> v;
-    iter->GetMinMax(type, v);
+    iter->GetMinMax(v);
 
     // block_bits is set for illustration purpose here.
     vector<bool> block_bits(1, true);
