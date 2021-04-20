@@ -80,7 +80,7 @@ class MetaColumnBlockBuilder {
 
   MetaColumnBlockBuilder();
 
-  void Add(bool key, uint32_t value);
+  void Add(uint32_t key, uint32_t value);
   void Add(uint32_t key, uint64_t value);
   void Add(const std::string& key, const std::string& value);
 
@@ -128,6 +128,7 @@ Status ReadProperties(const Slice& handle_value, RandomAccessFileReader* file,
 Status ReadMetaColumnBlock(const Slice& handle_value,
                            RandomAccessFileReader* file, Env* env,
                            Logger* logger, uint32_t* column_num,
+                           uint32_t* column_count,
                            std::vector<uint64_t>& file_sizes);
 /*********************************** Shichao *******************************/
 

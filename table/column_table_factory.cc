@@ -72,7 +72,7 @@ TableBuilder* ColumnTableFactory::NewTableBuilder(
       table_builder_options.compression_opts,
       table_builder_options.compression_dict,
       table_builder_options.column_family_name,
-      table_builder_options.env_options);
+      table_builder_options.env_options, 0);
 
   return table_builder;
 }
@@ -82,7 +82,7 @@ Status ColumnTableFactory::SanitizeOptions(
   if (!cf_opts.splitter) {
     return Status::InvalidArgument("Missing splitter.");
   }
-  if (table_options_.column_comparators.size() != table_options_.column_count) {
+  if (table_options_.value_comparators.size() != table_options_.column_count) {
     return Status::InvalidArgument("Invalid column comparators.");
   }
   return Status::OK();
@@ -125,8 +125,8 @@ std::string ColumnTableFactory::GetPrintableTableOptions() const {
            table_options_.column_count);
   ret.append(buffer);
   for (auto i = 0u; i < table_options_.column_count; i++) {
-    const Comparator* comparator = table_options_.column_comparators[i];
-    snprintf(buffer, kBufferSize, "  column comparator[%d]: %s\n", i,
+    const Comparator* comparator = table_options_.value_comparators[i];
+    snprintf(buffer, kBufferSize, "  value comparator[%d]: %s\n", i,
              comparator->Name());
     ret.append(buffer);
   }

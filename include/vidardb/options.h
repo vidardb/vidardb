@@ -20,7 +20,6 @@
 #include <limits>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 #include "vidardb/listener.h"
@@ -1079,25 +1078,10 @@ struct ReadOptions {
   /***************************** Quanzhao *********************************/
   // If empty, RangeQuery will return all columns, else return the specified
   // index column.
-  // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
+  // Note: Column index must be ordered from 0 to MAX_COLUMN_INDEX.
   //       Index 0 means only querying the user keys, and
   //       the value column index is from 1 to MAX_COLUMN_INDEX.
   std::vector<uint32_t> columns;
-
-  // If non-zero, RangeQuery will return the expected result pairs of the given
-  // maximum size in every batch. Otherwise, it will return the all result pairs
-  // in one batch. Note: the size unit is Byte.
-  // Default: 0
-  size_t batch_capacity;
-
-  // Store the temporary states for RangeQuery.
-  // Note: Caller should not set the value.
-  void* range_query_meta;
-
-  // Store the result key and value size in one batch for RangeQuery.
-  // Note: Caller should not set the value and the size unit is Byte.
-  size_t result_key_size;
-  size_t result_val_size;
   /***************************** Quanzhao *********************************/
 
   ReadOptions();

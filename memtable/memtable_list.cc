@@ -110,20 +110,6 @@ bool MemTableListVersion::Get(ReadOptions& read_options, const LookupKey& key,
   return GetFromList(read_options, &memlist_, key, value, s, seq);
 }
 
-/******************************* Shichao *******************************/
-bool MemTableListVersion::RangeQuery(ReadOptions& read_options,
-                                     const LookupRange& range,
-                                     std::list<RangeQueryKeyVal>& res,
-                                     Status* s) {
-  for (const auto& memtable : memlist_) {
-    if (!memtable->RangeQuery(read_options, range, res, s)) {
-      return false;
-    }
-  }
-  return true;
-}
-/******************************* Shichao *******************************/
-
 bool MemTableListVersion::GetFromHistory(ReadOptions& read_options,
                                          const LookupKey& key,
                                          std::string* value, Status* s,

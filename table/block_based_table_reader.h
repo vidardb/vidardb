@@ -47,6 +47,7 @@ struct ReadOptions;
 struct ImmutableCFOptions;
 class GetContext;
 class InternalIterator;
+class IndexReader;
 
 using std::unique_ptr;
 
@@ -120,9 +121,6 @@ class BlockBasedTable : public TableReader {
   bool TEST_KeyInCache(const ReadOptions& options, const Slice& key);
 
   bool TEST_index_reader_preloaded() const;
-
-  // Implementation of IndexReader will be exposed to internal cc file only.
-  class IndexReader;
 
  private:
   struct Rep;

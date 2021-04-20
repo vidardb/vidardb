@@ -105,7 +105,7 @@ Slice PropertyBlockBuilder::Finish() {
 MetaColumnBlockBuilder::MetaColumnBlockBuilder()
     : meta_column_block_(new BlockBuilder(1)) {}
 
-void MetaColumnBlockBuilder::Add(bool key, uint32_t value) {
+void MetaColumnBlockBuilder::Add(uint32_t key, uint32_t value) {
   std::string str_key, str_val;
   PutFixed32(&str_key, key);
   PutFixed32(&str_val, value);
@@ -275,6 +275,7 @@ Status ReadProperties(const Slice& handle_value, RandomAccessFileReader* file,
 Status ReadMetaColumnBlock(const Slice& handle_value,
                            RandomAccessFileReader* file, Env* env,
                            Logger* logger, uint32_t* column_num,
+                           uint32_t* column_count,
                            std::vector<uint64_t>& file_sizes) {
   Slice v = handle_value;
   BlockHandle handle;
@@ -303,8 +304,9 @@ Status ReadMetaColumnBlock(const Slice& handle_value,
     }
 
     if (i == 0) {
-      *column_num = DecodeFixed32(iter->value().data());
-      file_sizes.resize(*column_num);
+      *column_num = DecodeFixed32(iter->key().data());
+      *column_count = DecodeFixed32(iter->value().data());
+      file_sizes.resize(*column_count);
     } else {
       Slice val = iter->value();
       GetFixed64(&val, &file_sizes[i-1]);
@@ -312,7 +314,7 @@ Status ReadMetaColumnBlock(const Slice& handle_value,
   }
 
   if (s.ok()) {
-    assert(*column_num == i-1);
+    assert(*column_count == i - 1);
   }
 
   return s;

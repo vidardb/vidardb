@@ -65,11 +65,6 @@ class MemTableListVersion {
     return Get(read_options, key, value, s, &seq);
   }
 
-  /******************************* Shichao *******************************/
-  bool RangeQuery(ReadOptions& read_options, const LookupRange& range,
-                  std::list<RangeQueryKeyVal>& res, Status* s);
-  /******************************* Shichao *******************************/
-
   // Similar to Get(), but searches the Memtable history of memtables that
   // have already been flushed.  Should only be used from in-memory only
   // queries (such as Transaction validation) as the history may contain

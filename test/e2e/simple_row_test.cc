@@ -6,18 +6,18 @@
 #include <cstdio>
 #include <iostream>
 #include <string>
+using namespace std;
 
 #include "vidardb/db.h"
 #include "vidardb/options.h"
 #include "vidardb/slice.h"
 #include "vidardb/splitter.h"
-
 using namespace vidardb;
 
-const std::string kDBPath = "/tmp/vidardb_simple_row_test";
+const string kDBPath = "/tmp/vidardb_simple_row_test";
 
 void TestSimpleRowStore(bool flush) {
-  int ret = system(std::string("rm -rf " + kDBPath).c_str());
+  int ret = system(string("rm -rf " + kDBPath).c_str());
 
   Options options;
   #ifndef VIDARDB_LITE
@@ -43,10 +43,10 @@ void TestSimpleRowStore(bool flush) {
   ReadOptions ro;
   ro.columns = {1};
 
-  std::string value;
+  string value;
   s = db->Get(ro, "key1", &value);
   assert(s.ok());
-  std::cout << "key1: " << value << std::endl;
+  cout << "key1: " << value << endl;
   assert(value == "val11");
 
   WriteBatch batch;
@@ -64,22 +64,22 @@ void TestSimpleRowStore(bool flush) {
   assert(s.IsNotFound());
 
   db->Get(ro, "key2", &value);
-  std::cout << "key2: " << value << std::endl;
+  cout << "key2: " << value << endl;
   assert(value == "val21");
 
   Iterator* iter = db->NewIterator(ro);
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-    std::string key = iter->key().ToString();
-    std::string val = iter->value().ToString();
-    std::cout << "key: " << key << ", "
-              << "val: " << val << std::endl;
+    string key = iter->key().ToString();
+    string val = iter->value().ToString();
+    cout << "key: " << key << ", "
+         << "val: " << val << endl;
     assert(key == "key2");
     assert(val == "val21");
   }
 
   delete iter;
   delete db;
-  std::cout << std::endl;
+  cout << endl;
 }
 
 int main() {

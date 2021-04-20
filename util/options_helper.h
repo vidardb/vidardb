@@ -457,8 +457,8 @@ static std::unordered_map<std::string, OptionTypeInfo> column_table_type_info =
         {"column_table.column_count",
          {offsetof(struct ColumnTableOptions, column_count),
           OptionType::kUInt32T, OptionVerificationType::kNormal}},
-        {"column_table.column_comparators",
-         {offsetof(struct ColumnTableOptions, column_comparators),
+        {"column_table.value_comparators",
+         {offsetof(struct ColumnTableOptions, value_comparators),
           OptionType::kVectorComparator, OptionVerificationType::kNormal}}};
 
 static std::unordered_map<std::string, CompressionType>

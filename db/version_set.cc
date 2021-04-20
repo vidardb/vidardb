@@ -211,69 +211,6 @@ class FilePicker {
     return nullptr;
   }
 
-  /********************************* Shichao *********************************/
-  FdWithKeyRange* GetNextFileForRangeQuery() {
-    while (!search_ended_) {
-      while (curr_index_in_curr_level_ < curr_file_level_->num_files) {
-        FdWithKeyRange* f = &curr_file_level_->files[curr_index_in_curr_level_];
-        hit_file_level_ = curr_level_;
-        is_hit_file_last_in_level_ =
-            curr_index_in_curr_level_ == curr_file_level_->num_files - 1;
-
-        bool invalid =
-            (start_.user_key().compare(kRangeQueryMin) == 0)
-                ? false
-                : (internal_comparator_->InternalKeyComparator::Compare(
-                       f->largest_key, start_.internal_key()) < 0);
-        if (is_hit_file_last_in_level_ && invalid) {
-          break;  // all keys in curr_file_level < start_key
-        }
-
-        int cmp_limit_ = -1;  // compare limit key
-        if (num_levels_ > 1 || curr_file_level_->num_files > 3) {
-          cmp_limit_ =
-              (limit_.user_key().compare(kRangeQueryMax) == 0)
-                  ? 1
-                  : user_comparator_->Compare(limit_.user_key(),
-                                              ExtractUserKey(f->smallest_key));
-          if (cmp_limit_ > 0) {  // limit > f.smallest_key
-            cmp_limit_ =
-                (limit_.user_key().compare(kRangeQueryMax) == 0)
-                    ? 1
-                    : user_comparator_->Compare(limit_.user_key(),
-                                                ExtractUserKey(f->largest_key));
-          } else {                   // limit <= f.smallest_key
-            if (curr_level_ == 0) {  // overlap
-              ++curr_index_in_curr_level_;
-              continue;
-            } else {  // level-n sorted
-              break;
-            }
-          }
-        }
-
-        returned_file_level_ = curr_level_;
-        if (curr_level_ > 0 && cmp_limit_ <= 0) {
-          // level-n [n>=1] and f.smallest_key < limit <= f.largest_key
-          // only the current sst is valid in the current level.
-          search_left_bound_ = 0;
-          search_right_bound_ = FileIndexer::kLevelMaxIndex;
-          search_ended_ = !PrepareNextLevel();  // prepare next level
-        } else {                        // level-0 or limit > f.largest_key
-          ++curr_index_in_curr_level_;  // prepare the next sst
-        }
-
-        return f;  // return the current valid sst
-      }
-
-      search_left_bound_ = 0;
-      search_right_bound_ = FileIndexer::kLevelMaxIndex;
-      search_ended_ = !PrepareNextLevel();
-    }
-    return nullptr;
-  }
-  /********************************* Shichao *********************************/
-
   // getter for current file level
   // for GET_HIT_L0, GET_HIT_L1 & GET_HIT_L2_AND_UP counts
   unsigned int GetHitFileLevel() { return hit_file_level_; }
@@ -334,7 +271,7 @@ class FilePicker {
       // any level. Otherwise, it only occurs at Level-0 (since Put/Deletes
       // are always compacted into a single entry).
       int32_t start_index;
-      if (curr_level_ == 0 || start_.user_key().compare(kRangeQueryMin) == 0) {
+      if (curr_level_ == 0) {
         // On Level-0, we read through all files to check for overlap.
         start_index = 0;
       } else {
@@ -559,7 +496,7 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
                          const EnvOptions& env_options,
                          const InternalKeyComparator& icomparator,
                          HistogramImpl* file_read_hist, bool for_compaction,
-                         int level)
+                         int level, bool os_cache = true)  // Shichao
       : TwoLevelIteratorState(),
         table_cache_(table_cache),
         read_options_(read_options),
@@ -567,7 +504,8 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
         icomparator_(icomparator),
         file_read_hist_(file_read_hist),
         for_compaction_(for_compaction),
-        level_(level) {}
+        level_(level),
+        os_cache_(os_cache) {}  // Shichao
 
   InternalIterator* NewSecondaryIterator(const Slice& meta_handle) override {
     if (meta_handle.size() != sizeof(FileDescriptor)) {
@@ -579,7 +517,7 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
       return table_cache_->NewIterator(
           read_options_, env_options_, icomparator_, *fd,
           nullptr /* don't need reference to table*/, file_read_hist_,
-          for_compaction_, nullptr /* arena */, level_);
+          for_compaction_, nullptr /* arena */, level_, os_cache_);  // Shichao
     }
   }
 
@@ -591,6 +529,7 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
   HistogramImpl* file_read_hist_;
   bool for_compaction_;
   int level_;
+  bool os_cache_;  // Shichao
 };
 
 // A wrapper of version builder which references the current version in
@@ -873,7 +812,7 @@ void Version::AddIterators(const ReadOptions& read_options,
     merge_iter_builder->AddIterator(cfd_->table_cache()->NewIterator(
         read_options, soptions, cfd_->internal_comparator(), file.fd, nullptr,
         cfd_->internal_stats()->GetFileReadHist(0), false, arena,
-        false /* skip_filters */, 0 /* level */));
+        0 /* level */));
   }
 
   // For levels > 0, we can use a concatenating iterator that sequentially
@@ -892,6 +831,31 @@ void Version::AddIterators(const ReadOptions& read_options,
           cfd_->internal_comparator(), &storage_info_.LevelFilesBrief(level));
       merge_iter_builder->AddIterator(
           NewTwoLevelIterator(state, first_level_iter, arena, false));
+    }
+  }
+}
+
+void Version::AddIterators(const ReadOptions& read_options,
+                           const EnvOptions& soptions,
+                           std::vector<InternalIterator*>* iterator_list) {
+  assert(storage_info_.finalized_);
+
+  if (storage_info_.num_non_empty_levels() == 0) {
+    // No file in the Version.
+    return;
+  }
+
+  // TODO: consider using two level iterator to save memory space
+  // Merge all level files together
+  for (int level = 0; level < storage_info_.num_non_empty_levels(); level++) {
+    for (size_t i = 0; i < storage_info_.LevelFilesBrief(level).num_files;
+         i++) {
+      const auto& file = storage_info_.LevelFilesBrief(level).files[i];
+      iterator_list->push_back(cfd_->table_cache()->NewIterator(
+          read_options, soptions, cfd_->internal_comparator(), file.fd, nullptr,
+          cfd_->internal_stats()->GetFileReadHist(0),
+          true, /* for compactions */
+          nullptr, 0, /* level */ false /* don't use os cache */));
     }
   }
 }
@@ -1019,41 +983,6 @@ void Version::Get(const ReadOptions& read_options, const LookupKey& k,
   }
   *status = Status::NotFound(); // Use an empty error message for speed
 }
-
-/******************************** Shichao ********************************/
-void Version::RangeQuery(ReadOptions& read_options,
-                         const LookupRange& range,
-                         std::list<RangeQueryKeyVal>& res,
-                         Status* status) {
-  assert(status->ok());
-
-  FilePicker fp(storage_info_.files_, *range.start_, *range.limit_,
-                &storage_info_.level_files_brief_,
-                storage_info_.num_non_empty_levels_,
-                &storage_info_.file_indexer_, user_comparator(),
-                internal_comparator());
-
-  FdWithKeyRange* f = fp.GetNextFileForRangeQuery();
-  while (f != nullptr) {
-    std::unique_ptr<InternalIterator> iter(
-       table_cache_->NewIterator(read_options, vset_->env_options_,
-                                 *internal_comparator(), f->fd, nullptr,
-                                 nullptr, true, nullptr, -1, false));
-    *status = iter->status();
-    if (!status->ok()) {
-      return;
-    }
-
-    *status = iter->RangeQuery(read_options, range, res);
-    if (!status->ok()) {
-      return;
-    }
-
-    f = fp.GetNextFileForRangeQuery();
-  }
-  *status = Status::OK();
-}
-/******************************** Shichao ********************************/
 
 void VersionStorageInfo::GenerateLevelFilesBrief() {
   level_files_brief_.resize(num_non_empty_levels_);

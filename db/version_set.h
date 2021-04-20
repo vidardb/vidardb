@@ -422,6 +422,12 @@ class Version {
   void AddIterators(const ReadOptions&, const EnvOptions& soptions,
                     MergeIteratorBuilder* merger_iter_builder);
 
+  /**************************** Shichao *****************************/
+  // Another version but for file iterators
+  void AddIterators(const ReadOptions&, const EnvOptions& soptions,
+                    std::vector<InternalIterator*>* iterator_list);
+  /**************************** Shichao *****************************/
+
   // Lookup the value for key.  If found, store it in *val and
   // return OK.  Else return a non-OK status.
   // Uses *operands to store merge_operator operations to apply later.
@@ -441,11 +447,6 @@ class Version {
   void Get(const ReadOptions&, const LookupKey& key, std::string* val,
            Status* status, bool* value_found = nullptr,
            bool* key_exists = nullptr, SequenceNumber* seq = nullptr);
-
-  /**************** Shichao *******************/
-  void RangeQuery(ReadOptions& read_options, const LookupRange& range,
-                  std::list<RangeQueryKeyVal>& res, Status* status);
-  /**************** Shichao *******************/
 
   // Loads some stats information from files. Call without mutex held. It needs
   // to be called before applying the version to the version set.

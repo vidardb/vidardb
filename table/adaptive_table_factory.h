@@ -49,29 +49,11 @@ class AdaptiveTableFactory : public TableFactory {
 
   // Sanitizes the specified DB Options.
   Status SanitizeOptions(const DBOptions& db_opts,
-                         const ColumnFamilyOptions& cf_opts) const override {
-    if (table_factory_to_write_) {
-      Status s = table_factory_to_write_->SanitizeOptions(db_opts, cf_opts);
-      if (!s.ok()) {
-        return s;
-      }
-    }
-    if (block_based_table_factory_) {
-      Status s = block_based_table_factory_->SanitizeOptions(db_opts, cf_opts);
-      if (!s.ok()) {
-        return s;
-      }
-    }
-    if (column_table_factory_) {
-      Status s = column_table_factory_->SanitizeOptions(db_opts, cf_opts);
-      if (!s.ok()) {
-        return s;
-      }
-    }
-    return Status::OK();
-  }
+                         const ColumnFamilyOptions& cf_opts) const override;
 
   std::string GetPrintableTableOptions() const override;
+
+  void* GetOptions() override;
 
   /********************** Shichao **********************/
   // not thread-safe
@@ -104,6 +86,7 @@ class AdaptiveTableFactory : public TableFactory {
   std::unordered_map<std::string, int> output_levels_;  // Shichao
   int knob_;                                            // Shichao
   std::unique_ptr<InstrumentedMutex> mutex_;            // Shichao
+  std::vector<void*> table_factory_options_;            // Quanzhao
 };
 
 }  // namespace vidardb

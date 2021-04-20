@@ -8,6 +8,7 @@ using namespace std;
 
 #include "vidardb/comparator.h"
 #include "vidardb/db.h"
+#include "vidardb/file_iter.h"
 #include "vidardb/options.h"
 #include "vidardb/splitter.h"
 #include "vidardb/table.h"
@@ -28,7 +29,7 @@ int main() {
       static_cast<ColumnTableOptions*>(table_factory->GetOptions());
   opts->column_count = M;
   for (auto i = 0u; i < opts->column_count; i++) {
-    opts->column_comparators.push_back(BytewiseComparator());
+    opts->value_comparators.push_back(BytewiseComparator());
   }
   options.table_factory.reset(table_factory);
 
@@ -39,7 +40,7 @@ int main() {
               options.splitter->Stitch({"val11", "val12", "val13"}));
   s = db->Put(WriteOptions(), "column2",
               options.splitter->Stitch({"val21", "val22", "val23"}));
-  if (!s.ok()) cout << "Put not ok!" << endl;
+  assert(s.ok());
 
   // test memtable or sstable
   s = db->Flush(FlushOptions());
@@ -47,20 +48,26 @@ int main() {
 
   ReadOptions ro;
   ro.columns = {1, 3};
-  // ro.columns = {3};
+//  ro.columns = {0};
 
   cout << "Range Query: ";
-  list<RangeQueryKeyVal> resRQ;
-  bool next = true;
-  while (next) { // range query loop
-    next = db->RangeQuery(ro, Range(), resRQ, &s);
+  FileIter* file_iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
+  for (file_iter->SeekToFirst(); file_iter->Valid(); file_iter->Next()) {
+    vector<vector<MinMax>> v;
+    s = file_iter->GetMinMax(v);
     assert(s.ok());
-    for (auto it = resRQ.begin(); it != resRQ.end(); it++) {
-      // should use splitter to split the values
-      cout << it->user_val << " ";
+
+    // block_bits is set for illustration purpose here.
+    vector<bool> block_bits(1, true);
+    vector<RangeQueryKeyVal> res;
+    s = file_iter->RangeQuery(block_bits, res);
+    assert(s.ok());
+    for (auto& it : res) {
+      cout << it.user_key << ": " << it.user_val << " ";
     }
-    cout << endl;
   }
+  delete file_iter;
+  cout << endl;
 
   string val;
   s = db->Get(ro, "column2", &val);

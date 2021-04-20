@@ -176,16 +176,6 @@ class MemTable {
     return Get(read_options, key, value, s, &seq);
   }
 
-  /******************************* Shichao *******************************/
-  // If memtable overlaps with the range including the deleted key, store
-  // it in res and return true.
-  // If memtable does not overlap with the range, store a NotFound() error
-  // in *status and return true.
-  // Else, return false.
-  bool RangeQuery(ReadOptions& read_options, const LookupRange& range,
-                  std::list<RangeQueryKeyVal>& res, Status* s);
-  /******************************* Shichao *******************************/
-
   // Get total number of entries in the mem table.
   // REQUIRES: external synchronization to prevent simultaneous
   // operations on the same MemTable (unless this Memtable is immutable).

@@ -56,10 +56,17 @@ class Block {
     return contents_.compression_type;
   }
 
+  enum BlockType : unsigned char {
+    kTypeBlock = 0x0,
+    kTypeColumn = 0x1,
+    kTypeMinMax = 0x3
+  };
+
   // If iter is null, return new Iterator
   // If iter is not null, update this one and return it as Iterator*
   InternalIterator* NewIterator(const Comparator* comparator,
-                                BlockIter* iter = nullptr, bool column = false);
+                                BlockIter* iter = nullptr,
+                                BlockType type = kTypeBlock);
 
   // Report an approximation of how much memory has been used.
   size_t ApproximateMemoryUsage() const;
@@ -196,6 +203,7 @@ class BlockIter : public InternalIterator {
                           uint32_t* index);
 };
 
+// Sub-column block iterator, used in sub columns' data block
 class ColumnBlockIter : public BlockIter {
  public:
   ColumnBlockIter() : BlockIter() {}
@@ -212,6 +220,57 @@ class ColumnBlockIter : public BlockIter {
 
   virtual bool BinarySeek(const Slice& target, uint32_t left, uint32_t right,
                           uint32_t* index) override;
+};
+
+// Min max block iterator, used in sub columns' index block
+class MinMaxBlockIter : public BlockIter {
+ public:
+  MinMaxBlockIter() : BlockIter(), max_storage_len_(0) {}
+  MinMaxBlockIter(const Comparator* comparator, const char* data,
+                  uint32_t restarts, uint32_t num_restarts)
+      : MinMaxBlockIter() {
+    Initialize(comparator, data, restarts, num_restarts);
+  }
+
+  virtual Slice min() const override {
+    assert(Valid());
+    return min_;
+  }
+
+  virtual Slice max() const override {
+    assert(Valid());
+    return max_;
+  }
+
+ private:
+  // Return the offset in data_ just past the end of the current entry.
+  virtual inline uint32_t NextEntryOffset() const override {
+    // NOTE: We don't support files bigger than 2GB
+    return static_cast<uint32_t>(min_.data() + min_.size() + max_storage_len_ -
+                                 data_);
+  }
+
+  virtual void SeekToRestartPoint(uint32_t index) override {
+    key_.Clear();
+    value_.clear();
+    max_.clear();
+    restart_index_ = index;
+    max_storage_len_ = 0;
+    // current_ will be fixed by ParseNextKey();
+
+    // ParseNextKey() starts at the end of max_, but max is not continuously
+    // stored, so set min_accordingly
+    uint32_t offset = GetRestartPoint(index);
+    min_ = Slice(data_ + offset, 0);
+  }
+
+  virtual void CorruptionError() override;
+
+  virtual bool ParseNextKey() override;
+
+  Slice min_;
+  std::string max_;
+  uint32_t max_storage_len_;
 };
 
 }  // namespace vidardb

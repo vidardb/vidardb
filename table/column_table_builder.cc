@@ -16,136 +16,42 @@
 
 #include "db/dbformat.h"
 #include "db/filename.h"
-
-#include "vidardb/cache.h"
-#include "vidardb/comparator.h"
-#include "vidardb/env.h"
-#include "vidardb/flush_block_policy.h"
-#include "vidardb/table.h"
-#include "vidardb/splitter.h"
-
 #include "table/block.h"
-#include "table/column_table_reader.h"
-#include "table/block_builder.h"
 #include "table/column_block_builder.h"
 #include "table/column_table_factory.h"
+#include "table/column_table_reader.h"
 #include "table/format.h"
+#include "table/index_builder.h"
 #include "table/meta_blocks.h"
+#include "table/min_max_block_builder.h"
 #include "table/table_builder.h"
-
-#include "util/string_util.h"
 #include "util/coding.h"
 #include "util/compression.h"
 #include "util/crc32c.h"
 #include "util/stop_watch.h"
 #include "util/string_util.h"
+#include "vidardb/cache.h"
+#include "vidardb/comparator.h"
+#include "vidardb/env.h"
+#include "vidardb/flush_block_policy.h"
+#include "vidardb/splitter.h"
+#include "vidardb/table.h"
 
 namespace vidardb {
-
-// The interface for building index.
-// Instruction for adding a new concrete IndexBuilder:
-//  1. Create a subclass instantiated from IndexBuilder.
-//  2. Add a new entry associated with that subclass in TableOptions::IndexType.
-//  3. Add a create function for the new subclass in CreateIndexBuilder.
-// Note: we can devise more advanced design to simplify the process for adding
-// new subclass, which will, on the other hand, increase the code complexity and
-// catch unwanted attention from readers. Given that we won't add/change
-// indexes frequently, it makes sense to just embrace a more straightforward
-// design that just works.
-class IndexBuilder {
- public:
-  // Index builder will construct a set of blocks which contain:
-  //  1. One primary index block.
-  struct IndexBlocks {
-    Slice index_block_contents;
-  };
-  explicit IndexBuilder(const Comparator* comparator)
-      : comparator_(comparator) {}
-
-  virtual ~IndexBuilder() {}
-
-  // Add a new index entry to index block.
-  // To allow further optimization, we provide `last_key_in_current_block` and
-  // `first_key_in_next_block`, based on which the specific implementation can
-  // determine the best index key to be used for the index block.
-  // @last_key_in_current_block: this parameter maybe overridden with the value
-  //                             "substitute key".
-  // @first_key_in_next_block: it will be nullptr if the entry being added is
-  //                           the last one in the table
-  //
-  // REQUIRES: Finish() has not yet been called.
-  virtual void AddIndexEntry(std::string* last_key_in_current_block,
-                             const Slice* first_key_in_next_block,
-                             const BlockHandle& block_handle) = 0;
-
-  // This method will be called whenever a key is added. The subclasses may
-  // override OnKeyAdded() if they need to collect additional information.
-  virtual void OnKeyAdded(const Slice& key) {}
-
-  // Inform the index builder that all entries has been written. Block builder
-  // may therefore perform any operation required for block finalization.
-  //
-  // REQUIRES: Finish() has not yet been called.
-  virtual Status Finish(IndexBlocks* index_blocks) = 0;
-
-  // Get the estimated size for index block.
-  virtual size_t EstimatedSize() const = 0;
-
- protected:
-  const Comparator* comparator_;
-};
-
-// This index builder builds space-efficient index block.
-//
-// Optimizations:
-//  1. Made block's `block_restart_interval` to be 1, which will avoid linear
-//     search when doing index lookup (can be disabled by setting
-//     index_block_restart_interval).
-//  2. Shorten the key length for index block. Other than honestly using the
-//     last key in the data block as the index key, we instead find a shortest
-//     substitute key that serves the same function.
-class ShortenedIndexBuilder : public IndexBuilder {
- public:
-  explicit ShortenedIndexBuilder(const Comparator* comparator,
-                                 int index_block_restart_interval)
-      : IndexBuilder(comparator),
-        index_block_builder_(index_block_restart_interval) {}
-
-  virtual void AddIndexEntry(std::string* last_key_in_current_block,
-                             const Slice* first_key_in_next_block,
-                             const BlockHandle& block_handle) override {
-    if (first_key_in_next_block != nullptr) {
-      comparator_->FindShortestSeparator(last_key_in_current_block,
-                                         *first_key_in_next_block);
-    } else {
-      comparator_->FindShortSuccessor(last_key_in_current_block);
-    }
-
-    std::string handle_encoding;
-    block_handle.EncodeTo(&handle_encoding);
-    index_block_builder_.Add(*last_key_in_current_block, handle_encoding);
-  }
-
-  virtual Status Finish(IndexBlocks* index_blocks) override {
-    index_blocks->index_block_contents = index_block_builder_.Finish();
-    return Status::OK();
-  }
-
-  virtual size_t EstimatedSize() const override {
-    return index_block_builder_.CurrentSizeEstimate();
-  }
-
- private:
-  BlockBuilder index_block_builder_;
-};
 
 // Without anonymous namespace here, we fail the warning -Wmissing-prototypes
 namespace {
 
 // Create a index builder based on its type.
 IndexBuilder* CreateIndexBuilder(const Comparator* comparator,
-                                 int index_block_restart_interval) {
-  return new ShortenedIndexBuilder(comparator, index_block_restart_interval);
+                                 int index_block_restart_interval,
+                                 const Comparator* value_comparator) {
+  if (value_comparator == nullptr) {
+    return new ShortenedIndexBuilder(comparator, index_block_restart_interval);
+  } else {
+    return new MinMaxShortenedIndexBuilder(
+        comparator, index_block_restart_interval, value_comparator);
+  }
 }
 
 bool GoodCompressionRatio(size_t compressed_size, size_t raw_size) {
@@ -209,7 +115,7 @@ Slice CompressBlock(const Slice& raw,
 const uint64_t kColumnTableMagicNumber = 0x88e241b785f4cfffull;
 
 struct ColumnTableBuilder::Rep {
-  bool main_column;
+  uint32_t column_num;
   const ImmutableCFOptions ioptions;
   const ColumnTableOptions table_options;
   const InternalKeyComparator& internal_comparator;
@@ -242,8 +148,7 @@ struct ColumnTableBuilder::Rep {
   const EnvOptions& env_options;
   std::vector<std::unique_ptr<ColumnTableBuilder>> builders;
 
-  Rep(bool _main_column,
-      const ImmutableCFOptions& _ioptions,
+  Rep(uint32_t _column_num, const ImmutableCFOptions& _ioptions,
       const ColumnTableOptions& table_opt,
       const InternalKeyComparator& icomparator,
       const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
@@ -252,30 +157,35 @@ struct ColumnTableBuilder::Rep {
       const CompressionType _compression_type,
       const CompressionOptions& _compression_opts,
       const std::string* _compression_dict,
-      const std::string& _column_family_name,
-      const EnvOptions& _env_options)
-      : main_column(_main_column),
+      const std::string& _column_family_name, const EnvOptions& _env_options)
+      : column_num(_column_num),
         ioptions(_ioptions),
         table_options(table_opt),
         internal_comparator(icomparator),
-        column_comparator(main_column ? new ColumnKeyComparator() : nullptr),
+        column_comparator(column_num == 0 ? new ColumnKeyComparator()
+                                          : nullptr),
         file(f),
-        data_block(main_column ?
-                new BlockBuilder(table_options.block_restart_interval) :
-                new ColumnBlockBuilder(table_options.block_restart_interval)),
-        index_builder(
-            CreateIndexBuilder(&internal_comparator,
-                               table_options.index_block_restart_interval)),
+        data_block(
+            column_num == 0
+                ? new BlockBuilder(table_options.block_restart_interval)
+                : new ColumnBlockBuilder(table_options.block_restart_interval)),
+        index_builder(CreateIndexBuilder(
+            &internal_comparator, table_options.index_block_restart_interval,
+            (column_num == 0)
+                ? nullptr
+                : table_options.value_comparators[column_num - 1])),
         compression_type(_compression_type),
         compression_opts(_compression_opts),
         compression_dict(_compression_dict),
         flush_block_policy(
-            table_options.flush_block_policy_factory->NewFlushBlockPolicy(
-                table_options, *data_block)),
+            column_num == 0
+                ? table_options.flush_block_policy_factory->NewFlushBlockPolicy(
+                      table_options, *data_block)
+                : nullptr),
         column_family_id(_column_family_id),
         column_family_name(_column_family_name),
         env_options(_env_options) {
-    if (main_column && int_tbl_prop_collector_factories) {
+    if (column_num == 0 && int_tbl_prop_collector_factories) {
       for (auto& collector_factories : *int_tbl_prop_collector_factories) {
         table_properties_collectors.emplace_back(
             collector_factories->CreateIntTblPropCollector(column_family_id));
@@ -285,19 +195,16 @@ struct ColumnTableBuilder::Rep {
 };
 
 ColumnTableBuilder::ColumnTableBuilder(
-    const ImmutableCFOptions& ioptions,
-    const ColumnTableOptions& table_options,
+    const ImmutableCFOptions& ioptions, const ColumnTableOptions& table_options,
     const InternalKeyComparator& internal_comparator,
     const std::vector<std::unique_ptr<IntTblPropCollectorFactory>>*
         int_tbl_prop_collector_factories,
     uint32_t column_family_id, WritableFileWriter* file,
     const CompressionType compression_type,
     const CompressionOptions& compression_opts,
-    const std::string* compression_dict,
-    const std::string& column_family_name,
-    const EnvOptions& env_options,
-    bool main_column) {
-  rep_ = new Rep(main_column, ioptions, table_options, internal_comparator,
+    const std::string* compression_dict, const std::string& column_family_name,
+    const EnvOptions& env_options, uint32_t column_num) {
+  rep_ = new Rep(column_num, ioptions, table_options, internal_comparator,
                  int_tbl_prop_collector_factories, column_family_id, file,
                  compression_type, compression_opts, compression_dict,
                  column_family_name, env_options);
@@ -319,16 +226,18 @@ void ColumnTableBuilder::CreateSubcolumnBuilders(Rep* r) {
                                 r->env_options);
     assert(r->status.ok());
     file->SetIOPriority(pri);
-    r->builders[i].reset(new ColumnTableBuilder(r->ioptions, r->table_options,
-        *(r->column_comparator), nullptr, r->column_family_id,
+    r->builders[i].reset(new ColumnTableBuilder(
+        r->ioptions, r->table_options, *(r->column_comparator), nullptr,
+        r->column_family_id,
         new WritableFileWriter(std::move(file), r->env_options),
         r->compression_type, r->compression_opts, r->compression_dict,
-        r->column_family_name, r->env_options, false));
+        r->column_family_name, r->env_options, i + 1));
   }
 }
 
 void ColumnTableBuilder::AddInSubcolumnBuilders(Rep* r, const Slice& key,
-                                                const Slice& value) {
+                                                const Slice& value,
+                                                bool should_flush) {
   std::vector<Slice> vals(r->ioptions.splitter->Split(value));
   if (!vals.empty() && vals.size() != r->table_options.column_count) {
     r->status = Status::InvalidArgument("table_options.column_count");
@@ -343,9 +252,8 @@ void ColumnTableBuilder::AddInSubcolumnBuilders(Rep* r, const Slice& key,
       assert(rep->internal_comparator.Compare(key, Slice(rep->last_key)) > 0);
     }
 
-    // empty key to subcolumn data block, but tail index should not empty key
-    auto should_flush = rep->flush_block_policy->
-            Update(key, vals.empty()? Slice(): vals[i]);
+    // instead of fixed block size, every block has the same amount of attribute
+    // values horizontally
     if (should_flush) {
       assert(!rep->data_block->empty());
       r->builders[i]->Flush();
@@ -362,7 +270,7 @@ void ColumnTableBuilder::AddInSubcolumnBuilders(Rep* r, const Slice& key,
     rep->props.num_entries++;
     rep->props.raw_key_size += rep->data_block->IsKeyStored() ? key.size() : 0;
     rep->props.raw_value_size += vals.empty()? 0: vals[i].size();
-    rep->index_builder->OnKeyAdded(key);
+    rep->index_builder->OnKeyAdded(vals.empty()? Slice(): vals[i]);
   }
 }
 
@@ -382,7 +290,7 @@ void ColumnTableBuilder::Add(const Slice& key, const Slice& value) {
   // Be carefull about big endian and small endian issue
   // when comparing number with binary format
   std::string pos;
-  PutFixed64BigEndian(&pos, r->props.num_entries);
+  PutFixed32BigEndian(&pos, r->props.num_entries);
 
   auto should_flush = r->flush_block_policy->Update(key, pos);
   if (should_flush) {
@@ -407,12 +315,11 @@ void ColumnTableBuilder::Add(const Slice& key, const Slice& value) {
   r->props.num_entries++;
   r->props.raw_key_size += key.size();
   r->props.raw_value_size += pos.size();
-  r->index_builder->OnKeyAdded(key);
   NotifyCollectTableCollectorsOnAdd(key, pos, r->offset,
                                     r->table_properties_collectors,
                                     r->ioptions.info_log);
 
-  AddInSubcolumnBuilders(r, pos, value);
+  AddInSubcolumnBuilders(r, pos, value, should_flush);
 }
 
 void ColumnTableBuilder::Flush() {
@@ -498,7 +405,7 @@ Status ColumnTableBuilder::status() const {
 
 Status ColumnTableBuilder::Finish() {
   Rep* r = rep_;
-  if (r->main_column) {
+  if (r->column_num == 0) {
     for (const auto& it : r->builders) {
       if (it) {
         it->rep_->status = it->Finish();
@@ -544,9 +451,9 @@ Status ColumnTableBuilder::Finish() {
     {
       MetaColumnBlockBuilder meta_column_block_builder;
       uint32_t column_count = (uint32_t)r->builders.size();
-      meta_column_block_builder.Add(r->main_column, column_count);
+      meta_column_block_builder.Add(r->column_num, column_count);
       for (auto i = 0u; i < column_count; i++) {
-          meta_column_block_builder.Add(i+1, r->builders[i]->rep_->offset);
+        meta_column_block_builder.Add(i + 1, r->builders[i]->rep_->offset);
       }
 
       BlockHandle column_block_handle;
@@ -567,7 +474,7 @@ Status ColumnTableBuilder::Finish() {
                                      : "nullptr";
       r->props.compression_name = CompressionTypeToString(r->compression_type);
 
-      if (r->main_column) {
+      if (r->column_num == 0) {
         std::string property_collectors_names = "[";
         for (size_t i = 0;
              i < r->ioptions.table_properties_collector_factories.size(); ++i) {
@@ -585,7 +492,7 @@ Status ColumnTableBuilder::Finish() {
       property_block_builder.AddTableProperty(r->props);
 
       // Add user collected properties
-      if (r->main_column) {
+      if (r->column_num == 0) {
         NotifyCollectTableCollectorsOnFinish(r->table_properties_collectors,
                                              r->ioptions.info_log,
                                              &property_block_builder);
@@ -630,7 +537,7 @@ Status ColumnTableBuilder::Finish() {
 
   // Different from blockbasedtable, we take care of subcolumn file sync and
   // close inside the builder
-  if (r->main_column) {
+  if (r->column_num == 0) {
     for (const auto& it : r->builders) {
       if (it && it->rep_->status.ok()) {
         it->rep_->file->Sync(r->ioptions.use_fsync);

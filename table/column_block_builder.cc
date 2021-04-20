@@ -56,6 +56,8 @@ void ColumnBlockBuilder::Add(const Slice& key, const Slice& value) {
     counter_ = 0;
   }
 
+  // key is actually an increasing number sequence, so we only store the key in
+  // start of every restart array to save space
   if (counter_ == 0) {
     PutVarint32(&buffer_, static_cast<uint32_t>(key.size()));
     buffer_.append(key.data(), key.size());

@@ -7,8 +7,9 @@
 using namespace std;
 
 #include "vidardb/db.h"
-#include "vidardb/status.h"
+#include "vidardb/file_iter.h"
 #include "vidardb/options.h"
+#include "vidardb/status.h"
 using namespace vidardb;
 
 string kDBPath = "/tmp/vidardb_range_query_example";
@@ -19,7 +20,9 @@ int main(int argc, char* argv[]) {
 
   // open database
   DB* db;
-  Status s = DB::Open(Options(), kDBPath, &db);
+  Options options;
+  options.splitter.reset(NewPipeSplitter());
+  Status s = DB::Open(options, kDBPath, &db);
   assert(s.ok());
 
   // insert data
@@ -37,47 +40,38 @@ int main(int argc, char* argv[]) {
   assert(s.ok());
   s = db->Put(write_options, "6", "data6");
   assert(s.ok());
-  s = db->Delete(write_options, "1");
-  assert(s.ok());
-  s = db->Put(write_options, "3", "data333");
-  assert(s.ok());
-  s = db->Put(write_options, "6", "data666");
-  assert(s.ok());
-  s = db->Put(write_options, "1", "data1111");
-  assert(s.ok());
-  s = db->Delete(write_options, "3");
-  assert(s.ok());
+//  s = db->Delete(write_options, "1");
+//  assert(s.ok());
+//  s = db->Put(write_options, "3", "data333");
+//  assert(s.ok());
+//  s = db->Put(write_options, "6", "data666");
+//  assert(s.ok());
+//  s = db->Put(write_options, "1", "data1111");
+//  assert(s.ok());
+//  s = db->Delete(write_options, "3");
+//  assert(s.ok());
 
   // test blocked sstable or memtable
   s = db->Flush(FlushOptions());
   assert(s.ok());
 
-  ReadOptions read_options;
-  // read_options.batch_capacity = 0; // full search
-  read_options.batch_capacity = 15;  // in batch (byte)
+  ReadOptions ro;
+  ro.columns = {0, 1};
 
-  // Range range; // full search
-  // Range range("2", "4"); // [2, 4]
-  Range range("1", "6"); // [1, 6]
-  // Range range("1", kRangeQueryMax); // [1, max]
+  FileIter* iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
+  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+    vector<vector<MinMax>> v;
+    iter->GetMinMax(v);
 
-  list<RangeQueryKeyVal> res;
-  bool next = true;
-  while (next) { // range query loop
-    size_t total_key_size = 0, total_val_size = 0;
-    next = db->RangeQuery(read_options, range, res, &s);
-    assert(s.ok());
-    cout<< "{ ";
-    for (auto it : res) {
-      total_key_size += it.user_key.size();
-      total_val_size += it.user_val.size();
-      cout << it.user_key << "=" << it.user_val << " ";
+    // block_bits is set for illustration purpose here.
+    vector<bool> block_bits(1, true);
+    vector<RangeQueryKeyVal> res;
+    iter->RangeQuery(block_bits, res);
+    for (auto& it : res) {
+      cout << it.user_key << ": " << it.user_val << endl;
     }
-    cout << "} key_size=" << read_options.result_key_size;
-    cout << ", val_size=" << read_options.result_val_size << endl;
-    assert(total_key_size == read_options.result_key_size);
-    assert(total_val_size == read_options.result_val_size);
   }
+  delete iter;
 
   delete db;
   return 0;

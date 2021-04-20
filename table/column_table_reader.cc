@@ -15,6 +15,7 @@
 #include "table/column_table_factory.h"
 #include "table/format.h"
 #include "table/get_context.h"
+#include "table/index_reader.h"
 #include "table/internal_iterator.h"
 #include "table/meta_blocks.h"
 #include "table/two_level_iterator.h"
@@ -38,30 +39,7 @@ namespace vidardb {
 extern const uint64_t kColumnTableMagicNumber;
 using std::unique_ptr;
 
-typedef ColumnTable::IndexReader IndexReader;
-
 namespace {
-
-// Read the block identified by "handle" from "file".
-// The only relevant option is options.verify_checksums for now.
-// On failure return non-OK.
-// On success fill *result and return OK - caller owns *result
-// @param compression_dict Data for presetting the compression library's
-//    dictionary.
-Status ReadBlockFromFile(RandomAccessFileReader* file,
-                         const ReadOptions& options, const BlockHandle& handle,
-                         std::unique_ptr<Block>* result, Env* env,
-                         bool do_uncompress, const Slice& compression_dict,
-                         Logger* info_log) {
-  BlockContents contents;
-  Status s = ReadBlockContents(file, options, handle, &contents, env,
-                               do_uncompress, compression_dict, info_log);
-  if (s.ok()) {
-    result->reset(new Block(std::move(contents)));
-  }
-
-  return s;
-}
 
 // Delete the resource that is held by the iterator.
 template <class ResourceType>
@@ -119,92 +97,6 @@ Cache::Handle* GetEntryFromCache(Cache* block_cache, const Slice& key,
 
   return cache_handle;
 }
-
-}  // namespace
-
-// -- IndexReader and its subclasses
-// IndexReader is the interface that provide the functionality for index access.
-class ColumnTable::IndexReader {
- public:
-  explicit IndexReader(const Comparator* comparator, Statistics* stats)
-      : comparator_(comparator), statistics_(stats) {}
-
-  virtual ~IndexReader() {}
-
-  // Create an iterator for index access.
-  // An iter is passed in, if it is not null, update this one and return it
-  // If it is null, create a new Iterator
-  virtual InternalIterator* NewIterator(BlockIter* iter = nullptr) = 0;
-
-  // The size of the index.
-  virtual size_t size() const = 0;
-  // Memory usage of the index block
-  virtual size_t usable_size() const = 0;
-  // return the statistics pointer
-  virtual Statistics* statistics() const { return statistics_; }
-  // Report an approximation of how much memory has been used other than memory
-  // that was allocated in block cache.
-  virtual size_t ApproximateMemoryUsage() const = 0;
-
- protected:
-  const Comparator* comparator_;
-
- private:
-  Statistics* statistics_;
-};
-
-// Index that allows binary search lookup for the first key of each block.
-// This class can be viewed as a thin wrapper for `Block` class which already
-// supports binary search.
-class BinarySearchIndexReader : public IndexReader {
- public:
-  // Read index from the file and create an instance for
-  // `BinarySearchIndexReader`.
-  // On success, index_reader will be populated; otherwise it will remain
-  // unmodified.
-  static Status Create(RandomAccessFileReader* file,
-                       const BlockHandle& index_handle, Env* env,
-                       const Comparator* comparator, IndexReader** index_reader,
-                       Statistics* statistics) {
-    std::unique_ptr<Block> index_block;
-    auto s = ReadBlockFromFile(file, ReadOptions(), index_handle, &index_block,
-                               env, true /* decompress */,
-                               Slice() /*compression dict*/,
-                               /*info_log*/ nullptr);
-
-    if (s.ok()) {
-      *index_reader = new BinarySearchIndexReader(
-          comparator, std::move(index_block), statistics);
-    }
-
-    return s;
-  }
-
-  virtual InternalIterator* NewIterator(BlockIter* iter = nullptr) override {
-    return index_block_->NewIterator(comparator_, iter);
-  }
-
-  virtual size_t size() const override { return index_block_->size(); }
-  virtual size_t usable_size() const override {
-    return index_block_->usable_size();
-  }
-
-  virtual size_t ApproximateMemoryUsage() const override {
-    assert(index_block_);
-    return index_block_->ApproximateMemoryUsage();
-  }
-
- private:
-  BinarySearchIndexReader(const Comparator* comparator,
-                          std::unique_ptr<Block>&& index_block,
-                          Statistics* stats)
-      : IndexReader(comparator, stats), index_block_(std::move(index_block)) {
-    assert(index_block_ != nullptr);
-  }
-  std::unique_ptr<Block> index_block_;
-};
-
-namespace {
 
 void DeleteCachedIndexEntry(const Slice& key, void* value) {
   IndexReader* index_reader = reinterpret_cast<IndexReader*>(value);
@@ -273,7 +165,7 @@ struct ColumnTable::Rep {
   // another member ("allocation").
   std::unique_ptr<const BlockContents> compression_dict_block;
 
-  bool main_column;
+  uint32_t column_num;
   std::vector<unique_ptr<ColumnTable>> tables;  // sub colum tables
 };
 
@@ -471,8 +363,9 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
 
   InternalIterator* iter;
   if (s.ok() && block.value != nullptr) {
-    iter = block.value->NewIterator(&rep->internal_comparator, input_iter,
-                                    !rep->main_column);
+    iter = block.value->NewIterator(
+        &rep->internal_comparator, input_iter,
+        (rep->column_num == 0) ? Block::kTypeBlock : Block::kTypeColumn);
     if (block.cache_handle != nullptr) {
       iter->RegisterCleanup(&ReleaseCachedEntry, block_cache,
                             block.cache_handle);
@@ -497,8 +390,17 @@ Status ColumnTable::CreateIndexReader(IndexReader** index_reader) {
   const Footer& footer = rep_->footer;
   Statistics* stats = rep_->ioptions.statistics;
 
-  return BinarySearchIndexReader::Create(file, footer.index_handle(), env,
-                                         comparator, index_reader, stats);
+  if (rep_->column_num == 0) {
+    return BinarySearchIndexReader::Create(file, footer.index_handle(), env,
+                                           comparator, index_reader, stats);
+  } else {
+    const ColumnTableOptions& table_options = rep_->table_options;
+    const Comparator* value_comparator =
+        table_options.value_comparators[rep_->column_num - 1];
+    return MinMaxBinarySearchIndexReader::Create(file, footer.index_handle(),
+                                                 env, comparator, index_reader,
+                                                 stats, value_comparator);
+  }
 }
 
 InternalIterator* ColumnTable::NewIndexIterator(
@@ -746,17 +648,18 @@ Status ColumnTable::Open(const ImmutableCFOptions& ioptions,
     uint32_t column_count;
     std::vector<uint64_t> file_sizes;
     s = ReadMetaColumnBlock(meta_iter->value(), rep->file.get(), ioptions.env,
-                            ioptions.info_log, &column_count, file_sizes);
+                            ioptions.info_log, &rep->column_num, &column_count,
+                            file_sizes);
     if (!s.ok()) {
       return s;
     }
 
     rep->tables.resize(column_count);
-    rep->main_column = rep->tables.empty()? false: true;
-    if (rep->main_column && column_count != rep->table_options.column_count) {
+    if (rep->column_num == 0 &&
+        column_count != rep->table_options.column_count) {
       return Status::InvalidArgument("table_options.column_count");
     }
-    if (rep->main_column) {
+    if (rep->column_num == 0) {
       rep->column_comparator.reset(new ColumnKeyComparator());
     }
 
@@ -885,24 +788,24 @@ class ColumnTable::BlockEntryIteratorState : public TwoLevelIteratorState {
 
 class ColumnTable::ColumnIterator : public InternalIterator {
  public:
-  ColumnIterator(const std::vector<InternalIterator*>& columns,
+  ColumnIterator(const std::vector<InternalIterator*>& iters,
                  bool has_main_column, const Splitter* splitter,
                  const InternalKeyComparator& internal_comparator,
-                 uint64_t num_entries = 0)
-      : columns_(columns),
+                 const std::vector<uint32_t>& columns)
+      : iters_(iters),
         has_main_column_(has_main_column),
         splitter_(splitter),
         internal_comparator_(internal_comparator),
-        num_entries_(num_entries) {}
+        columns_(columns) {}
 
   virtual ~ColumnIterator() {
-    for (const auto& it : columns_) {
+    for (const auto& it : iters_) {
       it->~InternalIterator();
     }
   }
 
-  virtual bool Valid() const {
-    for (const auto& it : columns_) {
+  virtual bool Valid() const override {
+    for (const auto& it : iters_) {
       if (!it->Valid()) {
         return false;
       }
@@ -910,24 +813,24 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return true;
   }
 
-  virtual void SeekToFirst() {
-    for (const auto& it : columns_) {
+  virtual void SeekToFirst() override {
+    for (const auto& it : iters_) {
       it->SeekToFirst();
     }
     ParseCurrentValue();
   }
 
-  virtual void SeekToLast() {
-    for (const auto& it : columns_) {
+  virtual void SeekToLast() override {
+    for (const auto& it : iters_) {
       it->SeekToLast();
     }
     ParseCurrentValue();
   }
 
-  virtual void Seek(const Slice& target) {
+  virtual void Seek(const Slice& target) override {
     Slice sub_column_target = target;
-    for (auto i = 0u; i < columns_.size(); i++) {
-      const auto& it = columns_[i];
+    for (auto i = 0u; i < iters_.size(); i++) {
+      const auto& it = iters_[i];
       if (has_main_column_ && i==0u) {
         it->Seek(target);
         if (!it->Valid()) {
@@ -945,38 +848,38 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     ParseCurrentValue();
   }
 
-  virtual void Next() {
+  virtual void Next() override {
     assert(Valid());
-    for (const auto& it : columns_) {
+    for (const auto& it : iters_) {
       it->Next();
     }
     ParseCurrentValue();
   }
 
-  virtual void Prev() {
+  virtual void Prev() override {
     assert(Valid());
-    for (const auto& it : columns_) {
+    for (const auto& it : iters_) {
       it->Prev();
     }
     ParseCurrentValue();
   }
 
-  virtual Slice key() const {
+  virtual Slice key() const override {
     assert(Valid());
-    return columns_[0]->key();
+    return iters_[0]->key();
   }
 
-  virtual Slice value() {
+  virtual Slice value() override {
     assert(Valid());
     return value_;
   }
 
-  virtual Status status() const {
+  virtual Status status() const override {
     if (!status_.ok()) {
       return status_;
     }
     Status s;
-    for (const auto& it : columns_) {
+    for (const auto& it : iters_) {
       s = it->status();
       if (!s.ok()) {
         break;
@@ -985,51 +888,125 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return s;
   }
 
-  virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
-                            std::list<RangeQueryKeyVal>& res) {
-    STVIters user_vals;
-    std::vector<bool> sub_key_bs;  // trace the valid sub_keys
-    // user key's sequence number -> sub_key_bs index
-    SeqIdxMap seq_idx_map;
-    if (num_entries_ > 0) {
-      user_vals.reserve(num_entries_);
-      sub_key_bs.reserve(num_entries_);
+  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
+    v.clear();
+    // called from NewIterator, so iters_ won't be empty
+    assert(has_main_column_);
+    // test whether it is an empty table
+    iters_.front()->SeekToFirst();
+    if (!iters_.front()->Valid()) {
+      return Status::NotFound();
     }
 
-    std::string start_sub_key;  // track start sub key
+    // columns should already be sanitized so empty columns is impossible.
+    v.resize(columns_.size());
+    // column idx
+    size_t j = 0;
+    // handle key column case
+    if (columns_.front() == 0) {
+      // store the smallest internal key in parsed_key
+      ParsedInternalKey parsed_key;
+      if (!ParseInternalKey(iters_.front()->key(), &parsed_key)) {
+        return Status::Corruption("corrupted internal key in Table::Iter");
+      }
+      // store the smallest user key
+      std::string last_block_user_key(parsed_key.user_key.data(),
+                                      parsed_key.user_key.size());
 
-    // Range query one by one to improve performance
-    for (size_t i = 0u; i < columns_.size(); i++) {
-      InternalIterator* iter = columns_[i];
+      auto iter = dynamic_cast<TwoLevelIterator*>(iters_.front());
+      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext()) {
+        // current block max internal key
+        if (!ParseInternalKey(iter->FirstLevelKey(), &parsed_key)) {
+          return Status::Corruption("corrupted internal key in Table::Iter");
+        }
 
-      if (i == 0) {  // query sub keys from main column
-        Status s= RangeQueryMainColumn(iter, read_options, range, res,
-                                       user_vals, sub_key_bs, start_sub_key,
-                                       seq_idx_map);
-        if (!s.ok()) {
-          return s;
-        }
-      } else {  // loop query all sub column values
-        if (start_sub_key.empty()) {
-          break;
-        }
-        bool last = i + 1 == columns_.size();
-        RangeQuerySubColumn(iter, last, read_options, res, user_vals,
-                            sub_key_bs, start_sub_key, seq_idx_map);
+        v[j].emplace_back(last_block_user_key, parsed_key.user_key.ToString());
+
+        // for next block's min user key
+        last_block_user_key.assign(parsed_key.user_key.data(),
+                                   parsed_key.user_key.size());
+      }
+      j++;
+    }
+
+    // handle other column cases
+    for (size_t i = 1; i < iters_.size(); i++, j++) {
+      // if not the first column, reserve the space to avoid re-allocation
+      if (j > 0) {
+        v[j].reserve(v.front().size());
+      }
+      auto iter = dynamic_cast<TwoLevelIterator*>(iters_[i]);
+      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext()) {
+        v[j].emplace_back(iter->FirstLevelMin().ToString(),
+                          iter->FirstLevelMax().ToString());
       }
     }
 
-    return Status();
+    return Status::OK();
   }
 
-  virtual void SetPinnedItersMgr(PinnedIteratorsManager* pinned_iters_mgr) {
-    for (const auto& it : columns_) {
+  // TODO: handle update and delete
+  virtual Status RangeQuery(const std::vector<bool>& block_bits,
+                            std::vector<RangeQueryKeyVal>& res) const override {
+    res.clear();
+
+    // If block_bits is empty, imply a full scan. Empty table case has been
+    // recognized by NotFound status in GetMinMax, so shouldn't reach here.
+
+    // handle key column case
+    size_t j = 0;
+    auto iter = dynamic_cast<TwoLevelIterator*>(iters_.front());
+    // block level
+    for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
+      assert(block_bits.empty() || j < block_bits.size());
+      if (!block_bits.empty() && !block_bits[j]) {
+        continue;
+      }
+      // within block
+      for (; iter->Valid(); iter->SecondLevelNext()) {
+        if (columns_.front() > 0) {
+          res.emplace_back("", "");
+        } else {
+          ParsedInternalKey parsed_key;
+          if (!ParseInternalKey(iter->key(), &parsed_key)) {
+            return Status::Corruption("corrupted internal key in Table::Iter");
+          }
+          res.emplace_back(parsed_key.user_key.ToString(), "");
+        }
+      }
+    }
+
+    // handle other column cases
+    for (size_t i = 1; i < iters_.size(); i++) {
+      j = 0;
+      size_t k = 0;
+      iter = dynamic_cast<TwoLevelIterator*>(iters_[i]);
+      bool last_column = ((i + 1) == iters_.size());
+      // block level
+      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
+        assert(block_bits.empty() || j < block_bits.size());
+        if (!block_bits.empty() && !block_bits[j]) {
+          continue;
+        }
+        // within block
+        for (; iter->Valid(); iter->SecondLevelNext()) {
+          splitter_->Append(res[k++].user_val, iter->value(), last_column);
+        }
+      }
+    }
+
+    return Status::OK();
+  }
+
+  virtual void SetPinnedItersMgr(
+      PinnedIteratorsManager* pinned_iters_mgr) override {
+    for (const auto& it : iters_) {
       it->SetPinnedItersMgr(pinned_iters_mgr);
     }
   }
 
-  virtual bool IsKeyPinned() const {
-    for (const auto& it : columns_) {
+  virtual bool IsKeyPinned() const override {
+    for (const auto& it : iters_) {
       if (!it->IsKeyPinned()) {
         return false;
       }
@@ -1040,179 +1017,26 @@ class ColumnTable::ColumnIterator : public InternalIterator {
  private:
   inline bool ParseCurrentValue() {
     value_.clear();
-    for (auto i = 0u; i < columns_.size(); i++) {
-      if (!columns_[i]->Valid()) {
+    for (auto i = 0u; i < iters_.size(); i++) {
+      if (!iters_[i]->Valid()) {
         return false;
       }
       if (has_main_column_ && i==0u) {
         // skip main column (only key)
         continue;
       }
-      splitter_->Append(value_, columns_[i]->value(), i + 1 == columns_.size());
+      splitter_->Append(value_, iters_[i]->value(), i + 1 == iters_.size());
     }
     return true;
   }
 
-  typedef std::vector<std::map<std::string, SeqTypeVal>::iterator> STVIters;
-  typedef std::unordered_map<SequenceNumber, size_t> SeqIdxMap;
-
-  Status RangeQueryMainColumn(InternalIterator* iter, ReadOptions& read_options,
-                              const LookupRange& range,
-                              std::list<RangeQueryKeyVal>& res,
-                              STVIters& user_vals,
-                              std::vector<bool>& sub_key_bs,
-                              std::string& start_sub_key,
-                              SeqIdxMap& seq_idx_map) {
-    if (range.start_->user_key().compare(kRangeQueryMin) == 0) {
-      iter->SeekToFirst(); // Full search
-    } else {
-      iter->Seek(range.start_->internal_key());
-    }
-
-    RangeQueryMeta* meta =
-        static_cast<RangeQueryMeta*>(read_options.range_query_meta);
-    SequenceNumber sequence_num = range.SequenceNum();
-
-    for (; iter->Valid(); iter->Next()) {  // main iterator
-      if (CompareRangeLimit(internal_comparator_, iter->key(),
-                            meta->current_limit_key) > 0) {
-        break;
-      }
-
-      ParsedInternalKey parsed_key;
-      if (!ParseInternalKey(iter->key(), &parsed_key)) {
-        return Status::Corruption("corrupted internal key in Table::Iter");
-      }
-
-      if (parsed_key.sequence <= sequence_num) {
-        std::string user_key(iter->key().data(), iter->key().size() - 8);
-        SeqTypeVal stv(parsed_key.sequence, parsed_key.type, res.end());
-        if (start_sub_key.empty()) {  // record the sub start key
-          start_sub_key.assign(iter->value().data_, iter->value().size_);
-        }
-
-        // give accurate hint
-        auto it = meta->map_res->end();
-        if (!user_vals.empty()) {
-          it = user_vals.back();
-          it++;
-        }
-        it = meta->map_res->emplace_hint(it, user_key, std::move(stv));
-        if (it->second.seq_ > parsed_key.sequence) {
-          // already exists the same user key, which shadows the current
-          sub_key_bs.push_back(false);
-          continue;
-        }
-
-        // two cases:
-        // 1. already exists the same user key, invalidate the old one
-        // 2. same seq, the current one
-        sub_key_bs.push_back(true);
-        seq_idx_map.insert({parsed_key.sequence, sub_key_bs.size() - 1});
-
-        if (it->second.seq_ < parsed_key.sequence) {
-          // replaced
-          if (it->second.type_ == kTypeDeletion) {
-            meta->del_keys.erase(it->second.seq_);
-          }
-          assert(read_options.result_val_size >=
-                 it->second.iter_->user_val.size());
-          read_options.result_val_size -= it->second.iter_->user_val.size();
-          it->second.seq_ = parsed_key.sequence;
-          it->second.type_ = parsed_key.type;
-          it->second.iter_->user_val = "";
-          user_vals.push_back(it);
-          if (parsed_key.type == kTypeDeletion) {
-            meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
-          }
-        } else {
-          // inserted
-          res.emplace_back(user_key, "");
-          read_options.result_key_size += user_key.size();
-          it->second.iter_ = --res.end();
-          user_vals.push_back(it);
-          if (parsed_key.type == kTypeDeletion) {
-            meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
-          }
-
-          // check the result size only by key size
-          auto crl = CompressResultList(&res, read_options);
-          if (crl.size() > 0 && meta->map_res->rbegin()->first <= user_key) {
-            if (meta->map_res->rbegin()->first < user_key) {
-              for (auto& seq : crl) {
-                // element added but popped out in map
-                // remove in bits as well
-                if (seq_idx_map.erase(seq) > 0) {
-                  sub_key_bs.pop_back();
-                  user_vals.pop_back();
-                }
-              }
-            }
-            break;  // Reach the batch capacity
-          }
-        }
-      } else {
-        sub_key_bs.push_back(false);
-      }
-    }
-
-    return Status();
-  }
-
-  void RangeQuerySubColumn(InternalIterator* iter, bool last,
-                           ReadOptions& read_options,
-                           std::list<RangeQueryKeyVal>& res,
-                           STVIters& user_vals, std::vector<bool>& sub_key_bs,
-                           const std::string& start_sub_key,
-                           SeqIdxMap& seq_idx_map) {
-    assert(!start_sub_key.empty());
-    iter->Seek(start_sub_key);
-
-    size_t sub_key_idx = 0, user_val_idx = 0;
-    for (; iter->Valid() && sub_key_idx < sub_key_bs.size(); iter->Next()) {
-      if (!sub_key_bs[sub_key_idx++]) {  // follow sub_key's order
-        continue;
-      }
-
-      auto& it = user_vals[user_val_idx++]->second.iter_;
-      size_t prev_val_size = it->user_val.size();
-      splitter_->Append(it->user_val, iter->value(), last);
-      size_t delta_val_size = it->user_val.size() - prev_val_size;
-      read_options.result_val_size += delta_val_size;
-
-      // check the result size by key and value size
-      auto crl = CompressResultList(&res, read_options);
-      if (crl.size() > 0) {  // Reach the batch capacity
-        size_t smallest_idx = sub_key_bs.size();
-        for (auto& seq : crl) {
-          auto idx_iter = seq_idx_map.find(seq);
-          if (idx_iter == seq_idx_map.end()) {
-            // user_key is not in this sstable
-            continue;
-          }
-
-          size_t idx = idx_iter->second;
-          assert(idx <= sub_key_bs.size());
-          smallest_idx = std::min(smallest_idx, idx);
-          seq_idx_map.erase(idx_iter);
-        }
-
-        // remove sub_key index from sub_key_bs
-        assert(smallest_idx <= sub_key_bs.size());
-        if (smallest_idx < sub_key_bs.size()) {
-          sub_key_bs.resize(smallest_idx);
-        }
-      }
-    }
-  }
-
-  std::vector<InternalIterator*> columns_;
+  std::vector<InternalIterator*> iters_;
   std::string value_;
   Status status_;
   bool has_main_column_;  // true in NewIterator, false in Get & Prefetch
   const Splitter* splitter_;                         // used in rangequery
   const InternalKeyComparator& internal_comparator_; // used in rangrquery
-  uint64_t num_entries_;  // used in rangrquery
+  const std::vector<uint32_t> columns_;              // used in rangequery
 };
 
 // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
@@ -1242,17 +1066,19 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
   std::vector<InternalIterator*> iters;  // main column
   iters.push_back(NewTwoLevelIterator(new BlockEntryIteratorState(this, ro),
                                       NewIndexIterator(ro), arena));
+
   for (const auto& column_index : ro.columns) {  // sub column
     if (column_index < 1) {  // only process the value columns
       continue;
     }
+
+    auto& table = rep_->tables[column_index-1];
     iters.push_back(NewTwoLevelIterator(
         new BlockEntryIteratorState(rep_->tables[column_index-1].get(), ro),
-        rep_->tables[column_index-1]->NewIndexIterator(ro), arena));
+        table->NewIndexIterator(ro), arena));
   }
   return new ColumnIterator(iters, true, rep_->ioptions.splitter,
-                            rep_->internal_comparator,
-                            rep_->table_properties->num_entries);
+                            rep_->internal_comparator, ro.columns);
 }
 
 Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
@@ -1306,7 +1132,7 @@ Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
 
       ColumnIterator citers(iters, false, rep_->ioptions.splitter,
                             rep_->internal_comparator, /* might change*/
-                            rep_->table_properties->num_entries);
+                            ro.columns);
       if (!citers.status().ok()) {
         s = citers.status();
         break;
@@ -1404,8 +1230,7 @@ Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end,
     }
 
     ColumnIterator citers(iters, false, rep_->ioptions.splitter,
-                          rep_->internal_comparator,
-                          rep_->table_properties->num_entries);
+                          rep_->internal_comparator, ro.columns);
     if (!citers.status().ok()) {
       return citers.status();
     }
@@ -1450,7 +1275,7 @@ uint64_t ColumnTable::ApproximateOffsetOf(const Slice& key) {
     }
   }
 
-  if (!rep_->main_column) {
+  if (rep_->column_num > 0) {
     return result;
   }
 
@@ -1587,9 +1412,9 @@ void ColumnTable::Close() {
   if (!rep_->table_options.no_block_cache) {
     char cache_key[kMaxCacheKeyPrefixSize + kMaxVarint64Length];
     // Get the index block key
-    auto key = GetCacheKeyFromOffset(rep_->cache_key_prefix,
-                                rep_->cache_key_prefix_size,
-                                rep_->dummy_index_reader_offset, cache_key);
+    auto key = GetCacheKeyFromOffset(
+        rep_->cache_key_prefix, rep_->cache_key_prefix_size,
+        rep_->dummy_index_reader_offset, cache_key);
     rep_->table_options.block_cache.get()->Erase(key);
   }
   for (const auto& it : rep_->tables) {
@@ -1600,7 +1425,7 @@ void ColumnTable::Close() {
 }
 
 ColumnTable::~ColumnTable() {
-  if (rep_->main_column) {
+  if (rep_->column_num == 0) {
     Close();
   }
   delete rep_;

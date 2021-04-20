@@ -91,7 +91,7 @@ void BlockIter::Seek(const Slice& target) {
     return;
   }
   SeekToRestartPoint(index);
-  // Linear search (within restart block) for first key >= target
+  // Linear search (within restart area) for first key >= target
 
   while (true) {
     if (!ParseNextKey() || Compare(key_.GetKey(), target) >= 0) {
@@ -198,28 +198,6 @@ bool BlockIter::BinarySeek(const Slice& target, uint32_t left, uint32_t right,
   return true;
 }
 
-uint32_t Block::NumRestarts() const {
-  assert(size_ >= 2*sizeof(uint32_t));
-  return DecodeFixed32(data_ + size_ - sizeof(uint32_t));
-}
-
-Block::Block(BlockContents&& contents)
-    : contents_(std::move(contents)),
-      data_(contents_.data.data()),
-      size_(contents_.data.size()) {
-  if (size_ < sizeof(uint32_t)) {
-    size_ = 0;  // Error marker
-  } else {
-    restart_offset_ =
-        static_cast<uint32_t>(size_) - (1 + NumRestarts()) * sizeof(uint32_t);
-    if (restart_offset_ > size_ - sizeof(uint32_t)) {
-      // The size is too small for NumRestarts() and therefore
-      // restart_offset_ wrapped around.
-      size_ = 0;
-    }
-  }
-}
-
 // Helper routine: decode the next block entry starting at "p",
 // storing the number of the length of the key or value in "key_length"
 // or "*value_length". Will not derefence past "limit".
@@ -261,16 +239,16 @@ void ColumnBlockIter::Seek(const Slice& target) {
   }
 
   Slice key = key_.GetKey();
-  uint64_t restart_pos = 0;
-  GetFixed64BigEndian(&key, &restart_pos);
+  uint32_t restart_pos = 0;
+  GetFixed32BigEndian(&key, &restart_pos);
 
-  uint64_t target_pos = 0;
-  GetFixed64BigEndian(&target, &target_pos);
+  uint32_t target_pos = 0;
+  GetFixed32BigEndian(&target, &target_pos);
 
-  uint64_t step = target_pos - restart_pos;
+  uint32_t step = target_pos - restart_pos;
 
-  // Linear search (within restart block) for first key >= target
-  for (uint64_t i = 0u; i < step; i++) {
+  // Linear search (within restart area) for first key >= target
+  for (uint32_t i = 0u; i < step; i++) {
     if (!ParseNextKey()) {
       return;
     }
@@ -294,6 +272,7 @@ bool ColumnBlockIter::ParseNextKey() {
   }
 
   uint32_t restart_offset = GetRestartPoint(restart_index_);
+  // within the restart area, key is not stored because it is merely sequence
   bool has_key = (restart_offset == current_ ? true : false);
 
   // Decode next entry
@@ -307,7 +286,7 @@ bool ColumnBlockIter::ParseNextKey() {
     key_.SetKey(Slice(p, key_length), false /* copy */);
   }
   p += key_length;
-  uint32_t value_length;
+  uint32_t value_length = 0;
   p = DecodeKeyOrValue(p, limit, &value_length);
   if (p == nullptr) {
     CorruptionError();
@@ -353,8 +332,96 @@ bool ColumnBlockIter::BinarySeek(const Slice& target, uint32_t left,
   return true;
 }
 
+void MinMaxBlockIter::CorruptionError() {
+  BlockIter::CorruptionError();
+  min_.clear();
+  max_.clear();
+  max_storage_len_ = 0;
+}
+
+// Helper routine: decode the next block max starting at "p",
+// storing the number of shared bytes, non_shared bytes, in "*shared",
+// "*non_shared" respectively.  Will not derefence past "limit".
+//
+// If any errors are detected, returns nullptr.  Otherwise, returns a
+// pointer to the key delta (just past the three decoded values).
+static inline const char* DecodeMax(const char* p, const char* limit,
+                                    uint32_t* shared, uint32_t* non_shared) {
+  if (limit - p < 2) return nullptr;
+  *shared = reinterpret_cast<const unsigned char*>(p)[0];
+  *non_shared = reinterpret_cast<const unsigned char*>(p)[1];
+  if ((*shared | *non_shared) < 128) {
+    // Fast path: all three values are encoded in one byte each
+    p += 2;
+  } else {
+    if ((p = GetVarint32Ptr(p, limit, shared)) == nullptr) return nullptr;
+    if ((p = GetVarint32Ptr(p, limit, non_shared)) == nullptr) return nullptr;
+  }
+
+  if (static_cast<uint32_t>(limit - p) < *non_shared) {
+    return nullptr;
+  }
+  return p;
+}
+
+bool MinMaxBlockIter::ParseNextKey() {
+  bool ret = BlockIter::ParseNextKey();
+  if (!ret) {
+    return false;
+  }
+
+  const char* p = value_.data_ + value_.size_;
+  const char* limit = data_ + restarts_;  // Restarts come right after data
+  // Decode min
+  uint32_t shared, non_shared;
+  p = DecodeKeyOrValue(p, limit, &non_shared);
+  if (p == nullptr) {
+    CorruptionError();
+    return false;
+  }
+  min_ = Slice(p, non_shared);
+  p += non_shared;
+  const char* max_start = p;
+
+  // Decode max
+  p = DecodeMax(p, limit, &shared, &non_shared);
+  if (p == nullptr || min_.size() < shared) {
+    CorruptionError();
+    return false;
+  }
+  max_.clear();
+  max_.assign(min_.data(), shared);
+  max_.append(p, non_shared);
+
+  p += non_shared;
+  max_storage_len_ = p - max_start;
+  return true;
+}
+
+uint32_t Block::NumRestarts() const {
+  assert(size_ >= 2 * sizeof(uint32_t));
+  return DecodeFixed32(data_ + size_ - sizeof(uint32_t));
+}
+
+Block::Block(BlockContents&& contents)
+    : contents_(std::move(contents)),
+      data_(contents_.data.data()),
+      size_(contents_.data.size()) {
+  if (size_ < sizeof(uint32_t)) {
+    size_ = 0;  // Error marker
+  } else {
+    restart_offset_ =
+        static_cast<uint32_t>(size_) - (1 + NumRestarts()) * sizeof(uint32_t);
+    if (restart_offset_ > size_ - sizeof(uint32_t)) {
+      // The size is too small for NumRestarts() and therefore
+      // restart_offset_ wrapped around.
+      size_ = 0;
+    }
+  }
+}
+
 InternalIterator* Block::NewIterator(const Comparator* cmp, BlockIter* iter,
-                                     bool column) {
+                                     BlockType type) {
   if (size_ < 2*sizeof(uint32_t)) {
     if (iter != nullptr) {
       iter->SetStatus(Status::Corruption("bad block contents"));
@@ -375,9 +442,17 @@ InternalIterator* Block::NewIterator(const Comparator* cmp, BlockIter* iter,
     if (iter != nullptr) {
       iter->Initialize(cmp, data_, restart_offset_, num_restarts);
     } else {
-      iter = column ?
-              new ColumnBlockIter(cmp, data_, restart_offset_, num_restarts):
-              new BlockIter(cmp, data_, restart_offset_, num_restarts);
+      switch (type) {
+        case kTypeBlock:
+          return new BlockIter(cmp, data_, restart_offset_, num_restarts);
+        case kTypeColumn:
+          return new ColumnBlockIter(cmp, data_, restart_offset_, num_restarts);
+        case kTypeMinMax:
+          return new MinMaxBlockIter(cmp, data_, restart_offset_, num_restarts);
+        default:
+          return NewErrorInternalIterator(
+              Status::Corruption("unknown block type"));
+      }
     }
   }
 

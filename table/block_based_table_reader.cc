@@ -21,6 +21,7 @@
 #include "table/block_based_table_factory.h"
 #include "table/format.h"
 #include "table/get_context.h"
+#include "table/index_reader.h"
 #include "table/internal_iterator.h"
 #include "table/meta_blocks.h"
 #include "table/two_level_iterator.h"
@@ -44,30 +45,7 @@ namespace vidardb {
 extern const uint64_t kBlockBasedTableMagicNumber;
 using std::unique_ptr;
 
-typedef BlockBasedTable::IndexReader IndexReader;
-
 namespace {
-
-// Read the block identified by "handle" from "file".
-// The only relevant option is options.verify_checksums for now.
-// On failure return non-OK.
-// On success fill *result and return OK - caller owns *result
-// @param compression_dict Data for presetting the compression library's
-//    dictionary.
-Status ReadBlockFromFile(RandomAccessFileReader* file,
-                         const ReadOptions& options, const BlockHandle& handle,
-                         std::unique_ptr<Block>* result, Env* env,
-                         bool do_uncompress, const Slice& compression_dict,
-                         Logger* info_log) {
-  BlockContents contents;
-  Status s = ReadBlockContents(file, options, handle, &contents, env,
-                               do_uncompress, compression_dict, info_log);
-  if (s.ok()) {
-    result->reset(new Block(std::move(contents)));
-  }
-
-  return s;
-}
 
 // Delete the resource that is held by the iterator.
 template <class ResourceType>
@@ -125,92 +103,6 @@ Cache::Handle* GetEntryFromCache(Cache* block_cache, const Slice& key,
 
   return cache_handle;
 }
-
-}  // namespace
-
-// -- IndexReader and its subclasses
-// IndexReader is the interface that provide the functionality for index access.
-class BlockBasedTable::IndexReader {
- public:
-  explicit IndexReader(const Comparator* comparator, Statistics* stats)
-      : comparator_(comparator), statistics_(stats) {}
-
-  virtual ~IndexReader() {}
-
-  // Create an iterator for index access.
-  // An iter is passed in, if it is not null, update this one and return it
-  // If it is null, create a new Iterator
-  virtual InternalIterator* NewIterator(BlockIter* iter = nullptr) = 0;
-
-  // The size of the index.
-  virtual size_t size() const = 0;
-  // Memory usage of the index block
-  virtual size_t usable_size() const = 0;
-  // return the statistics pointer
-  virtual Statistics* statistics() const { return statistics_; }
-  // Report an approximation of how much memory has been used other than memory
-  // that was allocated in block cache.
-  virtual size_t ApproximateMemoryUsage() const = 0;
-
- protected:
-  const Comparator* comparator_;
-
- private:
-  Statistics* statistics_;
-};
-
-// Index that allows binary search lookup for the first key of each block.
-// This class can be viewed as a thin wrapper for `Block` class which already
-// supports binary search.
-class BinarySearchIndexReader : public IndexReader {
- public:
-  // Read index from the file and create an instance for
-  // `BinarySearchIndexReader`.
-  // On success, index_reader will be populated; otherwise it will remain
-  // unmodified.
-  static Status Create(RandomAccessFileReader* file,
-                       const BlockHandle& index_handle, Env* env,
-                       const Comparator* comparator, IndexReader** index_reader,
-                       Statistics* statistics) {
-    std::unique_ptr<Block> index_block;
-    auto s = ReadBlockFromFile(file, ReadOptions(), index_handle, &index_block,
-                               env, true /* decompress */,
-                               Slice() /*compression dict*/,
-                               /*info_log*/ nullptr);
-
-    if (s.ok()) {
-      *index_reader = new BinarySearchIndexReader(
-          comparator, std::move(index_block), statistics);
-    }
-
-    return s;
-  }
-
-  virtual InternalIterator* NewIterator(BlockIter* iter = nullptr) override {
-    return index_block_->NewIterator(comparator_, iter);
-  }
-
-  virtual size_t size() const override { return index_block_->size(); }
-  virtual size_t usable_size() const override {
-    return index_block_->usable_size();
-  }
-
-  virtual size_t ApproximateMemoryUsage() const override {
-    assert(index_block_);
-    return index_block_->ApproximateMemoryUsage();
-  }
-
- private:
-  BinarySearchIndexReader(const Comparator* comparator,
-                          std::unique_ptr<Block>&& index_block,
-                          Statistics* stats)
-      : IndexReader(comparator, stats), index_block_(std::move(index_block)) {
-    assert(index_block_ != nullptr);
-  }
-  std::unique_ptr<Block> index_block_;
-};
-
-namespace {
 
 void DeleteCachedIndexEntry(const Slice& key, void* value) {
   IndexReader* index_reader = reinterpret_cast<IndexReader*>(value);
@@ -839,139 +731,118 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
     iter_->~InternalIterator();
   }
 
-  virtual bool Valid() const {
-    return iter_->Valid();
-  }
+  virtual bool Valid() const override { return iter_->Valid(); }
 
-  virtual void SeekToFirst() {
-    iter_->SeekToFirst();
-  }
+  virtual void SeekToFirst() override { iter_->SeekToFirst(); }
 
-  virtual void SeekToLast() {
-    iter_->SeekToLast();
-  }
+  virtual void SeekToLast() override { iter_->SeekToLast(); }
 
-  virtual void Seek(const Slice& target) {
-    iter_->Seek(target);
-  }
+  virtual void Seek(const Slice& target) override { iter_->Seek(target); }
 
-  virtual void Next() {
+  virtual void Next() override {
     assert(Valid());
     iter_->Next();
   }
 
-  virtual void Prev() {
+  virtual void Prev() override {
     assert(Valid());
     iter_->Prev();
   }
 
-  virtual Slice key() const {
+  virtual Slice key() const override {
     assert(Valid());
     return iter_->key();
   }
 
-  virtual Slice value() {
+  virtual Slice value() override {
     assert(Valid());
     Slice v = iter_->value();
-    if (columns_.empty() || !splitter_ || v.empty()) {
-      return v;
-    }
-    value_.clear();  // prepare for splitting user value
     return ReformatUserValue(v, columns_, splitter_, value_);
   }
 
-  virtual Status status() const {
-    return iter_->status();
-  }
+  virtual Status status() const override { return iter_->status(); }
 
-  virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
-                            std::list<RangeQueryKeyVal>& res) {
-    if (range.start_->user_key().compare(kRangeQueryMin) == 0) {
-      iter_->SeekToFirst(); // Full search
-    } else {
-      iter_->Seek(range.start_->internal_key());
+  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
+    v.clear();
+    // test whether it is an empty table
+    iter_->SeekToFirst();
+    if (!iter_->Valid()) {
+      return Status::NotFound();
     }
 
-    SequenceNumber sequence_num = range.SequenceNum();
-    RangeQueryMeta* meta =
-        static_cast<RangeQueryMeta*>(read_options.range_query_meta);
-    auto prev_it = meta->map_res->end();  // record previous iterator
-    for (; iter_->Valid(); iter_->Next()) {
-      if (CompareRangeLimit(internal_comparator_, iter_->key(),
-                            meta->current_limit_key) > 0) {
-        break;
-      }
-
+    // all columns or key column is involved
+    // In other cases, we really can don nothing here.
+    if (columns_.empty() || columns_.front() == 0) {
+      // only key column is useful
+      v.resize(1);
+      // store the smallest internal key in parsed_key
       ParsedInternalKey parsed_key;
       if (!ParseInternalKey(iter_->key(), &parsed_key)) {
         return Status::Corruption("corrupted internal key in Table::Iter");
       }
+      // store the smallest user key
+      std::string last_block_user_key(parsed_key.user_key.data(),
+                                      parsed_key.user_key.size());
 
-      if (parsed_key.sequence <= sequence_num) {
-        std::string user_key(iter_->key().data(), iter_->key().size() - 8);
-        SeqTypeVal stv(parsed_key.sequence, parsed_key.type, res.end());
-
-        auto it = prev_it;
-        if (it != meta->map_res->end()) {
-          it++;
-        }
-        it = meta->map_res->emplace_hint(it, user_key, std::move(stv));
-        prev_it = it;
-
-        if (it->second.seq_ > parsed_key.sequence) {
-          // already exists the same user key, which shadows the current
-          continue;
+      auto iter = dynamic_cast<TwoLevelIterator*>(iter_);
+      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext()) {
+        // current block max internal key
+        if (!ParseInternalKey(iter->FirstLevelKey(), &parsed_key)) {
+          return Status::Corruption("corrupted internal key in Table::Iter");
         }
 
-        value_.clear();  // prepare for splitting user value
-        Slice user_val(ReformatUserValue(iter_->value(), read_options.columns,
-                                         splitter_, value_));
+        v[0].emplace_back(last_block_user_key, parsed_key.user_key.ToString());
 
-        if (it->second.seq_ < parsed_key.sequence) {
-          // replaced
-          if (it->second.type_ == kTypeDeletion) {
-            meta->del_keys.erase(it->second.seq_);
-          }
-          assert(read_options.result_val_size >= 
-              it->second.iter_->user_val.size());
-          read_options.result_val_size -= it->second.iter_->user_val.size();
-          it->second.seq_ = parsed_key.sequence;
-          it->second.type_ = parsed_key.type;
-          it->second.iter_->user_val = user_val.ToString();
-          read_options.result_val_size += it->second.iter_->user_val.size();
-          if (parsed_key.type == kTypeDeletion) {
-            meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
-          }
-        } else {
-          // inserted
-          size_t delta_key_size = user_key.size();
-          size_t delta_val_size = user_val.size();
-          res.emplace_back(user_key, user_val.ToString());
-          read_options.result_key_size += delta_key_size;
-          read_options.result_val_size += delta_val_size;
-          it->second.iter_ = --res.end();
-          if (parsed_key.type == kTypeDeletion) {
-            meta->del_keys.insert({parsed_key.sequence, it->second.iter_});
-          }
-        }
-
-        auto crl = CompressResultList(&res, read_options);
-        if (crl.size() > 0 && meta->map_res->rbegin()->first <= user_key) {
-          break;  // Reach the batch capacity
-        }
+        // for next block's min user key
+        last_block_user_key.assign(parsed_key.user_key.data(),
+                                   parsed_key.user_key.size());
       }
     }
 
-    return Status();
+    return Status::OK();
   }
 
-  virtual void SetPinnedItersMgr(PinnedIteratorsManager* pinned_iters_mgr) {
+  // TODO: handle update and delete
+  virtual Status RangeQuery(const std::vector<bool>& block_bits,
+                            std::vector<RangeQueryKeyVal>& res) const override {
+    res.clear();
+
+    // If block_bits is empty, imply a full scan. Empty table case has been
+    // recognized by NotFound status in GetMinMax, so shouldn't reach here.
+    size_t j = 0;
+    auto iter = dynamic_cast<TwoLevelIterator*>(iter_);
+    // block level
+    for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
+      assert(block_bits.empty() || j < block_bits.size());
+      if (!block_bits.empty() && !block_bits[j]) {
+        continue;
+      }
+      // within block
+      for (; iter->Valid(); iter->SecondLevelNext()) {
+        ParsedInternalKey parsed_key;
+        if (!ParseInternalKey(iter->key(), &parsed_key)) {
+          return Status::Corruption("corrupted internal key in Table::Iter");
+        }
+
+        std::string val;  // prepare for splitting user value
+        ReformatUserValue(iter->value(), columns_, splitter_, val);
+
+        std::string userkey(columns_.empty() || columns_.front()==0
+                                ? parsed_key.user_key.ToString()
+                                : "");
+        res.emplace_back(std::move(userkey), std::move(val));
+      }
+    }
+
+    return Status::OK();
+  }
+
+  virtual void SetPinnedItersMgr(
+      PinnedIteratorsManager* pinned_iters_mgr) override {
     iter_->SetPinnedItersMgr(pinned_iters_mgr);
   }
 
-  virtual bool IsKeyPinned() const {
-    return iter_->IsKeyPinned();
-  }
+  virtual bool IsKeyPinned() const override { return iter_->IsKeyPinned(); }
 
  private:
   InternalIterator* iter_;

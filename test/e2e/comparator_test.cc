@@ -4,14 +4,13 @@
 // of patent rights can be found in the PATENTS file in the same directory.
 
 #include <iostream>
+using namespace std;
 
 #include "vidardb/db.h"
 #include "vidardb/status.h"
 #include "vidardb/options.h"
 #include "vidardb/comparator.h"
 #include "vidardb/table.h"
-
-using namespace std;
 using namespace vidardb;
 
 enum kTableType { ROW, COLUMN };
@@ -34,10 +33,10 @@ class CustomizedComparator : public Comparator {
     return a == b;
   }
 
-  virtual void FindShortestSeparator(std::string* start,
+  virtual void FindShortestSeparator(string* start,
                                      const Slice& limit) const override {
     // Find length of common prefix
-    size_t min_length = std::min(start->size(), limit.size());
+    size_t min_length = min(start->size(), limit.size());
     size_t diff_index = 0;
     while ((diff_index < min_length) &&
            ((*start)[diff_index] == limit[diff_index])) {
@@ -85,7 +84,7 @@ class CustomizedComparator : public Comparator {
     }
   }
 
-  virtual void FindShortSuccessor(std::string* key) const override {
+  virtual void FindShortSuccessor(string* key) const override {
     // Find first character that can be incremented
     size_t n = key->size();
     for (size_t i = 0; i < n; i++) {
@@ -136,7 +135,7 @@ void TestCustomizedComparator(kTableType table, bool flush,
       static_cast<ColumnTableOptions*>(column_table->GetOptions());
   column_opts->column_count = kColumn;
   for (auto i = 0u; i < column_opts->column_count; i++) {
-    column_opts->column_comparators.push_back(BytewiseComparator());
+    column_opts->value_comparators.push_back(BytewiseComparator());
   }
   options.table_factory.reset(NewAdaptiveTableFactory(block_based_table,
       block_based_table, column_table, knob));
@@ -199,34 +198,6 @@ void TestCustomizedComparator(kTableType table, bool flush,
     keys.push_back(iter->key().ToString());
   }
   delete iter;
-  ValidateKeysOrder(keys, cmp);
-
-  // range query
-  cout << "=> range query:" << endl;
-  ro.batch_capacity = 50;  // in batch (byte)
-  ro.columns = {1, 3};
-  Range range;
-  keys.clear();
-  list<RangeQueryKeyVal> res;
-  bool next = true;
-  while (next) { // range query loop
-    next = db->RangeQuery(ro, range, res, &s);
-    assert(s.ok());
-    for (auto it : res) {
-      cout << it.user_key << "=[";
-      vector<Slice> vals(options.splitter->Split(it.user_val));
-      for (auto i = 0u; i < vals.size(); i++) {
-        cout << vals[i].ToString();
-        if (i < vals.size() - 1) {
-          cout << ", ";
-        };
-      }
-      cout << "] ";
-      keys.push_back(it.user_key);
-    }
-    cout << " key_size=" << ro.result_key_size;
-    cout << ", val_size=" << ro.result_val_size << endl;
-  }
   ValidateKeysOrder(keys, cmp);
 
   if (cmp->Name() == "CustomizedComparator") {

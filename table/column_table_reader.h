@@ -37,6 +37,7 @@ struct EnvOptions;
 struct ReadOptions;
 class GetContext;
 class InternalIterator;
+class IndexReader;
 
 using std::unique_ptr;
 
@@ -110,9 +111,6 @@ class ColumnTable : public TableReader {
   void Close() override;
 
   ~ColumnTable();
-
-  // Implementation of IndexReader will be exposed to internal cc file only.
-  class IndexReader;
 
  private:
   struct Rep;

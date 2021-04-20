@@ -11,11 +11,13 @@
 
 #pragma once
 
+#include <list>  // Shichao
 #include <string>
-#include <list>    // Shichao
+
+#include "vidardb/file_iter.h"  // Shichao
 #include "vidardb/iterator.h"
+#include "vidardb/options.h"  // Quanzhao
 #include "vidardb/status.h"
-#include "vidardb/options.h" // Quanzhao
 
 namespace vidardb {
 
@@ -25,6 +27,7 @@ class PinnedIteratorsManager;
 struct LookupRange;
 struct SeqTypeVal;
 struct RangeQueryKeyVal;
+struct MinMax;
 /*********************** Shichao **************************/
 
 class InternalIterator : public Cleanable {
@@ -77,9 +80,20 @@ class InternalIterator : public Cleanable {
   virtual Status status() const = 0;
 
   /***************************** Shichao ******************************/
-  // Support OLAP range query, Table iterator should re-implement this.
-  virtual Status RangeQuery(ReadOptions& read_options, const LookupRange& range,
-                            std::list<RangeQueryKeyVal>& res) {
+  // Implemented in MinMaxBlock iterator
+  virtual Slice min() const { return Slice(); }
+
+  // Implemented in MinMaxBlock iterator
+  virtual Slice max() const { return Slice(); }
+
+  // See comments in file_iter.h
+  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const {
+    return Status::NotSupported(Slice("not implemented"));
+  }
+
+  // See comments in file_iter.h
+  virtual Status RangeQuery(const std::vector<bool>& block_bits,
+                            std::vector<RangeQueryKeyVal>& res) const {
     return Status::NotSupported(Slice("not implemented"));
   }
   /***************************** Shichao ******************************/

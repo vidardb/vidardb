@@ -41,9 +41,8 @@ class ColumnTableBuilder : public TableBuilder {
       const CompressionType compression_type,
       const CompressionOptions& compression_opts,
       const std::string* compression_dict,
-      const std::string& column_family_name,
-      const EnvOptions& env_options,
-      bool main_column = true);
+      const std::string& column_family_name, const EnvOptions& env_options,
+      uint32_t column_num);
 
   // REQUIRES: Either Finish() or Abandon() has been called.
   ~ColumnTableBuilder();
@@ -115,7 +114,8 @@ class ColumnTableBuilder : public TableBuilder {
   void CreateSubcolumnBuilders(Rep* r);
 
   // Called by main column to add kv in sub column builders
-  void AddInSubcolumnBuilders(Rep* r, const Slice& key, const Slice& value);
+  void AddInSubcolumnBuilders(Rep* r, const Slice& key, const Slice& value,
+                              bool should_flush);
 
   // No copying allowed
   ColumnTableBuilder(const ColumnTableBuilder&) = delete;

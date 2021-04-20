@@ -8,12 +8,14 @@
 
 #include <mutex>
 #include <string>
+using namespace std;
+
 #include "vidardb/db.h"
 #include "vidardb/env.h"
 #include "vidardb/options.h"
-
 using namespace vidardb;
-std::string kDBPath = "/tmp/vidardb_compact_files_example";
+
+string kDBPath = "/tmp/vidardb_compact_files_example";
 struct CompactionTask;
 
 // This is an example interface of external-compaction algorithm.
@@ -25,8 +27,7 @@ class Compactor : public EventListener {
   // and column family.  It is the caller's responsibility to
   // destroy the returned CompactionTask.  Returns "nullptr"
   // if it cannot find a proper compaction task.
-  virtual CompactionTask* PickCompaction(
-      DB* db, const std::string& cf_name) = 0;
+  virtual CompactionTask* PickCompaction(DB* db, const string& cf_name) = 0;
 
   // Schedule and run the specified compaction task in background.
   virtual void ScheduleCompaction(CompactionTask *task) = 0;
@@ -34,24 +35,22 @@ class Compactor : public EventListener {
 
 // Example structure that describes a compaction task.
 struct CompactionTask {
-  CompactionTask(
-      DB* _db, Compactor* _compactor,
-      const std::string& _column_family_name,
-      const std::vector<std::string>& _input_file_names,
-      const int _output_level,
-      const CompactionOptions& _compact_options,
-      bool _retry_on_fail)
-          : db(_db),
-            compactor(_compactor),
-            column_family_name(_column_family_name),
-            input_file_names(_input_file_names),
-            output_level(_output_level),
-            compact_options(_compact_options),
-            retry_on_fail(_retry_on_fail) {}
+  CompactionTask(DB* _db, Compactor* _compactor,
+                 const string& _column_family_name,
+                 const vector<string>& _input_file_names,
+                 const int _output_level,
+                 const CompactionOptions& _compact_options, bool _retry_on_fail)
+      : db(_db),
+        compactor(_compactor),
+        column_family_name(_column_family_name),
+        input_file_names(_input_file_names),
+        output_level(_output_level),
+        compact_options(_compact_options),
+        retry_on_fail(_retry_on_fail) {}
   DB* db;
   Compactor* compactor;
-  const std::string& column_family_name;
-  std::vector<std::string> input_file_names;
+  const string& column_family_name;
+  vector<string> input_file_names;
   int output_level;
   CompactionOptions compact_options;
   bool retry_on_fail;
@@ -80,12 +79,11 @@ class FullCompactor : public Compactor {
   }
 
   // Always pick a compaction which includes all files whenever possible.
-  CompactionTask* PickCompaction(
-      DB* db, const std::string& cf_name) override {
+  CompactionTask* PickCompaction(DB* db, const string& cf_name) override {
     ColumnFamilyMetaData cf_meta;
     db->GetColumnFamilyMetaData(&cf_meta);
 
-    std::vector<std::string> input_file_names;
+    vector<string> input_file_names;
     for (auto level : cf_meta.levels) {
       for (auto file : level.files) {
         if (file.being_compacted) {
@@ -105,8 +103,7 @@ class FullCompactor : public Compactor {
   }
 
   static void CompactFiles(void* arg) {
-    std::unique_ptr<CompactionTask> task(
-        reinterpret_cast<CompactionTask*>(arg));
+    unique_ptr<CompactionTask> task(reinterpret_cast<CompactionTask*>(arg));
     assert(task);
     assert(task->db);
     Status s = task->db->CompactFiles(
@@ -142,19 +139,16 @@ int main() {
   assert(s.ok());
   assert(db);
 
-  // if background compaction is not working, write will stall
-  // because of options.level0_stop_writes_trigger
   for (int i = 1000; i < 99999; ++i) {
-    db->Put(WriteOptions(), std::to_string(i),
-                            std::string(500, 'a' + (i % 26)));
+    db->Put(WriteOptions(), to_string(i), string(500, 'a' + (i % 26)));
   }
 
   // verify the values are still there
-  std::string value;
+  string value;
   ReadOptions ro;
   for (int i = 1000; i < 99999; ++i) {
-    db->Get(ro, std::to_string(i), &value);
-    assert(value == std::string(500, 'a' + (i % 26)));
+    db->Get(ro, to_string(i), &value);
+    assert(value == string(500, 'a' + (i % 26)));
   }
 
   // close the db.

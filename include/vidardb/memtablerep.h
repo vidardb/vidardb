@@ -122,13 +122,6 @@ class MemTableRep {
   virtual void Get(const LookupKey& k, void* callback_args,
                    bool (*callback_func)(void* arg, const char* entry));
 
-  /******************************* Shichao ***********************************/
-  virtual void RangeQuery(const LookupRange& range,
-                          std::list<RangeQueryKeyVal>& res,
-                          void* callback_args,
-                          bool (*callback_func)(void* arg, const char* entry)) {}
-  /******************************* Shichao ***********************************/
-
   virtual uint64_t ApproximateNumEntries(const Slice& start_ikey,
                                          const Slice& end_key) {
     return 0;
@@ -255,7 +248,7 @@ class VectorRepFactory : public MemTableRepFactory {
   const size_t count_;
 
  public:
-  explicit VectorRepFactory(size_t count = 0) : count_(count) { printf("\nI am here\n"); }
+  explicit VectorRepFactory(size_t count = 0) : count_(count) {}
   virtual MemTableRep* CreateMemTableRep(const MemTableRep::KeyComparator&,
                                          MemTableAllocator*,
                                          Logger* logger) override;

@@ -86,11 +86,7 @@ class DBImpl : public DB {
                      const Slice& key, std::string* value) override;
 
   /*************************** Shichao ****************************/
-  using DB::RangeQuery;
-  virtual bool RangeQuery(ReadOptions& options,
-                          ColumnFamilyHandle* column_family, const Range& range,
-                          std::list<RangeQueryKeyVal>& res,
-                          Status* s = nullptr) override;
+  virtual Iterator* NewFileIterator(const ReadOptions& options) override;
   /*************************** Shichao ****************************/
 
   virtual Status CreateColumnFamily(const ColumnFamilyOptions& options,
@@ -348,7 +344,7 @@ class DBImpl : public DB {
                          bool no_full_scan = false);
 
   // Diffs the files listed in filenames and those that do not
-  // belong to live files are posibly removed. Also, removes all the
+  // belong to live files are possibly removed. Also, removes all the
   // files in sst_delete_files and log_delete_files.
   // It is not necessary to hold the mutex when invoking this method.
   void PurgeObsoleteFiles(const JobContext& background_contet);

@@ -15,7 +15,6 @@
 #include "memtable/memtable.h"
 
 #include <string.h>
-
 #include <algorithm>
 #include <limits>
 #include <memory>
@@ -263,14 +262,77 @@ class MemTableIterator : public InternalIterator {
     Slice key_slice = GetLengthPrefixedSlice(iter_->key());
     Slice val_slice =
         GetLengthPrefixedSlice(key_slice.data() + key_slice.size());
-    if (columns_.empty() || !splitter_ || val_slice.empty()) {
-      return val_slice;  // for flushing
-    }
-    value_.clear();  // prepare for splitting user value
     return ReformatUserValue(val_slice, columns_, splitter_, value_);
   }
 
   virtual Status status() const override { return Status::OK(); }
+
+  /***************************** Shichao ********************************/
+  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
+    v.clear();
+    // test whether it is an empty table
+    iter_->SeekToFirst();
+    if (!iter_->Valid()) {
+      return Status::NotFound();
+    }
+
+    // all columns or key column is involved
+    // In other cases, we really can don nothing here.
+    if (columns_.empty() || columns_.front() == 0) {
+      // only key column is useful
+      v.resize(1);
+      // treat the entire memtable column as a block
+      v[0].resize(1);
+
+      // min user key
+      Slice min(GetLengthPrefixedSlice(iter_->key()));
+      Slice userkey_min(min.data(), min.size()-8);
+      v[0][0].min_.assign(userkey_min.data(), userkey_min.size());
+
+      // max user_key
+      iter_->SeekToLast();
+      Slice max(GetLengthPrefixedSlice(iter_->key()));
+      Slice userkey_max(max.data(), max.size()-8);
+      v[0][0].max_.assign(userkey_max.data(), userkey_max.size());
+    }
+
+    return Status::OK();
+  }
+
+  virtual Status RangeQuery(const std::vector<bool>& block_bits,
+                            std::vector<RangeQueryKeyVal>& res) const override {
+    res.clear();
+    // block_bits is generally useless in memtable, since we treat the entire
+    // memtable column as a block
+    if (block_bits.size() > 1) {
+      return Status::InvalidArgument();
+    }
+
+    // If block_bits is empty, imply a full scan. Empty table case has been
+    // recognized by NotFound status in GetMinMax, so shouldn't reach here.
+    if (!block_bits.empty() && !block_bits[0]) {
+      return Status::OK();
+    }
+
+    // TODO: handle update and delete
+    for (iter_->SeekToFirst(); iter_->Valid(); iter_->Next()) {
+      Slice key_slice = GetLengthPrefixedSlice(iter_->key());
+      Slice userkey_slice(Slice(key_slice.data(), key_slice.size()-8));
+      Slice val_slice =
+          GetLengthPrefixedSlice(key_slice.data() + key_slice.size());
+
+      std::string val;  // prepare for splitting user value
+      ReformatUserValue(val_slice, columns_, splitter_, val);
+
+      std::string userkey(columns_.empty() || columns_.front()==0
+                              ? userkey_slice.ToString()
+                              : "");
+      res.emplace_back(std::move(userkey), std::move(val));
+    }
+
+    return Status::OK();
+  }
+  /***************************** Shichao ********************************/
 
   virtual bool IsKeyPinned() const override {
     // memtable data is always pinned
@@ -292,9 +354,12 @@ class MemTableIterator : public InternalIterator {
 
 InternalIterator* MemTable::NewIterator(const ReadOptions& read_options,
                                         Arena* arena) {
-  assert(arena != nullptr);
-  auto mem = arena->AllocateAligned(sizeof(MemTableIterator));
-  return new (mem) MemTableIterator(*this, read_options.columns, arena);
+  if (arena) {
+    auto mem = arena->AllocateAligned(sizeof(MemTableIterator));
+    return new (mem) MemTableIterator(*this, read_options.columns, arena);
+  } else {
+    return new MemTableIterator(*this, read_options.columns, nullptr);
+  }
 }
 
 uint64_t MemTable::ApproximateSize(const Slice& start_ikey,
@@ -438,14 +503,13 @@ static bool SaveValue(void* arg, const char* entry) {
 
     switch (type) {
       case kTypeValue: {
-        std::string buf;  // prepare for splitting user value
+        std::string user_val;  // prepare for splitting user value
         Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
-        Slice user_val(ReformatUserValue(v, s->read_options->columns,
-                                         s->mem->GetMemTableOptions()->splitter,
-                                         buf));
+        ReformatUserValue(v, s->read_options->columns,
+                          s->mem->GetMemTableOptions()->splitter, user_val);
         *(s->status) = Status::OK();
         if (s->get_value != nullptr) {
-          s->get_value->assign(user_val.data(), user_val.size());
+          s->get_value->assign(std::move(user_val));
         }
         *(s->found_final_value) = true;
         return false;
@@ -465,98 +529,6 @@ static bool SaveValue(void* arg, const char* entry) {
   // s->state could be Corrupt, merge or notfound
   return false;
 }
-
-/***************************** Shichao *****************************/
-static bool SaveValueForRangeQuery(void* arg, const char* entry) {
-  Saver* s = reinterpret_cast<Saver*>(arg);
-  assert(s != nullptr);
-
-  uint32_t key_length;
-  const char* key_ptr = GetVarint32Ptr(entry, entry + 5, &key_length);
-  Slice internal_key = Slice(key_ptr, key_length);
-
-  RangeQueryMeta* meta =
-      static_cast<RangeQueryMeta*>(s->read_options->range_query_meta);
-  if (CompareRangeLimit(s->mem->GetInternalKeyComparator(), internal_key,
-                        meta->current_limit_key) > 0) {
-    *(s->status) = Status::OK();
-    return false;
-  }
-
-  const uint64_t tag = DecodeFixed64(key_ptr + key_length - 8);
-  ValueType type;
-  UnPackSequenceAndType(tag, &s->seq, &type);
-  SequenceNumber sequence_num = s->range->SequenceNum();
-  switch (type) {
-    case kTypeValue:
-    case kTypeDeletion:
-    case kTypeSingleDeletion: {
-      if (s->seq <= sequence_num) {
-        std::string user_key(internal_key.data(), internal_key.size() - 8);
-        SeqTypeVal stv(s->seq, type, s->res->end());
-
-        auto it = s->prev_iter;
-        if (it != meta->map_res->end()) {
-          it++;
-        }
-        it = meta->map_res->emplace_hint(it, user_key, std::move(stv));
-        s->prev_iter = it;
-
-        if (it->second.seq_ <= s->seq) {
-          // TODO: might leverage move semantic later
-          Slice v = GetLengthPrefixedSlice(key_ptr + key_length);
-          std::string buf;  // prepare for splitting user value
-          Slice user_val(
-              ReformatUserValue(v, s->read_options->columns,
-                                s->mem->GetMemTableOptions()->splitter, buf));
-
-          if (it->second.seq_ < s->seq) {
-            // replaced
-            if (it->second.type_ == kTypeDeletion) {
-              meta->del_keys.erase(it->second.seq_);
-            }
-            assert(s->read_options->result_val_size >=
-                it->second.iter_->user_val.size());
-            s->read_options->result_val_size -= 
-                it->second.iter_->user_val.size();
-            it->second.seq_ = s->seq;
-            it->second.type_ = type;
-            it->second.iter_->user_val = user_val.ToString();
-            s->read_options->result_val_size += 
-                it->second.iter_->user_val.size();
-            if (type == kTypeDeletion) {
-              meta->del_keys.insert({s->seq, it->second.iter_});
-            }
-          } else {
-            // inserted
-            size_t delta_key_size = user_key.size();
-            size_t delta_val_size = user_val.size();
-            s->res->emplace_back(user_key, user_val.ToString());
-            s->read_options->result_key_size += delta_key_size;
-            s->read_options->result_val_size += delta_val_size;
-            it->second.iter_ = --(s->res->end());
-            if (type == kTypeDeletion) {
-              meta->del_keys.insert({s->seq, it->second.iter_});
-            }
-          }
-
-          auto crl = CompressResultList(s->res, *(s->read_options));
-          if (crl.size() > 0 && meta->map_res->rbegin()->first <= user_key) {
-            // Reach the batch capacity
-            *(s->status) = Status::OK();
-            return false;
-          }
-        }
-      }
-      *(s->status) = Status::OK();
-      return true;
-    }
-    default:
-      *(s->status) = Status::Corruption(Slice());
-      return false;
-  }
-}
-/***************************** Shichao *****************************/
 
 bool MemTable::Get(ReadOptions& read_options, const LookupKey& key,
                    std::string* value, Status* s, SequenceNumber* seq) {
@@ -589,38 +561,6 @@ bool MemTable::Get(ReadOptions& read_options, const LookupKey& key,
   PERF_COUNTER_ADD(get_from_memtable_count, 1);
   return found_final_value;
 }
-
-/***************************** Shichao *****************************/
-bool MemTable::RangeQuery(ReadOptions& read_options, const LookupRange& range,
-                          std::list<RangeQueryKeyVal>& res, Status* s) {
-  if (IsEmpty()) {
-    *s = Status::NotFound(Slice());
-    return true;
-  }
-
-  RangeQueryMeta* meta =
-      static_cast<RangeQueryMeta*>(read_options.range_query_meta);
-  Saver saver;
-  saver.status = s;
-  saver.range = &range;
-  saver.res = &res;
-  saver.prev_iter = meta->map_res->end();
-  saver.seq = kMaxSequenceNumber;
-  saver.mem = this;
-  saver.logger = moptions_.info_log;
-  saver.statistics = moptions_.statistics;
-  saver.env_ = env_;
-  saver.read_options = &read_options;
-
-  size_t old_size = res.size();
-  table_->RangeQuery(range, res, &saver, SaveValueForRangeQuery);
-  if (res.size() == old_size) {
-    *s = Status::NotFound(Slice());
-  }
-
-  return (s->ok() || s->IsNotFound());
-}
-/***************************** Shichao *****************************/
 
 void MemTableRep::Get(const LookupKey& k, void* callback_args,
                       bool (*callback_func)(void* arg, const char* entry)) {

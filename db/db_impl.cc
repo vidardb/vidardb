@@ -26,9 +26,12 @@
 #include "jemalloc/jemalloc.h"
 #endif
 
+#include <sys/stat.h>  // Shichao
+
 #include <algorithm>
 #include <climits>
 #include <cstdio>
+#include <fstream>  // Shichao
 #include <map>
 #include <set>
 #include <stdexcept>
@@ -37,8 +40,6 @@
 #include <unordered_set>
 #include <utility>
 #include <vector>
-#include <fstream>  // Shichao
-#include <sys/stat.h>  // Shichao
 
 #include "db/auto_roll_logger.h"
 #include "db/builder.h"
@@ -53,24 +54,16 @@
 #include "db/job_context.h"
 #include "db/log_reader.h"
 #include "db/log_writer.h"
-#include "memtable/memtable.h"
-#include "memtable/memtable_list.h"
 #include "db/table_cache.h"
 #include "db/table_properties_collector.h"
 #include "db/transaction_log_impl.h"
 #include "db/version_set.h"
 #include "db/write_batch_internal.h"
 #include "db/writebuffer.h"
+#include "memtable/memtable.h"
+#include "memtable/memtable_list.h"
 #include "port/likely.h"
 #include "port/port.h"
-#include "vidardb/cache.h"
-#include "vidardb/db.h"
-#include "vidardb/env.h"
-#include "vidardb/sst_file_writer.h"
-#include "vidardb/statistics.h"
-#include "vidardb/status.h"
-#include "vidardb/table.h"
-#include "vidardb/version.h"
 #include "table/block.h"
 #include "table/block_based_table_factory.h"
 #include "table/merger.h"
@@ -95,7 +88,16 @@
 #include "util/sync_point.h"
 #include "util/thread_status_updater.h"
 #include "util/thread_status_util.h"
+#include "vidardb/cache.h"
+#include "vidardb/db.h"
+#include "vidardb/env.h"
+#include "vidardb/file_iter.h"  // Shichao
+#include "vidardb/sst_file_writer.h"
+#include "vidardb/statistics.h"
+#include "vidardb/status.h"
+#include "vidardb/table.h"
 #include "vidardb/utilities/json.hpp"  // Shichao
+#include "vidardb/version.h"
 
 namespace vidardb {
 
@@ -855,7 +857,7 @@ bool CompareCandidateFile(const JobContext::CandidateFileInfo& first,
 };  // namespace
 
 // Diffs the files listed in filenames and those that do not
-// belong to live files are posibly removed. Also, removes all the
+// belong to live files are possibly removed. Also, removes all the
 // files in sst_delete_files and log_delete_files.
 // It is not necessary to hold the mutex when invoking this method.
 void DBImpl::PurgeObsoleteFiles(const JobContext& state) {
@@ -3519,114 +3521,40 @@ Status DBImpl::GetImpl(ReadOptions& read_options,
 }
 
 /***************************** Shichao ******************************/
-bool DBImpl::RangeQuery(ReadOptions& read_options,
-                        ColumnFamilyHandle* column_family, const Range& range,
-                        std::list<RangeQueryKeyVal>& res, Status* s) {
-  res.clear();
-  read_options.result_key_size = 0;
-  read_options.result_val_size = 0;
-
-  // Create range query metadata at first
-  if (read_options.range_query_meta == nullptr) {
-    SequenceNumber snapshot;
-    if (read_options.snapshot != nullptr) {
-      snapshot = reinterpret_cast<const SnapshotImpl*>(
-          read_options.snapshot)->number_;
-    } else {
-      snapshot = versions_->LastSequence();
-    }
-
-    auto cfh = reinterpret_cast<ColumnFamilyHandleImpl*>(column_family);
-    auto cfd = cfh->cfd();
-
-    SuperVersion* sv = GetAndRefSuperVersion(cfd);
-    read_options.range_query_meta = new RangeQueryMeta(cfd, sv, snapshot,
-      nullptr, 0UL, cfd->user_comparator());
-    RangeQueryMeta* meta =
-        static_cast<RangeQueryMeta*>(read_options.range_query_meta);
-    meta->next_start_key.assign(range.start.data_, range.start.size_);
+Iterator* DBImpl::NewFileIterator(const ReadOptions& read_options) {
+  if (read_options.read_tier == kPersistedTier) {
+    return NewErrorIterator(Status::NotSupported(
+        "ReadTier::kPersistedData is not yet supported in iterators."));
+  } else if (read_options.tailing) {
+    return NewErrorIterator(Status::NotSupported(
+        "ReadOptions::tailing is not yet supported in file iterators."));
   }
 
-  RangeQueryMeta* meta =
-      static_cast<RangeQueryMeta*>(read_options.range_query_meta);
+  auto cfh = dynamic_cast<ColumnFamilyHandleImpl*>(default_cf_handle_);
+  auto cfd = cfh->cfd();
 
-  // Create lookup key range
-  LookupKey start_lookup_key(meta->next_start_key, meta->snapshot);
-  meta->limit_sequence = 0;  // include limit key
-  LookupKey limit_lookup_key(range.limit, meta->limit_sequence);
-  LookupRange lookup_range(&start_lookup_key, &limit_lookup_key);
-  meta->current_limit_key = new LookupKey(range.limit, meta->limit_sequence);
+  SequenceNumber latest_snapshot = versions_->LastSequence();
+  SuperVersion* sv = cfd->GetReferencedSuperVersion(&mutex_);
 
-  // Prepare range query
-  ColumnFamilyData* cfd = meta->column_family_data;
-  SuperVersion* sv = meta->super_version;
-  bool skip_memtable =
-      (read_options.read_tier == kPersistedTier && has_unpersisted_data_);
-  // First look in the memtable, then in the immutable memtable (if any).
-  // s is both in/out. When in, s could be OK.
-  if (!skip_memtable) {
-    if (!sv->mem->RangeQuery(read_options, lookup_range, res, s)) {
-      return false;
-    }
-    if (!sv->imm->RangeQuery(read_options, lookup_range, res, s)) {
-      return false;
-    }
-  }
+  auto snapshot =
+      read_options.snapshot != nullptr
+          ? dynamic_cast<const SnapshotImpl*>(read_options.snapshot)->number_
+          : latest_snapshot;
 
-  *s = Status::OK();
-  sv->current->RangeQuery(read_options, lookup_range, res, s);
-  if (!s->ok()) {
-    return false;
-  }
+  FileIter* file_iter = new FileIter(snapshot);
+  auto iters = file_iter->GetInternalIterators();
 
-  // Update the next range query
-  delete meta->current_limit_key;
-  meta->current_limit_key = nullptr;
+  // Collect iterator for mutable mem
+  iters->push_back(sv->mem->NewIterator(read_options, nullptr));
+  // Collect all needed child iterators for immutable memtables
+  sv->imm->AddIterators(read_options, iters, nullptr);
+  // Collect iterators for files in L0 - Ln
+  sv->current->AddIterators(read_options, env_options_, iters);
 
-  size_t result_total_size =
-      read_options.result_key_size + read_options.result_val_size;
-  if (read_options.batch_capacity > 0 &&
-      result_total_size > read_options.batch_capacity) {
-    auto it = --(meta->map_res->end());
-    meta->next_start_key = std::move(it->first);
-    // Not include the next start key
-    size_t delta_key_size = it->second.iter_->user_key.size();
-    size_t delta_val_size = it->second.iter_->user_val.size();
-    res.erase(it->second.iter_);
-    assert(read_options.result_key_size >= delta_key_size);
-    assert(read_options.result_val_size >= delta_val_size);
-    read_options.result_key_size -= delta_key_size;
-    read_options.result_val_size -= delta_val_size;
-    if (it->second.type_ == kTypeDeletion) {
-      meta->del_keys.erase(it->second.seq_);
-    }
-    meta->map_res->erase(it);
-  }
-  meta->map_res->clear();
+  IterState* cleanup = new IterState(this, &mutex_, sv);
+  file_iter->RegisterCleanup(CleanupIteratorState, cleanup, nullptr);
 
-  // Hide deleted keys from users, erase them in list
-  for (const auto& it : meta->del_keys) {
-    size_t delta_key_size = it.second->user_key.size();
-    size_t delta_val_size = it.second->user_val.size();
-    res.erase(it.second);
-    assert(read_options.result_key_size >= delta_key_size);
-    assert(read_options.result_val_size >= delta_val_size);
-    read_options.result_key_size -= delta_key_size;
-    read_options.result_val_size -= delta_val_size;
-  }
-  meta->del_keys.clear();
-
-  // Check if have the next range query
-  bool next_query = true;
-  if (result_total_size == 0 || read_options.batch_capacity == 0 ||
-      result_total_size <= read_options.batch_capacity) {
-    next_query = false;
-    ReturnAndCleanupSuperVersion(cfd, sv);
-    delete meta;
-    read_options.range_query_meta = nullptr;
-  }
-
-  return next_query;
+  return file_iter;
 }
 /***************************** Shichao ******************************/
 
@@ -4029,7 +3957,7 @@ Iterator* DBImpl::NewIterator(const ReadOptions& read_options,
     return NewErrorIterator(Status::NotSupported(
         "ReadTier::kPersistedData is not yet supported in iterators."));
   }
-  auto cfh = reinterpret_cast<ColumnFamilyHandleImpl*>(column_family);
+  auto cfh = dynamic_cast<ColumnFamilyHandleImpl*>(column_family);
   auto cfd = cfh->cfd();
 
   if (read_options.tailing) {
@@ -4049,8 +3977,7 @@ Iterator* DBImpl::NewIterator(const ReadOptions& read_options,
 
     auto snapshot =
         read_options.snapshot != nullptr
-            ? reinterpret_cast<const SnapshotImpl*>(
-                read_options.snapshot)->number_
+            ? dynamic_cast<const SnapshotImpl*>(read_options.snapshot)->number_
             : latest_snapshot;
 
     // Try to generate a DB iterator tree in continuous memory area to be
