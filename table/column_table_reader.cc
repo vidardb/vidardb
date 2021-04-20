@@ -888,9 +888,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return s;
   }
 
-  virtual Status GetMinMax(FileIter::FileType& type,
-                           std::vector<std::vector<MinMax>>& v) const override {
-    type = FileIter::ColumnTable;
+  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
     v.clear();
     // called from NewIterator, so iters_ won't be empty
     assert(has_main_column_);

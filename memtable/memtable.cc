@@ -268,9 +268,7 @@ class MemTableIterator : public InternalIterator {
   virtual Status status() const override { return Status::OK(); }
 
   /***************************** Shichao ********************************/
-  virtual Status GetMinMax(FileIter::FileType& type,
-                           std::vector<std::vector<MinMax>>& v) const override {
-    type = FileIter::MemTable;
+  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
     v.clear();
     // test whether it is an empty table
     iter_->SeekToFirst();

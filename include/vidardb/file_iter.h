@@ -51,8 +51,6 @@ class FileIter : public Iterator {
 
   std::vector<InternalIterator*>* GetInternalIterators() { return &children_; }
 
-  enum FileType : char { MemTable, BlockBasedTable, ColumnTable };
-
   // Return the targeted columns' block min and max. If key is in the target
   // set, return its block min and max as well, but be cautious about its
   // different max. We have to use the type first to identify the file type
@@ -68,7 +66,7 @@ class FileIter : public Iterator {
   //
   // NotFound status might be returned because table might be empty, note at
   // this case v is also empty, and a full scan should not be executed later.
-  Status GetMinMax(FileType& type, std::vector<std::vector<MinMax>>& v) const;
+  Status GetMinMax(std::vector<std::vector<MinMax>>& v) const;
 
   // According to the calculated block bits, fetch the partial tuples.
   // If key is not in the target, set it empty. Sometimes the block_bits is

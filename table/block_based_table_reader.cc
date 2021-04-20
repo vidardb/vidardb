@@ -762,9 +762,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 
   virtual Status status() const override { return iter_->status(); }
 
-  virtual Status GetMinMax(FileIter::FileType& type,
-                           std::vector<std::vector<MinMax>>& v) const override {
-    type = FileIter::BlockBasedTable;
+  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
     v.clear();
     // test whether it is an empty table
     iter_->SeekToFirst();
