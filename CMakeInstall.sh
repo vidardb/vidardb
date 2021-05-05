@@ -22,7 +22,7 @@ _install() {
     mkdir -p $temp_dir
     cd $temp_dir
     cmake $CMAKE_FLAGS ..
-    make
+    make -j2
     make install
 }
 
