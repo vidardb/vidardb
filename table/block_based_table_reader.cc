@@ -785,7 +785,8 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
                                       parsed_key.user_key.size());
 
       auto iter = dynamic_cast<TwoLevelIterator*>(iter_);
-      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext()) {
+      for (iter->FirstLevelSeekToFirst(); iter->FirstLevelValid();
+           iter->FirstLevelNext(false)) {
         // current block max internal key
         if (!ParseInternalKey(iter->FirstLevelKey(), &parsed_key)) {
           return Status::Corruption("corrupted internal key in Table::Iter");
@@ -812,7 +813,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
     size_t j = 0;
     auto iter = dynamic_cast<TwoLevelIterator*>(iter_);
     // block level
-    for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
+    for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(true), j++) {
       assert(block_bits.empty() || j < block_bits.size());
       if (!block_bits.empty() && !block_bits[j]) {
         continue;

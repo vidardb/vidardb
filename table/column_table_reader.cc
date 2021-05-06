@@ -914,7 +914,8 @@ class ColumnTable::ColumnIterator : public InternalIterator {
                                       parsed_key.user_key.size());
 
       auto iter = dynamic_cast<TwoLevelIterator*>(iters_.front());
-      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext()) {
+      for (iter->FirstLevelSeekToFirst(); iter->FirstLevelValid();
+           iter->FirstLevelNext(false)) {
         // current block max internal key
         if (!ParseInternalKey(iter->FirstLevelKey(), &parsed_key)) {
           return Status::Corruption("corrupted internal key in Table::Iter");
@@ -936,7 +937,8 @@ class ColumnTable::ColumnIterator : public InternalIterator {
         v[j].reserve(v.front().size());
       }
       auto iter = dynamic_cast<TwoLevelIterator*>(iters_[i]);
-      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext()) {
+      for (iter->FirstLevelSeekToFirst(); iter->FirstLevelValid();
+           iter->FirstLevelNext(false)) {
         v[j].emplace_back(iter->FirstLevelMin().ToString(),
                           iter->FirstLevelMax().ToString());
       }
@@ -957,7 +959,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     size_t j = 0;
     auto iter = dynamic_cast<TwoLevelIterator*>(iters_.front());
     // block level
-    for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
+    for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(true), j++) {
       assert(block_bits.empty() || j < block_bits.size());
       if (!block_bits.empty() && !block_bits[j]) {
         continue;
@@ -983,7 +985,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
       iter = dynamic_cast<TwoLevelIterator*>(iters_[i]);
       bool last_column = ((i + 1) == iters_.size());
       // block level
-      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(), j++) {
+      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(true), j++) {
         assert(block_bits.empty() || j < block_bits.size());
         if (!block_bits.empty() && !block_bits[j]) {
           continue;

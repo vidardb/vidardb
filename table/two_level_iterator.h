@@ -45,7 +45,11 @@ class TwoLevelIterator : public InternalIterator {
   virtual void Prev() override;
 
   /******************** Shichao ******************/
-  virtual void FirstLevelNext();
+  // the following 3 are optimized for speed without touching the disk due to
+  // second level access otherwise
+  virtual void FirstLevelSeekToFirst();
+  virtual bool FirstLevelValid() const;
+  virtual void FirstLevelNext(bool prepare_second_level);
   virtual void SecondLevelNext();
   virtual Slice FirstLevelKey() const {
     assert(Valid());
