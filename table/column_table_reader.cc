@@ -791,12 +791,10 @@ class ColumnTable::ColumnIterator : public InternalIterator {
   ColumnIterator(const std::vector<InternalIterator*>& iters,
                  bool has_main_column, const Splitter* splitter,
                  const InternalKeyComparator& internal_comparator,
-                 const std::vector<uint32_t>& columns)
-      : iters_(iters),
-        has_main_column_(has_main_column),
-        splitter_(splitter),
-        internal_comparator_(internal_comparator),
-        columns_(columns) {}
+                 const std::vector<uint32_t>& columns, uint64_t num_entries)
+      : iters_(iters), has_main_column_(has_main_column), splitter_(splitter),
+        internal_comparator_(internal_comparator), columns_(columns),
+        num_entries_(num_entries) {}
 
   virtual ~ColumnIterator() {
     for (const auto& it : iters_) {
@@ -951,6 +949,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
   virtual Status RangeQuery(const std::vector<bool>& block_bits,
                             std::vector<RangeQueryKeyVal>& res) const override {
     res.clear();
+    res.reserve(num_entries_);
 
     // If block_bits is empty, imply a full scan. Empty table case has been
     // recognized by NotFound status in GetMinMax, so shouldn't reach here.
@@ -1039,6 +1038,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
   const Splitter* splitter_;                         // used in rangequery
   const InternalKeyComparator& internal_comparator_; // used in rangrquery
   const std::vector<uint32_t> columns_;              // used in rangequery
+  uint64_t num_entries_;                             // used in rangrquery
 };
 
 // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
@@ -1080,7 +1080,8 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
         table->NewIndexIterator(ro), arena));
   }
   return new ColumnIterator(iters, true, rep_->ioptions.splitter,
-                            rep_->internal_comparator, ro.columns);
+                            rep_->internal_comparator, ro.columns,
+                            rep_->table_properties->num_entries);
 }
 
 Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
@@ -1134,7 +1135,7 @@ Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
 
       ColumnIterator citers(iters, false, rep_->ioptions.splitter,
                             rep_->internal_comparator, /* might change*/
-                            ro.columns);
+                            ro.columns, rep_->table_properties->num_entries);
       if (!citers.status().ok()) {
         s = citers.status();
         break;
@@ -1232,7 +1233,8 @@ Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end,
     }
 
     ColumnIterator citers(iters, false, rep_->ioptions.splitter,
-                          rep_->internal_comparator, ro.columns);
+                          rep_->internal_comparator, ro.columns,
+                          rep_->table_properties->num_entries);
     if (!citers.status().ok()) {
       return citers.status();
     }
