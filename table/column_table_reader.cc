@@ -791,14 +791,19 @@ class ColumnTable::ColumnIterator : public InternalIterator {
   ColumnIterator(const std::vector<InternalIterator*>& iters,
                  bool has_main_column, const Splitter* splitter,
                  const InternalKeyComparator& internal_comparator,
-                 const std::vector<uint32_t>& columns, uint64_t num_entries)
+                 const std::vector<uint32_t>& columns, uint64_t num_entries,
+                 Arena* arena)
       : iters_(iters), has_main_column_(has_main_column), splitter_(splitter),
         internal_comparator_(internal_comparator), columns_(columns),
-        num_entries_(num_entries) {}
+        num_entries_(num_entries), arena_(arena) {}
 
   virtual ~ColumnIterator() {
     for (const auto& it : iters_) {
-      delete it;
+      if (arena_) {
+        it->~InternalIterator();
+      } else {
+        delete it;
+      }
     }
   }
 
@@ -1039,6 +1044,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
   const InternalKeyComparator& internal_comparator_; // used in rangrquery
   const std::vector<uint32_t> columns_;              // used in rangequery
   uint64_t num_entries_;                             // used in rangrquery
+  Arena* arena_;
 };
 
 // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
@@ -1081,7 +1087,7 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
   }
   return new ColumnIterator(iters, true, rep_->ioptions.splitter,
                             rep_->internal_comparator, ro.columns,
-                            rep_->table_properties->num_entries);
+                            rep_->table_properties->num_entries, arena);
 }
 
 Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
@@ -1135,7 +1141,8 @@ Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
 
       ColumnIterator citers(iters, false, rep_->ioptions.splitter,
                             rep_->internal_comparator, /* might change*/
-                            ro.columns, rep_->table_properties->num_entries);
+                            ro.columns, rep_->table_properties->num_entries,
+                            nullptr);
       if (!citers.status().ok()) {
         s = citers.status();
         break;
@@ -1234,7 +1241,7 @@ Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end,
 
     ColumnIterator citers(iters, false, rep_->ioptions.splitter,
                           rep_->internal_comparator, ro.columns,
-                          rep_->table_properties->num_entries);
+                          rep_->table_properties->num_entries, nullptr);
     if (!citers.status().ok()) {
       return citers.status();
     }

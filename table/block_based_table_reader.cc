@@ -721,14 +721,16 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   BlockBasedIterator(InternalIterator* iter,
                      const InternalKeyComparator& internal_comparator,
                      const Splitter* splitter,
-                     const std::vector<uint32_t>& columns)
-      : iter_(iter),
-        internal_comparator_(internal_comparator),
-        splitter_(splitter),
-        columns_(columns) {}
+                     const std::vector<uint32_t>& columns, Arena* arena)
+      : iter_(iter), internal_comparator_(internal_comparator),
+        splitter_(splitter), columns_(columns), arena_(arena) {}
 
   virtual ~BlockBasedIterator() {
-    iter_->~InternalIterator();
+    if (arena_) {
+      iter_->~InternalIterator();
+    } else {
+      delete iter_;
+    }
   }
 
   virtual bool Valid() const override { return iter_->Valid(); }
@@ -853,6 +855,7 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   const Splitter* splitter_;
   const std::vector<uint32_t> columns_;
   std::string value_;  // mutable
+  Arena* arena_;
 };
 /***************************** Shichao *********************************/
 
@@ -861,7 +864,8 @@ InternalIterator* BlockBasedTable::NewIterator(const ReadOptions& read_options,
   return new BlockBasedIterator(
       NewTwoLevelIterator(new BlockEntryIteratorState(this, read_options),
                           NewIndexIterator(read_options), arena),
-      rep_->internal_comparator, rep_->ioptions.splitter, read_options.columns);
+      rep_->internal_comparator, rep_->ioptions.splitter, read_options.columns,
+      arena);
 }
 
 Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,
