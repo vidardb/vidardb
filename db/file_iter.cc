@@ -9,6 +9,12 @@
 
 namespace vidardb {
 
+FileIter::~FileIter() {
+  for (auto it : children_) {
+    delete it;
+  }
+}
+
 bool FileIter::Valid() const {
   if (cur_ >= children_.size()) {
     // empty or out of index

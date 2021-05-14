@@ -273,7 +273,7 @@ bool ColumnBlockIter::ParseNextKey() {
 
   uint32_t restart_offset = GetRestartPoint(restart_index_);
   // within the restart area, key is not stored because it is merely sequence
-  bool has_key = (restart_offset == current_ ? true : false);
+  bool has_key = (restart_offset == current_);
 
   // Decode next entry
   uint32_t key_length = 0;

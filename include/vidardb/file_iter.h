@@ -24,7 +24,7 @@ class FileIter : public Iterator {
  public:
   FileIter(SequenceNumber s) : sequence_(s), cur_(0) {}
 
-  virtual ~FileIter() {}
+  virtual ~FileIter();
 
   bool Valid() const override;
 

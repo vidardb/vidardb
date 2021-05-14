@@ -798,7 +798,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 
   virtual ~ColumnIterator() {
     for (const auto& it : iters_) {
-      it->~InternalIterator();
+      delete it;
     }
   }
 
