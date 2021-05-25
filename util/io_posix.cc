@@ -316,8 +316,9 @@ Status PosixRandomAccessFile::Read(uint64_t offset, size_t n, Slice* result,
   ssize_t r = -1;
   size_t left = n;
   char* ptr = scratch;
+  off_t off = static_cast<off_t>(offset);
   while (left > 0) {
-    r = pread(fd_, ptr, left, static_cast<off_t>(offset));
+    r = pread(fd_, ptr, left, off);
 
     if (r <= 0) {
       if (errno == EINTR) {
@@ -326,7 +327,7 @@ Status PosixRandomAccessFile::Read(uint64_t offset, size_t n, Slice* result,
       break;
     }
     ptr += r;
-    offset += r;
+    off += r;
     left -= r;
   }
 
@@ -338,7 +339,8 @@ Status PosixRandomAccessFile::Read(uint64_t offset, size_t n, Slice* result,
   if (!use_os_buffer_) {
     // we need to fadvise away the entire range of pages because
     // we do not want readahead pages to be cached.
-    Fadvise(fd_, 0, 0, POSIX_FADV_DONTNEED);  // free OS pages
+    Fadvise(fd_, static_cast<off_t>(offset), static_cast<off_t>(n - left),
+            POSIX_FADV_DONTNEED);
   }
   return s;
 }

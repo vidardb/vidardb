@@ -504,8 +504,7 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
         icomparator_(icomparator),
         file_read_hist_(file_read_hist),
         for_compaction_(for_compaction),
-        level_(level),
-        os_cache_(os_cache) {}  // Shichao
+        level_(level) {}
 
   InternalIterator* NewSecondaryIterator(const Slice& meta_handle) override {
     if (meta_handle.size() != sizeof(FileDescriptor)) {
@@ -517,7 +516,7 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
       return table_cache_->NewIterator(
           read_options_, env_options_, icomparator_, *fd,
           nullptr /* don't need reference to table*/, file_read_hist_,
-          for_compaction_, nullptr /* arena */, level_, os_cache_);  // Shichao
+          for_compaction_, nullptr /* arena */, level_);
     }
   }
 
@@ -529,7 +528,6 @@ class LevelFileIteratorState : public TwoLevelIteratorState {
   HistogramImpl* file_read_hist_;
   bool for_compaction_;
   int level_;
-  bool os_cache_;  // Shichao
 };
 
 // A wrapper of version builder which references the current version in
@@ -845,7 +843,6 @@ void Version::AddIterators(const ReadOptions& read_options,
     return;
   }
 
-  // TODO: consider using two level iterator to save memory space
   // Merge all level files together
   for (int level = 0; level < storage_info_.num_non_empty_levels(); level++) {
     for (size_t i = 0; i < storage_info_.LevelFilesBrief(level).num_files;
@@ -853,9 +850,8 @@ void Version::AddIterators(const ReadOptions& read_options,
       const auto& file = storage_info_.LevelFilesBrief(level).files[i];
       iterator_list->push_back(cfd_->table_cache()->NewIterator(
           read_options, soptions, cfd_->internal_comparator(), file.fd, nullptr,
-          cfd_->internal_stats()->GetFileReadHist(0),
-          true, /* for compactions */
-          nullptr, 0, /* level */ false /* don't use os cache */));
+          cfd_->internal_stats()->GetFileReadHist(0), true,
+          /* for compactions */ nullptr, 0 /* level */));
     }
   }
 }
@@ -3218,7 +3214,7 @@ InternalIterator* VersionSet::MakeInputIterator(const Compaction* c) {
               cfd->internal_comparator(), flevel->files[i].fd, nullptr,
               nullptr, /* no per level latency histogram*/
               true /* for_compaction */, nullptr /* arena */,
-              false /* skip_filters */, (int)which /* level */);
+              (int)which /* level */);
         }
       } else {
         // Create concatenating iterator for the files from this level

@@ -94,19 +94,11 @@ Status TableCache::GetTableReader(
     const InternalKeyComparator& internal_comparator, const FileDescriptor& fd,
     bool sequential_mode, size_t readahead, bool record_read_stats,
     HistogramImpl* file_read_hist, unique_ptr<TableReader>* table_reader,
-    int level, bool os_cache/*Shichao*/, const std::vector<uint32_t>& cols) {  // Shichao
+    int level, const std::vector<uint32_t>& cols) {  // Shichao
   std::string fname =
       TableFileName(ioptions_.db_paths, fd.GetNumber(), fd.GetPathId());
   unique_ptr<RandomAccessFile> file;
-  /*************************** Shichao *************************/
-  EnvOptions eo;
-  if (!os_cache) {
-    eo = env_options;
-    eo.use_direct_reads = true;
-  }
-  /*************************** Shichao *************************/
-  Status s = ioptions_.env->NewRandomAccessFile(fname, &file,
-      os_cache? env_options: eo);  // Shichao
+  Status s = ioptions_.env->NewRandomAccessFile(fname, &file, env_options);
 
   if (readahead > 0) {
     file = NewReadaheadRandomAccessFile(std::move(file), readahead);
@@ -124,8 +116,8 @@ Status TableCache::GetTableReader(
                                    file_read_hist));
 
     s = ioptions_.table_factory->NewTableReader(
-        TableReaderOptions(ioptions_, os_cache? env_options: eo,  // Shichao
-            internal_comparator, level, cols),      // Shichao
+        TableReaderOptions(ioptions_, env_options, internal_comparator, level,
+                           cols),  // Shichao
         std::move(file_reader), fd.GetFileSize(), table_reader);
     TEST_SYNC_POINT("TableCache::GetTableReader:0");
   }
@@ -182,7 +174,7 @@ InternalIterator* TableCache::NewIterator(
     const ReadOptions& options, const EnvOptions& env_options,
     const InternalKeyComparator& icomparator, const FileDescriptor& fd,
     TableReader** table_reader_ptr, HistogramImpl* file_read_hist,
-    bool for_compaction, Arena* arena, int level, bool os_cache) {  // Shichao
+    bool for_compaction, Arena* arena, int level) {  // Shichao
   PERF_TIMER_GUARD(new_table_iterator_nanos);
 
   if (table_reader_ptr != nullptr) {
@@ -196,9 +188,8 @@ InternalIterator* TableCache::NewIterator(
   bool create_new_table_reader = false;
   if (for_compaction) {
     // when for_compaction && !os_cache = true, it is range query
-    if (!os_cache) {
+    if (!env_options.use_os_buffer) {
       readahead = options.readahead_size;  // Shichao
-      // TODO: create new table reader each time???
       create_new_table_reader = true;      // Shichao
     } else if (ioptions_.new_table_reader_for_compaction_inputs) {
       readahead = ioptions_.compaction_readahead_size;
@@ -214,7 +205,7 @@ InternalIterator* TableCache::NewIterator(
     Status s = GetTableReader(
         env_options, icomparator, fd, true /* sequential_mode */, readahead,
         !for_compaction /* record stats */, nullptr, &table_reader_unique_ptr,
-        level, os_cache/*Shichao*/, options.columns/*Shichao*/);
+        level, options.columns /*Shichao*/);
     if (!s.ok()) {
       return NewErrorInternalIterator(s, arena);
     }

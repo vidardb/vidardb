@@ -18,7 +18,7 @@ struct MinMax;
 struct RangeQueryKeyVal;
 class InternalIterator;
 
-// Flie level iterator of picking up the next file (memtable, block based table,
+// File level iterator of picking up the next file (memtable, block based table,
 // column table)
 class FileIter : public Iterator {
  public:

@@ -3548,8 +3548,12 @@ Iterator* DBImpl::NewFileIterator(const ReadOptions& read_options) {
   iters->push_back(sv->mem->NewIterator(read_options, nullptr));
   // Collect all needed child iterators for immutable memtables
   sv->imm->AddIterators(read_options, iters, nullptr);
+
+  // Don't pollute the os cache.
+  EnvOptions env_options(env_options_);
+  env_options.use_os_buffer = false;
   // Collect iterators for files in L0 - Ln
-  sv->current->AddIterators(read_options, env_options_, iters);
+  sv->current->AddIterators(read_options, env_options, iters);
 
   IterState* cleanup = new IterState(this, &mutex_, sv);
   file_iter->RegisterCleanup(CleanupIteratorState, cleanup, nullptr);

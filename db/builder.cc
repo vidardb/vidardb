@@ -171,8 +171,7 @@ Status BuildTable(
           ReadOptions(), env_options, internal_comparator, meta->fd, nullptr,
           (internal_stats == nullptr) ? nullptr
                                       : internal_stats->GetFileReadHist(0),
-          false /* for_compaction */, nullptr /* arena */,
-          false /* skip_filter */, level));
+          false /* for_compaction */, nullptr /* arena */, level));
       s = it->status();
       if (s.ok() && paranoid_file_checks) {
         for (it->SeekToFirst(); it->Valid(); it->Next()) {

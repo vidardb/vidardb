@@ -56,7 +56,7 @@ class TableCache {
       const InternalKeyComparator& internal_comparator,
       const FileDescriptor& file_fd, TableReader** table_reader_ptr = nullptr,
       HistogramImpl* file_read_hist = nullptr, bool for_compaction = false,
-      Arena* arena = nullptr, int level = -1, bool os_cache = true);  // Shichao
+      Arena* arena = nullptr, int level = -1);
 
   // If a seek to internal key "k" in specified file finds an entry,
   // call (*handle_result)(arg, found_key, found_value) repeatedly until
@@ -112,14 +112,13 @@ class TableCache {
 
  private:
   // Build a table reader
-  Status GetTableReader(const EnvOptions& env_options,
-                        const InternalKeyComparator& internal_comparator,
-                        const FileDescriptor& fd, bool sequential_mode,
-                        size_t readahead, bool record_read_stats,
-                        HistogramImpl* file_read_hist,
-                        unique_ptr<TableReader>* table_reader,
-                        int level = -1, bool os_cache = true,  // Shichao
-                        const std::vector<uint32_t>& cols = std::vector<uint32_t>());  // Shichao
+  Status GetTableReader(
+      const EnvOptions& env_options,
+      const InternalKeyComparator& internal_comparator,
+      const FileDescriptor& fd, bool sequential_mode, size_t readahead,
+      bool record_read_stats, HistogramImpl* file_read_hist,
+      unique_ptr<TableReader>* table_reader, int level = -1,
+      const std::vector<uint32_t>& cols = std::vector<uint32_t>());  // Shichao
 
   const ImmutableCFOptions& ioptions_;
   const EnvOptions& env_options_;
