@@ -208,9 +208,11 @@ class PosixEnv : public Env {
                                                   size, options));
         } else {
           s = IOError(fname, errno);
+          close(fd);
         }
+      } else {
+        close(fd);
       }
-      close(fd);
     } else if (options.use_direct_reads) {
 #ifdef OS_MACOSX
       int flags = O_RDONLY;

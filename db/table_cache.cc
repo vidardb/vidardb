@@ -187,8 +187,8 @@ InternalIterator* TableCache::NewIterator(
   size_t readahead = 0;
   bool create_new_table_reader = false;
   if (for_compaction) {
-    // when for_compaction && !os_cache = true, it is range query
-    if (!env_options.use_os_buffer) {
+    // when for_compaction && direct_read is true, it is for range query
+    if (env_options.use_direct_reads) {    // Shichao
       readahead = options.readahead_size;  // Shichao
       create_new_table_reader = true;      // Shichao
     } else if (ioptions_.new_table_reader_for_compaction_inputs) {
