@@ -833,6 +833,7 @@ void Version::AddIterators(const ReadOptions& read_options,
   }
 }
 
+/**************************** Shichao *****************************/
 void Version::AddIterators(const ReadOptions& read_options,
                            const EnvOptions& soptions,
                            std::vector<InternalIterator*>* iterator_list) {
@@ -851,10 +852,12 @@ void Version::AddIterators(const ReadOptions& read_options,
       iterator_list->push_back(cfd_->table_cache()->NewIterator(
           read_options, soptions, cfd_->internal_comparator(), file.fd, nullptr,
           cfd_->internal_stats()->GetFileReadHist(0), true,
-          /* for compactions */ nullptr, 0 /* level */));
+          /* for compactions */ nullptr, 0 /* level */,
+          true /* range query */));
     }
   }
 }
+/**************************** Shichao *****************************/
 
 VersionStorageInfo::VersionStorageInfo(
     const InternalKeyComparator* internal_comparator,

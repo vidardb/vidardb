@@ -3549,10 +3549,13 @@ Iterator* DBImpl::NewFileIterator(const ReadOptions& read_options) {
   // Collect all needed child iterators for immutable memtables
   sv->imm->AddIterators(read_options, iters, nullptr);
 
-  // Don't pollute the os cache. We use direct read here instead of fadvise
-  // since we would like to minimize the impact to other threads.
+  // Try not to pollute the os cache with 3 methods with pros and cons listed:
+  // O_DIRECT: no impact to other threads but poor performance
+  // FADV_DONTNEED: good performance but impact OS working set
+  // FADV_NOREUSE: noop in linux
   EnvOptions env_options(env_options_);
-  env_options.use_direct_reads = true;
+  //  env_options.use_direct_reads = true;
+  env_options.use_os_buffer = false;  // consider increase db cache
   // Collect iterators for files in L0 - Ln
   sv->current->AddIterators(read_options, env_options, iters);
 

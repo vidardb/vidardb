@@ -170,11 +170,58 @@ Status TableCache::FindTable(const EnvOptions& env_options,
   return s;
 }
 
+/**************************** Shichao *****************************/
+Status TableCache::FindTableForRangeQuery(
+    const EnvOptions& env_options,
+    const InternalKeyComparator& internal_comparator, const FileDescriptor& fd,
+    Cache::Handle** handle, const bool no_io, bool record_read_stats,
+    HistogramImpl* file_read_hist, int level, size_t readahead) {
+  PERF_TIMER_GUARD(find_table_nanos);
+  Status s;
+  uint64_t number = fd.GetNumber();
+  // For range query, we set another half of number as the cache key to avoid
+  // the conflict of the original cache key, since their open file options are
+  // different, direct v.s. buffered read.
+  assert(number < (kFileNumberMask >> 1));
+  number = kFileNumberMask - number;
+  Slice key = GetSliceForFileNumber(&number);
+  *handle = cache_->Lookup(key);
+  TEST_SYNC_POINT_CALLBACK("TableCache::FindTable:0",
+                           const_cast<bool*>(&no_io));
+
+  if (*handle == nullptr) {
+    if (no_io) {  // Don't do IO and return a not-found status
+      return Status::Incomplete("Table not found in table_cache, no_io is set");
+    }
+    unique_ptr<TableReader> table_reader;
+    s = GetTableReader(env_options, internal_comparator, fd,
+                       true /* sequential mode */, readahead, record_read_stats,
+                       file_read_hist, &table_reader, level);
+    if (!s.ok()) {
+      assert(table_reader == nullptr);
+      RecordTick(ioptions_.statistics, NO_FILE_ERRORS);
+      // We do not cache error results so that if the error is transient,
+      // or somebody repairs the file, we recover automatically.
+    } else {
+      s = cache_->Insert(key, table_reader.get(), 1, &DeleteEntry<TableReader>,
+                         handle);
+      if (s.ok()) {
+        // Release ownership of table reader.
+        table_reader.release();
+      }
+    }
+  }
+
+  return s;
+}
+/**************************** Shichao *****************************/
+
 InternalIterator* TableCache::NewIterator(
     const ReadOptions& options, const EnvOptions& env_options,
     const InternalKeyComparator& icomparator, const FileDescriptor& fd,
     TableReader** table_reader_ptr, HistogramImpl* file_read_hist,
-    bool for_compaction, Arena* arena, int level) {  // Shichao
+    bool for_compaction, Arena* arena, int level,
+    bool for_range_query) {  // Shichao
   PERF_TIMER_GUARD(new_table_iterator_nanos);
 
   if (table_reader_ptr != nullptr) {
@@ -187,11 +234,7 @@ InternalIterator* TableCache::NewIterator(
   size_t readahead = 0;
   bool create_new_table_reader = false;
   if (for_compaction) {
-    // when for_compaction && direct_read is true, it is for range query
-    if (env_options.use_direct_reads) {    // Shichao
-      readahead = options.readahead_size;  // Shichao
-      create_new_table_reader = true;      // Shichao
-    } else if (ioptions_.new_table_reader_for_compaction_inputs) {
+    if (ioptions_.new_table_reader_for_compaction_inputs) {
       readahead = ioptions_.compaction_readahead_size;
       create_new_table_reader = true;
     }
@@ -211,16 +254,30 @@ InternalIterator* TableCache::NewIterator(
     }
     table_reader = table_reader_unique_ptr.release();
   } else {
-    table_reader = fd.table_reader;
-    if (table_reader == nullptr) {
-      Status s = FindTable(env_options, icomparator, fd, &handle,
-                           options.read_tier == kBlockCacheTier /* no_io */,
-                           !for_compaction /* record read_stats */,
-                           file_read_hist, level);
+    if (for_range_query) {
+      // For range query, we create another reader first time and cache it to
+      // make tail index in memory.
+      Status s = FindTableForRangeQuery(
+          env_options, icomparator, fd, &handle,
+          options.read_tier == kBlockCacheTier /* no_io */,
+          !for_compaction /* record read_stats */, file_read_hist, level,
+          options.readahead_size);
       if (!s.ok()) {
         return NewErrorInternalIterator(s, arena);
       }
       table_reader = GetTableReaderFromHandle(handle);
+    } else {
+      table_reader = fd.table_reader;
+      if (table_reader == nullptr) {
+        Status s = FindTable(env_options, icomparator, fd, &handle,
+                             options.read_tier == kBlockCacheTier /* no_io */,
+                             !for_compaction /* record read_stats */,
+                             file_read_hist, level);
+        if (!s.ok()) {
+          return NewErrorInternalIterator(s, arena);
+        }
+        table_reader = GetTableReaderFromHandle(handle);
+      }
     }
   }
 

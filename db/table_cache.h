@@ -49,14 +49,14 @@ class TableCache {
   // the returned iterator.  The returned "*tableptr" object is owned by
   // the cache and should not be deleted, and is valid for as long as the
   // returned iterator is live.
-  // @param skip_filters Disables loading/accessing the filter block
   // @param level The level this table is at, -1 for "not set / don't know"
   InternalIterator* NewIterator(
       const ReadOptions& options, const EnvOptions& toptions,
       const InternalKeyComparator& internal_comparator,
       const FileDescriptor& file_fd, TableReader** table_reader_ptr = nullptr,
       HistogramImpl* file_read_hist = nullptr, bool for_compaction = false,
-      Arena* arena = nullptr, int level = -1);
+      Arena* arena = nullptr, int level = -1,
+      bool for_range_query = false);  // Shichao
 
   // If a seek to internal key "k" in specified file finds an entry,
   // call (*handle_result)(arg, found_key, found_value) repeatedly until
@@ -77,7 +77,6 @@ class TableCache {
   void EraseHandle(const FileDescriptor& fd, Cache::Handle* handle);
 
   // Find table reader
-  // @param skip_filters Disables loading/accessing the filter block
   // @param level == -1 means not specified
   Status FindTable(const EnvOptions& toptions,
                    const InternalKeyComparator& internal_comparator,
@@ -120,6 +119,15 @@ class TableCache {
       unique_ptr<TableReader>* table_reader, int level = -1,
       const std::vector<uint32_t>& cols = std::vector<uint32_t>());  // Shichao
 
+  /**************************** Shichao *****************************/
+  // Another version of FindTable built for range query.
+  Status FindTableForRangeQuery(
+      const EnvOptions& env_options,
+      const InternalKeyComparator& internal_comparator,
+      const FileDescriptor& fd, Cache::Handle** handle, const bool no_io,
+      bool record_read_stats, HistogramImpl* file_read_hist, int level,
+      size_t readahead);
+  /**************************** Shichao *****************************/
   const ImmutableCFOptions& ioptions_;
   const EnvOptions& env_options_;
   Cache* const cache_;
