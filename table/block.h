@@ -99,8 +99,8 @@ class BlockIter : public InternalIterator {
     Initialize(comparator, data, restarts, num_restarts);
   }
 
-  virtual void Initialize(const Comparator* comparator, const char* data,
-                          uint32_t restarts, uint32_t num_restarts) {
+  void Initialize(const Comparator* comparator, const char* data,
+                  uint32_t restarts, uint32_t num_restarts) {
     assert(data_ == nullptr);           // Ensure it is called only once
     assert(num_restarts > 0);           // Ensure the param is valid
 
@@ -112,7 +112,7 @@ class BlockIter : public InternalIterator {
     restart_index_ = num_restarts_;
   }
 
-  virtual void SetStatus(Status s) {
+  void SetStatus(Status s) {
     status_ = s;
   }
 
@@ -170,7 +170,7 @@ class BlockIter : public InternalIterator {
   Slice value_;
   Status status_;
 
-  virtual inline int Compare(const Slice& a, const Slice& b) const {
+  inline int Compare(const Slice& a, const Slice& b) const {
     return comparator_->Compare(a, b);
   }
 
@@ -180,7 +180,7 @@ class BlockIter : public InternalIterator {
     return static_cast<uint32_t>((value_.data() + value_.size()) - data_);
   }
 
-  virtual uint32_t GetRestartPoint(uint32_t index) {
+  uint32_t GetRestartPoint(uint32_t index) {
     assert(index < num_restarts_);
     return DecodeFixed32(data_ + restarts_ + index * sizeof(uint32_t));
   }
