@@ -16,7 +16,7 @@
 #include "vidardb/iterator.h"
 #include "vidardb/env.h"
 #include "table/iterator_wrapper.h"
-
+#include "table/block.h"
 namespace vidardb {
 
 struct ReadOptions;
@@ -28,6 +28,7 @@ struct TwoLevelIteratorState {
 
   virtual ~TwoLevelIteratorState() {}
   virtual InternalIterator* NewSecondaryIterator(const Slice& handle) = 0;
+  virtual InternalIterator* NewIterator(const Slice& handle, BlockIter* input_iter) {return nullptr;}
 };
 
 class TwoLevelIterator : public InternalIterator {

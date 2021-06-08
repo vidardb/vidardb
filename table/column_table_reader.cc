@@ -34,6 +34,8 @@
 #include "vidardb/table.h"
 #include "vidardb/table_properties.h"
 
+#include "table/sub_column_table_iterator.h"
+
 namespace vidardb {
 
 extern const uint64_t kColumnTableMagicNumber;
@@ -780,6 +782,10 @@ class ColumnTable::BlockEntryIteratorState : public TwoLevelIteratorState {
     return NewDataBlockIterator(table_->rep_, read_options_, index_value);
   }
 
+  InternalIterator* NewIterator(const Slice& index_value, BlockIter* input_iter) override {
+      return NewDataBlockIterator(table_->rep_, read_options_, index_value, input_iter);
+  }
+
  private:
   // Don't own table_
   ColumnTable* table_;
@@ -792,10 +798,10 @@ class ColumnTable::ColumnIterator : public InternalIterator {
                  bool has_main_column, const Splitter* splitter,
                  const InternalKeyComparator& internal_comparator,
                  const std::vector<uint32_t>& columns, uint64_t num_entries,
-                 Arena* arena)
+                 Arena* arena, SubColumnTableIterator* sub_col_iter = nullptr)
       : iters_(iters), has_main_column_(has_main_column), splitter_(splitter),
         internal_comparator_(internal_comparator), columns_(columns),
-        num_entries_(num_entries), arena_(arena) {}
+        num_entries_(num_entries), arena_(arena), sub_col_iter_(sub_col_iter) {}
 
   virtual ~ColumnIterator() {
     for (const auto& it : iters_) {
@@ -893,6 +899,8 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 
   virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
     v.clear();
+    return Status::OK();
+
     // called from NewIterator, so iters_ won't be empty
     assert(has_main_column_);
     // test whether it is an empty table
@@ -956,50 +964,47 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     res.clear();
     res.reserve(num_entries_);
 
-    // If block_bits is empty, imply a full scan. Empty table case has been
-    // recognized by NotFound status in GetMinMax, so shouldn't reach here.
-
     // handle key column case
-    size_t j = 0;
+//    size_t j = 0;
     auto iter = dynamic_cast<TwoLevelIterator*>(iters_.front());
-    // block level
-    for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(true), j++) {
-      assert(block_bits.empty() || j < block_bits.size());
-      if (!block_bits.empty() && !block_bits[j]) {
-        continue;
-      }
-      // within block
-      for (; iter->Valid(); iter->SecondLevelNext()) {
-        if (columns_.front() > 0) {
-          res.emplace_back("", "");
-        } else {
-          ParsedInternalKey parsed_key;
-          if (!ParseInternalKey(iter->key(), &parsed_key)) {
-            return Status::Corruption("corrupted internal key in Table::Iter");
-          }
-          res.emplace_back(parsed_key.user_key.ToString(), "");
-        }
-      }
+
+    struct timeval tv1, tv2;
+    gettimeofday(&tv1, NULL);
+    for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+//      if (columns_.front() > 0) {
+//        res.emplace_back("", "");
+//      } else {
+//        ParsedInternalKey parsed_key;
+//        if (!ParseInternalKey(iter->key(), &parsed_key)) {
+//          return Status::Corruption("corrupted internal key in Table::Iter");
+//        }
+//        res.emplace_back(parsed_key.user_key.ToString(), "");
+//      }
     }
 
+    gettimeofday(&tv2, NULL);
+    printf ("RQ first column time = %f seconds\n",
+            (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
+            (double) (tv2.tv_sec - tv1.tv_sec));
+
+    gettimeofday(&tv1, NULL);
     // handle other column cases
     for (size_t i = 1; i < iters_.size(); i++) {
-      j = 0;
-      size_t k = 0;
-      iter = dynamic_cast<TwoLevelIterator*>(iters_[i]);
-      bool last_column = ((i + 1) == iters_.size());
-      // block level
-      for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(true), j++) {
-        assert(block_bits.empty() || j < block_bits.size());
-        if (!block_bits.empty() && !block_bits[j]) {
-          continue;
-        }
-        // within block
-        for (; iter->Valid(); iter->SecondLevelNext()) {
-          splitter_->Append(res[k++].user_val, iter->value(), last_column);
-        }
+//////      size_t k = 0;
+//      iter = dynamic_cast<TwoLevelIterator*>(iters_[i]);
+////      bool last_column = ((i + 1) == iters_.size());
+//      for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+////        splitter_->Append(res[k++].user_val, iter->value(), last_column);
+//      }
+
+      for (sub_col_iter_->SeekToFirst(); sub_col_iter_->Valid(); sub_col_iter_->Next()) {
       }
     }
+
+    gettimeofday(&tv2, NULL);
+    printf ("RQ other columns time = %f seconds\n",
+            (double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +
+            (double) (tv2.tv_sec - tv1.tv_sec));
 
     return Status::OK();
   }
@@ -1045,6 +1050,7 @@ class ColumnTable::ColumnIterator : public InternalIterator {
   const std::vector<uint32_t> columns_;              // used in rangequery
   uint64_t num_entries_;                             // used in rangrquery
   Arena* arena_;
+  SubColumnTableIterator* sub_col_iter_;
 };
 
 // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
@@ -1075,6 +1081,7 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
   iters.push_back(NewTwoLevelIterator(new BlockEntryIteratorState(this, ro),
                                       NewIndexIterator(ro), arena));
 
+  SubColumnTableIterator* it = nullptr;
   for (const auto& column_index : ro.columns) {  // sub column
     if (column_index < 1) {  // only process the value columns
       continue;
@@ -1084,10 +1091,14 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
     iters.push_back(NewTwoLevelIterator(
         new BlockEntryIteratorState(rep_->tables[column_index-1].get(), ro),
         table->NewIndexIterator(ro), arena));
+
+    it = new SubColumnTableIterator(
+        new BlockEntryIteratorState(rep_->tables[column_index-1].get(), ro),
+        dynamic_cast<MinMaxBlockIter*>(table->NewIndexIterator(ro)));
   }
   return new ColumnIterator(iters, true, rep_->ioptions.splitter,
                             rep_->internal_comparator, ro.columns,
-                            rep_->table_properties->num_entries, arena);
+                            rep_->table_properties->num_entries, arena, it);
 }
 
 Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
