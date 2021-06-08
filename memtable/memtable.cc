@@ -464,11 +464,9 @@ namespace {
 struct Saver {
   Status* status;
   const LookupKey* key;
-  const LookupRange* range;  // Shichao
   bool* found_final_value;   // Is value set correctly? Used by KeyMayExist
   std::string* get_value;    // User value ptr for Get()
   std::list<RangeQueryKeyVal>* res;  // Shichao
-  std::map<std::string, SeqTypeVal>::iterator prev_iter;  // Shichao
   SequenceNumber seq;
   MemTable* mem;
   Logger* logger;

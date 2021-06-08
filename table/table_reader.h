@@ -36,7 +36,8 @@ class TableReader {
   //        but Iterator::~Iterator() directly. The destructor needs to destroy
   //        all the states but those allocated in arena.
   virtual InternalIterator* NewIterator(const ReadOptions&,
-                                        Arena* arena = nullptr) = 0;
+                                        Arena* arena = nullptr,
+                                        bool for_range_query = false) = 0;
 
   // Calls get_context->SaveValue() repeatedly, starting with
   // the entry found after a call to Seek(key), until it returns false.

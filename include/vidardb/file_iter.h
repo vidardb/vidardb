@@ -30,22 +30,7 @@ class FileIter : public Iterator {
 
   void SeekToFirst() override;
 
-  // not support
-  void SeekToLast() override { return; }
-
-  // TODO: not support now, but should support in the future for parallel scan
-  void Seek(const Slice& target) override { return; }
-
   void Next() override;
-
-  // not support
-  void Prev() override { return; }
-
-  // not support
-  Slice key() const override { return Slice(); }
-
-  // not support
-  Slice value() const override { return Slice(); }
 
   Status status() const override;
 

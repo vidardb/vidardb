@@ -282,7 +282,7 @@ InternalIterator* TableCache::NewIterator(
   }
 
   InternalIterator* result =
-      table_reader->NewIterator(options, arena);
+      table_reader->NewIterator(options, arena, for_range_query);
 
   if (create_new_table_reader) {
     assert(handle == nullptr);

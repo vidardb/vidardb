@@ -860,7 +860,8 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 /***************************** Shichao *********************************/
 
 InternalIterator* BlockBasedTable::NewIterator(const ReadOptions& read_options,
-                                               Arena* arena) {
+                                               Arena* arena,
+                                               bool for_range_query) {
   return new BlockBasedIterator(
       NewTwoLevelIterator(new BlockEntryIteratorState(this, read_options),
                           NewIndexIterator(read_options), arena),

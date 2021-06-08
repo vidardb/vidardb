@@ -83,7 +83,8 @@ class BlockBasedTable : public TableReader {
   // The result of NewIterator() is initially invalid (caller must
   // call one of the Seek methods on the iterator before using it).
   InternalIterator* NewIterator(const ReadOptions& read_options,
-                                Arena* arena = nullptr) override;
+                                Arena* arena = nullptr,
+                                bool for_range_query = false) override;
 
   Status Get(const ReadOptions& read_options, const Slice& key,
              GetContext* get_context) override;

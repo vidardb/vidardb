@@ -789,13 +789,9 @@ class ColumnTable::BlockEntryIteratorState : public TwoLevelIteratorState {
 class ColumnTable::ColumnIterator : public InternalIterator {
  public:
   ColumnIterator(const std::vector<InternalIterator*>& iters,
-                 bool has_main_column, const Splitter* splitter,
-                 const InternalKeyComparator& internal_comparator,
-                 const std::vector<uint32_t>& columns, uint64_t num_entries,
-                 Arena* arena)
+                 bool has_main_column, const Splitter* splitter, Arena* arena)
       : iters_(iters), has_main_column_(has_main_column), splitter_(splitter),
-        internal_comparator_(internal_comparator), columns_(columns),
-        num_entries_(num_entries), arena_(arena) {}
+        arena_(arena) {}
 
   virtual ~ColumnIterator() {
     for (const auto& it : iters_) {
@@ -891,10 +887,98 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return s;
   }
 
+  virtual void SetPinnedItersMgr(
+      PinnedIteratorsManager* pinned_iters_mgr) override {
+    for (const auto& it : iters_) {
+      it->SetPinnedItersMgr(pinned_iters_mgr);
+    }
+  }
+
+  virtual bool IsKeyPinned() const override {
+    for (const auto& it : iters_) {
+      if (!it->IsKeyPinned()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+ private:
+  bool ParseCurrentValue() {
+    value_.clear();
+    for (auto i = 0u; i < iters_.size(); i++) {
+      if (!iters_[i]->Valid()) {
+        return false;
+      }
+      if (has_main_column_ && i==0u) {
+        // skip main column (only key)
+        continue;
+      }
+      splitter_->Append(value_, iters_[i]->value(), i + 1 == iters_.size());
+    }
+    return true;
+  }
+
+  std::vector<InternalIterator*> iters_;
+  std::string value_;
+  Status status_;
+  bool has_main_column_;  // true in NewIterator, false in Get & Prefetch
+  const Splitter* splitter_;
+  Arena* arena_;
+};
+
+class ColumnTable::RangeQueryIterator : public InternalIterator {
+ public:
+  RangeQueryIterator(const std::vector<InternalIterator*>& iters,
+                     const Splitter* splitter,
+                     const InternalKeyComparator& internal_comparator,
+                     const std::vector<uint32_t>& columns, uint64_t num_entries,
+                     Arena* arena)
+      : iters_(iters), splitter_(splitter),
+        internal_comparator_(internal_comparator), columns_(columns),
+        num_entries_(num_entries), arena_(arena) {}
+
+  virtual ~RangeQueryIterator() {
+    for (const auto& it : iters_) {
+      if (arena_) {
+        it->~InternalIterator();
+      } else {
+        delete it;
+      }
+    }
+  }
+
+  virtual bool Valid() const override {
+    for (const auto& it : iters_) {
+      if (!it->Valid()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  virtual void SeekToFirst() override {
+    for (const auto& it : iters_) {
+      it->SeekToFirst();
+    }
+  }
+
+  virtual Status status() const override {
+    if (!status_.ok()) {
+      return status_;
+    }
+    Status s;
+    for (const auto& it : iters_) {
+      s = it->status();
+      if (!s.ok()) {
+        break;
+      }
+    }
+    return s;
+  }
+
   virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
     v.clear();
-    // called from NewIterator, so iters_ won't be empty
-    assert(has_main_column_);
     // test whether it is an empty table
     iters_.front()->SeekToFirst();
     if (!iters_.front()->Valid()) {
@@ -1004,42 +1088,9 @@ class ColumnTable::ColumnIterator : public InternalIterator {
     return Status::OK();
   }
 
-  virtual void SetPinnedItersMgr(
-      PinnedIteratorsManager* pinned_iters_mgr) override {
-    for (const auto& it : iters_) {
-      it->SetPinnedItersMgr(pinned_iters_mgr);
-    }
-  }
-
-  virtual bool IsKeyPinned() const override {
-    for (const auto& it : iters_) {
-      if (!it->IsKeyPinned()) {
-        return false;
-      }
-    }
-    return true;
-  }
-
  private:
-  inline bool ParseCurrentValue() {
-    value_.clear();
-    for (auto i = 0u; i < iters_.size(); i++) {
-      if (!iters_[i]->Valid()) {
-        return false;
-      }
-      if (has_main_column_ && i==0u) {
-        // skip main column (only key)
-        continue;
-      }
-      splitter_->Append(value_, iters_[i]->value(), i + 1 == iters_.size());
-    }
-    return true;
-  }
-
   std::vector<InternalIterator*> iters_;
-  std::string value_;
   Status status_;
-  bool has_main_column_;  // true in NewIterator, false in Get & Prefetch
   const Splitter* splitter_;                         // used in rangequery
   const InternalKeyComparator& internal_comparator_; // used in rangrquery
   const std::vector<uint32_t> columns_;              // used in rangequery
@@ -1067,7 +1118,7 @@ inline static ReadOptions SanitizeColumnReadOptions(
 }
 
 InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
-                                           Arena* arena) {
+                                           Arena* arena, bool for_range_query) {
   ReadOptions ro = SanitizeColumnReadOptions(
       rep_->table_options.column_count, read_options);
 
@@ -1085,9 +1136,14 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
         new BlockEntryIteratorState(rep_->tables[column_index-1].get(), ro),
         table->NewIndexIterator(ro), arena));
   }
-  return new ColumnIterator(iters, true, rep_->ioptions.splitter,
-                            rep_->internal_comparator, ro.columns,
-                            rep_->table_properties->num_entries, arena);
+
+  if (for_range_query) {
+    return new RangeQueryIterator(iters, rep_->ioptions.splitter,
+                                  rep_->internal_comparator, ro.columns,
+                                  rep_->table_properties->num_entries, arena);
+  } else {
+    return new ColumnIterator(iters, true, rep_->ioptions.splitter, arena);
+  }
 }
 
 Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
@@ -1139,10 +1195,7 @@ Status ColumnTable::Get(const ReadOptions& read_options, const Slice& key,
             rep_->tables[it-1]->NewIndexIterator(ro)));
       }
 
-      ColumnIterator citers(iters, false, rep_->ioptions.splitter,
-                            rep_->internal_comparator, /* might change*/
-                            ro.columns, rep_->table_properties->num_entries,
-                            nullptr);
+      ColumnIterator citers(iters, false, rep_->ioptions.splitter, nullptr);
       if (!citers.status().ok()) {
         s = citers.status();
         break;
@@ -1239,9 +1292,7 @@ Status ColumnTable::Prefetch(const Slice* const begin, const Slice* const end,
           rep_->tables[it-1]->NewIndexIterator(ro)));
     }
 
-    ColumnIterator citers(iters, false, rep_->ioptions.splitter,
-                          rep_->internal_comparator, ro.columns,
-                          rep_->table_properties->num_entries, nullptr);
+    ColumnIterator citers(iters, false, rep_->ioptions.splitter, nullptr);
     if (!citers.status().ok()) {
       return citers.status();
     }
