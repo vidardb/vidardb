@@ -16,6 +16,7 @@
 #include "vidardb/table.h"
 #include "table/table_properties_internal.h"
 #include "table/table_reader.h"
+#include "table/two_level_iterator.h"
 #include "util/coding.h"
 #include "util/file_reader_writer.h"
 
@@ -113,12 +114,36 @@ class ColumnTable : public TableReader {
 
   ~ColumnTable();
 
+  class BlockEntryIteratorState : public TwoLevelIteratorState {
+   public:
+    BlockEntryIteratorState(ColumnTable* table, const ReadOptions& read_options)
+        : TwoLevelIteratorState(), table_(table), read_options_(read_options) {}
+
+    InternalIterator* NewSecondaryIterator(const Slice& index_value) override {
+      return NewDataBlockIterator(table_->rep_, read_options_, index_value);
+    }
+
+    InternalIterator* NewIndexIterator(BlockIter* input_iter) {
+      return table_->NewIndexIterator(read_options_, input_iter);
+    }
+
+    InternalIterator* NewDataIterator(const Slice& index_value,
+                                      BlockIter* input_iter) {
+      return NewDataBlockIterator(table_->rep_, read_options_, index_value,
+                                  input_iter);
+    }
+
+   private:
+    // Don't own table_
+    ColumnTable* table_;
+    const ReadOptions read_options_;
+  };
+
  private:
   struct Rep;
   Rep* rep_;
   bool compaction_optimized_;
 
-  class BlockEntryIteratorState;
   class ColumnIterator;
   class RangeQueryIterator;
 

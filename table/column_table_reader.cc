@@ -18,6 +18,7 @@
 #include "table/index_reader.h"
 #include "table/internal_iterator.h"
 #include "table/meta_blocks.h"
+#include "table/sub_column_table_iterator.h"
 #include "table/two_level_iterator.h"
 #include "util/coding.h"
 #include "util/file_reader_writer.h"
@@ -768,24 +769,6 @@ Status ColumnTable::Open(const ImmutableCFOptions& ioptions,
   return s;
 }
 
-class ColumnTable::BlockEntryIteratorState : public TwoLevelIteratorState {
- public:
-  BlockEntryIteratorState(ColumnTable* table,
-                          const ReadOptions& read_options)
-      : TwoLevelIteratorState(),
-        table_(table),
-        read_options_(read_options) {}
-
-  InternalIterator* NewSecondaryIterator(const Slice& index_value) override {
-    return NewDataBlockIterator(table_->rep_, read_options_, index_value);
-  }
-
- private:
-  // Don't own table_
-  ColumnTable* table_;
-  const ReadOptions read_options_;
-};
-
 class ColumnTable::ColumnIterator : public InternalIterator {
  public:
   ColumnIterator(const std::vector<InternalIterator*>& iters,
@@ -929,27 +912,32 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 
 class ColumnTable::RangeQueryIterator : public InternalIterator {
  public:
-  RangeQueryIterator(const std::vector<InternalIterator*>& iters,
+  RangeQueryIterator(TwoLevelIterator* main_iter,
+                     const std::vector<SubColumnTableIterator*> sub_iters,
                      const Splitter* splitter,
                      const InternalKeyComparator& internal_comparator,
                      const std::vector<uint32_t>& columns, uint64_t num_entries,
                      Arena* arena)
-      : iters_(iters), splitter_(splitter),
+      : main_iter_(main_iter), sub_iters_(sub_iters), splitter_(splitter),
         internal_comparator_(internal_comparator), columns_(columns),
         num_entries_(num_entries), arena_(arena) {}
 
   virtual ~RangeQueryIterator() {
-    for (const auto& it : iters_) {
-      if (arena_) {
-        it->~InternalIterator();
-      } else {
-        delete it;
-      }
+    if (arena_) {
+      main_iter_->~InternalIterator();
+    } else {
+      delete main_iter_;
+    }
+    for (const auto& it : sub_iters_) {
+      delete it;
     }
   }
 
   virtual bool Valid() const override {
-    for (const auto& it : iters_) {
+    if (!main_iter_->Valid()) {
+      return false;
+    }
+    for (const auto& it : sub_iters_) {
       if (!it->Valid()) {
         return false;
       }
@@ -958,7 +946,8 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
   }
 
   virtual void SeekToFirst() override {
-    for (const auto& it : iters_) {
+    main_iter_->SeekToFirst();
+    for (const auto& it : sub_iters_) {
       it->SeekToFirst();
     }
   }
@@ -968,7 +957,11 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
       return status_;
     }
     Status s;
-    for (const auto& it : iters_) {
+    s = main_iter_->status();
+    if (!s.ok()) {
+      return s;
+    }
+    for (const auto& it : sub_iters_) {
       s = it->status();
       if (!s.ok()) {
         break;
@@ -980,8 +973,8 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
   virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
     v.clear();
     // test whether it is an empty table
-    iters_.front()->SeekToFirst();
-    if (!iters_.front()->Valid()) {
+    main_iter_->SeekToFirst();
+    if (!main_iter_->Valid()) {
       return Status::NotFound();
     }
 
@@ -993,18 +986,17 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
     if (columns_.front() == 0) {
       // store the smallest internal key in parsed_key
       ParsedInternalKey parsed_key;
-      if (!ParseInternalKey(iters_.front()->key(), &parsed_key)) {
+      if (!ParseInternalKey(main_iter_->key(), &parsed_key)) {
         return Status::Corruption("corrupted internal key in Table::Iter");
       }
       // store the smallest user key
       std::string last_block_user_key(parsed_key.user_key.data(),
                                       parsed_key.user_key.size());
 
-      auto iter = dynamic_cast<TwoLevelIterator*>(iters_.front());
-      for (iter->FirstLevelSeekToFirst(); iter->FirstLevelValid();
-           iter->FirstLevelNext(false)) {
+      for (main_iter_->FirstLevelSeekToFirst(); main_iter_->FirstLevelValid();
+           main_iter_->FirstLevelNext(false)) {
         // current block max internal key
-        if (!ParseInternalKey(iter->FirstLevelKey(), &parsed_key)) {
+        if (!ParseInternalKey(main_iter_->FirstLevelKey(), &parsed_key)) {
           return Status::Corruption("corrupted internal key in Table::Iter");
         }
 
@@ -1018,12 +1010,12 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
     }
 
     // handle other column cases
-    for (size_t i = 1; i < iters_.size(); i++, j++) {
+    for (size_t i = 0; i < sub_iters_.size(); i++, j++) {
       // if not the first column, reserve the space to avoid re-allocation
       if (j > 0) {
         v[j].reserve(v.front().size());
       }
-      auto iter = dynamic_cast<TwoLevelIterator*>(iters_[i]);
+      auto iter = sub_iters_[i];
       for (iter->FirstLevelSeekToFirst(); iter->FirstLevelValid();
            iter->FirstLevelNext(false)) {
         v[j].emplace_back(iter->FirstLevelMin().ToString(),
@@ -1045,20 +1037,20 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
 
     // handle key column case
     size_t j = 0;
-    auto iter = dynamic_cast<TwoLevelIterator*>(iters_.front());
     // block level
-    for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(true), j++) {
+    for (main_iter_->SeekToFirst(); main_iter_->Valid();
+         main_iter_->FirstLevelNext(true), j++) {
       assert(block_bits.empty() || j < block_bits.size());
       if (!block_bits.empty() && !block_bits[j]) {
         continue;
       }
       // within block
-      for (; iter->Valid(); iter->SecondLevelNext()) {
+      for (; main_iter_->Valid(); main_iter_->SecondLevelNext()) {
         if (columns_.front() > 0) {
           res.emplace_back("", "");
         } else {
           ParsedInternalKey parsed_key;
-          if (!ParseInternalKey(iter->key(), &parsed_key)) {
+          if (!ParseInternalKey(main_iter_->key(), &parsed_key)) {
             return Status::Corruption("corrupted internal key in Table::Iter");
           }
           res.emplace_back(parsed_key.user_key.ToString(), "");
@@ -1067,11 +1059,11 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
     }
 
     // handle other column cases
-    for (size_t i = 1; i < iters_.size(); i++) {
+    for (size_t i = 0; i < sub_iters_.size(); i++) {
       j = 0;
       size_t k = 0;
-      iter = dynamic_cast<TwoLevelIterator*>(iters_[i]);
-      bool last_column = ((i + 1) == iters_.size());
+      auto iter = sub_iters_[i];
+      bool last_column = ((i + 1) == sub_iters_.size());
       // block level
       for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(true), j++) {
         assert(block_bits.empty() || j < block_bits.size());
@@ -1089,7 +1081,8 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
   }
 
  private:
-  std::vector<InternalIterator*> iters_;
+  TwoLevelIterator* main_iter_;
+  std::vector<SubColumnTableIterator*> sub_iters_;
   Status status_;
   const Splitter* splitter_;                         // used in rangequery
   const InternalKeyComparator& internal_comparator_; // used in rangrquery
@@ -1122,27 +1115,41 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
   ReadOptions ro = SanitizeColumnReadOptions(
       rep_->table_options.column_count, read_options);
 
-  std::vector<InternalIterator*> iters;  // main column
-  iters.push_back(NewTwoLevelIterator(new BlockEntryIteratorState(this, ro),
-                                      NewIndexIterator(ro), arena));
+  if (!for_range_query) {
+    std::vector<InternalIterator*> iters;  // main column
+    iters.push_back(NewTwoLevelIterator(new BlockEntryIteratorState(this, ro),
+                                        NewIndexIterator(ro), arena));
 
-  for (const auto& column_index : ro.columns) {  // sub column
-    if (column_index < 1) {  // only process the value columns
-      continue;
+    for (const auto& column_index : ro.columns) {  // sub column
+      if (column_index < 1) {  // only process the value columns
+        continue;
+      }
+
+      auto& table = rep_->tables[column_index-1];
+      iters.push_back(NewTwoLevelIterator(
+          new BlockEntryIteratorState(rep_->tables[column_index-1].get(), ro),
+          table->NewIndexIterator(ro), arena));
+    }
+    return new ColumnIterator(iters, true, rep_->ioptions.splitter, arena);
+  } else {
+    InternalIterator* main_iter = NewTwoLevelIterator(
+        new BlockEntryIteratorState(this, ro), NewIndexIterator(ro), arena);
+
+    std::vector<SubColumnTableIterator*> sub_iters;  // sub column
+    for (const auto& column_index : ro.columns) {  // sub column
+      if (column_index < 1) {  // only process the value columns
+        continue;
+      }
+
+      auto& table = rep_->tables[column_index-1];
+      sub_iters.push_back(new SubColumnTableIterator(
+          new BlockEntryIteratorState(table.get(), ro)));
     }
 
-    auto& table = rep_->tables[column_index-1];
-    iters.push_back(NewTwoLevelIterator(
-        new BlockEntryIteratorState(rep_->tables[column_index-1].get(), ro),
-        table->NewIndexIterator(ro), arena));
-  }
-
-  if (for_range_query) {
-    return new RangeQueryIterator(iters, rep_->ioptions.splitter,
+    return new RangeQueryIterator(dynamic_cast<TwoLevelIterator*>(main_iter),
+                                  sub_iters, rep_->ioptions.splitter,
                                   rep_->internal_comparator, ro.columns,
                                   rep_->table_properties->num_entries, arena);
-  } else {
-    return new ColumnIterator(iters, true, rep_->ioptions.splitter, arena);
   }
 }
 
