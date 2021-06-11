@@ -84,53 +84,34 @@ class Block {
 
 class BlockIter : public InternalIterator {
  public:
-  BlockIter()
-      : comparator_(nullptr),
-        data_(nullptr),
-        restarts_(0),
-        num_restarts_(0),
-        current_(0),
-        restart_index_(0),
-        status_(Status::OK()) {}
+  BlockIter();
 
   BlockIter(const Comparator* comparator, const char* data, uint32_t restarts,
-            uint32_t num_restarts)
-      : BlockIter() {
-    Initialize(comparator, data, restarts, num_restarts);
-  }
+            uint32_t num_restarts);
 
   void Initialize(const Comparator* comparator, const char* data,
-                  uint32_t restarts, uint32_t num_restarts) {
-    assert(data_ == nullptr);           // Ensure it is called only once
-    assert(num_restarts > 0);           // Ensure the param is valid
+                  uint32_t restarts, uint32_t num_restarts);
 
-    comparator_ = comparator;
-    data_ = data;
-    restarts_ = restarts;
-    num_restarts_ = num_restarts;
-    current_ = restarts_;
-    restart_index_ = num_restarts_;
-  }
+  void SetStatus(Status s) { status_ = s; }
 
-  void SetStatus(Status s) {
-    status_ = s;
-  }
+  virtual bool Valid() const override final { return current_ < restarts_; }
 
-  virtual bool Valid() const override { return current_ < restarts_; }
+  virtual Status status() const override final { return status_; }
 
-  virtual Status status() const override { return status_; }
-
-  virtual Slice key() const override {
+  virtual Slice key() const override final {
     assert(Valid());
     return key_.GetKey();
   }
 
-  virtual Slice value() override {
+  virtual Slice value() override final {
     assert(Valid());
     return value_;
   }
 
-  virtual void Next() override;
+  virtual void Next() override {
+    assert(Valid());
+    ParseNextKey();
+  }
 
   virtual void Prev() override;
 
@@ -141,11 +122,7 @@ class BlockIter : public InternalIterator {
   virtual void SeekToLast() override;
 
 #ifndef NDEBUG
-  virtual ~BlockIter() {
-    // Assert that the BlockIter is never deleted while Pinning is Enabled.
-    assert(!pinned_iters_mgr_ ||
-           (pinned_iters_mgr_ && !pinned_iters_mgr_->PinningEnabled()));
-  }
+  virtual ~BlockIter();
 
   virtual void SetPinnedItersMgr(
       PinnedIteratorsManager* pinned_iters_mgr) override {
@@ -170,12 +147,12 @@ class BlockIter : public InternalIterator {
   Slice value_;
   Status status_;
 
-  inline int Compare(const Slice& a, const Slice& b) const {
+  int Compare(const Slice& a, const Slice& b) const {
     return comparator_->Compare(a, b);
   }
 
   // Return the offset in data_ just past the end of the current entry.
-  virtual inline uint32_t NextEntryOffset() const {
+  virtual uint32_t NextEntryOffset() const {
     // NOTE: We don't support files bigger than 2GB
     return static_cast<uint32_t>((value_.data() + value_.size()) - data_);
   }
@@ -197,40 +174,161 @@ class BlockIter : public InternalIterator {
 
   virtual void CorruptionError();
 
-  virtual bool ParseNextKey();
+  virtual bool ParseNextKey() {
+    current_ = NextEntryOffset();
+    const char* p = data_ + current_;
+    const char* limit = data_ + restarts_;  // Restarts come right after data
+    if (p >= limit) {
+      // No more entries to return.  Mark as invalid.
+      current_ = restarts_;
+      restart_index_ = num_restarts_;
+      return false;
+    }
+
+    // Decode next entry
+    uint32_t shared, non_shared, value_length;
+    p = DecodeEntry(p, limit, &shared, &non_shared, &value_length);
+    if (p == nullptr || key_.Size() < shared) {
+      CorruptionError();
+      return false;
+    } else {
+      if (shared == 0) {
+        // If this key don't share any bytes with prev key then we don't need
+        // to decode it and can use it's address in the block directly.
+        key_.SetKey(Slice(p, non_shared), false /* copy */);
+      } else {
+        // This key share `shared` bytes with prev key, we need to decode it
+        key_.TrimAppend(shared, p, non_shared);
+      }
+
+      value_ = Slice(p + non_shared, value_length);
+      while (restart_index_ + 1 < num_restarts_ &&
+             GetRestartPoint(restart_index_ + 1) < current_) {
+        ++restart_index_;
+      }
+      return true;
+    }
+  }
 
   virtual bool BinarySeek(const Slice& target, uint32_t left, uint32_t right,
                           uint32_t* index);
+
+  // Helper routine: decode the next block entry starting at "p",
+  // storing the number of shared key bytes, non_shared key bytes,
+  // and the length of the value in "*shared", "*non_shared", and
+  // "*value_length", respectively.  Will not derefence past "limit".
+  //
+  // If any errors are detected, returns nullptr.  Otherwise, returns a
+  // pointer to the key delta (just past the three decoded values).
+  static const char* DecodeEntry(const char* p, const char* limit,
+                                 uint32_t* shared, uint32_t* non_shared,
+                                 uint32_t* value_length) {
+    if (limit - p < 3) return nullptr;
+    *shared = reinterpret_cast<const unsigned char*>(p)[0];
+    *non_shared = reinterpret_cast<const unsigned char*>(p)[1];
+    *value_length = reinterpret_cast<const unsigned char*>(p)[2];
+    if ((*shared | *non_shared | *value_length) < 128) {
+      // Fast path: all three values are encoded in one byte each
+      p += 3;
+    } else {
+      if ((p = GetVarint32Ptr(p, limit, shared)) == nullptr) return nullptr;
+      if ((p = GetVarint32Ptr(p, limit, non_shared)) == nullptr) return nullptr;
+      if ((p = GetVarint32Ptr(p, limit, value_length)) == nullptr)
+        return nullptr;
+    }
+
+    if (static_cast<uint32_t>(limit - p) < (*non_shared + *value_length)) {
+      return nullptr;
+    }
+    return p;
+  }
 };
 
 // Sub-column block iterator, used in sub columns' data block
-class ColumnBlockIter : public BlockIter {
+class ColumnBlockIter final : public BlockIter {
  public:
   ColumnBlockIter() : BlockIter() {}
   ColumnBlockIter(const Comparator* comparator, const char* data,
-                  uint32_t restarts, uint32_t num_restarts)
-      : ColumnBlockIter() {
-    Initialize(comparator, data, restarts, num_restarts);
-  }
+                  uint32_t restarts, uint32_t num_restarts);
 
   virtual void Seek(const Slice& target) override;
 
+  // Helper routine: decode the next block entry starting at "p",
+  // storing the number of the length of the key or value in "key_length"
+  // or "*value_length". Will not derefence past "limit".
+  //
+  // If any errors are detected, returns nullptr. Otherwise, returns a
+  // pointer to the key delta (just past the decoded values).
+  static const char* DecodeKeyOrValue(const char* p, const char* limit,
+                                      uint32_t* length) {
+    if (limit - p < 1) return nullptr;
+    *length = reinterpret_cast<const unsigned char*>(p)[0];
+    if (*length < 128) {
+      // Fast path: key_length is encoded in one byte each
+      p++;
+    } else {
+      if ((p = GetVarint32Ptr(p, limit, length)) == nullptr) return nullptr;
+    }
+
+    if (static_cast<uint32_t>(limit - p) < *length) {
+      return nullptr;
+    }
+    return p;
+  }
+
  private:
-  virtual bool ParseNextKey() override;
+  virtual bool ParseNextKey() override {
+    current_ = NextEntryOffset();
+    const char* p = data_ + current_;
+    const char* limit = data_ + restarts_;  // Restarts come right after data
+    if (p >= limit) {
+      // No more entries to return.  Mark as invalid.
+      current_ = restarts_;
+      restart_index_ = num_restarts_;
+      return false;
+    }
+
+    while (restart_index_ + 1 < num_restarts_ &&
+           GetRestartPoint(restart_index_ + 1) <= current_) {
+      ++restart_index_;
+    }
+
+    uint32_t restart_offset = GetRestartPoint(restart_index_);
+    // within the restart area, key is not stored because it is merely sequence
+    bool has_key = (restart_offset == current_);
+
+    // Decode next entry
+    uint32_t key_length = 0;
+    if (has_key) {
+      p = DecodeKeyOrValue(p, limit, &key_length);
+      if (p == nullptr) {
+        CorruptionError();
+        return false;
+      }
+      key_.SetKey(Slice(p, key_length), false /* copy */);
+    }
+    p += key_length;
+    uint32_t value_length = 0;
+    p = DecodeKeyOrValue(p, limit, &value_length);
+    if (p == nullptr) {
+      CorruptionError();
+      return false;
+    }
+
+    value_ = Slice(p, value_length);
+    return true;
+  }
 
   virtual bool BinarySeek(const Slice& target, uint32_t left, uint32_t right,
                           uint32_t* index) override;
 };
 
 // Min max block iterator, used in sub columns' index block
-class MinMaxBlockIter : public BlockIter {
+class MinMaxBlockIter final : public BlockIter {
  public:
   MinMaxBlockIter() : BlockIter(), max_storage_len_(0) {}
   MinMaxBlockIter(const Comparator* comparator, const char* data,
-                  uint32_t restarts, uint32_t num_restarts)
-      : MinMaxBlockIter() {
-    Initialize(comparator, data, restarts, num_restarts);
-  }
+                  uint32_t restarts, uint32_t num_restarts);
 
   virtual Slice min() const override {
     assert(Valid());
@@ -266,7 +364,64 @@ class MinMaxBlockIter : public BlockIter {
 
   virtual void CorruptionError() override;
 
-  virtual bool ParseNextKey() override;
+  virtual bool ParseNextKey() override {
+    bool ret = BlockIter::ParseNextKey();
+    if (!ret) {
+      return false;
+    }
+
+    const char* p = value_.data_ + value_.size_;
+    const char* limit = data_ + restarts_;  // Restarts come right after data
+    // Decode min
+    uint32_t shared, non_shared;
+    p = ColumnBlockIter::DecodeKeyOrValue(p, limit, &non_shared);
+    if (p == nullptr) {
+      CorruptionError();
+      return false;
+    }
+    min_ = Slice(p, non_shared);
+    p += non_shared;
+    const char* max_start = p;
+
+    // Decode max
+    p = DecodeMax(p, limit, &shared, &non_shared);
+    if (p == nullptr || min_.size() < shared) {
+      CorruptionError();
+      return false;
+    }
+    max_.clear();
+    max_.assign(min_.data(), shared);
+    max_.append(p, non_shared);
+
+    p += non_shared;
+    max_storage_len_ = p - max_start;
+    return true;
+  }
+
+  // Helper routine: decode the next block max starting at "p",
+  // storing the number of shared bytes, non_shared bytes, in "*shared",
+  // "*non_shared" respectively.  Will not derefence past "limit".
+  //
+  // If any errors are detected, returns nullptr.  Otherwise, returns a
+  // pointer to the key delta (just past the three decoded values).
+  static const char* DecodeMax(const char* p, const char* limit,
+                               uint32_t* shared, uint32_t* non_shared) {
+    if (limit - p < 2) return nullptr;
+    *shared = reinterpret_cast<const unsigned char*>(p)[0];
+    *non_shared = reinterpret_cast<const unsigned char*>(p)[1];
+    if ((*shared | *non_shared) < 128) {
+      // Fast path: all three values are encoded in one byte each
+      p += 2;
+    } else {
+      if ((p = GetVarint32Ptr(p, limit, shared)) == nullptr) return nullptr;
+      if ((p = GetVarint32Ptr(p, limit, non_shared)) == nullptr) return nullptr;
+    }
+
+    if (static_cast<uint32_t>(limit - p) < *non_shared) {
+      return nullptr;
+    }
+    return p;
+  }
 
   Slice min_;
   std::string max_;
