@@ -17,6 +17,7 @@
 #include "table/get_context.h"
 #include "table/index_reader.h"
 #include "table/internal_iterator.h"
+#include "table/main_column_table_iterator.h"
 #include "table/meta_blocks.h"
 #include "table/sub_column_table_iterator.h"
 #include "table/two_level_iterator.h"
@@ -912,22 +913,20 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 
 class ColumnTable::RangeQueryIterator : public InternalIterator {
  public:
-  RangeQueryIterator(TwoLevelIterator* main_iter,
+  RangeQueryIterator(MainColumnTableIterator* main_iter,
                      const std::vector<SubColumnTableIterator*> sub_iters,
                      const Splitter* splitter,
                      const InternalKeyComparator& internal_comparator,
-                     const std::vector<uint32_t>& columns, uint64_t num_entries,
-                     Arena* arena)
-      : main_iter_(main_iter), sub_iters_(sub_iters), splitter_(splitter),
-        internal_comparator_(internal_comparator), columns_(columns),
-        num_entries_(num_entries), arena_(arena) {}
+                     const std::vector<uint32_t>& columns, uint64_t num_entries)
+      : main_iter_(main_iter),
+        sub_iters_(sub_iters),
+        splitter_(splitter),
+        internal_comparator_(internal_comparator),
+        columns_(columns),
+        num_entries_(num_entries) {}
 
   virtual ~RangeQueryIterator() {
-    if (arena_) {
-      main_iter_->~InternalIterator();
-    } else {
-      delete main_iter_;
-    }
+    delete main_iter_;
     for (const auto& it : sub_iters_) {
       delete it;
     }
@@ -1081,14 +1080,13 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
   }
 
  private:
-  TwoLevelIterator* main_iter_;
+  MainColumnTableIterator* main_iter_;
   std::vector<SubColumnTableIterator*> sub_iters_;
   Status status_;
   const Splitter* splitter_;                         // used in rangequery
   const InternalKeyComparator& internal_comparator_; // used in rangrquery
   const std::vector<uint32_t> columns_;              // used in rangequery
   uint64_t num_entries_;                             // used in rangrquery
-  Arena* arena_;
 };
 
 // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
@@ -1132,8 +1130,8 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
     }
     return new ColumnIterator(iters, true, rep_->ioptions.splitter, arena);
   } else {
-    InternalIterator* main_iter = NewTwoLevelIterator(
-        new BlockEntryIteratorState(this, ro), NewIndexIterator(ro), arena);
+    MainColumnTableIterator* main_iter =
+        new MainColumnTableIterator(new BlockEntryIteratorState(this, ro));
 
     std::vector<SubColumnTableIterator*> sub_iters;  // sub column
     for (const auto& column_index : ro.columns) {  // sub column
@@ -1146,10 +1144,9 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
           new BlockEntryIteratorState(table.get(), ro)));
     }
 
-    return new RangeQueryIterator(dynamic_cast<TwoLevelIterator*>(main_iter),
-                                  sub_iters, rep_->ioptions.splitter,
+    return new RangeQueryIterator(main_iter, sub_iters, rep_->ioptions.splitter,
                                   rep_->internal_comparator, ro.columns,
-                                  rep_->table_properties->num_entries, arena);
+                                  rep_->table_properties->num_entries);
   }
 }
 
