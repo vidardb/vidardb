@@ -393,8 +393,8 @@ SHARED3 = $(SHARED1).$(SHARED_MAJOR).$(SHARED_MINOR)
 SHARED4 = $(SHARED1).$(SHARED_MAJOR).$(SHARED_MINOR).$(SHARED_PATCH)
 endif
 SHARED = $(SHARED1) $(SHARED2) $(SHARED3) $(SHARED4)
-$(SHARED1): $(SHARED4)
-	ln -fs $(SHARED4) $(SHARED1)
+$(SHARED1): $(SHARED2)
+	ln -fs $(SHARED2) $(SHARED1)
 $(SHARED2): $(SHARED4)
 	ln -fs $(SHARED4) $(SHARED2)
 $(SHARED3): $(SHARED4)
@@ -1044,7 +1044,7 @@ install-shared: install-headers $(SHARED4)
 	install -C -m 755 $(SHARED4) $(INSTALL_PATH)/lib && \
 		ln -fs $(SHARED4) $(INSTALL_PATH)/lib/$(SHARED3) && \
 		ln -fs $(SHARED4) $(INSTALL_PATH)/lib/$(SHARED2) && \
-		ln -fs $(SHARED4) $(INSTALL_PATH)/lib/$(SHARED1)
+		ln -fs $(SHARED2) $(INSTALL_PATH)/lib/$(SHARED1)
 
 # install both static and shared library by cmake
 install:
