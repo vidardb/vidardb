@@ -26,14 +26,14 @@
 #include <assert.h>
 #include "vidardb/comparator.h"
 
-#include "column_block_builder.h"
 #include "db/dbformat.h"
+#include "sub_column_block_builder.h"
 #include "util/coding.h"
 
 namespace vidardb {
 
-size_t ColumnBlockBuilder::EstimateSizeAfterKV(const Slice& key,
-                                               const Slice& value) const {
+size_t SubColumnBlockBuilder::EstimateSizeAfterKV(const Slice& key,
+                                                  const Slice& value) const {
   size_t estimate = CurrentSizeEstimate();
   estimate += value.size();
   if (counter_ >= block_restart_interval_) {
@@ -47,7 +47,7 @@ size_t ColumnBlockBuilder::EstimateSizeAfterKV(const Slice& key,
   return estimate;
 }
 
-void ColumnBlockBuilder::Add(const Slice& key, const Slice& value) {
+void SubColumnBlockBuilder::Add(const Slice& key, const Slice& value) {
   assert(!finished_);
   assert(counter_ <= block_restart_interval_);
   if (counter_ >= block_restart_interval_) {

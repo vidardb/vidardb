@@ -17,13 +17,13 @@
 #include "db/dbformat.h"
 #include "db/filename.h"
 #include "table/block.h"
-#include "table/column_block_builder.h"
 #include "table/column_table_factory.h"
 #include "table/column_table_reader.h"
 #include "table/format.h"
 #include "table/index_builder.h"
 #include "table/meta_blocks.h"
 #include "table/min_max_block_builder.h"
+#include "table/sub_column_block_builder.h"
 #include "table/table_builder.h"
 #include "util/coding.h"
 #include "util/compression.h"
@@ -165,10 +165,10 @@ struct ColumnTableBuilder::Rep {
         column_comparator(column_num == 0 ? new ColumnKeyComparator()
                                           : nullptr),
         file(f),
-        data_block(
-            column_num == 0
-                ? new BlockBuilder(table_options.block_restart_interval)
-                : new ColumnBlockBuilder(table_options.block_restart_interval)),
+        data_block(column_num == 0
+                       ? new BlockBuilder(table_options.block_restart_interval)
+                       : new SubColumnBlockBuilder(
+                             table_options.block_restart_interval)),
         index_builder(CreateIndexBuilder(
             &internal_comparator, table_options.index_block_restart_interval,
             (column_num == 0)
