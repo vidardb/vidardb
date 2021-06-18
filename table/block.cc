@@ -163,13 +163,14 @@ bool BlockIter::BinarySeek(const Slice& target, uint32_t left, uint32_t right,
   return true;
 }
 
-ColumnBlockIter::ColumnBlockIter(const Comparator* comparator, const char* data,
-                                 uint32_t restarts, uint32_t num_restarts)
-    : ColumnBlockIter() {
+SubColumnBlockIter::SubColumnBlockIter(const Comparator* comparator,
+                                       const char* data, uint32_t restarts,
+                                       uint32_t num_restarts)
+    : SubColumnBlockIter() {
   Initialize(comparator, data, restarts, num_restarts);
 }
 
-void ColumnBlockIter::Seek(const Slice& target) {
+void SubColumnBlockIter::Seek(const Slice& target) {
   PERF_TIMER_GUARD(block_seek_nanos);
   if (data_ == nullptr) {  // Not init yet
     return;
@@ -205,7 +206,7 @@ void ColumnBlockIter::Seek(const Slice& target) {
 
 // Binary search in restart array to find the first restart point
 // with a key >= target (TODO: this comment is inaccurate)
-bool ColumnBlockIter::BinarySeek(const Slice& target, uint32_t left,
+bool SubColumnBlockIter::BinarySeek(const Slice& target, uint32_t left,
                                     uint32_t right, uint32_t* index) {
   assert(left <= right);
 
@@ -299,7 +300,8 @@ InternalIterator* Block::NewIterator(const Comparator* cmp, BlockIter* iter,
         case kTypeBlock:
           return new BlockIter(cmp, data_, restart_offset_, num_restarts);
         case kTypeColumn:
-          return new ColumnBlockIter(cmp, data_, restart_offset_, num_restarts);
+          return new SubColumnBlockIter(cmp, data_, restart_offset_,
+                                        num_restarts);
         case kTypeMinMax:
           return new MinMaxBlockIter(cmp, data_, restart_offset_, num_restarts);
         default:

@@ -245,11 +245,11 @@ class BlockIter : public InternalIterator {
 };
 
 // Sub-column block iterator, used in sub columns' data block
-class ColumnBlockIter final : public BlockIter {
+class SubColumnBlockIter final : public BlockIter {
  public:
-  ColumnBlockIter() : BlockIter() {}
-  ColumnBlockIter(const Comparator* comparator, const char* data,
-                  uint32_t restarts, uint32_t num_restarts);
+  SubColumnBlockIter() : BlockIter() {}
+  SubColumnBlockIter(const Comparator* comparator, const char* data,
+                     uint32_t restarts, uint32_t num_restarts);
 
   virtual void Seek(const Slice& target) override;
 
@@ -374,7 +374,7 @@ class MinMaxBlockIter final : public BlockIter {
     const char* limit = data_ + restarts_;  // Restarts come right after data
     // Decode min
     uint32_t shared, non_shared;
-    p = ColumnBlockIter::DecodeKeyOrValue(p, limit, &non_shared);
+    p = SubColumnBlockIter::DecodeKeyOrValue(p, limit, &non_shared);
     if (p == nullptr) {
       CorruptionError();
       return false;
