@@ -287,7 +287,7 @@ void ColumnTableBuilder::Add(const Slice& key, const Slice& value) {
     CreateSubcolumnBuilders(r);
   }
 
-  // Be carefull about big endian and small endian issue
+  // Be careful about big endian and small endian issue
   // when comparing number with binary format
   std::string pos;
   PutFixed32BigEndian(&pos, r->props.num_entries);

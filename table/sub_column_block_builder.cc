@@ -22,12 +22,7 @@
 //     num_restarts: uint32
 // restarts[i] contains the offset within the block of the ith restart point.
 
-#include <algorithm>
-#include <assert.h>
-#include "vidardb/comparator.h"
-
-#include "db/dbformat.h"
-#include "sub_column_block_builder.h"
+#include "table/sub_column_block_builder.h"
 #include "util/coding.h"
 
 namespace vidardb {
