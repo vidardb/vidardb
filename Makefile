@@ -1041,8 +1041,7 @@ install-static: install-headers $(LIBRARY)
 	install -C -m 755 $(LIBRARY) $(INSTALL_PATH)/lib
 
 install-shared: install-headers $(SHARED4)
-	install -C -m 755 $(SHARED4) $(INSTALL_PATH)/lib && \
-		ln -fs $(SHARED4) $(INSTALL_PATH)/lib/$(SHARED3) && \
+	install -C -m 644 $(SHARED4) $(INSTALL_PATH)/lib && \
 		ln -fs $(SHARED4) $(INSTALL_PATH)/lib/$(SHARED2) && \
 		ln -fs $(SHARED2) $(INSTALL_PATH)/lib/$(SHARED1)
 
