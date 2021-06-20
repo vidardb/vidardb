@@ -4,24 +4,21 @@
 //  of patent rights can be found in the PATENTS file in the same directory.
 
 #pragma once
-#include <vector>
 
-#include <stdint.h>
-#include "vidardb/slice.h"
 #include "table/block_builder.h"
 
 namespace vidardb {
 
 // Sub-column builder
-class ColumnBlockBuilder : public BlockBuilder {
+class SubColumnBlockBuilder : public BlockBuilder {
  public:
-  ColumnBlockBuilder(const ColumnBlockBuilder&) = delete;
-  void operator=(const ColumnBlockBuilder&) = delete;
+  SubColumnBlockBuilder(const SubColumnBlockBuilder&) = delete;
+  void operator=(const SubColumnBlockBuilder&) = delete;
 
-  explicit ColumnBlockBuilder(int block_restart_interval)
+  explicit SubColumnBlockBuilder(int block_restart_interval)
     : BlockBuilder(block_restart_interval) {}
 
-  virtual ~ColumnBlockBuilder() {}
+  virtual ~SubColumnBlockBuilder() {}
 
   // REQUIRES: Finish() has not been called since the last call to Reset().
   // REQUIRES: key is larger than any previously added key

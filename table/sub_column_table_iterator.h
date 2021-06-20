@@ -140,7 +140,7 @@ class SubColumnTableIterator {
 
   ColumnTable::BlockEntryIteratorState* state_;
   MinMaxBlockIter first_level_iter_;
-  ColumnBlockIter second_level_iter_;  // May be not valid
+  SubColumnBlockIter second_level_iter_;  // May be not valid
   bool valid_second_level_iter_;
   Status status_;
   // If second_level_iter is non-nullptr, then "data_block_handle_" holds the
