@@ -21,6 +21,7 @@
 #include "table/column_table_reader.h"
 #include "table/format.h"
 #include "table/index_builder.h"
+#include "table/main_column_block_builder.h"
 #include "table/meta_blocks.h"
 #include "table/min_max_block_builder.h"
 #include "table/sub_column_block_builder.h"
@@ -165,10 +166,6 @@ struct ColumnTableBuilder::Rep {
         column_comparator(column_num == 0 ? new ColumnKeyComparator()
                                           : nullptr),
         file(f),
-        data_block(column_num == 0
-                       ? new BlockBuilder(table_options.block_restart_interval)
-                       : new SubColumnBlockBuilder(
-                             table_options.block_restart_interval)),
         index_builder(CreateIndexBuilder(
             &internal_comparator, table_options.index_block_restart_interval,
             (column_num == 0)
@@ -177,14 +174,21 @@ struct ColumnTableBuilder::Rep {
         compression_type(_compression_type),
         compression_opts(_compression_opts),
         compression_dict(_compression_dict),
-        flush_block_policy(
-            column_num == 0
-                ? table_options.flush_block_policy_factory->NewFlushBlockPolicy(
-                      table_options, *data_block)
-                : nullptr),
         column_family_id(_column_family_id),
         column_family_name(_column_family_name),
         env_options(_env_options) {
+    if (column_num == 0) {
+      data_block.reset(
+          new MainColumnBlockBuilder(table_options.block_restart_interval));
+      flush_block_policy.reset(
+          table_options.flush_block_policy_factory->NewFlushBlockPolicy(
+              table_options, *data_block));
+    } else {
+      data_block.reset(
+          new SubColumnBlockBuilder(table_options.block_restart_interval));
+      flush_block_policy.reset(nullptr);
+    }
+
     if (column_num == 0 && int_tbl_prop_collector_factories) {
       for (auto& collector_factories : *int_tbl_prop_collector_factories) {
         table_properties_collectors.emplace_back(

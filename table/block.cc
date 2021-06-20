@@ -348,7 +348,10 @@ InternalIterator* Block::NewIterator(const Comparator* cmp, BlockIter* iter,
       switch (type) {
         case kTypeBlock:
           return new BlockIter(cmp, data_, restart_offset_, num_restarts);
-        case kTypeColumn:
+        case kTypeMainColumn:
+          return new MainColumnBlockIter(cmp, data_, restart_offset_,
+                                         num_restarts);
+        case kTypeSubColumn:
           return new SubColumnBlockIter(cmp, data_, restart_offset_,
                                         num_restarts);
         case kTypeMinMax:

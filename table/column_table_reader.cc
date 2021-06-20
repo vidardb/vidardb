@@ -367,7 +367,7 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
   if (s.ok() && block.value != nullptr) {
     iter = block.value->NewIterator(
         &rep->internal_comparator, input_iter,
-        (rep->column_num == 0) ? Block::kTypeBlock : Block::kTypeColumn);
+        (rep->column_num == 0) ? Block::kTypeMainColumn : Block::kTypeSubColumn);
     if (block.cache_handle != nullptr) {
       iter->RegisterCleanup(&ReleaseCachedEntry, block_cache,
                             block.cache_handle);

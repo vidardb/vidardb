@@ -58,7 +58,8 @@ class Block {
 
   enum BlockType : unsigned char {
     kTypeBlock = 0x0,
-    kTypeColumn = 0x1,
+    kTypeMainColumn = 0x1,
+    kTypeSubColumn =0x2,
     kTypeMinMax = 0x3
   };
 

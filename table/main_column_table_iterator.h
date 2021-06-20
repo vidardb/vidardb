@@ -140,7 +140,7 @@ class MainColumnTableIterator {
 
   ColumnTable::BlockEntryIteratorState* state_;
   BlockIter first_level_iter_;
-  BlockIter second_level_iter_;  // May be not valid
+  MainColumnBlockIter second_level_iter_;  // May be not valid
   bool valid_second_level_iter_;
   Status status_;
   // If second_level_iter is non-nullptr, then "data_block_handle_" holds the
