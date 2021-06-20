@@ -244,6 +244,87 @@ class BlockIter : public InternalIterator {
   }
 };
 
+class SubColumnBlockIter;
+// Main column block iterator, used in main columns' data block
+class MainColumnBlockIter final : public BlockIter {
+ public:
+  MainColumnBlockIter() : BlockIter(), has_val_(false), int_val_(0) {}
+  MainColumnBlockIter(const Comparator* comparator, const char* data,
+                      uint32_t restarts, uint32_t num_restarts);
+
+ private:
+  // Return the offset in data_ just past the end of the current entry.
+  virtual uint32_t NextEntryOffset() const override {
+    // NOTE: We don't support files bigger than 2GB
+    return static_cast<uint32_t>(key_.GetKey().data() + key_.Size() - data_ +
+                                 (has_val_ ? 4 : 0));
+  }
+
+  virtual void SeekToRestartPoint(uint32_t index) override {
+    restart_index_ = index;
+    // current_ will be fixed by ParseNextKey();
+
+    // ParseNextKey() starts at the end of value_ or key_
+    uint32_t offset = GetRestartPoint(index);
+    value_ = Slice(data_ + offset, 0);
+    key_.SetKey(value_, false);
+
+    has_val_ = false;
+    int_val_ = 0;
+    str_val_.empty();
+  }
+
+  virtual void CorruptionError() override;
+
+  virtual bool ParseNextKey() override {
+    current_ = NextEntryOffset();
+    const char* p = data_ + current_;
+    const char* limit = data_ + restarts_;  // Restarts come right after data
+    if (p >= limit) {
+      // No more entries to return.  Mark as invalid.
+      current_ = restarts_;
+      restart_index_ = num_restarts_;
+      return false;
+    }
+
+    // Decode next entry
+    uint32_t key_length = 0;
+    p = SubColumnBlockIter::DecodeKeyOrValue(p, limit, &key_length);
+    if (p == nullptr) {
+      CorruptionError();
+      return false;
+    }
+    key_.SetKey(Slice(p, key_length), false /* copy */);
+
+    while (restart_index_ + 1 < num_restarts_ &&
+           GetRestartPoint(restart_index_ + 1) <= current_) {
+      ++restart_index_;
+    }
+
+    uint32_t restart_offset = GetRestartPoint(restart_index_);
+    // within the restart area, val is not stored because it is merely sequence
+    has_val_ = (restart_offset == current_);
+
+    uint32_t value_length = 4;  // fixed 32 bits
+    if (has_val_) {
+      value_ = Slice(p + key_length, value_length);
+      GetFixed32BigEndian(&value_, &int_val_);
+    } else {
+      PutFixed32BigEndian(&str_val_, ++int_val_);
+      value_ = Slice(str_val_);
+    }
+
+    return true;
+  }
+
+  virtual bool BinarySeek(const Slice& target, uint32_t left, uint32_t right,
+                          uint32_t* index) override;
+
+  bool has_val_;
+  uint32_t int_val_;     // integer representation of sequence value
+  std::string str_val_;  // big endian representation of sequence value
+};
+
 // Sub-column block iterator, used in sub columns' data block
 class SubColumnBlockIter final : public BlockIter {
  public:
@@ -342,7 +423,7 @@ class MinMaxBlockIter final : public BlockIter {
 
  private:
   // Return the offset in data_ just past the end of the current entry.
-  virtual inline uint32_t NextEntryOffset() const override {
+  virtual uint32_t NextEntryOffset() const override {
     // NOTE: We don't support files bigger than 2GB
     return static_cast<uint32_t>(min_.data() + min_.size() + max_storage_len_ -
                                  data_);
