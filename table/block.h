@@ -244,7 +244,85 @@ class BlockIter : public InternalIterator {
   }
 };
 
-class SubColumnBlockIter;
+// Sub-column block iterator, used in sub columns' data block
+class SubColumnBlockIter final : public BlockIter {
+ public:
+  SubColumnBlockIter() : BlockIter() {}
+  SubColumnBlockIter(const Comparator* comparator, const char* data,
+                     uint32_t restarts, uint32_t num_restarts);
+
+  virtual void Seek(const Slice& target) override;
+
+  // Helper routine: decode the next block entry starting at "p",
+  // storing the number of the length of the key or value in "key_length"
+  // or "*value_length". Will not derefence past "limit".
+  //
+  // If any errors are detected, returns nullptr. Otherwise, returns a
+  // pointer to the key delta (just past the decoded values).
+  static const char* DecodeKeyOrValue(const char* p, const char* limit,
+                                      uint32_t* length) {
+    if (limit - p < 1) return nullptr;
+    *length = reinterpret_cast<const unsigned char*>(p)[0];
+    if (*length < 128) {
+      // Fast path: key_length is encoded in one byte each
+      p++;
+    } else {
+      if ((p = GetVarint32Ptr(p, limit, length)) == nullptr) return nullptr;
+    }
+
+    if (static_cast<uint32_t>(limit - p) < *length) {
+      return nullptr;
+    }
+    return p;
+  }
+
+ private:
+  virtual bool ParseNextKey() override {
+    current_ = NextEntryOffset();
+    const char* p = data_ + current_;
+    const char* limit = data_ + restarts_;  // Restarts come right after data
+    if (p >= limit) {
+      // No more entries to return.  Mark as invalid.
+      current_ = restarts_;
+      restart_index_ = num_restarts_;
+      return false;
+    }
+
+    while (restart_index_ + 1 < num_restarts_ &&
+           GetRestartPoint(restart_index_ + 1) <= current_) {
+      ++restart_index_;
+    }
+
+    uint32_t restart_offset = GetRestartPoint(restart_index_);
+    // within the restart area, key is not stored because it is merely sequence
+    bool has_key = (restart_offset == current_);
+
+    // Decode next entry
+    uint32_t key_length = 0;
+    if (has_key) {
+      p = DecodeKeyOrValue(p, limit, &key_length);
+      if (p == nullptr) {
+        CorruptionError();
+        return false;
+      }
+      key_.SetKey(Slice(p, key_length), false /* copy */);
+    }
+    p += key_length;
+    uint32_t value_length = 0;
+    p = DecodeKeyOrValue(p, limit, &value_length);
+    if (p == nullptr) {
+      CorruptionError();
+      return false;
+    }
+
+    value_ = Slice(p, value_length);
+    return true;
+  }
+
+  virtual bool BinarySeek(const Slice& target, uint32_t left, uint32_t right,
+                          uint32_t* index) override;
+};
+
 // Main column block iterator, used in main columns' data block
 class MainColumnBlockIter final : public BlockIter {
  public:
@@ -323,85 +401,6 @@ class MainColumnBlockIter final : public BlockIter {
   bool has_val_;
   uint32_t int_val_;     // integer representation of sequence value
   std::string str_val_;  // big endian representation of sequence value
-};
-
-// Sub-column block iterator, used in sub columns' data block
-class SubColumnBlockIter final : public BlockIter {
- public:
-  SubColumnBlockIter() : BlockIter() {}
-  SubColumnBlockIter(const Comparator* comparator, const char* data,
-                     uint32_t restarts, uint32_t num_restarts);
-
-  virtual void Seek(const Slice& target) override;
-
-  // Helper routine: decode the next block entry starting at "p",
-  // storing the number of the length of the key or value in "key_length"
-  // or "*value_length". Will not derefence past "limit".
-  //
-  // If any errors are detected, returns nullptr. Otherwise, returns a
-  // pointer to the key delta (just past the decoded values).
-  static const char* DecodeKeyOrValue(const char* p, const char* limit,
-                                      uint32_t* length) {
-    if (limit - p < 1) return nullptr;
-    *length = reinterpret_cast<const unsigned char*>(p)[0];
-    if (*length < 128) {
-      // Fast path: key_length is encoded in one byte each
-      p++;
-    } else {
-      if ((p = GetVarint32Ptr(p, limit, length)) == nullptr) return nullptr;
-    }
-
-    if (static_cast<uint32_t>(limit - p) < *length) {
-      return nullptr;
-    }
-    return p;
-  }
-
- private:
-  virtual bool ParseNextKey() override {
-    current_ = NextEntryOffset();
-    const char* p = data_ + current_;
-    const char* limit = data_ + restarts_;  // Restarts come right after data
-    if (p >= limit) {
-      // No more entries to return.  Mark as invalid.
-      current_ = restarts_;
-      restart_index_ = num_restarts_;
-      return false;
-    }
-
-    while (restart_index_ + 1 < num_restarts_ &&
-           GetRestartPoint(restart_index_ + 1) <= current_) {
-      ++restart_index_;
-    }
-
-    uint32_t restart_offset = GetRestartPoint(restart_index_);
-    // within the restart area, key is not stored because it is merely sequence
-    bool has_key = (restart_offset == current_);
-
-    // Decode next entry
-    uint32_t key_length = 0;
-    if (has_key) {
-      p = DecodeKeyOrValue(p, limit, &key_length);
-      if (p == nullptr) {
-        CorruptionError();
-        return false;
-      }
-      key_.SetKey(Slice(p, key_length), false /* copy */);
-    }
-    p += key_length;
-    uint32_t value_length = 0;
-    p = DecodeKeyOrValue(p, limit, &value_length);
-    if (p == nullptr) {
-      CorruptionError();
-      return false;
-    }
-
-    value_ = Slice(p, value_length);
-    return true;
-  }
-
-  virtual bool BinarySeek(const Slice& target, uint32_t left, uint32_t right,
-                          uint32_t* index) override;
 };
 
 // Min max block iterator, used in sub columns' index block
