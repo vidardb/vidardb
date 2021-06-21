@@ -6,6 +6,7 @@
 
 #include "vidardb/file_iter.h"
 #include "table/internal_iterator.h"
+#include "vidardb/db.h"
 
 namespace vidardb {
 
@@ -61,11 +62,12 @@ Status FileIter::GetMinMax(std::vector<std::vector<MinMax>>& v) const {
   return children_[cur_]->GetMinMax(v);
 }
 
-Status FileIter::RangeQuery(const std::vector<bool>& block_bits,
-                            std::vector<RangeQueryKeyVal>& res) const {
+Status FileIter::RangeQuery(const std::vector<bool>& block_bits, char* buf,
+                            uint64_t capacity, uint64_t* count) const {
   if (cur_ >= children_.size()) {
     return Status::NotFound();
   }
+  std::vector<RangeQueryKeyVal> res;
   // children_[cur_]->Valid() is false
   return children_[cur_]->RangeQuery(block_bits, res);
 }

@@ -15,7 +15,6 @@
 namespace vidardb {
 
 struct MinMax;
-struct RangeQueryKeyVal;
 class InternalIterator;
 
 // File level iterator of picking up the next file (memtable, block based table,
@@ -53,12 +52,16 @@ class FileIter : public Iterator {
   // this case v is also empty, and a full scan should not be executed later.
   Status GetMinMax(std::vector<std::vector<MinMax>>& v) const;
 
-  // According to the calculated block bits, fetch the partial tuples.
-  // If key is not in the target, set it empty. Sometimes the block_bits is
-  // empty, implying a full scan since no useful filters get from GetMinMax.
-  // Empty table has already been recognized by NotFound status in GetMinMax;
-  Status RangeQuery(const std::vector<bool>& block_bits,
-                    std::vector<RangeQueryKeyVal>& res) const;
+  // Estimate the size of current range query buffer to store required data
+  // blocks and meta data.
+  uint64_t EstimateRangeQueryBufSize() { /* not implemented */ return 0; }
+
+  // According to the calculated block bits, fetch the relevant attributes.
+  // Sometimes the block_bits is empty, implying a full scan since no useful
+  // filters get from GetMinMax. Empty table has already been recognized by
+  // NotFound status in GetMinMax;
+  Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
+                    uint64_t capacity, uint64_t* count) const;
 
  private:
   std::vector<InternalIterator*> children_;
@@ -66,4 +69,4 @@ class FileIter : public Iterator {
   size_t cur_;
 };
 
-}  // vidardb
+}  // namespace vidardb
