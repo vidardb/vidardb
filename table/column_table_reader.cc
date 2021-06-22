@@ -1026,16 +1026,16 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
   }
 
   // TODO: handle update and delete
-  virtual Status RangeQuery(const std::vector<bool>& block_bits,
-                            std::vector<RangeQueryKeyVal>& res) const override {
-    res.clear();
-    res.reserve(num_entries_);
+  virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
+                            uint64_t capacity, uint64_t* count) const override {
+    uint64_t* end = reinterpret_cast<uint64_t*>(buf + capacity);
 
     // If block_bits is empty, imply a full scan. Empty table case has been
     // recognized by NotFound status in GetMinMax, so shouldn't reach here.
 
     // handle key column case
     size_t j = 0;
+    main_iter_->SetArea(buf);
     // block level
     for (main_iter_->SeekToFirst(); main_iter_->Valid();
          main_iter_->FirstLevelNext(true), j++) {
@@ -1046,23 +1046,25 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
       // within block
       for (; main_iter_->Valid(); main_iter_->SecondLevelNext()) {
         if (columns_.front() > 0) {
-          res.emplace_back("", "");
+          // TODO: do sth checking about validness
         } else {
+          // TODO: currently we are assuming no delete
           ParsedInternalKey parsed_key;
           if (!ParseInternalKey(main_iter_->key(), &parsed_key)) {
             return Status::Corruption("corrupted internal key in Table::Iter");
           }
-          res.emplace_back(parsed_key.user_key.ToString(), "");
+          *(--end) = parsed_key.user_key.data() - buf;
+          *(--end) = parsed_key.user_key.size();
         }
       }
     }
+    buf = main_iter_->GetArea();
 
     // handle other column cases
     for (size_t i = 0; i < sub_iters_.size(); i++) {
       j = 0;
-      size_t k = 0;
       auto iter = sub_iters_[i];
-      bool last_column = ((i + 1) == sub_iters_.size());
+      iter->SetArea(buf);
       // block level
       for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(true), j++) {
         assert(block_bits.empty() || j < block_bits.size());
@@ -1071,9 +1073,11 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
         }
         // within block
         for (; iter->Valid(); iter->SecondLevelNext()) {
-          splitter_->Append(res[k++].user_val, iter->value(), last_column);
+          *(--end) = iter->value().data() - buf;
+          *(--end) = iter->value().size();
         }
       }
+      buf = iter->GetArea();
     }
 
     return Status::OK();

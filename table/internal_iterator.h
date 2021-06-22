@@ -11,12 +11,10 @@
 
 #pragma once
 
-#include <list>  // Shichao
 #include <string>
 
 #include "vidardb/file_iter.h"  // Shichao
 #include "vidardb/iterator.h"
-#include "vidardb/options.h"  // Quanzhao
 #include "vidardb/status.h"
 
 namespace vidardb {
@@ -90,8 +88,8 @@ class InternalIterator : public Cleanable {
   }
 
   // See comments in file_iter.h
-  virtual Status RangeQuery(const std::vector<bool>& block_bits,
-                            std::vector<RangeQueryKeyVal>& res) const {
+  virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
+                            uint64_t capacity, uint64_t* count) const {
     return Status::NotSupported(Slice("not implemented"));
   }
   /***************************** Shichao ******************************/

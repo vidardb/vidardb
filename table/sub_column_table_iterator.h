@@ -16,13 +16,13 @@ namespace vidardb {
 class SubColumnTableIterator {
  public:
   explicit SubColumnTableIterator(ColumnTable::BlockEntryIteratorState* state)
-      : state_(state), valid_second_level_iter_(false) {
+      : state_(state), valid_second_level_iter_(false), area_(nullptr) {
     state_->NewIndexIterator(&first_level_iter_);
   }
+  virtual ~SubColumnTableIterator() { delete state_; }
 
-  virtual ~SubColumnTableIterator() {
-    delete state_;
-  }
+  void SetArea(char* area) { area_ = area; }
+  char* GetArea() { return area_; }
 
   void SeekToFirst() {
     first_level_iter_.SeekToFirst();
@@ -35,12 +35,6 @@ class SubColumnTableIterator {
 
   bool Valid() const {
     return valid_second_level_iter_ ? second_level_iter_.Valid() : false;
-  }
-
-  void Next() {
-    assert(Valid());
-    second_level_iter_.Next();
-    SkipEmptyDataBlocksForward();
   }
 
   // the following 3 are optimized for speed without touching the disk due to
@@ -74,10 +68,6 @@ class SubColumnTableIterator {
     return first_level_iter_.max();
   }
 
-  Slice key() const {
-    assert(Valid());
-    return second_level_iter_.key();
-  }
   Slice value() {
     assert(Valid());
     return second_level_iter_.value();
@@ -146,6 +136,7 @@ class SubColumnTableIterator {
   // If second_level_iter is non-nullptr, then "data_block_handle_" holds the
   // "index_value" passed to block_function_ to create the second_level_iter.
   std::string data_block_handle_;
+  char* area_;  // Load the data blocks in this specified area consecutively
 };
 
 }  // namespace vidardb

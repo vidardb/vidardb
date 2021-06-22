@@ -806,8 +806,9 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
   }
 
   // TODO: handle update and delete
-  virtual Status RangeQuery(const std::vector<bool>& block_bits,
-                            std::vector<RangeQueryKeyVal>& res) const override {
+  virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
+                            uint64_t capacity, uint64_t* count) const override {
+    std::vector<RangeQueryKeyVal> res;
     res.clear();
 
     // If block_bits is empty, imply a full scan. Empty table case has been

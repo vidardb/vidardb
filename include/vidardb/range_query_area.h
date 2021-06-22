@@ -17,10 +17,5 @@
 #include <stdint.h>
 
 namespace vidardb {
-
-struct AttrHeader {
-  uint64_t offset;
-  uint64_t size;
-};
-
+// reserved for future data structures about the specified memory area
 }  // namespace vidardb

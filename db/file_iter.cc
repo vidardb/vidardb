@@ -6,7 +6,6 @@
 
 #include "vidardb/file_iter.h"
 #include "table/internal_iterator.h"
-#include "vidardb/db.h"
 
 namespace vidardb {
 
@@ -67,9 +66,8 @@ Status FileIter::RangeQuery(const std::vector<bool>& block_bits, char* buf,
   if (cur_ >= children_.size()) {
     return Status::NotFound();
   }
-  std::vector<RangeQueryKeyVal> res;
   // children_[cur_]->Valid() is false
-  return children_[cur_]->RangeQuery(block_bits, res);
+  return children_[cur_]->RangeQuery(block_bits, buf, capacity, count);
 }
 
 }  // namespace vidardb
