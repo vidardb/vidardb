@@ -216,7 +216,7 @@ Status ReadBlockContents(RandomAccessFileReader* file,
   Status status;
   Slice slice;
   size_t n = static_cast<size_t>(handle.size());
-  std::unique_ptr<char[]> heap_buf;
+  std::unique_ptr<char[], BlockContents::Deleter> heap_buf;  // Shichao
   char stack_buf[DefaultStackBufferSize];
   char* used_buf = nullptr;
   vidardb::CompressionType compression_type;
@@ -230,7 +230,8 @@ Status ReadBlockContents(RandomAccessFileReader* file,
     // trivially allocated stack buffer instead of needing a full malloc()
     used_buf = &stack_buf[0];
   } else {
-    heap_buf = std::unique_ptr<char[]>(new char[n + kBlockTrailerSize]);
+    heap_buf = std::unique_ptr<char[], BlockContents::Deleter>(
+        new char[n + kBlockTrailerSize]);  // Shichao
     used_buf = heap_buf.get();
   }
 
@@ -256,7 +257,8 @@ Status ReadBlockContents(RandomAccessFileReader* file,
     assert(area == nullptr);  // Shichao
     // page is uncompressed, the buffer either stack or heap provided
     if (used_buf == &stack_buf[0]) {
-      heap_buf = std::unique_ptr<char[]>(new char[n]);
+      heap_buf = std::unique_ptr<char[], BlockContents::Deleter>(
+          new char[n]);  // Shichao
       memcpy(heap_buf.get(), stack_buf, n);
     }
     *contents = BlockContents(std::move(heap_buf), n, true, compression_type);
@@ -276,7 +278,7 @@ Status UncompressBlockContents(const char* data, size_t n,
                                BlockContents* contents,
                                const Slice& compression_dict,
                                char** area) {  // Shichao
-  std::unique_ptr<char[]> ubuf;
+  std::unique_ptr<char[], BlockContents::Deleter> ubuf;  // Shichao
   int decompress_size = 0;
   assert(data[n] != kNoCompression);
   switch (data[n]) {
@@ -290,6 +292,7 @@ Status UncompressBlockContents(const char* data, size_t n,
       /***************************** Shichao *********************************/
       if (area != nullptr) {
         ubuf.reset(new (*area) char[ulength]);
+        ubuf.get_deleter().noop = true;  // noop got transferred by std::move
         *area += ulength;
       } else {
         ubuf.reset(new char[ulength]);

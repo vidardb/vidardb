@@ -159,7 +159,19 @@ struct BlockContents {
   Slice data;           // Actual contents of data
   bool cachable;        // True iff data can be cached
   CompressionType compression_type;
-  std::unique_ptr<char[]> allocation;
+
+  /********************************** Shichao *********************************/
+  struct Deleter {
+    Deleter() : noop(false) {}
+    void operator()(char* p) {
+      if (!noop) {
+        delete[] p;
+      }
+    }
+    bool noop;
+  };
+  std::unique_ptr<char[], Deleter> allocation;
+  /********************************** Shichao *********************************/
 
   BlockContents() : cachable(false), compression_type(kNoCompression) {}
 
@@ -167,8 +179,8 @@ struct BlockContents {
                 CompressionType _compression_type)
       : data(_data), cachable(_cachable), compression_type(_compression_type) {}
 
-  BlockContents(std::unique_ptr<char[]>&& _data, size_t _size, bool _cachable,
-                CompressionType _compression_type)
+  BlockContents(std::unique_ptr<char[], Deleter>&& _data /* Shichao*/,
+                size_t _size, bool _cachable, CompressionType _compression_type)
       : data(_data.get(), _size),
         cachable(_cachable),
         compression_type(_compression_type),

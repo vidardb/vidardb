@@ -21,7 +21,7 @@ class MainColumnTableIterator {
   virtual ~MainColumnTableIterator() { delete state_; }
 
   void SetArea(char* area) { area_ = area; }
-  char* GetArea() { return area_; }
+  char* GetArea() const { return area_; }
 
   void SeekToFirst() {
     first_level_iter_.SeekToFirst();

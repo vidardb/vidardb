@@ -372,7 +372,7 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
     if (block.cache_handle != nullptr) {
       iter->RegisterCleanup(&ReleaseCachedEntry, block_cache,
                             block.cache_handle);
-    } else if (area == nullptr) {
+    } else {
       iter->RegisterCleanup(&DeleteHeldResource<Block>, block.value, nullptr);
     }
   } else {
@@ -1029,6 +1029,7 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
   // TODO: handle update and delete
   virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
                             uint64_t capacity, uint64_t* count) const override {
+    assert(buf != nullptr);
     uint64_t* end = reinterpret_cast<uint64_t*>(buf + capacity);
 
     // If block_bits is empty, imply a full scan. Empty table case has been
