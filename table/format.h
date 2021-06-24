@@ -191,7 +191,7 @@ extern Status ReadBlockContents(
     RandomAccessFileReader* file, const ReadOptions& options,
     const BlockHandle& handle, BlockContents* contents, Env* env,
     bool do_uncompress = true, const Slice& compression_dict = Slice(),
-    Logger* info_log = nullptr);
+    Logger* info_log = nullptr, char** area = nullptr);  // Shichao
 
 // The 'data' points to the raw block contents read in from file.
 // This method allocates a new heap buffer and the raw block
@@ -202,7 +202,8 @@ extern Status ReadBlockContents(
 // util/compression.h
 extern Status UncompressBlockContents(const char* data, size_t n,
                                       BlockContents* contents,
-                                      const Slice& compression_dict);
+                                      const Slice& compression_dict,
+                                      char** area = nullptr);  // Shichao
 
 // Implementation details follow.  Clients should ignore,
 

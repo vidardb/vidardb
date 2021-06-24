@@ -291,7 +291,7 @@ Status ColumnTable::GetDataBlockFromCache(
 // If input_iter is not null, update this iter and return it
 InternalIterator* ColumnTable::NewDataBlockIterator(
     Rep* rep, const ReadOptions& read_options, const Slice& index_value,
-    BlockIter* input_iter) {
+    BlockIter* input_iter, char** area) {
   PERF_TIMER_GUARD(new_table_block_iter_nanos);
 
   BlockHandle handle;
@@ -299,7 +299,6 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
   // We intentionally allow extra stuff in index_value so that we
   // can add more features in the future.
   Status s = handle.DecodeFrom(&input);
-
   if (!s.ok()) {
     if (input_iter != nullptr) {
       input_iter->SetStatus(s);
@@ -318,7 +317,9 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
   Cache* block_cache = rep->table_options.block_cache.get();
   CachableEntry<Block> block;
   // If block cache is enabled, we'll try to read from it.
-  if (block_cache != nullptr) {
+  // But if area is specified, don't use block cache, since we would put data
+  // block in the specified area.
+  if (block_cache != nullptr && area == nullptr) {
     Statistics* statistics = rep->ioptions.statistics;
     char cache_key[kMaxCacheKeyPrefixSize + kMaxVarint64Length];
     // create key for block cache
@@ -357,7 +358,7 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
     std::unique_ptr<Block> block_value;
     s = ReadBlockFromFile(rep->file.get(), read_options, handle, &block_value,
                           rep->ioptions.env, true, compression_dict,
-                          rep->ioptions.info_log);
+                          rep->ioptions.info_log, area);
     if (s.ok()) {
       block.value = block_value.release();
     }
@@ -371,7 +372,7 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
     if (block.cache_handle != nullptr) {
       iter->RegisterCleanup(&ReleaseCachedEntry, block_cache,
                             block.cache_handle);
-    } else {
+    } else if (area == nullptr) {
       iter->RegisterCleanup(&DeleteHeldResource<Block>, block.value, nullptr);
     }
   } else {

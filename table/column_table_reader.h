@@ -128,9 +128,9 @@ class ColumnTable : public TableReader {
     }
 
     InternalIterator* NewDataIterator(const Slice& index_value,
-                                      BlockIter* input_iter) {
+                                      BlockIter* input_iter, char** area) {
       return NewDataBlockIterator(table_->rep_, read_options_, index_value,
-                                  input_iter);
+                                  input_iter, area);
     }
 
    private:
@@ -183,9 +183,11 @@ class ColumnTable : public TableReader {
       ColumnTable::CachableEntry<Block>* block);
 
   // input_iter: if it is not null, update this one and return it as Iterator
-  static InternalIterator* NewDataBlockIterator(
-      Rep* rep, const ReadOptions& read_options, const Slice& index_value,
-      BlockIter* input_iter = nullptr);
+  static InternalIterator* NewDataBlockIterator(Rep* rep,
+                                                const ReadOptions& read_options,
+                                                const Slice& index_value,
+                                                BlockIter* input_iter = nullptr,
+                                                char** area = nullptr);
 
   // Create a index reader based on the index type stored in the table.
   Status CreateIndexReader(IndexReader** index_reader);

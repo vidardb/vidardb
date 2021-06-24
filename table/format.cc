@@ -211,8 +211,8 @@ Status ReadBlockContents(RandomAccessFileReader* file,
                          const ReadOptions& read_options,
                          const BlockHandle& handle, BlockContents* contents,
                          Env* env, bool decompression_requested,
-                         const Slice& compression_dict,
-                         Logger* info_log) {
+                         const Slice& compression_dict, Logger* info_log,
+                         char** area) {  // Shichao
   Status status;
   Slice slice;
   size_t n = static_cast<size_t>(handle.size());
@@ -247,11 +247,13 @@ Status ReadBlockContents(RandomAccessFileReader* file,
   if (decompression_requested && compression_type != kNoCompression) {
     // compressed page, uncompress, update cache
     status = UncompressBlockContents(slice.data(), n, contents,
-                                     compression_dict);
+                                     compression_dict, area);  // Shichao
   } else if (slice.data() != used_buf) {
+    assert(area == nullptr);  // Shichao
     // the slice content is not the buffer provided
     *contents = BlockContents(Slice(slice.data(), n), false, compression_type);
   } else {
+    assert(area == nullptr);  // Shichao
     // page is uncompressed, the buffer either stack or heap provided
     if (used_buf == &stack_buf[0]) {
       heap_buf = std::unique_ptr<char[]>(new char[n]);
@@ -267,12 +269,13 @@ Status ReadBlockContents(RandomAccessFileReader* file,
 // The 'data' points to the raw block contents that was read in from file.
 // This method allocates a new heap buffer and the raw block
 // contents are uncompresed into this buffer. This
-// buffer is returned via 'result' and it is upto the caller to
+// buffer is returned via 'result' and it is up to the caller to
 // free this buffer.
 // format_version is the block format as defined in include/vidardb/table.h
 Status UncompressBlockContents(const char* data, size_t n,
                                BlockContents* contents,
-                               const Slice& compression_dict) {
+                               const Slice& compression_dict,
+                               char** area) {  // Shichao
   std::unique_ptr<char[]> ubuf;
   int decompress_size = 0;
   assert(data[n] != kNoCompression);
@@ -284,7 +287,14 @@ Status UncompressBlockContents(const char* data, size_t n,
       if (!Snappy_GetUncompressedLength(data, n, &ulength)) {
         return Status::Corruption(snappy_corrupt_msg);
       }
-      ubuf.reset(new char[ulength]);
+      /***************************** Shichao *********************************/
+      if (area != nullptr) {
+        ubuf.reset(new (*area) char[ulength]);
+        *area += ulength;
+      } else {
+        ubuf.reset(new char[ulength]);
+      }
+      /***************************** Shichao *********************************/
       if (!Snappy_Uncompress(data, n, ubuf.get())) {
         return Status::Corruption(snappy_corrupt_msg);
       }
@@ -292,6 +302,7 @@ Status UncompressBlockContents(const char* data, size_t n,
       break;
     }
     case kZlibCompression:
+      assert(area == nullptr);  // Shichao
       ubuf.reset(Zlib_Uncompress(
           data, n, &decompress_size,
           GetCompressFormatForVersion(kZlibCompression),
@@ -305,6 +316,7 @@ Status UncompressBlockContents(const char* data, size_t n,
           BlockContents(std::move(ubuf), decompress_size, true, kNoCompression);
       break;
     case kBZip2Compression:
+      assert(area == nullptr);  // Shichao
       ubuf.reset(BZip2_Uncompress(
           data, n, &decompress_size,
           GetCompressFormatForVersion(kBZip2Compression)));

@@ -8,7 +8,6 @@
 
 #include "table/block.h"
 
-
 namespace vidardb {
 
 // Similar to TwoLevelIterator, but with increased performance due to direct
@@ -59,14 +58,6 @@ class MainColumnTableIterator {
     assert(Valid());
     return first_level_iter_.key();
   }
-  Slice FirstLevelMin() const {
-    assert(Valid());
-    return first_level_iter_.min();
-  }
-  Slice FirstLevelMax() const {
-    assert(Valid());
-    return first_level_iter_.max();
-  }
 
   Slice key() const {
     assert(Valid());
@@ -106,7 +97,7 @@ class MainColumnTableIterator {
         // no need to change anything
       } else {
         data_block_handle_.assign(handle.data(), handle.size());
-        state_->NewDataIterator(handle, &second_level_iter_);
+        state_->NewDataIterator(handle, &second_level_iter_, &area_);
         valid_second_level_iter_ = true;
       }
     }
