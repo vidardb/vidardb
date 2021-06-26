@@ -50,7 +50,7 @@ int main() {
   ro.columns = {1, 3};
 //  ro.columns = {0};
 
-  cout << "Range Query: ";
+  cout << "Range Query: " << endl;
   FileIter* file_iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
   for (file_iter->SeekToFirst(); file_iter->Valid(); file_iter->Next()) {
     vector<vector<MinMax>> v;
@@ -59,12 +59,21 @@ int main() {
 
     // block_bits is set for illustration purpose here.
     vector<bool> block_bits(1, true);
-    vector<RangeQueryKeyVal> res;
-    s = file_iter->RangeQuery(block_bits, res);
+    int N = 1024 * 1024;
+    char* buf = new char[N];
+    uint64_t count;
+    s = file_iter->RangeQuery(block_bits, buf, N, &count);
     assert(s.ok());
-    for (auto& it : res) {
-      cout << it.user_key << ": " << it.user_val << " ";
+
+    uint64_t* end = reinterpret_cast<uint64_t*>(buf + N);
+    for (auto c : ro.columns) {
+      for (int i = 0; i < count; ++i) {
+        uint64_t offset = *(--end), size = *(--end);
+        cout << Slice(buf + offset, size).ToString() << " ";
+      }
+      cout << endl;
     }
+    delete[] buf;
   }
   delete file_iter;
   cout << endl;

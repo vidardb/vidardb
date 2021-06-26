@@ -58,20 +58,20 @@ int main(int argc, char* argv[]) {
   ReadOptions ro;
   ro.columns = {0, 1};
 
-  FileIter* iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
-  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
-    vector<vector<MinMax>> v;
-    iter->GetMinMax(v);
-
-    // block_bits is set for illustration purpose here.
-    vector<bool> block_bits(1, true);
-    vector<RangeQueryKeyVal> res;
-    iter->RangeQuery(block_bits, res);
-    for (auto& it : res) {
-      cout << it.user_key << ": " << it.user_val << endl;
-    }
-  }
-  delete iter;
+//  FileIter* iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
+//  for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
+//    vector<vector<MinMax>> v;
+//    iter->GetMinMax(v);
+//
+//    // block_bits is set for illustration purpose here.
+//    vector<bool> block_bits(1, true);
+//    vector<RangeQueryKeyVal> res;
+//    iter->RangeQuery(block_bits, res);
+//    for (auto& it : res) {
+//      cout << it.user_key << ": " << it.user_val << endl;
+//    }
+//  }
+//  delete iter;
 
   delete db;
   return 0;

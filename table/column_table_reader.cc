@@ -1030,6 +1030,8 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
   virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
                             uint64_t capacity, uint64_t* count) const override {
     assert(buf != nullptr);
+    *count = 0;
+    char* begin = buf;
     uint64_t* end = reinterpret_cast<uint64_t*>(buf + capacity);
 
     // If block_bits is empty, imply a full scan. Empty table case has been
@@ -1047,15 +1049,14 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
       }
       // within block
       for (; main_iter_->Valid(); main_iter_->SecondLevelNext()) {
-        if (columns_.front() > 0) {
-          // TODO: do sth checking about validness
-        } else {
-          // TODO: currently we are assuming no delete
-          ParsedInternalKey parsed_key;
-          if (!ParseInternalKey(main_iter_->key(), &parsed_key)) {
-            return Status::Corruption("corrupted internal key in Table::Iter");
-          }
-          *(--end) = parsed_key.user_key.data() - buf;
+        ParsedInternalKey parsed_key;
+        if (!ParseInternalKey(main_iter_->key(), &parsed_key)) {
+          return Status::Corruption("corrupted internal key in Table::Iter");
+        }
+        // TODO: currently we are assuming no delete
+        ++(*count);
+        if (columns_.front() == 0) {
+          *(--end) = parsed_key.user_key.data() - begin;
           *(--end) = parsed_key.user_key.size();
         }
       }
@@ -1075,7 +1076,7 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
         }
         // within block
         for (; iter->Valid(); iter->SecondLevelNext()) {
-          *(--end) = iter->value().data() - buf;
+          *(--end) = iter->value().data() - begin;
           *(--end) = iter->value().size();
         }
       }

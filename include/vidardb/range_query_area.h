@@ -19,6 +19,6 @@
 namespace vidardb {
 // reserved for future data structures about the specified memory area
 
-// To enable range_query_area ability, currently snappy compression must be
-// used.
+// To enable range_query_area ability, currently either no compression or only
+// snappy compression must be used.
 }  // namespace vidardb

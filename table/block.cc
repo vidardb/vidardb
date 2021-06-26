@@ -41,7 +41,7 @@ BlockIter::BlockIter(const Comparator* comparator, const char* data,
 
 void BlockIter::Initialize(const Comparator* comparator, const char* data,
                            uint32_t restarts, uint32_t num_restarts) {
-  assert(data_ == nullptr);  // Ensure it is called only once
+//  assert(data_ == nullptr);  // Ensure it is called only once
   assert(num_restarts > 0);  // Ensure the param is valid
 
   comparator_ = comparator;
