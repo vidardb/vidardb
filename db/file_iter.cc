@@ -9,54 +9,34 @@
 
 namespace vidardb {
 
+FileIter::FileIter(SequenceNumber s) : sequence_(s), cur_(0) {}
+
 FileIter::~FileIter() {
   for (auto it : children_) {
     delete it;
   }
 }
 
-bool FileIter::Valid() const {
-  if (cur_ >= children_.size()) {
-    // empty or out of index
-    return false;
-  }
-  return children_[cur_]->Valid();
-}
+bool FileIter::Valid() const { return cur_ < children_.size(); }
 
-void FileIter::SeekToFirst() {
-  if (cur_ >= children_.size()) {
-    return;
-  }
-  // Since mutable MemTable might be empty, we have to seek next one.
-  // We don't need loop here, but just be conservative
-  for (cur_ = 0; cur_ < children_.size(); cur_++) {
-    children_[cur_]->SeekToFirst();
-    if (children_[cur_]->Valid()) {
-      // not empty
-      return;
-    }
-  }
-}
+void FileIter::SeekToFirst() { cur_ = 0; }
 
-void FileIter::Next() {
-  cur_++;
-  if (cur_ < children_.size()) {
-    children_[cur_]->SeekToFirst();
-    // no empty table anymore
-    assert(children_[cur_]->Valid());
-  }
-}
+void FileIter::Next() { ++cur_; }
 
 Status FileIter::status() const {
   if (cur_ >= children_.size()) {
-    return Status::NotFound();
+    return Status::NotFound("out of bound");
   }
-  return children_[cur_]->status();
+  return Status::OK();
+}
+
+std::vector<InternalIterator*>* FileIter::GetInternalIterators() {
+  return &children_;
 }
 
 Status FileIter::GetMinMax(std::vector<std::vector<MinMax>>& v) const {
   if (cur_ >= children_.size()) {
-    return Status::NotFound();
+    return Status::NotFound("out of bound");
   }
   return children_[cur_]->GetMinMax(v);
 }
@@ -64,9 +44,8 @@ Status FileIter::GetMinMax(std::vector<std::vector<MinMax>>& v) const {
 Status FileIter::RangeQuery(const std::vector<bool>& block_bits, char* buf,
                             uint64_t capacity, uint64_t* count) const {
   if (cur_ >= children_.size()) {
-    return Status::NotFound();
+    return Status::NotFound("out of bound");
   }
-  // children_[cur_]->Valid() is false
   return children_[cur_]->RangeQuery(block_bits, buf, capacity, count);
 }
 

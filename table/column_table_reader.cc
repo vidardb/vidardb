@@ -916,15 +916,8 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
  public:
   RangeQueryIterator(MainColumnTableIterator* main_iter,
                      const std::vector<SubColumnTableIterator*> sub_iters,
-                     const Splitter* splitter,
-                     const InternalKeyComparator& internal_comparator,
-                     const std::vector<uint32_t>& columns, uint64_t num_entries)
-      : main_iter_(main_iter),
-        sub_iters_(sub_iters),
-        splitter_(splitter),
-        internal_comparator_(internal_comparator),
-        columns_(columns),
-        num_entries_(num_entries) {}
+                     const std::vector<uint32_t>& columns)
+      : main_iter_(main_iter), sub_iters_(sub_iters), columns_(columns) {}
 
   virtual ~RangeQueryIterator() {
     delete main_iter_;
@@ -933,50 +926,8 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
     }
   }
 
-  virtual bool Valid() const override {
-    if (!main_iter_->Valid()) {
-      return false;
-    }
-    for (const auto& it : sub_iters_) {
-      if (!it->Valid()) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  virtual void SeekToFirst() override {
-    main_iter_->SeekToFirst();
-    for (const auto& it : sub_iters_) {
-      it->SeekToFirst();
-    }
-  }
-
-  virtual Status status() const override {
-    if (!status_.ok()) {
-      return status_;
-    }
-    Status s;
-    s = main_iter_->status();
-    if (!s.ok()) {
-      return s;
-    }
-    for (const auto& it : sub_iters_) {
-      s = it->status();
-      if (!s.ok()) {
-        break;
-      }
-    }
-    return s;
-  }
-
   virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
     v.clear();
-    // test whether it is an empty table
-    main_iter_->SeekToFirst();
-    if (!main_iter_->Valid()) {
-      return Status::NotFound();
-    }
 
     // columns should already be sanitized so empty columns is impossible.
     v.resize(columns_.size());
@@ -1089,11 +1040,7 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
  private:
   MainColumnTableIterator* main_iter_;
   std::vector<SubColumnTableIterator*> sub_iters_;
-  Status status_;
-  const Splitter* splitter_;                         // used in rangequery
-  const InternalKeyComparator& internal_comparator_; // used in rangrquery
-  const std::vector<uint32_t> columns_;              // used in rangequery
-  uint64_t num_entries_;                             // used in rangrquery
+  const std::vector<uint32_t> columns_;
 };
 
 // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
@@ -1151,9 +1098,7 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
           new BlockEntryIteratorState(table.get(), ro)));
     }
 
-    return new RangeQueryIterator(main_iter, sub_iters, rep_->ioptions.splitter,
-                                  rep_->internal_comparator, ro.columns,
-                                  rep_->table_properties->num_entries);
+    return new RangeQueryIterator(main_iter, sub_iters, ro.columns);
   }
 }
 

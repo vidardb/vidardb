@@ -99,7 +99,8 @@ int main(int argc, char* argv[]) {
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
     vector<vector<MinMax>> v;
     s = iter->GetMinMax(v);
-    assert(s.ok());
+    assert(s.ok() || s.IsNotFound());
+    if (!s.ok()) continue;
 
     // block_bits is set for illustration purpose here.
     vector<bool> block_bits(1, true);

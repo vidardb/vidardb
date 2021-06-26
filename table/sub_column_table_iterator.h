@@ -54,19 +54,19 @@ class SubColumnTableIterator {
     }
   }
   void SecondLevelNext() {
-    assert(first_level_iter_.Valid());
+    assert(FirstLevelValid());
     second_level_iter_.Next();
   }
   Slice FirstLevelKey() const {
-    assert(Valid());
+    assert(FirstLevelValid());
     return first_level_iter_.key();
   }
   Slice FirstLevelMin() const {
-    assert(Valid());
+    assert(FirstLevelValid());
     return first_level_iter_.min();
   }
   Slice FirstLevelMax() const {
-    assert(Valid());
+    assert(FirstLevelValid());
     return first_level_iter_.max();
   }
 
@@ -109,6 +109,7 @@ class SubColumnTableIterator {
       } else {
         data_block_handle_.assign(handle.data(), handle.size());
         last_area_ = area_;
+        second_level_iter_.DoCleanup();  // release previous resource
         state_->NewDataIterator(handle, &second_level_iter_,
                                 (area_ ? &area_ : nullptr));
         valid_second_level_iter_ = true;

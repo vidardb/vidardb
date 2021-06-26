@@ -21,7 +21,7 @@ class InternalIterator;
 // column table)
 class FileIter : public Iterator {
  public:
-  FileIter(SequenceNumber s) : sequence_(s), cur_(0) {}
+  FileIter(SequenceNumber s);
 
   virtual ~FileIter();
 
@@ -33,12 +33,11 @@ class FileIter : public Iterator {
 
   Status status() const override;
 
-  std::vector<InternalIterator*>* GetInternalIterators() { return &children_; }
+  std::vector<InternalIterator*>* GetInternalIterators();
 
   // Return the targeted columns' block min and max. If key is in the target
   // set, return its block min and max as well, but be cautious about its
-  // different max. We have to use the type first to identify the file type
-  // since not all target columns' min & max might be returned.
+  // different max.
   //
   // For MemTable, if our interest set includes key, then min & max key is
   // returned. If not, nothing we can do here, meaning v is empty.

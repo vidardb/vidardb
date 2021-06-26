@@ -55,7 +55,8 @@ int main() {
   for (file_iter->SeekToFirst(); file_iter->Valid(); file_iter->Next()) {
     vector<vector<MinMax>> v;
     s = file_iter->GetMinMax(v);
-    assert(s.ok());
+    assert(s.ok() || s.IsNotFound());
+    if (!s.ok()) continue;
 
     // block_bits is set for illustration purpose here.
     vector<bool> block_bits(1, true);
