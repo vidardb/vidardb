@@ -807,7 +807,8 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 
   // TODO: handle update and delete
   virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
-                            uint64_t capacity, uint64_t* count) const override {
+                            uint64_t capacity, uint64_t* valid_count,
+                            uint64_t* total_count) const override {
     std::vector<RangeQueryKeyVal> res;
     res.clear();
 

@@ -62,17 +62,20 @@ int main() {
     vector<bool> block_bits(1, true);
     int N = 1024 * 1024;
     char* buf = new char[N];
-    uint64_t count;
-    s = file_iter->RangeQuery(block_bits, buf, N, &count);
+    uint64_t valid_count, total_count;
+    s = file_iter->RangeQuery(block_bits, buf, N, &valid_count, &total_count);
     assert(s.ok());
 
-    uint64_t* end = reinterpret_cast<uint64_t*>(buf + N);
+    char* limit = buf + N;
+    uint64_t* end = reinterpret_cast<uint64_t*>(limit);
     for (auto c : ro.columns) {
-      for (int i = 0; i < count; ++i) {
+      for (int i = 0; i < valid_count; ++i) {
         uint64_t offset = *(--end), size = *(--end);
         cout << Slice(buf + offset, size).ToString() << " ";
       }
       cout << endl;
+      limit -= total_count * 2 * sizeof(uint64_t);
+      end = reinterpret_cast<uint64_t*>(limit);
     }
     delete[] buf;
   }

@@ -42,11 +42,13 @@ Status FileIter::GetMinMax(std::vector<std::vector<MinMax>>& v) const {
 }
 
 Status FileIter::RangeQuery(const std::vector<bool>& block_bits, char* buf,
-                            uint64_t capacity, uint64_t* count) const {
+                            uint64_t capacity, uint64_t* valid_count,
+                            uint64_t* total_count) const {
   if (cur_ >= children_.size()) {
     return Status::NotFound("out of bound");
   }
-  return children_[cur_]->RangeQuery(block_bits, buf, capacity, count);
+  return children_[cur_]->RangeQuery(block_bits, buf, capacity, valid_count,
+                                     total_count);
 }
 
 }  // namespace vidardb

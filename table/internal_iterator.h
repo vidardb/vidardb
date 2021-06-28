@@ -89,7 +89,8 @@ class InternalIterator : public Cleanable {
 
   // See comments in file_iter.h
   virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
-                            uint64_t capacity, uint64_t* count) const {
+                            uint64_t capacity, uint64_t* valid_count,
+                            uint64_t* total_count) const {
     return Status::NotSupported(Slice("not implemented"));
   }
   /***************************** Shichao ******************************/

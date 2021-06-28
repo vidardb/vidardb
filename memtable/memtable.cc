@@ -300,7 +300,8 @@ class MemTableIterator : public InternalIterator {
   }
 
   virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
-                            uint64_t capacity, uint64_t* count) const override {
+                            uint64_t capacity, uint64_t* valid_count,
+                            uint64_t* total_count) const override {
     std::vector<RangeQueryKeyVal> res;
     res.clear();
     // block_bits is generally useless in memtable, since we treat the entire

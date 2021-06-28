@@ -916,11 +916,12 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
  public:
   RangeQueryIterator(MainColumnTableIterator* main_iter,
                      const std::vector<SubColumnTableIterator*> sub_iters,
-                     const std::vector<uint32_t>& columns,
+                     const std::vector<uint32_t>& columns, uint64_t num_entries,
                      const Slice& smallest_user_key)
       : main_iter_(main_iter),
         sub_iters_(sub_iters),
         columns_(columns),
+        num_entries_(num_entries),
         smallest_user_key_(smallest_user_key) {}
 
   virtual ~RangeQueryIterator() {
@@ -978,18 +979,22 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
 
   // TODO: handle update and delete
   virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
-                            uint64_t capacity, uint64_t* count) const override {
+                            uint64_t capacity, uint64_t* valid_count,
+                            uint64_t* total_count) const override {
     assert(buf != nullptr);
-    *count = 0;
-    char* begin = buf;
-    uint64_t* end = reinterpret_cast<uint64_t*>(buf + capacity);
+    *valid_count = 0;
+    *total_count = num_entries_;
+    uint64_t segment_size = (*total_count) * 2 * sizeof(uint64_t);
+    char* forward = buf;
+    char* limit = buf + capacity;
+    uint64_t* backward = reinterpret_cast<uint64_t*>(limit);
 
     // If block_bits is empty, imply a full scan. Empty table case has been
     // recognized by NotFound status in GetMinMax, so shouldn't reach here.
 
     // handle key column case
     size_t j = 0;
-    main_iter_->SetArea(buf);
+    main_iter_->SetArea(forward);
     // block level
     for (main_iter_->SeekToFirst(); main_iter_->Valid();
          main_iter_->FirstLevelNext(true), j++) {
@@ -1004,20 +1009,24 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
           return Status::Corruption("corrupted internal key in Table::Iter");
         }
         // TODO: currently we are assuming no delete
-        ++(*count);
+        ++(*valid_count);
         if (columns_.front() == 0) {
-          *(--end) = parsed_key.user_key.data() - begin;
-          *(--end) = parsed_key.user_key.size();
+          *(--backward) = parsed_key.user_key.data() - buf;
+          *(--backward) = parsed_key.user_key.size();
         }
       }
     }
-    buf = main_iter_->GetArea();
+    forward = main_iter_->GetArea();
+    if (columns_.front() == 0) {
+      limit -= segment_size;
+      backward = reinterpret_cast<uint64_t*>(limit);
+    }
 
     // handle other column cases
     for (size_t i = 0; i < sub_iters_.size(); i++) {
       j = 0;
       auto iter = sub_iters_[i];
-      iter->SetArea(buf);
+      iter->SetArea(forward);
       // block level
       for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(true), j++) {
         assert(block_bits.empty() || j < block_bits.size());
@@ -1026,11 +1035,13 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
         }
         // within block
         for (; iter->Valid(); iter->SecondLevelNext()) {
-          *(--end) = iter->value().data() - begin;
-          *(--end) = iter->value().size();
+          *(--backward) = iter->value().data() - buf;
+          *(--backward) = iter->value().size();
         }
       }
-      buf = iter->GetArea();
+      forward = iter->GetArea();
+      limit -= segment_size;
+      backward = reinterpret_cast<uint64_t*>(limit);
     }
 
     return Status::OK();
@@ -1040,6 +1051,7 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
   MainColumnTableIterator* main_iter_;
   std::vector<SubColumnTableIterator*> sub_iters_;
   const std::vector<uint32_t> columns_;
+  uint64_t num_entries_;
   Slice smallest_user_key_;
 };
 
@@ -1100,6 +1112,7 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
     }
 
     return new RangeQueryIterator(main_iter, sub_iters, ro.columns,
+                                  rep_->table_properties->num_entries,
                                   smallest_user_key);
   }
 }

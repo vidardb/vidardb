@@ -49,6 +49,8 @@ void Cleanable::DoCleanup() {
       c = next;
     }
   }
+  cleanup_.function = nullptr;
+  cleanup_.next = nullptr;
 }
 /************************** Shichao **********************/
 
