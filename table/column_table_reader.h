@@ -75,9 +75,10 @@ class ColumnTable : public TableReader {
   // Returns a new iterator over the table contents.
   // The result of NewIterator() is initially invalid (caller must
   // call one of the Seek methods on the iterator before using it).
-  InternalIterator* NewIterator(const ReadOptions& read_options,
-                                Arena* arena = nullptr,
-                                bool for_range_query = false) override;
+  InternalIterator* NewIterator(
+      const ReadOptions& read_options, Arena* arena = nullptr,
+      bool for_range_query = false,
+      const Slice& smallest_user_key = Slice()) override;
 
   Status Get(const ReadOptions& read_options, const Slice& key,
              GetContext* get_context) override;

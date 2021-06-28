@@ -92,27 +92,26 @@ void TestAdaptiveTableFactory(bool flush, kTableType table,
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
     vector<vector<MinMax>> v;
     s = iter->GetMinMax(v);
-    assert(s.ok());
+    assert(s.ok() || s.IsNotFound());
+    if (s.IsNotFound()) continue;
 
     // block_bits is set for illustration purpose here.
     vector<bool> block_bits(1, true);
-    vector<RangeQueryKeyVal> res;
-    s = iter->RangeQuery(block_bits, res);
+    int N = 1024 * 1024;
+    char* buf = new char[N];
+    uint64_t count;
+    s = iter->RangeQuery(block_bits, buf, N, &count);
     assert(s.ok());
 
-    cout << "{ ";
-    for (auto& it : res) {
-      cout << it.user_key << "=[";
-      vector<Slice> vals(options.splitter->Split(it.user_val));
-      for (auto i = 0u; i < vals.size(); i++) {
-        cout << vals[i].ToString();
-        if (i < vals.size() - 1) {
-          cout << ", ";
-        };
+    uint64_t* end = reinterpret_cast<uint64_t*>(buf + N);
+    for (auto c : ro.columns) {
+      for (int i = 0; i < count; ++i) {
+        uint64_t offset = *(--end), size = *(--end);
+        cout << Slice(buf + offset, size).ToString() << " ";
       }
-      cout << "] ";
+      cout << endl;
     }
-    cout << "} " << endl;
+    delete[] buf;
   }
   delete iter;
 
@@ -121,13 +120,13 @@ void TestAdaptiveTableFactory(bool flush, kTableType table,
 }
 
 int main() {
-  TestAdaptiveTableFactory(false, ROW, {1, 3});
-  TestAdaptiveTableFactory(false, ROW, {0});
-  TestAdaptiveTableFactory(true, ROW, {1, 3});
-  TestAdaptiveTableFactory(true, ROW, {0});
-
-  TestAdaptiveTableFactory(false, COLUMN, {1, 3});
-  TestAdaptiveTableFactory(false, COLUMN, {0});
+  //  TestAdaptiveTableFactory(false, ROW, {1, 3});
+  //  TestAdaptiveTableFactory(false, ROW, {0});
+  //  TestAdaptiveTableFactory(true, ROW, {1, 3});
+  //  TestAdaptiveTableFactory(true, ROW, {0});
+  //
+  //  TestAdaptiveTableFactory(false, COLUMN, {1, 3});
+  //  TestAdaptiveTableFactory(false, COLUMN, {0});
   TestAdaptiveTableFactory(true, COLUMN, {1, 3});
   TestAdaptiveTableFactory(true, COLUMN, {0});
 

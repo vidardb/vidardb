@@ -61,11 +61,11 @@ void TestRowRangeQuery(bool flush) {
 
     // block_bits is set for illustration purpose here.
     vector<bool> block_bits(1, true);
-    vector<RangeQueryKeyVal> res;
-    iter->RangeQuery(block_bits, res);
-    for (auto& it : res) {
-      cout << it.user_key << ": " << it.user_val << endl;
-    }
+    //    vector<RangeQueryKeyVal> res;
+    //    iter->RangeQuery(block_bits, res);
+    //    for (auto& it : res) {
+    //      cout << it.user_key << ": " << it.user_val << endl;
+    //    }
   }
   delete iter;
 
@@ -74,8 +74,8 @@ void TestRowRangeQuery(bool flush) {
 }
 
 int main() {
-  TestRowRangeQuery(false);
-  TestRowRangeQuery(true);
+  //  TestRowRangeQuery(false);
+  //  TestRowRangeQuery(true);
 
   return 0;
 }

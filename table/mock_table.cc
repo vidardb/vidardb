@@ -29,7 +29,8 @@ stl_wrappers::KVMap MakeMockFile(
 }
 
 InternalIterator* MockTableReader::NewIterator(const ReadOptions&, Arena* arena,
-                                               bool for_range_query) {
+                                               bool for_range_query,
+                                               const Slice& smallest_user_key) {
   return new MockTableIterator(table_);
 }
 

@@ -862,7 +862,8 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 
 InternalIterator* BlockBasedTable::NewIterator(const ReadOptions& read_options,
                                                Arena* arena,
-                                               bool for_range_query) {
+                                               bool for_range_query,
+                                               const Slice& smallest_user_key) {
   return new BlockBasedIterator(
       NewTwoLevelIterator(new BlockEntryIteratorState(this, read_options),
                           NewIndexIterator(read_options), arena),

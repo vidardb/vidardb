@@ -55,8 +55,8 @@ class TableCache {
       const InternalKeyComparator& internal_comparator,
       const FileDescriptor& file_fd, TableReader** table_reader_ptr = nullptr,
       HistogramImpl* file_read_hist = nullptr, bool for_compaction = false,
-      Arena* arena = nullptr, int level = -1,
-      bool for_range_query = false);  // Shichao
+      Arena* arena = nullptr, int level = -1, bool for_range_query = false,
+      const Slice& smallest_user_key = Slice());  // Shichao
 
   // If a seek to internal key "k" in specified file finds an entry,
   // call (*handle_result)(arg, found_key, found_value) repeatedly until

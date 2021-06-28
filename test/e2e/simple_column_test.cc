@@ -57,18 +57,26 @@ void TestSimpleColumnStore(bool flush) {
   for (file_iter->SeekToFirst(); file_iter->Valid(); file_iter->Next()) {
     vector<vector<MinMax>> v;
     s = file_iter->GetMinMax(v);
-    assert(s.ok());
+    assert(s.ok() || s.IsNotFound());
+    if (s.IsNotFound()) continue;
 
     // block_bits is set for illustration purpose here.
     vector<bool> block_bits(1, true);
-    vector<RangeQueryKeyVal> res;
-    s = file_iter->RangeQuery(block_bits, res);
+    int N = 1024 * 1024;
+    char* buf = new char[N];
+    uint64_t count;
+    s = file_iter->RangeQuery(block_bits, buf, N, &count);
     assert(s.ok());
-    for (auto& it : res) {
-      cout << it.user_key << ": " << it.user_val << " " << endl;
-      assert(it.user_key == "" || it.user_key == "");
-      assert(it.user_val == "val11|val13" || it.user_val == "val21|val23");
+
+    uint64_t* end = reinterpret_cast<uint64_t*>(buf + N);
+    for (auto c : ro.columns) {
+      for (int i = 0; i < count; ++i) {
+        uint64_t offset = *(--end), size = *(--end);
+        cout << Slice(buf + offset, size).ToString() << " ";
+      }
+      cout << endl;
     }
+    delete[] buf;
   }
   delete file_iter;
 
@@ -103,7 +111,7 @@ void TestSimpleColumnStore(bool flush) {
 }
 
 int main() {
-  TestSimpleColumnStore(false);
+  //  TestSimpleColumnStore(false);
   TestSimpleColumnStore(true);
   return 0;
 }

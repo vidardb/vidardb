@@ -849,11 +849,12 @@ void Version::AddIterators(const ReadOptions& read_options,
     for (size_t i = 0; i < storage_info_.LevelFilesBrief(level).num_files;
          i++) {
       const auto& file = storage_info_.LevelFilesBrief(level).files[i];
+      Slice smallest_user_key(ExtractUserKey(file.smallest_key));
       iterator_list->push_back(cfd_->table_cache()->NewIterator(
           read_options, soptions, cfd_->internal_comparator(), file.fd, nullptr,
           cfd_->internal_stats()->GetFileReadHist(0), true,
-          /* for compactions */ nullptr, 0 /* level */,
-          true /* range query */));
+          /* for compactions */ nullptr, 0 /* level */, true /* range query */,
+          smallest_user_key));
     }
   }
 }

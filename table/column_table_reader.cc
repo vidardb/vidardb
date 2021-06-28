@@ -916,8 +916,12 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
  public:
   RangeQueryIterator(MainColumnTableIterator* main_iter,
                      const std::vector<SubColumnTableIterator*> sub_iters,
-                     const std::vector<uint32_t>& columns)
-      : main_iter_(main_iter), sub_iters_(sub_iters), columns_(columns) {}
+                     const std::vector<uint32_t>& columns,
+                     const Slice& smallest_user_key)
+      : main_iter_(main_iter),
+        sub_iters_(sub_iters),
+        columns_(columns),
+        smallest_user_key_(smallest_user_key) {}
 
   virtual ~RangeQueryIterator() {
     delete main_iter_;
@@ -935,15 +939,10 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
     size_t j = 0;
     // handle key column case
     if (columns_.front() == 0) {
-      // store the smallest internal key in parsed_key
-      ParsedInternalKey parsed_key;
-      if (!ParseInternalKey(main_iter_->key(), &parsed_key)) {
-        return Status::Corruption("corrupted internal key in Table::Iter");
-      }
       // store the smallest user key
-      std::string last_block_user_key(parsed_key.user_key.data(),
-                                      parsed_key.user_key.size());
-
+      std::string last_block_user_key(smallest_user_key_.data(),
+                                      smallest_user_key_.size());
+      ParsedInternalKey parsed_key;
       for (main_iter_->FirstLevelSeekToFirst(); main_iter_->FirstLevelValid();
            main_iter_->FirstLevelNext(false)) {
         // current block max internal key
@@ -1041,6 +1040,7 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
   MainColumnTableIterator* main_iter_;
   std::vector<SubColumnTableIterator*> sub_iters_;
   const std::vector<uint32_t> columns_;
+  Slice smallest_user_key_;
 };
 
 // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
@@ -1063,7 +1063,8 @@ inline static ReadOptions SanitizeColumnReadOptions(
 }
 
 InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
-                                           Arena* arena, bool for_range_query) {
+                                           Arena* arena, bool for_range_query,
+                                           const Slice& smallest_user_key) {
   ReadOptions ro = SanitizeColumnReadOptions(
       rep_->table_options.column_count, read_options);
 
@@ -1098,7 +1099,8 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
           new BlockEntryIteratorState(table.get(), ro)));
     }
 
-    return new RangeQueryIterator(main_iter, sub_iters, ro.columns);
+    return new RangeQueryIterator(main_iter, sub_iters, ro.columns,
+                                  smallest_user_key);
   }
 }
 

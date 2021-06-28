@@ -35,9 +35,9 @@ class TableReader {
   //        When destroying the iterator, the caller will not call "delete"
   //        but Iterator::~Iterator() directly. The destructor needs to destroy
   //        all the states but those allocated in arena.
-  virtual InternalIterator* NewIterator(const ReadOptions&,
-                                        Arena* arena = nullptr,
-                                        bool for_range_query = false) = 0;
+  virtual InternalIterator* NewIterator(
+      const ReadOptions&, Arena* arena = nullptr, bool for_range_query = false,
+      const Slice& smallest_user_key = Slice()) = 0;
 
   // Calls get_context->SaveValue() repeatedly, starting with
   // the entry found after a call to Seek(key), until it returns false.
