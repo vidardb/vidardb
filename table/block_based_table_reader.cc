@@ -718,20 +718,11 @@ class BlockBasedTable::BlockEntryIteratorState : public TwoLevelIteratorState {
 /***************************** Shichao *********************************/
 class BlockBasedTable::BlockBasedIterator : public InternalIterator {
  public:
-  BlockBasedIterator(InternalIterator* iter,
-                     const InternalKeyComparator& internal_comparator,
-                     const Splitter* splitter,
-                     const std::vector<uint32_t>& columns, Arena* arena)
-      : iter_(iter), internal_comparator_(internal_comparator),
-        splitter_(splitter), columns_(columns), arena_(arena) {}
+  BlockBasedIterator(InternalIterator* iter, const Splitter* splitter,
+                     const std::vector<uint32_t>& columns)
+      : iter_(iter), splitter_(splitter), columns_(columns) {}
 
-  virtual ~BlockBasedIterator() {
-    if (arena_) {
-      iter_->~InternalIterator();
-    } else {
-      delete iter_;
-    }
-  }
+  virtual ~BlockBasedIterator() { delete iter_; }
 
   virtual bool Valid() const override { return iter_->Valid(); }
 
@@ -764,84 +755,6 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 
   virtual Status status() const override { return iter_->status(); }
 
-  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
-    v.clear();
-    // test whether it is an empty table
-    iter_->SeekToFirst();
-    if (!iter_->Valid()) {
-      return Status::NotFound();
-    }
-
-    // all columns or key column is involved
-    // In other cases, we really can don nothing here.
-    if (columns_.empty() || columns_.front() == 0) {
-      // only key column is useful
-      v.resize(1);
-      // store the smallest internal key in parsed_key
-      ParsedInternalKey parsed_key;
-      if (!ParseInternalKey(iter_->key(), &parsed_key)) {
-        return Status::Corruption("corrupted internal key in Table::Iter");
-      }
-      // store the smallest user key
-      std::string last_block_user_key(parsed_key.user_key.data(),
-                                      parsed_key.user_key.size());
-
-      auto iter = dynamic_cast<TwoLevelIterator*>(iter_);
-      for (iter->FirstLevelSeekToFirst(); iter->FirstLevelValid();
-           iter->FirstLevelNext(false)) {
-        // current block max internal key
-        if (!ParseInternalKey(iter->FirstLevelKey(), &parsed_key)) {
-          return Status::Corruption("corrupted internal key in Table::Iter");
-        }
-
-        v[0].emplace_back(last_block_user_key, parsed_key.user_key.ToString());
-
-        // for next block's min user key
-        last_block_user_key.assign(parsed_key.user_key.data(),
-                                   parsed_key.user_key.size());
-      }
-    }
-
-    return Status::OK();
-  }
-
-  // TODO: handle update and delete
-  virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
-                            uint64_t capacity, uint64_t* valid_count,
-                            uint64_t* total_count) const override {
-    std::vector<RangeQueryKeyVal> res;
-    res.clear();
-
-    // If block_bits is empty, imply a full scan. Empty table case has been
-    // recognized by NotFound status in GetMinMax, so shouldn't reach here.
-    size_t j = 0;
-    auto iter = dynamic_cast<TwoLevelIterator*>(iter_);
-    // block level
-    for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(true), j++) {
-      assert(block_bits.empty() || j < block_bits.size());
-      if (!block_bits.empty() && !block_bits[j]) {
-        continue;
-      }
-      // within block
-      for (; iter->Valid(); iter->SecondLevelNext()) {
-        ParsedInternalKey parsed_key;
-        if (!ParseInternalKey(iter->key(), &parsed_key)) {
-          return Status::Corruption("corrupted internal key in Table::Iter");
-        }
-
-        std::string val;  // prepare for splitting user value
-        ReformatUserValue(iter->value(), columns_, splitter_, val);
-
-        std::string userkey(columns_.empty() || columns_.front()==0
-                                ? parsed_key.user_key.ToString()
-                                : "");
-        res.emplace_back(std::move(userkey), std::move(val));
-      }
-    }
-
-    return Status::OK();
-  }
-
   virtual void SetPinnedItersMgr(
       PinnedIteratorsManager* pinned_iters_mgr) override {
     iter_->SetPinnedItersMgr(pinned_iters_mgr);
@@ -851,13 +764,147 @@ class BlockBasedTable::BlockBasedIterator : public InternalIterator {
 
  private:
   InternalIterator* iter_;
-  Status status_;
-  const InternalKeyComparator& internal_comparator_;
-
   const Splitter* splitter_;
   const std::vector<uint32_t> columns_;
   std::string value_;  // mutable
-  Arena* arena_;
+};
+
+class BlockBasedTable::RangeQueryIterator : public InternalIterator {
+ public:
+  RangeQueryIterator(InternalIterator* iter, const Splitter* splitter,
+                     const std::vector<uint32_t>& columns,
+                     const std::shared_ptr<const TableProperties>& properties,
+                     const Slice& smallest_user_key)
+      : iter_(iter),
+        splitter_(splitter),
+        columns_(columns),
+        properties_(properties),
+        smallest_user_key_(smallest_user_key) {}
+
+  virtual ~RangeQueryIterator() { delete iter_; }
+
+  virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
+    v.clear();
+    // all columns or key column is involved
+    // In other cases, we really can don nothing here.
+    if (!columns_.empty() && columns_.front() != 0) {
+      return Status::OK();
+    }
+
+    // only key column is useful
+    v.resize(1);
+    v.front().reserve(properties_->num_data_blocks);
+
+    // store the smallest user key
+    std::string last_block_user_key(smallest_user_key_.data(),
+                                    smallest_user_key_.size());
+    ParsedInternalKey parsed_key;
+    auto iter = dynamic_cast<TwoLevelIterator*>(iter_);
+    for (iter->FirstLevelSeekToFirst(); iter->FirstLevelValid();
+         iter->FirstLevelNext(false)) {
+      // current block max internal key
+      if (!ParseInternalKey(iter->FirstLevelKey(), &parsed_key)) {
+        return Status::Corruption("corrupted internal key in Table::Iter");
+      }
+
+      v[0].emplace_back(last_block_user_key, parsed_key.user_key.ToString());
+
+      // for next block's min user key
+      last_block_user_key.assign(parsed_key.user_key.data(),
+                                 parsed_key.user_key.size());
+    }
+
+    return Status::OK();
+  }
+
+  // TODO: handle update and delete
+  virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
+                            uint64_t capacity, uint64_t* valid_count,
+                            uint64_t* total_count) const override {
+    assert(buf != nullptr);
+    *valid_count = 0;
+    *total_count = properties_->num_entries;
+    char* forward = buf;
+    char* limit = buf + capacity;
+    uint64_t* backward = reinterpret_cast<uint64_t*>(limit);
+
+    // If block_bits is empty, imply a full scan. No empty table case.
+    size_t j = 0;
+    auto iter = dynamic_cast<TwoLevelIterator*>(iter_);
+    // block level
+    for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(true), j++) {
+      assert(block_bits.empty() || j < block_bits.size());
+      if (!block_bits.empty() && !block_bits[j]) {
+        continue;
+      }
+      // within block
+
+      for (; iter->Valid(); iter->SecondLevelNext()) {
+        ParsedInternalKey parsed_key;
+        if (!ParseInternalKey(iter->key(), &parsed_key)) {
+          return Status::Corruption("corrupted internal key in Table::Iter");
+        }
+
+        ++(*valid_count);
+        backward = reinterpret_cast<uint64_t*>(limit);
+
+        // handle key column
+        if (columns_.empty() || columns_.front() == 0) {
+          *(backward - 1) = forward - buf;
+          *(backward - 2) = parsed_key.user_key.size();
+          backward -= (*total_count) * 2;
+          memcpy(forward, parsed_key.user_key.data(),
+                 parsed_key.user_key.size());
+          forward += parsed_key.user_key.size();
+        }
+
+        // handle val columns
+        if (splitter_ == nullptr || iter->value().empty()) {
+          // requiring columns are sorted and consecutive
+          if (columns_.empty() || columns_.front() == 1 ||
+              columns_.size() > 1) {
+            *(backward - 1) = forward - buf;
+            *(backward - 2) = iter->value().size();
+            backward -= (*total_count) * 2;
+            memcpy(forward, iter->value().data(), iter->value().size());
+            forward += iter->value().size();
+          }
+        } else {
+          std::vector<Slice> user_vals(splitter_->Split(iter->value()));
+          if (columns_.empty()) {
+            for (const auto& val : user_vals) {
+              *(backward - 1) = forward - buf;
+              *(backward - 2) = val.size();
+              backward -= (*total_count) * 2;
+              memcpy(forward, val.data(), val.size());
+              forward += val.size();
+            }
+          } else {
+            for (auto index : columns_) {
+              if (index < 1) continue;  // only process the value columns
+              Slice& val = user_vals[index - 1];
+              *(backward - 1) = forward - buf;
+              *(backward - 2) = val.size();
+              backward -= (*total_count) * 2;
+              memcpy(forward, val.data(), val.size());
+              forward += val.size();
+            }
+          }
+        }
+
+        limit -= sizeof(uint64_t) * 2;
+      }
+    }
+
+    return Status::OK();
+  }
+
+ private:
+  InternalIterator* iter_;
+  const Splitter* splitter_;
+  const std::vector<uint32_t> columns_;
+  const std::shared_ptr<const TableProperties>& properties_;
+  Slice smallest_user_key_;
 };
 /***************************** Shichao *********************************/
 
@@ -865,11 +912,18 @@ InternalIterator* BlockBasedTable::NewIterator(const ReadOptions& read_options,
                                                Arena* arena,
                                                bool for_range_query,
                                                const Slice& smallest_user_key) {
-  return new BlockBasedIterator(
-      NewTwoLevelIterator(new BlockEntryIteratorState(this, read_options),
-                          NewIndexIterator(read_options), arena),
-      rep_->internal_comparator, rep_->ioptions.splitter, read_options.columns,
-      arena);
+  if (!for_range_query) {
+    return new BlockBasedIterator(
+        NewTwoLevelIterator(new BlockEntryIteratorState(this, read_options),
+                            NewIndexIterator(read_options)),
+        rep_->ioptions.splitter, read_options.columns);
+  } else {
+    return new RangeQueryIterator(
+        NewTwoLevelIterator(new BlockEntryIteratorState(this, read_options),
+                            NewIndexIterator(read_options)),
+        rep_->ioptions.splitter, read_options.columns, rep_->table_properties,
+        smallest_user_key);
+  }
 }
 
 Status BlockBasedTable::Get(const ReadOptions& read_options, const Slice& key,

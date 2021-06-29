@@ -15,7 +15,7 @@ using namespace std;
 #include "vidardb/table.h"
 using namespace vidardb;
 
-// #define ROW_STORE
+//#define ROW_STORE
 #define COLUMN_STORE
 
 unsigned int M = 3;
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
   assert(s.ok());
 
   ReadOptions ro;
-  ro.columns = {1, 2};
+  ro.columns = {1, 3};
 
   FileIter* iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {

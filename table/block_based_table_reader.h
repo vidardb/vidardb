@@ -131,6 +131,7 @@ class BlockBasedTable : public TableReader {
 
   class BlockEntryIteratorState;
   class BlockBasedIterator;  // Shichao
+  class RangeQueryIterator;  // Shichao
 
   template <class TValue>
   struct CachableEntry;

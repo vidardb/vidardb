@@ -916,12 +916,13 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
  public:
   RangeQueryIterator(MainColumnTableIterator* main_iter,
                      const std::vector<SubColumnTableIterator*> sub_iters,
-                     const std::vector<uint32_t>& columns, uint64_t num_entries,
+                     const std::vector<uint32_t>& columns,
+                     const std::shared_ptr<const TableProperties>& properties,
                      const Slice& smallest_user_key)
       : main_iter_(main_iter),
         sub_iters_(sub_iters),
         columns_(columns),
-        num_entries_(num_entries),
+        properties_(properties),
         smallest_user_key_(smallest_user_key) {}
 
   virtual ~RangeQueryIterator() {
@@ -936,6 +937,9 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
 
     // columns should already be sanitized so empty columns is impossible.
     v.resize(columns_.size());
+    for (auto& m : v) {
+      m.reserve(properties_->num_data_blocks);
+    }
     // column idx
     size_t j = 0;
     // handle key column case
@@ -962,10 +966,6 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
 
     // handle other column cases
     for (size_t i = 0; i < sub_iters_.size(); i++, j++) {
-      // if not the first column, reserve the space to avoid re-allocation
-      if (j > 0) {
-        v[j].reserve(v.front().size());
-      }
       auto iter = sub_iters_[i];
       for (iter->FirstLevelSeekToFirst(); iter->FirstLevelValid();
            iter->FirstLevelNext(false)) {
@@ -983,15 +983,13 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
                             uint64_t* total_count) const override {
     assert(buf != nullptr);
     *valid_count = 0;
-    *total_count = num_entries_;
-    uint64_t segment_size = (*total_count) * 2 * sizeof(uint64_t);
+    *total_count = properties_->num_entries;
+    uint64_t segment_size = (*total_count) * sizeof(uint64_t) * 2;
     char* forward = buf;
     char* limit = buf + capacity;
     uint64_t* backward = reinterpret_cast<uint64_t*>(limit);
 
-    // If block_bits is empty, imply a full scan. Empty table case has been
-    // recognized by NotFound status in GetMinMax, so shouldn't reach here.
-
+    // If block_bits is empty, imply a full scan. No empty table case.
     // handle key column case
     size_t j = 0;
     main_iter_->SetArea(forward);
@@ -1051,7 +1049,7 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
   MainColumnTableIterator* main_iter_;
   std::vector<SubColumnTableIterator*> sub_iters_;
   const std::vector<uint32_t> columns_;
-  uint64_t num_entries_;
+  const std::shared_ptr<const TableProperties>& properties_;
   Slice smallest_user_key_;
 };
 
@@ -1112,8 +1110,7 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
     }
 
     return new RangeQueryIterator(main_iter, sub_iters, ro.columns,
-                                  rep_->table_properties->num_entries,
-                                  smallest_user_key);
+                                  rep_->table_properties, smallest_user_key);
   }
 }
 
