@@ -123,13 +123,13 @@ void TestAdaptiveTableFactory(bool flush, kTableType table,
 }
 
 int main() {
-  //  TestAdaptiveTableFactory(false, ROW, {1, 3});
-  //  TestAdaptiveTableFactory(false, ROW, {0});
+  TestAdaptiveTableFactory(false, ROW, {1, 3});
+  TestAdaptiveTableFactory(false, ROW, {0});
   TestAdaptiveTableFactory(true, ROW, {1, 3});
   TestAdaptiveTableFactory(true, ROW, {0});
-  //
-  //  TestAdaptiveTableFactory(false, COLUMN, {1, 3});
-  //  TestAdaptiveTableFactory(false, COLUMN, {0});
+
+  TestAdaptiveTableFactory(false, COLUMN, {1, 3});
+  TestAdaptiveTableFactory(false, COLUMN, {0});
   TestAdaptiveTableFactory(true, COLUMN, {1, 3});
   TestAdaptiveTableFactory(true, COLUMN, {0});
 

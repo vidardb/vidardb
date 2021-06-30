@@ -104,36 +104,6 @@ struct MinMax {
       : min_(min), max_(max) {}
 };
 
-struct RangeQueryKeyVal {
-  std::string user_key;
-  std::string user_val;
-
-  RangeQueryKeyVal(const std::string& key, const std::string& val) :
-                   user_key(key), user_val(val) { }
-
-  RangeQueryKeyVal(std::string&& key, const std::string&& val) :
-                   user_key(std::move(key)), user_val(std::move(val)) { }
-
-  RangeQueryKeyVal(const RangeQueryKeyVal& kv) :
-                   user_key(kv.user_key), user_val(kv.user_val) { }
-
-  RangeQueryKeyVal(RangeQueryKeyVal&& kv) :
-                   user_key(std::move(kv.user_key)),
-                   user_val(std::move(kv.user_val)) { }
-
-  RangeQueryKeyVal& operator=(const RangeQueryKeyVal& kv) {
-    user_key = kv.user_key;
-    user_val = kv.user_val;
-    return *this;
-  }
-
-  RangeQueryKeyVal& operator=(RangeQueryKeyVal&& kv) {
-    user_key = std::move(kv.user_key);
-    user_val = std::move(kv.user_val);
-    return *this;
-  }
-};
-
 /***************************** Quanzhao *****************************/
 
 // A collections of table properties objects, where

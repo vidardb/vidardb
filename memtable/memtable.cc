@@ -204,6 +204,7 @@ class MemTableIterator : public InternalIterator {
       : valid_(false), arena_mode_(arena != nullptr), columns_(columns) {
     iter_ = mem.table_->GetIterator(arena);
     splitter_ = mem.GetMemTableOptions()->splitter;
+    num_entries_ = mem.num_entries_;
   }
 
   ~MemTableIterator() {
@@ -278,23 +279,25 @@ class MemTableIterator : public InternalIterator {
 
     // all columns or key column is involved
     // In other cases, we really can don nothing here.
-    if (columns_.empty() || columns_.front() == 0) {
-      // only key column is useful
-      v.resize(1);
-      // treat the entire memtable column as a block
-      v[0].resize(1);
-
-      // min user key
-      Slice min(GetLengthPrefixedSlice(iter_->key()));
-      Slice userkey_min(min.data(), min.size()-8);
-      v[0][0].min_.assign(userkey_min.data(), userkey_min.size());
-
-      // max user_key
-      iter_->SeekToLast();
-      Slice max(GetLengthPrefixedSlice(iter_->key()));
-      Slice userkey_max(max.data(), max.size()-8);
-      v[0][0].max_.assign(userkey_max.data(), userkey_max.size());
+    if (!columns_.empty() && columns_.front() != 0) {
+      return Status::OK();
     }
+
+    // only key column is useful
+    v.resize(1);
+    // treat the entire memtable column as a block
+    v[0].resize(1);
+
+    // min user key
+    Slice internal_min(GetLengthPrefixedSlice(iter_->key()));
+    Slice user_key_min(internal_min.data(), internal_min.size() - 8);
+    v[0][0].min_.assign(user_key_min.data(), user_key_min.size());
+
+    // max user_key
+    iter_->SeekToLast();
+    Slice internal_max(GetLengthPrefixedSlice(iter_->key()));
+    Slice user_key_max(internal_max.data(), internal_max.size() - 8);
+    v[0][0].max_.assign(user_key_max.data(), user_key_max.size());
 
     return Status::OK();
   }
@@ -302,34 +305,61 @@ class MemTableIterator : public InternalIterator {
   virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
                             uint64_t capacity, uint64_t* valid_count,
                             uint64_t* total_count) const override {
-    std::vector<RangeQueryKeyVal> res;
-    res.clear();
     // block_bits is generally useless in memtable, since we treat the entire
     // memtable column as a block
-    if (block_bits.size() > 1) {
-      return Status::InvalidArgument();
-    }
+    assert(block_bits.size() <= 1);
+    assert(buf != nullptr);
 
-    // If block_bits is empty, imply a full scan. Empty table case has been
-    // recognized by NotFound status in GetMinMax, so shouldn't reach here.
+    *valid_count = 0;
+    *total_count = num_entries_;
+
+    // If block_bits is empty, imply a full scan. No empty table case.
+    // Quick path to jump out.
     if (!block_bits.empty() && !block_bits[0]) {
       return Status::OK();
     }
 
+    char* forward = buf;
+    char* limit = buf + capacity;
+    uint64_t* backward = reinterpret_cast<uint64_t*>(limit);
+
     // TODO: handle update and delete
     for (iter_->SeekToFirst(); iter_->Valid(); iter_->Next()) {
-      Slice key_slice = GetLengthPrefixedSlice(iter_->key());
-      Slice userkey_slice(Slice(key_slice.data(), key_slice.size()-8));
-      Slice val_slice =
-          GetLengthPrefixedSlice(key_slice.data() + key_slice.size());
+      ++(*valid_count);
+      backward = reinterpret_cast<uint64_t*>(limit);
 
-      std::string val;  // prepare for splitting user value
-      ReformatUserValue(val_slice, columns_, splitter_, val);
+      Slice internal_key = GetLengthPrefixedSlice(iter_->key());
+      Slice user_key(Slice(internal_key.data(), internal_key.size() - 8));
+      Slice value =
+          GetLengthPrefixedSlice(internal_key.data() + internal_key.size());
 
-      std::string userkey(columns_.empty() || columns_.front()==0
-                              ? userkey_slice.ToString()
-                              : "");
-      res.emplace_back(std::move(userkey), std::move(val));
+      // handle key column
+      if (columns_.empty() || columns_.front() == 0) {
+        TransferKeyOrValue(user_key, buf, *total_count, forward, backward);
+      }
+
+      // handle val columns
+      if (splitter_ == nullptr || value.empty()) {
+        // requiring columns are sorted and consecutive
+        if (columns_.empty() || columns_.front() == 1 || columns_.size() > 1) {
+          TransferKeyOrValue(value, buf, *total_count, forward, backward);
+        }
+      } else {
+        std::vector<Slice> user_vals(splitter_->Split(value));
+        if (columns_.empty()) {
+          for (const auto& val : user_vals) {
+            TransferKeyOrValue(val, buf, *total_count, forward, backward);
+          }
+        } else {
+          for (auto index : columns_) {
+            if (index < 1) continue;  // only process the value columns
+            Slice& val = user_vals[index - 1];
+            TransferKeyOrValue(val, buf, *total_count, forward, backward);
+          }
+        }
+      }
+
+      limit -= sizeof(uint64_t) * 2;
     }
 
     return Status::OK();
@@ -342,12 +372,22 @@ class MemTableIterator : public InternalIterator {
   }
 
  private:
+  void TransferKeyOrValue(const Slice& s, const char* buf, uint64_t count,
+                          char*& forward, uint64_t*& backward) const {
+    *(backward - 1) = forward - buf;
+    *(backward - 2) = s.size();
+    backward -= count * 2;
+    memcpy(forward, s.data(), s.size());
+    forward += s.size();
+  }
+
   MemTableRep::Iterator* iter_;
   bool valid_;
   bool arena_mode_;
   const Splitter* splitter_;
   const std::vector<uint32_t> columns_;
   std::string value_;  // mutable
+  uint64_t num_entries_;
 
   // No copying allowed
   MemTableIterator(const MemTableIterator&);

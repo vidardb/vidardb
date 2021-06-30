@@ -112,8 +112,8 @@ void TestColumnRangeQuery(bool flush, vector<uint32_t> cols) {
 }
 
 int main() {
-  //  TestColumnRangeQuery(false, {1, 3});
-  //  TestColumnRangeQuery(false, {0});
+  TestColumnRangeQuery(false, {1, 3});
+  TestColumnRangeQuery(false, {0});
 
   TestColumnRangeQuery(true, {1, 3});
   TestColumnRangeQuery(true, {0});

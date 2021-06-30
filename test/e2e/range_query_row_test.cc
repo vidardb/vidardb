@@ -90,7 +90,7 @@ void TestRowRangeQuery(bool flush) {
 }
 
 int main() {
-  //  TestRowRangeQuery(false);
+  TestRowRangeQuery(false);
   TestRowRangeQuery(true);
 
   return 0;

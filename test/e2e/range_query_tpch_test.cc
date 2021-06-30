@@ -194,9 +194,9 @@ void TestTpchRangeQuery(bool flush, kTableType table, vector<uint32_t> cols) {
 }
 
 int main() {
-  // TestTpchRangeQuery(false, ROW, {});
-  //  TestTpchRangeQuery(false, COLUMN, {});
-  // TestTpchRangeQuery(true, ROW, {});
+  TestTpchRangeQuery(false, ROW, {});
+  TestTpchRangeQuery(false, COLUMN, {});
+  TestTpchRangeQuery(true, ROW, {});
   TestTpchRangeQuery(true, COLUMN, {});
   return 0;
 }

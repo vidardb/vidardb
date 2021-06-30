@@ -114,7 +114,7 @@ void TestSimpleColumnStore(bool flush) {
 }
 
 int main() {
-  //  TestSimpleColumnStore(false);
+  TestSimpleColumnStore(false);
   TestSimpleColumnStore(true);
   return 0;
 }

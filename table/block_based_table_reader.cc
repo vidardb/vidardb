@@ -850,12 +850,8 @@ class BlockBasedTable::RangeQueryIterator : public InternalIterator {
 
         // handle key column
         if (columns_.empty() || columns_.front() == 0) {
-          *(backward - 1) = forward - buf;
-          *(backward - 2) = parsed_key.user_key.size();
-          backward -= (*total_count) * 2;
-          memcpy(forward, parsed_key.user_key.data(),
-                 parsed_key.user_key.size());
-          forward += parsed_key.user_key.size();
+          TransferKeyOrValue(parsed_key.user_key, buf, *total_count, forward,
+                             backward);
         }
 
         // handle val columns
@@ -863,31 +859,20 @@ class BlockBasedTable::RangeQueryIterator : public InternalIterator {
           // requiring columns are sorted and consecutive
           if (columns_.empty() || columns_.front() == 1 ||
               columns_.size() > 1) {
-            *(backward - 1) = forward - buf;
-            *(backward - 2) = iter->value().size();
-            backward -= (*total_count) * 2;
-            memcpy(forward, iter->value().data(), iter->value().size());
-            forward += iter->value().size();
+            TransferKeyOrValue(iter->value(), buf, *total_count, forward,
+                               backward);
           }
         } else {
           std::vector<Slice> user_vals(splitter_->Split(iter->value()));
           if (columns_.empty()) {
             for (const auto& val : user_vals) {
-              *(backward - 1) = forward - buf;
-              *(backward - 2) = val.size();
-              backward -= (*total_count) * 2;
-              memcpy(forward, val.data(), val.size());
-              forward += val.size();
+              TransferKeyOrValue(val, buf, *total_count, forward, backward);
             }
           } else {
             for (auto index : columns_) {
               if (index < 1) continue;  // only process the value columns
               Slice& val = user_vals[index - 1];
-              *(backward - 1) = forward - buf;
-              *(backward - 2) = val.size();
-              backward -= (*total_count) * 2;
-              memcpy(forward, val.data(), val.size());
-              forward += val.size();
+              TransferKeyOrValue(val, buf, *total_count, forward, backward);
             }
           }
         }
@@ -900,6 +885,15 @@ class BlockBasedTable::RangeQueryIterator : public InternalIterator {
   }
 
  private:
+  void TransferKeyOrValue(const Slice& s, const char* buf, uint64_t count,
+                          char*& forward, uint64_t*& backward) const {
+    *(backward - 1) = forward - buf;
+    *(backward - 2) = s.size();
+    backward -= count * 2;
+    memcpy(forward, s.data(), s.size());
+    forward += s.size();
+  }
+
   InternalIterator* iter_;
   const Splitter* splitter_;
   const std::vector<uint32_t> columns_;
