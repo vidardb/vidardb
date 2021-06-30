@@ -3557,7 +3557,12 @@ Iterator* DBImpl::NewFileIterator(const ReadOptions& read_options) {
   //  env_options.use_direct_reads = true;
   env_options.use_os_buffer = false;  // consider increase db cache
   // Collect iterators for files in L0 - Ln
-  sv->current->AddIterators(read_options, env_options, iters);
+  Status s = sv->current->AddIterators(read_options, env_options, iters);
+  if (!s.ok()) {
+    // possible with "too many open files"
+    delete file_iter;
+    return NewErrorIterator(Status::NotSupported("Too many open files."));
+  }
 
   IterState* cleanup = new IterState(this, &mutex_, sv);
   file_iter->RegisterCleanup(CleanupIteratorState, cleanup, nullptr);

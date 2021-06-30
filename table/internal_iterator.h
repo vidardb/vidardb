@@ -84,14 +84,14 @@ class InternalIterator : public Cleanable {
 
   // See comments in file_iter.h
   virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const {
-    return Status::NotSupported(Slice("not implemented"));
+    return Status::NotSupported(Slice("GetMinMax is not implemented"));
   }
 
   // See comments in file_iter.h
   virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
                             uint64_t capacity, uint64_t* valid_count,
                             uint64_t* total_count) const {
-    return Status::NotSupported(Slice("not implemented"));
+    return Status::NotSupported(Slice("RangeQuery is not implemented"));
   }
   /***************************** Shichao ******************************/
 

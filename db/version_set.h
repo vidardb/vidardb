@@ -424,8 +424,8 @@ class Version {
 
   /**************************** Shichao *****************************/
   // Another version but for file iterators
-  void AddIterators(const ReadOptions&, const EnvOptions& soptions,
-                    std::vector<InternalIterator*>* iterator_list);
+  Status AddIterators(const ReadOptions&, const EnvOptions& soptions,
+                      std::vector<InternalIterator*>* iterator_list);
   /**************************** Shichao *****************************/
 
   // Lookup the value for key.  If found, store it in *val and
