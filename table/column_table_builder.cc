@@ -314,7 +314,8 @@ void ColumnTableBuilder::Add(const Slice& key, const Slice& value) {
   }
 
   r->last_key.assign(key.data(), key.size());
-  // main column format (keyN, pos): (key0, 0), (key1, 1) ...
+  // main column format (keyN, pos): (key0, 0), (key1, ) ...
+  // pos is only stored at every restart
   r->data_block->Add(key, pos);
   r->props.num_entries++;
   r->props.raw_key_size += key.size();

@@ -1001,6 +1001,7 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
         continue;
       }
       // within block
+      forward = main_iter_->GetArea();
       for (; main_iter_->Valid(); main_iter_->SecondLevelNext()) {
         ParsedInternalKey parsed_key;
         if (!ParseInternalKey(main_iter_->key(), &parsed_key)) {
@@ -1009,6 +1010,10 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
         // TODO: currently we are assuming no delete
         ++(*valid_count);
         if (columns_.front() == 0) {
+          // check out of bound
+          if (forward > reinterpret_cast<char*>(backward - 2)) {
+            return Status::InvalidArgument("Not enough specified memory.");
+          }
           *(--backward) = parsed_key.user_key.data() - buf;
           *(--backward) = parsed_key.user_key.size();
         }
@@ -1032,7 +1037,12 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
           continue;
         }
         // within block
+        forward = iter->GetArea();
         for (; iter->Valid(); iter->SecondLevelNext()) {
+          // check out of bound
+          if (forward > reinterpret_cast<char*>(backward - 2)) {
+            return Status::InvalidArgument("Not enough specified memory.");
+          }
           *(--backward) = iter->value().data() - buf;
           *(--backward) = iter->value().size();
         }

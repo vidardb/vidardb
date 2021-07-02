@@ -335,26 +335,38 @@ class MemTableIterator : public InternalIterator {
 
       // handle key column
       if (columns_.empty() || columns_.front() == 0) {
-        TransferKeyOrValue(user_key, buf, *total_count, forward, backward);
+        if (!TransferKeyOrValue(user_key, buf, *total_count, forward,
+                                backward)) {
+          return Status::InvalidArgument("Not enough specified memory.");
+        }
       }
 
       // handle val columns
       if (splitter_ == nullptr || value.empty()) {
         // requiring columns are sorted and consecutive
         if (columns_.empty() || columns_.front() == 1 || columns_.size() > 1) {
-          TransferKeyOrValue(value, buf, *total_count, forward, backward);
+          if (!TransferKeyOrValue(value, buf, *total_count, forward,
+                                  backward)) {
+            return Status::InvalidArgument("Not enough specified memory.");
+          }
         }
       } else {
         std::vector<Slice> user_vals(splitter_->Split(value));
         if (columns_.empty()) {
           for (const auto& val : user_vals) {
-            TransferKeyOrValue(val, buf, *total_count, forward, backward);
+            if (!TransferKeyOrValue(val, buf, *total_count, forward,
+                                    backward)) {
+              return Status::InvalidArgument("Not enough specified memory.");
+            }
           }
         } else {
           for (auto index : columns_) {
             if (index < 1) continue;  // only process the value columns
             Slice& val = user_vals[index - 1];
-            TransferKeyOrValue(val, buf, *total_count, forward, backward);
+            if (!TransferKeyOrValue(val, buf, *total_count, forward,
+                                    backward)) {
+              return Status::InvalidArgument("Not enough specified memory.");
+            }
           }
         }
       }
@@ -372,13 +384,18 @@ class MemTableIterator : public InternalIterator {
   }
 
  private:
-  void TransferKeyOrValue(const Slice& s, const char* buf, uint64_t count,
+  bool TransferKeyOrValue(const Slice& s, const char* buf, uint64_t count,
                           char*& forward, uint64_t*& backward) const {
+    // check out of bound
+    if (forward + s.size() > reinterpret_cast<char*>(backward - 2)) {
+      return false;
+    }
     *(backward - 1) = forward - buf;
     *(backward - 2) = s.size();
     backward -= count * 2;
     memcpy(forward, s.data(), s.size());
     forward += s.size();
+    return true;
   }
 
   MemTableRep::Iterator* iter_;
