@@ -205,6 +205,7 @@ class MemTableIterator : public InternalIterator {
     iter_ = mem.table_->GetIterator(arena);
     splitter_ = mem.GetMemTableOptions()->splitter;
     num_entries_ = mem.num_entries_;
+    data_size_ = mem.data_size_;
   }
 
   ~MemTableIterator() {
@@ -300,6 +301,15 @@ class MemTableIterator : public InternalIterator {
     v[0][0].max_.assign(user_key_max.data(), user_key_max.size());
 
     return Status::OK();
+  }
+
+  uint64_t EstimateRangeQueryBufSize(uint32_t column_count) const override {
+    uint64_t res = data_size_;
+    res *= 2;  // encoding factor
+
+    // offset & size
+    res += num_entries_ * sizeof(uint64_t) * 2 * column_count;
+    return res;
   }
 
   virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
@@ -404,7 +414,8 @@ class MemTableIterator : public InternalIterator {
   const Splitter* splitter_;
   const std::vector<uint32_t> columns_;
   std::string value_;  // mutable
-  uint64_t num_entries_;
+  uint64_t num_entries_;  // Shichao
+  uint64_t data_size_;    // Shichao
 
   // No copying allowed
   MemTableIterator(const MemTableIterator&);

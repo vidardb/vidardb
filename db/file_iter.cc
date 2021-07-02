@@ -41,6 +41,13 @@ Status FileIter::GetMinMax(std::vector<std::vector<MinMax>>& v) const {
   return children_[cur_]->GetMinMax(v);
 }
 
+uint64_t FileIter::EstimateRangeQueryBufSize(uint32_t column_count) const {
+  if (cur_ >= children_.size()) {
+    return 0;
+  }
+  return children_[cur_]->EstimateRangeQueryBufSize(column_count);
+}
+
 Status FileIter::RangeQuery(const std::vector<bool>& block_bits, char* buf,
                             uint64_t capacity, uint64_t* valid_count,
                             uint64_t* total_count) const {

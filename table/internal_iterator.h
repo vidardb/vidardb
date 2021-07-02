@@ -88,6 +88,11 @@ class InternalIterator : public Cleanable {
   }
 
   // See comments in file_iter.h
+  virtual uint64_t EstimateRangeQueryBufSize(uint32_t column_count) const {
+    return 0;
+  }
+
+  // See comments in file_iter.h
   virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
                             uint64_t capacity, uint64_t* valid_count,
                             uint64_t* total_count) const {

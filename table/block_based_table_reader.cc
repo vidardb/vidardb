@@ -817,6 +817,20 @@ class BlockBasedTable::RangeQueryIterator : public InternalIterator {
     return Status::OK();
   }
 
+  uint64_t EstimateRangeQueryBufSize(uint32_t column_count) const override {
+    uint64_t res = 0;
+    // key
+    if (columns_.empty() || columns_.front() == 0) {
+      res += properties_->raw_key_size;
+    }
+    // take into account all vals
+    res += properties_->raw_value_size;
+
+    // offset & size
+    res += properties_->num_entries * sizeof(uint64_t) * 2 * column_count;
+    return res;
+  }
+
   // TODO: handle update and delete
   virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
                             uint64_t capacity, uint64_t* valid_count,

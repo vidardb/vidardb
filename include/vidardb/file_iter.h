@@ -52,8 +52,8 @@ class FileIter : public Iterator {
   Status GetMinMax(std::vector<std::vector<MinMax>>& v) const;
 
   // Estimate the size of current range query buffer to store required data
-  // blocks and meta data.
-  uint64_t EstimateRangeQueryBufSize() { /* not implemented */ return 0; }
+  // blocks and meta data. The parameter is used in row-oriented storage.
+  uint64_t EstimateRangeQueryBufSize(uint32_t column_count) const;
 
   // According to the calculated block bits, fetch the relevant attributes.
   // Sometimes the block_bits is empty, implying a full scan since no useful

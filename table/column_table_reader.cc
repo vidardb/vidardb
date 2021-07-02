@@ -914,15 +914,16 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 
 class ColumnTable::RangeQueryIterator : public InternalIterator {
  public:
-  RangeQueryIterator(MainColumnTableIterator* main_iter,
-                     const std::vector<SubColumnTableIterator*> sub_iters,
-                     const std::vector<uint32_t>& columns,
-                     const std::shared_ptr<const TableProperties>& properties,
-                     const Slice& smallest_user_key)
+  RangeQueryIterator(
+      MainColumnTableIterator* main_iter,
+      const std::vector<SubColumnTableIterator*>& sub_iters,
+      const std::vector<uint32_t>& columns,
+      std::vector<std::shared_ptr<const TableProperties>>& table_properties,
+      const Slice& smallest_user_key)
       : main_iter_(main_iter),
         sub_iters_(sub_iters),
         columns_(columns),
-        properties_(properties),
+        table_properties_(table_properties),
         smallest_user_key_(smallest_user_key) {}
 
   virtual ~RangeQueryIterator() {
@@ -938,7 +939,7 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
     // columns should already be sanitized so empty columns is impossible.
     v.resize(columns_.size());
     for (auto& m : v) {
-      m.reserve(properties_->num_data_blocks);
+      m.reserve(table_properties_.front()->num_data_blocks);
     }
     // column idx
     size_t j = 0;
@@ -977,13 +978,29 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
     return Status::OK();
   }
 
+  uint64_t EstimateRangeQueryBufSize(uint32_t column_count) const override {
+    assert(column_count == columns_.size());
+
+    uint64_t res = 0;
+    // data block
+    for (auto& p : table_properties_) {
+      res += p->data_size;
+    }
+    res *= 2;  // compression factor
+
+    // offset & size
+    res += table_properties_.front()->num_entries * sizeof(uint64_t) * 2 *
+           columns_.size();
+    return res;
+  }
+
   // TODO: handle update and delete
   virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
                             uint64_t capacity, uint64_t* valid_count,
                             uint64_t* total_count) const override {
     assert(buf != nullptr);
     *valid_count = 0;
-    *total_count = properties_->num_entries;
+    *total_count = table_properties_.front()->num_entries;
     uint64_t segment_size = (*total_count) * sizeof(uint64_t) * 2;
     char* forward = buf;
     char* limit = buf + capacity;
@@ -1059,7 +1076,7 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
   MainColumnTableIterator* main_iter_;
   std::vector<SubColumnTableIterator*> sub_iters_;
   const std::vector<uint32_t> columns_;
-  const std::shared_ptr<const TableProperties>& properties_;
+  std::vector<std::shared_ptr<const TableProperties>> table_properties_;
   Slice smallest_user_key_;
 };
 
@@ -1108,6 +1125,11 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
     MainColumnTableIterator* main_iter =
         new MainColumnTableIterator(new BlockEntryIteratorState(this, ro));
 
+    std::vector<std::shared_ptr<const TableProperties>> table_properties;
+    if (ro.columns.front() == 0) {
+      table_properties.push_back(rep_->table_properties);
+    }
+
     std::vector<SubColumnTableIterator*> sub_iters;  // sub column
     for (const auto& column_index : ro.columns) {  // sub column
       if (column_index < 1) {  // only process the value columns
@@ -1117,10 +1139,12 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
       auto& table = rep_->tables[column_index-1];
       sub_iters.push_back(new SubColumnTableIterator(
           new BlockEntryIteratorState(table.get(), ro)));
+
+      table_properties.push_back(table->rep_->table_properties);
     }
 
     return new RangeQueryIterator(main_iter, sub_iters, ro.columns,
-                                  rep_->table_properties, smallest_user_key);
+                                  table_properties, smallest_user_key);
   }
 }
 
