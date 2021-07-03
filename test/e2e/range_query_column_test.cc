@@ -86,7 +86,8 @@ void TestColumnRangeQuery(bool flush, vector<uint32_t> cols) {
 
     // block_bits is set for illustration purpose here.
     vector<bool> block_bits(1, true);
-    int N = 1024 * 1024;
+    uint64_t N = iter->EstimateRangeQueryBufSize(
+        ro.columns.empty() ? 4 : ro.columns.size());
     char* buf = new char[N];
     uint64_t valid_count, total_count;
     s = iter->RangeQuery(block_bits, buf, N, &valid_count, &total_count);
