@@ -303,9 +303,9 @@ class MemTableIterator : public InternalIterator {
     return Status::OK();
   }
 
+  // return >= real required size
   uint64_t EstimateRangeQueryBufSize(uint32_t column_count) const override {
     uint64_t res = data_size_;
-    res *= 2;  // encoding factor
 
     // offset & size
     res += num_entries_ * sizeof(uint64_t) * 2 * column_count;
