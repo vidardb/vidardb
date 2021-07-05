@@ -55,7 +55,7 @@ class MainColumnTableIterator {
   }
   void SecondLevelNext() {
     assert(FirstLevelValid());
-    second_level_iter_.Next();
+    second_level_iter_.NextKey();
   }
   Slice FirstLevelKey() const {
     assert(FirstLevelValid());

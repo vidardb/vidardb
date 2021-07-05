@@ -330,7 +330,10 @@ class MainColumnBlockIter final : public BlockIter {
   MainColumnBlockIter() : BlockIter(), has_val_(false), int_val_(0) {}
   MainColumnBlockIter(const Comparator* comparator, const char* data,
                       uint32_t restarts, uint32_t num_restarts);
-
+  void NextKey() {
+    assert(Valid());
+    ParseNextKeyOnly();
+  }
  private:
   // Return the offset in data_ just past the end of the current entry.
   virtual uint32_t NextEntryOffset() const override {
@@ -356,6 +359,23 @@ class MainColumnBlockIter final : public BlockIter {
   virtual void CorruptionError() override;
 
   virtual bool ParseNextKey() override {
+    if (!ParseNextKeyOnly()) {
+      return false;
+    }
+
+    uint32_t value_length = 4;  // fixed 32 bits
+    if (has_val_) {
+      value_ = Slice(key_.GetKey().data() + key_.GetKey().size(), value_length);
+      GetFixed32BigEndian(&value_, &int_val_);
+    } else {
+      PutFixed32BigEndian(&str_val_, ++int_val_);
+      value_ = Slice(str_val_);
+    }
+
+    return true;
+  }
+
+  bool ParseNextKeyOnly() {
     current_ = NextEntryOffset();
     const char* p = data_ + current_;
     const char* limit = data_ + restarts_;  // Restarts come right after data
@@ -384,15 +404,7 @@ class MainColumnBlockIter final : public BlockIter {
     // within the restart area, val is not stored because it is merely sequence
     has_val_ = (restart_offset == current_);
 
-    uint32_t value_length = 4;  // fixed 32 bits
-    if (has_val_) {
-      value_ = Slice(p + key_length, value_length);
-      GetFixed32BigEndian(&value_, &int_val_);
-    } else {
-      PutFixed32BigEndian(&str_val_, ++int_val_);
-      value_ = Slice(str_val_);
-    }
-
+    value_ = Slice("not parsed");
     return true;
   }
 

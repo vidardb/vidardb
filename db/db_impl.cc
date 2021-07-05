@@ -3553,9 +3553,10 @@ Iterator* DBImpl::NewFileIterator(const ReadOptions& read_options) {
   // O_DIRECT: no impact to other threads but poor performance
   // FADV_DONTNEED: good performance but impact OS working set
   // FADV_NOREUSE: noop in linux
+  // Currently, default is to use os cache, but not db cache.
   EnvOptions env_options(env_options_);
   //  env_options.use_direct_reads = true;
-  env_options.use_os_buffer = false;  // consider increase db cache
+//  env_options.use_os_buffer = false;  // consider increase db cache
   // Collect iterators for files in L0 - Ln
   Status s = sv->current->AddIterators(read_options, env_options, iters);
   if (!s.ok()) {
