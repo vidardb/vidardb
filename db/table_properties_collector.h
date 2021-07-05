@@ -66,7 +66,6 @@ class InternalKeyPropertiesCollector : public IntTblPropCollector {
 
  private:
   uint64_t deleted_keys_ = 0;
-  uint64_t merge_operands_ = 0;
 };
 
 class InternalKeyPropertiesCollectorFactory

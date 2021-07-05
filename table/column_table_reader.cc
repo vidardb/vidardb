@@ -978,15 +978,15 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
     return Status::OK();
   }
 
+  // An accurate estimation
   uint64_t EstimateRangeQueryBufSize(uint32_t column_count) const override {
     assert(column_count == columns_.size());
 
     uint64_t res = 0;
     // data block
     for (auto& p : table_properties_) {
-      res += p->data_size;
+      res += p->raw_data_size;
     }
-    res *= 2;  // compression factor
 
     // offset & size
     res += table_properties_.front()->num_entries * sizeof(uint64_t) * 2 *
@@ -1126,9 +1126,7 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
         new MainColumnTableIterator(new BlockEntryIteratorState(this, ro));
 
     std::vector<std::shared_ptr<const TableProperties>> table_properties;
-    if (ro.columns.front() == 0) {
-      table_properties.push_back(rep_->table_properties);
-    }
+    table_properties.push_back(rep_->table_properties);
 
     std::vector<SubColumnTableIterator*> sub_iters;  // sub column
     for (const auto& column_index : ro.columns) {  // sub column

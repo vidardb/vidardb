@@ -35,19 +35,17 @@ typedef std::map<std::string, std::string> UserCollectedProperties;
 // table properties' human-readable names in the property block.
 struct TablePropertiesNames {
   static const std::string kDataSize;
+  static const std::string kRawDataSize;
   static const std::string kIndexSize;
-  static const std::string kFilterSize;
   static const std::string kRawKeySize;
   static const std::string kRawValueSize;
   static const std::string kNumDataBlocks;
   static const std::string kNumEntries;
   static const std::string kFormatVersion;
   static const std::string kFixedKeyLen;
-  static const std::string kFilterPolicy;
   static const std::string kColumnFamilyName;
   static const std::string kColumnFamilyId;
   static const std::string kComparator;
-  static const std::string kMergeOperator;
   static const std::string kPropertyCollectors;
   static const std::string kCompression;
 };
@@ -60,7 +58,6 @@ enum EntryType {
   kEntryPut,
   kEntryDelete,
   kEntrySingleDelete,
-  kEntryMerge,
   kEntryOther,
 };
 
@@ -136,10 +133,11 @@ struct TableProperties {
  public:
   // the total size of all data blocks.
   uint64_t data_size = 0;
+  // the total size of all data blocks before compression,
+  // only used in columnar storage
+  uint64_t raw_data_size = 0;
   // the size of index block.
   uint64_t index_size = 0;
-  // the size of filter block.
-  uint64_t filter_size = 0;
   // total raw key size
   uint64_t raw_key_size = 0;
   // total raw value size
@@ -191,7 +189,5 @@ struct TableProperties {
 // itself. Especially some properties regarding to the internal keys (which
 // is unknown to `table`).
 extern uint64_t GetDeletedKeys(const UserCollectedProperties& props);
-extern uint64_t GetMergeOperands(const UserCollectedProperties& props,
-                                 bool* property_present);
 
 }  // namespace vidardb

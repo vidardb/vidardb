@@ -163,7 +163,6 @@ namespace {
 void ResetTableProperties(TableProperties* tp) {
   tp->data_size = 0;
   tp->index_size = 0;
-  tp->filter_size = 0;
   tp->raw_key_size = 0;
   tp->raw_value_size = 0;
   tp->num_data_blocks = 0;
@@ -181,11 +180,10 @@ void ParseTablePropertiesString(std::string tp_string, TableProperties* tp) {
          " raw average key size %lf "
          " raw value size %" SCNu64
          " raw average value size %lf "
-         " data block size %" SCNu64 " index block size %" SCNu64
-         " filter block size %" SCNu64,
+         " data block size %" SCNu64 " index block size %" SCNu64,
          &tp->num_data_blocks, &tp->num_entries, &tp->raw_key_size,
          &dummy_double, &tp->raw_value_size, &dummy_double, &tp->data_size,
-         &tp->index_size, &tp->filter_size);
+         &tp->index_size);
 }
 
 void VerifySimilar(uint64_t a, uint64_t b, double bias) {
@@ -204,13 +202,11 @@ void VerifySimilar(uint64_t a, uint64_t b, double bias) {
 
 void VerifyTableProperties(const TableProperties& base_tp,
                            const TableProperties& new_tp,
-                           double filter_size_bias = 0.1,
                            double index_size_bias = 0.1,
                            double data_size_bias = 0.1,
                            double num_data_blocks_bias = 0.05) {
   VerifySimilar(base_tp.data_size, new_tp.data_size, data_size_bias);
   VerifySimilar(base_tp.index_size, new_tp.index_size, index_size_bias);
-  VerifySimilar(base_tp.filter_size, new_tp.filter_size, filter_size_bias);
   VerifySimilar(base_tp.num_data_blocks, new_tp.num_data_blocks,
                 num_data_blocks_bias);
   ASSERT_EQ(base_tp.raw_key_size, new_tp.raw_key_size);
@@ -237,8 +233,6 @@ void GetExpectedTableProperties(TableProperties* expected_tp,
       kTableCount * (kKeysPerTable * (kKeySize + 8 + kValueSize));
   expected_tp->index_size =
       expected_tp->num_data_blocks * (kAvgSuccessorSize + 12);
-  expected_tp->filter_size =
-      kTableCount * (kKeysPerTable * kBloomBitsPerKey / 8);
 }
 }  // anonymous namespace
 
@@ -448,7 +442,6 @@ TEST_F(DBPropertiesTest, AggregatedTablePropertiesAtLevel) {
       ParseTablePropertiesString(level_tp_strings[level], &level_tps[level]);
       sum_tp.data_size += level_tps[level].data_size;
       sum_tp.index_size += level_tps[level].index_size;
-      sum_tp.filter_size += level_tps[level].filter_size;
       sum_tp.raw_key_size += level_tps[level].raw_key_size;
       sum_tp.raw_value_size += level_tps[level].raw_value_size;
       sum_tp.num_data_blocks += level_tps[level].num_data_blocks;
@@ -458,7 +451,6 @@ TEST_F(DBPropertiesTest, AggregatedTablePropertiesAtLevel) {
     ParseTablePropertiesString(tp_string, &tp);
     ASSERT_EQ(sum_tp.data_size, tp.data_size);
     ASSERT_EQ(sum_tp.index_size, tp.index_size);
-    ASSERT_EQ(sum_tp.filter_size, tp.filter_size);
     ASSERT_EQ(sum_tp.raw_key_size, tp.raw_key_size);
     ASSERT_EQ(sum_tp.raw_value_size, tp.raw_value_size);
     ASSERT_EQ(sum_tp.num_data_blocks, tp.num_data_blocks);

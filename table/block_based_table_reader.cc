@@ -817,6 +817,7 @@ class BlockBasedTable::RangeQueryIterator : public InternalIterator {
     return Status::OK();
   }
 
+  // return >= real required size
   uint64_t EstimateRangeQueryBufSize(uint32_t column_count) const override {
     uint64_t res = 0;
     // key

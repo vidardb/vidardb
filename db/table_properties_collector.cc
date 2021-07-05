@@ -32,26 +32,18 @@ Status InternalKeyPropertiesCollector::Finish(
   assert(properties);
   assert(properties->find(
         InternalKeyTablePropertiesNames::kDeletedKeys) == properties->end());
-  assert(properties->find(InternalKeyTablePropertiesNames::kMergeOperands) ==
-         properties->end());
 
   std::string val_deleted_keys;
   PutVarint64(&val_deleted_keys, deleted_keys_);
   properties->insert(
       {InternalKeyTablePropertiesNames::kDeletedKeys, val_deleted_keys});
 
-  std::string val_merge_operands;
-  PutVarint64(&val_merge_operands, merge_operands_);
-  properties->insert(
-      {InternalKeyTablePropertiesNames::kMergeOperands, val_merge_operands});
-
   return Status::OK();
 }
 
 UserCollectedProperties
 InternalKeyPropertiesCollector::GetReadableProperties() const {
-  return {{"kDeletedKeys", ToString(deleted_keys_)},
-          {"kMergeOperands", ToString(merge_operands_)}};
+  return {{"kDeletedKeys", ToString(deleted_keys_)}};
 }
 
 namespace {
@@ -108,8 +100,6 @@ UserKeyTablePropertiesCollector::GetReadableProperties() const {
 
 const std::string InternalKeyTablePropertiesNames::kDeletedKeys
   = "vidardb.deleted.keys";
-const std::string InternalKeyTablePropertiesNames::kMergeOperands =
-    "vidardb.merge.operands";
 
 uint64_t GetDeletedKeys(
     const UserCollectedProperties& props) {
@@ -117,11 +107,4 @@ uint64_t GetDeletedKeys(
   return GetUint64Property(props, InternalKeyTablePropertiesNames::kDeletedKeys,
                            &property_present_ignored);
 }
-
-uint64_t GetMergeOperands(const UserCollectedProperties& props,
-                          bool* property_present) {
-  return GetUint64Property(
-      props, InternalKeyTablePropertiesNames::kMergeOperands, property_present);
-}
-
 }  // namespace vidardb
