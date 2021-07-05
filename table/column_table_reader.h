@@ -75,9 +75,10 @@ class ColumnTable : public TableReader {
   // Returns a new iterator over the table contents.
   // The result of NewIterator() is initially invalid (caller must
   // call one of the Seek methods on the iterator before using it).
-  InternalIterator* NewIterator(const ReadOptions& read_options,
-                                Arena* arena = nullptr,
-                                bool for_range_query = false) override;
+  InternalIterator* NewIterator(
+      const ReadOptions& read_options, Arena* arena = nullptr,
+      bool for_range_query = false,
+      const Slice& smallest_user_key = Slice()) override;
 
   Status Get(const ReadOptions& read_options, const Slice& key,
              GetContext* get_context) override;
@@ -128,9 +129,9 @@ class ColumnTable : public TableReader {
     }
 
     InternalIterator* NewDataIterator(const Slice& index_value,
-                                      BlockIter* input_iter) {
+                                      BlockIter* input_iter, char** area) {
       return NewDataBlockIterator(table_->rep_, read_options_, index_value,
-                                  input_iter);
+                                  input_iter, area);
     }
 
    private:
@@ -183,9 +184,11 @@ class ColumnTable : public TableReader {
       ColumnTable::CachableEntry<Block>* block);
 
   // input_iter: if it is not null, update this one and return it as Iterator
-  static InternalIterator* NewDataBlockIterator(
-      Rep* rep, const ReadOptions& read_options, const Slice& index_value,
-      BlockIter* input_iter = nullptr);
+  static InternalIterator* NewDataBlockIterator(Rep* rep,
+                                                const ReadOptions& read_options,
+                                                const Slice& index_value,
+                                                BlockIter* input_iter = nullptr,
+                                                char** area = nullptr);
 
   // Create a index reader based on the index type stored in the table.
   Status CreateIndexReader(IndexReader** index_reader);

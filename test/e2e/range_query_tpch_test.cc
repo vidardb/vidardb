@@ -163,27 +163,30 @@ void TestTpchRangeQuery(bool flush, kTableType table, vector<uint32_t> cols) {
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
     vector<vector<MinMax>> v;
     s = iter->GetMinMax(v);
-    assert(s.ok());
+    assert(s.ok() || s.IsNotFound());
+    if (s.IsNotFound()) continue;
 
     // block_bits is set for illustration purpose here.
     vector<bool> block_bits(1, true);
-    vector<RangeQueryKeyVal> res;
-    s = iter->RangeQuery(block_bits, res);
+    uint64_t N = file_iter->EstimateRangeQueryBufSize(
+        ro.columns.empty() ? 15 : ro.columns.size());
+    char* buf = new char[N];
+    uint64_t valid_count, total_count;
+    s = iter->RangeQuery(block_bits, buf, N, &valid_count, &total_count);
     assert(s.ok());
 
-    cout << "{ ";
-    for (auto& it : res) {
-      cout << it.user_key << "=[";
-      vector<Slice> vals(options.splitter->Split(it.user_val));
-      for (auto i = 0u; i < vals.size(); i++) {
-        cout << vals[i].ToString();
-        if (i < vals.size() - 1) {
-          cout << ", ";
-        };
+    char* limit = buf + N;
+    uint64_t* end = reinterpret_cast<uint64_t*>(limit);
+    for (auto c : ro.columns) {
+      for (int i = 0; i < valid_count; ++i) {
+        uint64_t offset = *(--end), size = *(--end);
+        cout << Slice(buf + offset, size).ToString() << " ";
       }
-      cout << "] ";
+      cout << endl;
+      limit -= total_count * 2 * sizeof(uint64_t);
+      end = reinterpret_cast<uint64_t*>(limit);
     }
-    cout << "} " << endl;
+    delete[] buf;
   }
   delete iter;
 
@@ -192,9 +195,9 @@ void TestTpchRangeQuery(bool flush, kTableType table, vector<uint32_t> cols) {
 }
 
 int main() {
-  // TestTpchRangeQuery(false, ROW, {});
+  TestTpchRangeQuery(false, ROW, {});
   TestTpchRangeQuery(false, COLUMN, {});
-  // TestTpchRangeQuery(true, ROW, {});
-  // TestTpchRangeQuery(true, COLUMN, {});
+  TestTpchRangeQuery(true, ROW, {});
+  TestTpchRangeQuery(true, COLUMN, {});
   return 0;
 }

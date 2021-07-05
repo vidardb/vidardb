@@ -314,7 +314,8 @@ void ColumnTableBuilder::Add(const Slice& key, const Slice& value) {
   }
 
   r->last_key.assign(key.data(), key.size());
-  // main column format (keyN, pos): (key0, 0), (key1, 1) ...
+  // main column format (keyN, pos): (key0, 0), (key1, ) ...
+  // pos is only stored at every restart
   r->data_block->Add(key, pos);
   r->props.num_entries++;
   r->props.raw_key_size += key.size();
@@ -342,7 +343,11 @@ void ColumnTableBuilder::Flush() {
 void ColumnTableBuilder::WriteBlock(BlockBuilder* block,
                                     BlockHandle* handle,
                                     bool is_data_block) {
-  WriteBlock(block->Finish(), handle, is_data_block);
+  Slice raw_block_contents = block->Finish();
+  WriteBlock(raw_block_contents, handle, is_data_block);
+  if (is_data_block) {
+    rep_->props.raw_data_size += raw_block_contents.size();
+  }
   block->Reset();
 }
 

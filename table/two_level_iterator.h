@@ -48,19 +48,31 @@ class TwoLevelIterator : public InternalIterator {
   // the following 3 are optimized for speed without touching the disk due to
   // second level access otherwise
   virtual void FirstLevelSeekToFirst();
-  virtual bool FirstLevelValid() const;
-  virtual void FirstLevelNext(bool prepare_second_level);
-  virtual void SecondLevelNext();
+  virtual bool FirstLevelValid() const { return first_level_iter_.Valid(); }
+  virtual void FirstLevelNext(bool prepare_second_level) {
+    first_level_iter_.Next();
+
+    if (prepare_second_level) {
+      InitDataBlock();
+      if (second_level_iter_.iter() != nullptr) {
+        second_level_iter_.SeekToFirst();
+      }
+    }
+  }
+  virtual void SecondLevelNext() {
+    assert(FirstLevelValid());
+    second_level_iter_.Next();
+  }
   virtual Slice FirstLevelKey() const {
-    assert(Valid());
+    assert(FirstLevelValid());
     return first_level_iter_.key();
   }
   virtual Slice FirstLevelMin() const {
-    assert(Valid());
+    assert(FirstLevelValid());
     return first_level_iter_.min();
   }
   virtual Slice FirstLevelMax() const {
-    assert(Valid());
+    assert(FirstLevelValid());
     return first_level_iter_.max();
   }
   /******************** Shichao ******************/

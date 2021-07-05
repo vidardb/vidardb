@@ -291,7 +291,7 @@ Status ColumnTable::GetDataBlockFromCache(
 // If input_iter is not null, update this iter and return it
 InternalIterator* ColumnTable::NewDataBlockIterator(
     Rep* rep, const ReadOptions& read_options, const Slice& index_value,
-    BlockIter* input_iter) {
+    BlockIter* input_iter, char** area) {
   PERF_TIMER_GUARD(new_table_block_iter_nanos);
 
   BlockHandle handle;
@@ -299,7 +299,6 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
   // We intentionally allow extra stuff in index_value so that we
   // can add more features in the future.
   Status s = handle.DecodeFrom(&input);
-
   if (!s.ok()) {
     if (input_iter != nullptr) {
       input_iter->SetStatus(s);
@@ -318,7 +317,9 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
   Cache* block_cache = rep->table_options.block_cache.get();
   CachableEntry<Block> block;
   // If block cache is enabled, we'll try to read from it.
-  if (block_cache != nullptr) {
+  // But if area is specified, don't use block cache, since we would put data
+  // block in the specified area.
+  if (block_cache != nullptr && area == nullptr) {
     Statistics* statistics = rep->ioptions.statistics;
     char cache_key[kMaxCacheKeyPrefixSize + kMaxVarint64Length];
     // create key for block cache
@@ -357,7 +358,7 @@ InternalIterator* ColumnTable::NewDataBlockIterator(
     std::unique_ptr<Block> block_value;
     s = ReadBlockFromFile(rep->file.get(), read_options, handle, &block_value,
                           rep->ioptions.env, true, compression_dict,
-                          rep->ioptions.info_log);
+                          rep->ioptions.info_log, area);
     if (s.ok()) {
       block.value = block_value.release();
     }
@@ -913,17 +914,17 @@ class ColumnTable::ColumnIterator : public InternalIterator {
 
 class ColumnTable::RangeQueryIterator : public InternalIterator {
  public:
-  RangeQueryIterator(MainColumnTableIterator* main_iter,
-                     const std::vector<SubColumnTableIterator*> sub_iters,
-                     const Splitter* splitter,
-                     const InternalKeyComparator& internal_comparator,
-                     const std::vector<uint32_t>& columns, uint64_t num_entries)
+  RangeQueryIterator(
+      MainColumnTableIterator* main_iter,
+      const std::vector<SubColumnTableIterator*>& sub_iters,
+      const std::vector<uint32_t>& columns,
+      std::vector<std::shared_ptr<const TableProperties>>& table_properties,
+      const Slice& smallest_user_key)
       : main_iter_(main_iter),
         sub_iters_(sub_iters),
-        splitter_(splitter),
-        internal_comparator_(internal_comparator),
         columns_(columns),
-        num_entries_(num_entries) {}
+        table_properties_(table_properties),
+        smallest_user_key_(smallest_user_key) {}
 
   virtual ~RangeQueryIterator() {
     delete main_iter_;
@@ -932,66 +933,22 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
     }
   }
 
-  virtual bool Valid() const override {
-    if (!main_iter_->Valid()) {
-      return false;
-    }
-    for (const auto& it : sub_iters_) {
-      if (!it->Valid()) {
-        return false;
-      }
-    }
-    return true;
-  }
-
-  virtual void SeekToFirst() override {
-    main_iter_->SeekToFirst();
-    for (const auto& it : sub_iters_) {
-      it->SeekToFirst();
-    }
-  }
-
-  virtual Status status() const override {
-    if (!status_.ok()) {
-      return status_;
-    }
-    Status s;
-    s = main_iter_->status();
-    if (!s.ok()) {
-      return s;
-    }
-    for (const auto& it : sub_iters_) {
-      s = it->status();
-      if (!s.ok()) {
-        break;
-      }
-    }
-    return s;
-  }
-
   virtual Status GetMinMax(std::vector<std::vector<MinMax>>& v) const override {
     v.clear();
-    // test whether it is an empty table
-    main_iter_->SeekToFirst();
-    if (!main_iter_->Valid()) {
-      return Status::NotFound();
-    }
 
     // columns should already be sanitized so empty columns is impossible.
     v.resize(columns_.size());
+    for (auto& m : v) {
+      m.reserve(table_properties_.front()->num_data_blocks);
+    }
     // column idx
     size_t j = 0;
     // handle key column case
     if (columns_.front() == 0) {
-      // store the smallest internal key in parsed_key
-      ParsedInternalKey parsed_key;
-      if (!ParseInternalKey(main_iter_->key(), &parsed_key)) {
-        return Status::Corruption("corrupted internal key in Table::Iter");
-      }
       // store the smallest user key
-      std::string last_block_user_key(parsed_key.user_key.data(),
-                                      parsed_key.user_key.size());
-
+      std::string last_block_user_key(smallest_user_key_.data(),
+                                      smallest_user_key_.size());
+      ParsedInternalKey parsed_key;
       for (main_iter_->FirstLevelSeekToFirst(); main_iter_->FirstLevelValid();
            main_iter_->FirstLevelNext(false)) {
         // current block max internal key
@@ -1010,10 +967,6 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
 
     // handle other column cases
     for (size_t i = 0; i < sub_iters_.size(); i++, j++) {
-      // if not the first column, reserve the space to avoid re-allocation
-      if (j > 0) {
-        v[j].reserve(v.front().size());
-      }
       auto iter = sub_iters_[i];
       for (iter->FirstLevelSeekToFirst(); iter->FirstLevelValid();
            iter->FirstLevelNext(false)) {
@@ -1025,17 +978,38 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
     return Status::OK();
   }
 
+  // An accurate estimation
+  uint64_t EstimateRangeQueryBufSize(uint32_t column_count) const override {
+    assert(column_count == columns_.size());
+
+    uint64_t res = 0;
+    // data block
+    for (auto& p : table_properties_) {
+      res += p->raw_data_size;
+    }
+
+    // offset & size
+    res += table_properties_.front()->num_entries * sizeof(uint64_t) * 2 *
+           columns_.size();
+    return res;
+  }
+
   // TODO: handle update and delete
-  virtual Status RangeQuery(const std::vector<bool>& block_bits,
-                            std::vector<RangeQueryKeyVal>& res) const override {
-    res.clear();
-    res.reserve(num_entries_);
+  virtual Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
+                            uint64_t capacity, uint64_t* valid_count,
+                            uint64_t* total_count) const override {
+    assert(buf != nullptr);
+    *valid_count = 0;
+    *total_count = table_properties_.front()->num_entries;
+    uint64_t segment_size = (*total_count) * sizeof(uint64_t) * 2;
+    char* forward = buf;
+    char* limit = buf + capacity;
+    uint64_t* backward = reinterpret_cast<uint64_t*>(limit);
 
-    // If block_bits is empty, imply a full scan. Empty table case has been
-    // recognized by NotFound status in GetMinMax, so shouldn't reach here.
-
+    // If block_bits is empty, imply a full scan. No empty table case.
     // handle key column case
     size_t j = 0;
+    main_iter_->SetArea(forward);
     // block level
     for (main_iter_->SeekToFirst(); main_iter_->Valid();
          main_iter_->FirstLevelNext(true), j++) {
@@ -1044,25 +1018,35 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
         continue;
       }
       // within block
+      forward = main_iter_->GetArea();
       for (; main_iter_->Valid(); main_iter_->SecondLevelNext()) {
-        if (columns_.front() > 0) {
-          res.emplace_back("", "");
-        } else {
-          ParsedInternalKey parsed_key;
-          if (!ParseInternalKey(main_iter_->key(), &parsed_key)) {
-            return Status::Corruption("corrupted internal key in Table::Iter");
+        ParsedInternalKey parsed_key;
+        if (!ParseInternalKey(main_iter_->key(), &parsed_key)) {
+          return Status::Corruption("corrupted internal key in Table::Iter");
+        }
+        // TODO: currently we are assuming no delete
+        ++(*valid_count);
+        if (columns_.front() == 0) {
+          // check out of bound
+          if (forward > reinterpret_cast<char*>(backward - 2)) {
+            return Status::InvalidArgument("Not enough specified memory.");
           }
-          res.emplace_back(parsed_key.user_key.ToString(), "");
+          *(--backward) = parsed_key.user_key.data() - buf;
+          *(--backward) = parsed_key.user_key.size();
         }
       }
+    }
+    forward = main_iter_->GetArea();
+    if (columns_.front() == 0) {
+      limit -= segment_size;
+      backward = reinterpret_cast<uint64_t*>(limit);
     }
 
     // handle other column cases
     for (size_t i = 0; i < sub_iters_.size(); i++) {
       j = 0;
-      size_t k = 0;
       auto iter = sub_iters_[i];
-      bool last_column = ((i + 1) == sub_iters_.size());
+      iter->SetArea(forward);
       // block level
       for (iter->SeekToFirst(); iter->Valid(); iter->FirstLevelNext(true), j++) {
         assert(block_bits.empty() || j < block_bits.size());
@@ -1070,10 +1054,19 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
           continue;
         }
         // within block
+        forward = iter->GetArea();
         for (; iter->Valid(); iter->SecondLevelNext()) {
-          splitter_->Append(res[k++].user_val, iter->value(), last_column);
+          // check out of bound
+          if (forward > reinterpret_cast<char*>(backward - 2)) {
+            return Status::InvalidArgument("Not enough specified memory.");
+          }
+          *(--backward) = iter->value().data() - buf;
+          *(--backward) = iter->value().size();
         }
       }
+      forward = iter->GetArea();
+      limit -= segment_size;
+      backward = reinterpret_cast<uint64_t*>(limit);
     }
 
     return Status::OK();
@@ -1082,11 +1075,9 @@ class ColumnTable::RangeQueryIterator : public InternalIterator {
  private:
   MainColumnTableIterator* main_iter_;
   std::vector<SubColumnTableIterator*> sub_iters_;
-  Status status_;
-  const Splitter* splitter_;                         // used in rangequery
-  const InternalKeyComparator& internal_comparator_; // used in rangrquery
-  const std::vector<uint32_t> columns_;              // used in rangequery
-  uint64_t num_entries_;                             // used in rangrquery
+  const std::vector<uint32_t> columns_;
+  std::vector<std::shared_ptr<const TableProperties>> table_properties_;
+  Slice smallest_user_key_;
 };
 
 // Note: Column index must be from 0 to MAX_COLUMN_INDEX.
@@ -1109,7 +1100,8 @@ inline static ReadOptions SanitizeColumnReadOptions(
 }
 
 InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
-                                           Arena* arena, bool for_range_query) {
+                                           Arena* arena, bool for_range_query,
+                                           const Slice& smallest_user_key) {
   ReadOptions ro = SanitizeColumnReadOptions(
       rep_->table_options.column_count, read_options);
 
@@ -1133,6 +1125,9 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
     MainColumnTableIterator* main_iter =
         new MainColumnTableIterator(new BlockEntryIteratorState(this, ro));
 
+    std::vector<std::shared_ptr<const TableProperties>> table_properties;
+    table_properties.push_back(rep_->table_properties);
+
     std::vector<SubColumnTableIterator*> sub_iters;  // sub column
     for (const auto& column_index : ro.columns) {  // sub column
       if (column_index < 1) {  // only process the value columns
@@ -1142,11 +1137,12 @@ InternalIterator* ColumnTable::NewIterator(const ReadOptions& read_options,
       auto& table = rep_->tables[column_index-1];
       sub_iters.push_back(new SubColumnTableIterator(
           new BlockEntryIteratorState(table.get(), ro)));
+
+      table_properties.push_back(table->rep_->table_properties);
     }
 
-    return new RangeQueryIterator(main_iter, sub_iters, rep_->ioptions.splitter,
-                                  rep_->internal_comparator, ro.columns,
-                                  rep_->table_properties->num_entries);
+    return new RangeQueryIterator(main_iter, sub_iters, ro.columns,
+                                  table_properties, smallest_user_key);
   }
 }
 

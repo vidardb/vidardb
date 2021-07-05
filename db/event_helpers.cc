@@ -58,10 +58,11 @@ void EventHelpers::LogAndNotifyTableFileCreationFinished(
       jwriter.StartObject();
 
       // basic properties:
-      jwriter << "data_size" << table_properties.data_size << "index_size"
-              << table_properties.index_size << "filter_size"
-              << table_properties.filter_size << "raw_key_size"
-              << table_properties.raw_key_size << "raw_average_key_size"
+      jwriter << "data_size" << table_properties.data_size 
+              << "raw_data_size" << table_properties.raw_data_size
+              << "index_size" << table_properties.index_size
+              << "raw_key_size" << table_properties.raw_key_size
+              << "raw_average_key_size"
               << SafeDivide(table_properties.raw_key_size,
                             table_properties.num_entries)
               << "raw_value_size" << table_properties.raw_value_size

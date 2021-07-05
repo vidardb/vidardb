@@ -834,14 +834,14 @@ void Version::AddIterators(const ReadOptions& read_options,
 }
 
 /**************************** Shichao *****************************/
-void Version::AddIterators(const ReadOptions& read_options,
-                           const EnvOptions& soptions,
-                           std::vector<InternalIterator*>* iterator_list) {
+Status Version::AddIterators(const ReadOptions& read_options,
+                             const EnvOptions& soptions,
+                             std::vector<InternalIterator*>* iterator_list) {
   assert(storage_info_.finalized_);
 
   if (storage_info_.num_non_empty_levels() == 0) {
     // No file in the Version.
-    return;
+    return Status();
   }
 
   // Merge all level files together
@@ -849,13 +849,20 @@ void Version::AddIterators(const ReadOptions& read_options,
     for (size_t i = 0; i < storage_info_.LevelFilesBrief(level).num_files;
          i++) {
       const auto& file = storage_info_.LevelFilesBrief(level).files[i];
-      iterator_list->push_back(cfd_->table_cache()->NewIterator(
+      Slice smallest_user_key(ExtractUserKey(file.smallest_key));
+      InternalIterator* iter = cfd_->table_cache()->NewIterator(
           read_options, soptions, cfd_->internal_comparator(), file.fd, nullptr,
-          cfd_->internal_stats()->GetFileReadHist(0), true,
-          /* for compactions */ nullptr, 0 /* level */,
-          true /* range query */));
+          cfd_->internal_stats()->GetFileReadHist(0),
+          true /* for compactions */, nullptr, 0 /* level */,
+          true /* range query */, smallest_user_key);
+      iterator_list->push_back(iter);
+      if (!iter->status().ok()) {
+        return iter->status();
+      }
     }
   }
+
+  return Status();
 }
 /**************************** Shichao *****************************/
 

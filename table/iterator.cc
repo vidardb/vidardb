@@ -20,15 +20,7 @@ Cleanable::Cleanable() {
 }
 
 Cleanable::~Cleanable() {
-  if (cleanup_.function != nullptr) {
-    (*cleanup_.function)(cleanup_.arg1, cleanup_.arg2);
-    for (Cleanup* c = cleanup_.next; c != nullptr; ) {
-      (*c->function)(c->arg1, c->arg2);
-      Cleanup* next = c->next;
-      delete c;
-      c = next;
-    }
-  }
+  DoCleanup();  // Shichao
 }
 
 void Cleanable::RegisterCleanup(CleanupFunction func, void* arg1, void* arg2) {
@@ -45,6 +37,22 @@ void Cleanable::RegisterCleanup(CleanupFunction func, void* arg1, void* arg2) {
   c->arg1 = arg1;
   c->arg2 = arg2;
 }
+
+/************************** Shichao **********************/
+void Cleanable::DoCleanup() {
+  if (cleanup_.function != nullptr) {
+    (*cleanup_.function)(cleanup_.arg1, cleanup_.arg2);
+    for (Cleanup* c = cleanup_.next; c != nullptr; ) {
+      (*c->function)(c->arg1, c->arg2);
+      Cleanup* next = c->next;
+      delete c;
+      c = next;
+    }
+  }
+  cleanup_.function = nullptr;
+  cleanup_.next = nullptr;
+}
+/************************** Shichao **********************/
 
 Status Iterator::GetProperty(std::string prop_name, std::string* prop) {
   if (prop == nullptr) {

@@ -82,11 +82,11 @@ std::string TableProperties::ToString(
                  prop_delim, kv_delim);
 
   AppendProperty(result, "data block size", data_size, prop_delim, kv_delim);
-  AppendProperty(result, "index block size", index_size, prop_delim, kv_delim);
-  AppendProperty(result, "filter block size", filter_size, prop_delim,
+  AppendProperty(result, "raw data block size", raw_data_size, prop_delim,
                  kv_delim);
-  AppendProperty(result, "(estimated) table size",
-                 data_size + index_size + filter_size, prop_delim, kv_delim);
+  AppendProperty(result, "index block size", index_size, prop_delim, kv_delim);
+  AppendProperty(result, "(estimated) table size", data_size + index_size,
+                 prop_delim, kv_delim);
   AppendProperty(result, "column family ID",
                  column_family_id == vidardb::TablePropertiesCollectorFactory::
                                          Context::kUnknownColumnFamily
@@ -117,20 +117,18 @@ std::string TableProperties::ToString(
 
 void TableProperties::Add(const TableProperties& tp) {
   data_size += tp.data_size;
+  raw_data_size += tp.raw_data_size;
   index_size += tp.index_size;
-  filter_size += tp.filter_size;
   raw_key_size += tp.raw_key_size;
   raw_value_size += tp.raw_value_size;
   num_data_blocks += tp.num_data_blocks;
   num_entries += tp.num_entries;
 }
 
-const std::string TablePropertiesNames::kDataSize  =
-    "vidardb.data.size";
+const std::string TablePropertiesNames::kDataSize = "vidardb.data.size";
+const std::string TablePropertiesNames::kRawDataSize = "vidardb.raw.data.size";
 const std::string TablePropertiesNames::kIndexSize =
     "vidardb.index.size";
-const std::string TablePropertiesNames::kFilterSize =
-    "vidardb.filter.size";
 const std::string TablePropertiesNames::kRawKeySize =
     "vidardb.raw.key.size";
 const std::string TablePropertiesNames::kRawValueSize =
@@ -139,8 +137,6 @@ const std::string TablePropertiesNames::kNumDataBlocks =
     "vidardb.num.data.blocks";
 const std::string TablePropertiesNames::kNumEntries =
     "vidardb.num.entries";
-const std::string TablePropertiesNames::kFilterPolicy =
-    "vidardb.filter.policy";
 const std::string TablePropertiesNames::kFormatVersion =
     "vidardb.format.version";
 const std::string TablePropertiesNames::kFixedKeyLen =
@@ -150,8 +146,6 @@ const std::string TablePropertiesNames::kColumnFamilyId =
 const std::string TablePropertiesNames::kColumnFamilyName =
     "vidardb.column.family.name";
 const std::string TablePropertiesNames::kComparator = "vidardb.comparator";
-const std::string TablePropertiesNames::kMergeOperator =
-    "vidardb.merge.operator";
 const std::string TablePropertiesNames::kPropertyCollectors =
     "vidardb.property.collectors";
 const std::string TablePropertiesNames::kCompression = "vidardb.compression";

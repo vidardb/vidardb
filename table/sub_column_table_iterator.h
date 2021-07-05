@@ -8,7 +8,6 @@
 
 #include "table/block.h"
 
-
 namespace vidardb {
 
 // Similar to TwoLevelIterator, but with increased performance due to direct
@@ -16,13 +15,16 @@ namespace vidardb {
 class SubColumnTableIterator {
  public:
   explicit SubColumnTableIterator(ColumnTable::BlockEntryIteratorState* state)
-      : state_(state), valid_second_level_iter_(false) {
+      : state_(state),
+        valid_second_level_iter_(false),
+        area_(nullptr),
+        last_area_(nullptr) {
     state_->NewIndexIterator(&first_level_iter_);
   }
+  virtual ~SubColumnTableIterator() { delete state_; }
 
-  virtual ~SubColumnTableIterator() {
-    delete state_;
-  }
+  void SetArea(char* area) { area_ = area; }
+  char* GetArea() { return area_; }
 
   void SeekToFirst() {
     first_level_iter_.SeekToFirst();
@@ -35,12 +37,6 @@ class SubColumnTableIterator {
 
   bool Valid() const {
     return valid_second_level_iter_ ? second_level_iter_.Valid() : false;
-  }
-
-  void Next() {
-    assert(Valid());
-    second_level_iter_.Next();
-    SkipEmptyDataBlocksForward();
   }
 
   // the following 3 are optimized for speed without touching the disk due to
@@ -58,26 +54,22 @@ class SubColumnTableIterator {
     }
   }
   void SecondLevelNext() {
-    assert(first_level_iter_.Valid());
+    assert(FirstLevelValid());
     second_level_iter_.Next();
   }
   Slice FirstLevelKey() const {
-    assert(Valid());
+    assert(FirstLevelValid());
     return first_level_iter_.key();
   }
   Slice FirstLevelMin() const {
-    assert(Valid());
+    assert(FirstLevelValid());
     return first_level_iter_.min();
   }
   Slice FirstLevelMax() const {
-    assert(Valid());
+    assert(FirstLevelValid());
     return first_level_iter_.max();
   }
 
-  Slice key() const {
-    assert(Valid());
-    return second_level_iter_.key();
-  }
   Slice value() {
     assert(Valid());
     return second_level_iter_.value();
@@ -111,12 +103,15 @@ class SubColumnTableIterator {
       Slice handle = first_level_iter_.value();
       if (valid_second_level_iter_ &&
           !second_level_iter_.status().IsIncomplete() &&
-          handle.compare(data_block_handle_) == 0) {
+          handle.compare(data_block_handle_) == 0 && last_area_ == area_) {
         // second_level_iter is already constructed with this iterator, so
         // no need to change anything
       } else {
         data_block_handle_.assign(handle.data(), handle.size());
-        state_->NewDataIterator(handle, &second_level_iter_);
+        last_area_ = area_;
+        second_level_iter_.DoCleanup();  // release previous resource
+        state_->NewDataIterator(handle, &second_level_iter_,
+                                (area_ ? &area_ : nullptr));
         valid_second_level_iter_ = true;
       }
     }
@@ -143,9 +138,11 @@ class SubColumnTableIterator {
   SubColumnBlockIter second_level_iter_;  // May be not valid
   bool valid_second_level_iter_;
   Status status_;
+  char* area_;  // Load the data blocks in this specified area consecutively
   // If second_level_iter is non-nullptr, then "data_block_handle_" holds the
   // "index_value" passed to block_function_ to create the second_level_iter.
   std::string data_block_handle_;
+  char* last_area_;  // together with data_block_handle_ to identify the block
 };
 
 }  // namespace vidardb

@@ -57,18 +57,30 @@ void TestSimpleColumnStore(bool flush) {
   for (file_iter->SeekToFirst(); file_iter->Valid(); file_iter->Next()) {
     vector<vector<MinMax>> v;
     s = file_iter->GetMinMax(v);
-    assert(s.ok());
+    assert(s.ok() || s.IsNotFound());
+    if (s.IsNotFound()) continue;
 
     // block_bits is set for illustration purpose here.
     vector<bool> block_bits(1, true);
-    vector<RangeQueryKeyVal> res;
-    s = file_iter->RangeQuery(block_bits, res);
+    uint64_t N = file_iter->EstimateRangeQueryBufSize(
+        ro.columns.empty() ? 4 : ro.columns.size());
+    char* buf = new char[N];
+    uint64_t valid_count, total_count;
+    s = file_iter->RangeQuery(block_bits, buf, N, &valid_count, &total_count);
     assert(s.ok());
-    for (auto& it : res) {
-      cout << it.user_key << ": " << it.user_val << " " << endl;
-      assert(it.user_key == "" || it.user_key == "");
-      assert(it.user_val == "val11|val13" || it.user_val == "val21|val23");
+
+    char* limit = buf + N;
+    uint64_t* end = reinterpret_cast<uint64_t*>(limit);
+    for (auto c : ro.columns) {
+      for (int i = 0; i < valid_count; ++i) {
+        uint64_t offset = *(--end), size = *(--end);
+        cout << Slice(buf + offset, size).ToString() << " ";
+      }
+      cout << endl;
+      limit -= total_count * 2 * sizeof(uint64_t);
+      end = reinterpret_cast<uint64_t*>(limit);
     }
+    delete[] buf;
   }
   delete file_iter;
 

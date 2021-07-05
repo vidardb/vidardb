@@ -37,6 +37,9 @@ class Cleanable {
   typedef void (*CleanupFunction)(void* arg1, void* arg2);
   void RegisterCleanup(CleanupFunction function, void* arg1, void* arg2);
 
+  // Actively call cleanup to release resource
+  void DoCleanup();  // Shichao
+
  protected:
   struct Cleanup {
     CleanupFunction function;

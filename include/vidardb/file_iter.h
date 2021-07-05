@@ -15,14 +15,13 @@
 namespace vidardb {
 
 struct MinMax;
-struct RangeQueryKeyVal;
 class InternalIterator;
 
 // File level iterator of picking up the next file (memtable, block based table,
 // column table)
 class FileIter : public Iterator {
  public:
-  FileIter(SequenceNumber s) : sequence_(s), cur_(0) {}
+  FileIter(SequenceNumber s);
 
   virtual ~FileIter();
 
@@ -34,12 +33,11 @@ class FileIter : public Iterator {
 
   Status status() const override;
 
-  std::vector<InternalIterator*>* GetInternalIterators() { return &children_; }
+  std::vector<InternalIterator*>* GetInternalIterators();
 
   // Return the targeted columns' block min and max. If key is in the target
   // set, return its block min and max as well, but be cautious about its
-  // different max. We have to use the type first to identify the file type
-  // since not all target columns' min & max might be returned.
+  // different max.
   //
   // For MemTable, if our interest set includes key, then min & max key is
   // returned. If not, nothing we can do here, meaning v is empty.
@@ -53,12 +51,19 @@ class FileIter : public Iterator {
   // this case v is also empty, and a full scan should not be executed later.
   Status GetMinMax(std::vector<std::vector<MinMax>>& v) const;
 
-  // According to the calculated block bits, fetch the partial tuples.
-  // If key is not in the target, set it empty. Sometimes the block_bits is
-  // empty, implying a full scan since no useful filters get from GetMinMax.
-  // Empty table has already been recognized by NotFound status in GetMinMax;
-  Status RangeQuery(const std::vector<bool>& block_bits,
-                    std::vector<RangeQueryKeyVal>& res) const;
+  // Estimate the size of current range query buffer to store required data
+  // blocks and meta data. The parameter is used in row-oriented storage.
+  uint64_t EstimateRangeQueryBufSize(uint32_t column_count) const;
+
+  // According to the calculated block bits, fetch the relevant attributes.
+  // Sometimes the block_bits is empty, implying a full scan since no useful
+  // filters get from GetMinMax. Empty table has already been recognized by
+  // NotFound status in GetMinMax;
+  //
+  // Both valid_count and total_count record the tuple-wise number.
+  Status RangeQuery(const std::vector<bool>& block_bits, char* buf,
+                    uint64_t capacity, uint64_t* valid_count,
+                    uint64_t* total_count) const;
 
  private:
   std::vector<InternalIterator*> children_;
@@ -66,4 +71,4 @@ class FileIter : public Iterator {
   size_t cur_;
 };
 
-}  // vidardb
+}  // namespace vidardb

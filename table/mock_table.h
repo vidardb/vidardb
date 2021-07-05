@@ -40,8 +40,9 @@ class MockTableReader : public TableReader {
  public:
   explicit MockTableReader(const stl_wrappers::KVMap& table) : table_(table) {}
 
-  InternalIterator* NewIterator(const ReadOptions&, Arena* arena,
-                                bool for_range_query = false) override;
+  InternalIterator* NewIterator(
+      const ReadOptions&, Arena* arena, bool for_range_query = false,
+      const Slice& smallest_user_key = Slice()) override;
 
   Status Get(const ReadOptions&, const Slice& key,
              GetContext* get_context) override;

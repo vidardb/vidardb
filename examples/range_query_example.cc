@@ -61,15 +61,31 @@ int main(int argc, char* argv[]) {
   FileIter* iter = dynamic_cast<FileIter*>(db->NewFileIterator(ro));
   for (iter->SeekToFirst(); iter->Valid(); iter->Next()) {
     vector<vector<MinMax>> v;
-    iter->GetMinMax(v);
+    s = iter->GetMinMax(v);
+    assert(s.ok() || s.IsNotFound());
+    if (s.IsNotFound()) continue;
 
     // block_bits is set for illustration purpose here.
     vector<bool> block_bits(1, true);
-    vector<RangeQueryKeyVal> res;
-    iter->RangeQuery(block_bits, res);
-    for (auto& it : res) {
-      cout << it.user_key << ": " << it.user_val << endl;
+    uint64_t N = iter->EstimateRangeQueryBufSize(
+        ro.columns.empty() ? 2 : ro.columns.size());
+    char* buf = new char[N];
+    uint64_t valid_count, total_count;
+    s = iter->RangeQuery(block_bits, buf, N, &valid_count, &total_count);
+    assert(s.ok());
+
+    char* limit = buf + N;
+    uint64_t* end = reinterpret_cast<uint64_t*>(limit);
+    for (auto c : ro.columns) {
+      for (int i = 0; i < valid_count; ++i) {
+        uint64_t offset = *(--end), size = *(--end);
+        cout << Slice(buf + offset, size).ToString() << " ";
+      }
+      cout << endl;
+      limit -= total_count * 2 * sizeof(uint64_t);
+      end = reinterpret_cast<uint64_t*>(limit);
     }
+    delete[] buf;
   }
   delete iter;
 

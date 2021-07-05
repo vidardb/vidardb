@@ -220,8 +220,8 @@ InternalIterator* TableCache::NewIterator(
     const ReadOptions& options, const EnvOptions& env_options,
     const InternalKeyComparator& icomparator, const FileDescriptor& fd,
     TableReader** table_reader_ptr, HistogramImpl* file_read_hist,
-    bool for_compaction, Arena* arena, int level,
-    bool for_range_query) {  // Shichao
+    bool for_compaction, Arena* arena, int level, bool for_range_query,
+    const Slice& smallest_user_key) {  // Shichao
   PERF_TIMER_GUARD(new_table_iterator_nanos);
 
   if (table_reader_ptr != nullptr) {
@@ -281,8 +281,8 @@ InternalIterator* TableCache::NewIterator(
     }
   }
 
-  InternalIterator* result =
-      table_reader->NewIterator(options, arena, for_range_query);
+  InternalIterator* result = table_reader->NewIterator(
+      options, arena, for_range_query, smallest_user_key);
 
   if (create_new_table_reader) {
     assert(handle == nullptr);
@@ -291,7 +291,7 @@ InternalIterator* TableCache::NewIterator(
     result->RegisterCleanup(&UnrefEntry, cache_, handle);
   }
 
-  if (for_compaction) {
+  if (for_compaction || for_range_query) {
     table_reader->SetupForCompaction();
   }
   if (table_reader_ptr != nullptr) {

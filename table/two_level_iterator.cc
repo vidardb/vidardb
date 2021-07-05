@@ -90,25 +90,6 @@ void TwoLevelIterator::FirstLevelSeekToFirst() {
   first_level_iter_.SeekToFirst();
 }
 
-bool TwoLevelIterator::FirstLevelValid() const {
-  return first_level_iter_.Valid();
-}
-
-void TwoLevelIterator::FirstLevelNext(bool prepare_second_level) {
-  first_level_iter_.Next();
-
-  if (prepare_second_level) {
-    InitDataBlock();
-    if (second_level_iter_.iter() != nullptr) {
-      second_level_iter_.SeekToFirst();
-    }
-  }
-}
-
-void TwoLevelIterator::SecondLevelNext() {
-  assert(first_level_iter_.Valid());
-  second_level_iter_.Next();
-}
 /**************************** Shichao *****************************/
 
 Status TwoLevelIterator::status() const {
